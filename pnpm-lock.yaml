@@ -2,14 +2,14 @@ lockfileVersion: '6.0'
 
 dependencies:
   '@fleetbase/ember-core':
-    specifier: ^0.1.3
-    version: 0.1.3(@babel/core@7.22.10)(ember-fetch@8.1.2)(postcss@8.4.28)(webpack@5.74.0)
+    specifier: ^0.1.4
+    version: 0.1.4(@babel/core@7.22.10)(ember-fetch@8.1.2)(postcss@8.4.28)(webpack@5.74.0)
   '@fleetbase/ember-ui':
-    specifier: ^0.1.9
-    version: 0.1.9(@babel/core@7.22.10)(@ember/test-helpers@2.8.1)(ember-source@4.6.0)(postcss@8.4.28)(rollup@3.28.0)(webpack@5.74.0)
+    specifier: ^0.2.0
+    version: 0.2.0(@babel/core@7.22.10)(@ember/test-helpers@2.8.1)(ember-source@4.6.0)(postcss@8.4.28)(rollup@3.28.0)(webpack@5.74.0)
   '@fleetbase/fleetops-data':
-    specifier: ^0.1.0
-    version: 0.1.0
+    specifier: ^0.1.1
+    version: 0.1.1
   '@fortawesome/ember-fontawesome':
     specifier: ^0.4.1
     version: 0.4.1(rollup@3.28.0)
@@ -2180,8 +2180,8 @@ packages:
       - supports-color
     dev: true
 
-  /@fleetbase/ember-core@0.1.3(@babel/core@7.22.10)(ember-fetch@8.1.2)(postcss@8.4.28)(webpack@5.74.0):
-    resolution: {integrity: sha512-eTcVzpVz7J7B0ctZLIsyrJ3wk4ATDahfer/WK/udW4M8Q5vEgEXXr0e+Wjzy6g7gv+n9f0DKe6eZ3uz5NoGzQg==}
+  /@fleetbase/ember-core@0.1.4(@babel/core@7.22.10)(ember-fetch@8.1.2)(postcss@8.4.28)(webpack@5.74.0):
+    resolution: {integrity: sha512-lQLjdLbQGcW5d1+n3zzy2UKpxpqCaa40F6i3JGO9vShZsDzoZermb1QjR0x9zaNAQP154ebhDfs8cDQLC8qr+g==}
     engines: {node: 14.* || >= 16}
     dependencies:
       date-fns: 2.30.0
@@ -2212,8 +2212,8 @@ packages:
       - webpack
     dev: false
 
-  /@fleetbase/ember-ui@0.1.9(@babel/core@7.22.10)(@ember/test-helpers@2.8.1)(ember-source@4.6.0)(postcss@8.4.28)(rollup@3.28.0)(webpack@5.74.0):
-    resolution: {integrity: sha512-zB/a/r9YYW8QkZqKsaN/Af0wJWM/P1+/m5V/JK+jLO4yojUOa/e7oZYeeE/GRB1Kz3LwaSmhEWCMYKnxeiey2A==}
+  /@fleetbase/ember-ui@0.2.0(@babel/core@7.22.10)(@ember/test-helpers@2.8.1)(ember-source@4.6.0)(postcss@8.4.28)(rollup@3.28.0)(webpack@5.74.0):
+    resolution: {integrity: sha512-c9PETFoMO3e5DS3vg7S0ZWlkLxDic09EY78WGyzTmg3l2EHB1uHn2HBo7GPWlLAPN2M6GZnVAXo5irTX76XZ4Q==}
     engines: {node: 14.* || >= 16}
     dependencies:
       '@ember/render-modifiers': 2.1.0(@babel/core@7.22.10)(ember-source@4.6.0)
@@ -2290,8 +2290,8 @@ packages:
       - webpack-command
     dev: false
 
-  /@fleetbase/fleetops-data@0.1.0:
-    resolution: {integrity: sha512-JuRjiY+W+nnWKMHE0I7j1xTc9SBKVW2CYvOdEY4tpv8o8Jsloq/VaSf34lbWHSemEeCzzquPpOb/s0fKFKFbMQ==}
+  /@fleetbase/fleetops-data@0.1.1:
+    resolution: {integrity: sha512-x3BsFR4hZ3P/2LSMqOx4XVgaahVs1Nr4fWFOPoS1FyF/XI8LU1EO6CNA/oimlLLC+0tbddQlT9wttXUrDOm5uw==}
     engines: {node: 14.* || >= 16}
     dependencies:
       date-fns: 2.30.0
