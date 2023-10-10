@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/edit-network';
+export { default } from '@fleetbase/storefront-engine/components/modals/edit-network';

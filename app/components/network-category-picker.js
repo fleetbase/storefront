@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/network-category-picker';
+export { default } from '@fleetbase/storefront-engine/components/network-category-picker';

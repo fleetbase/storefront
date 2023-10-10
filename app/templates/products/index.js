@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/templates/products/index';
+export { default } from '@fleetbase/storefront-engine/templates/products/index';

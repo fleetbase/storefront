@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/adapters/storefront';
+export { default } from '@fleetbase/storefront-engine/adapters/storefront';

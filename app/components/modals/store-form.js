@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/store-form';
+export { default } from '@fleetbase/storefront-engine/components/modals/store-form';

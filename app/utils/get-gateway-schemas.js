@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/utils/get-gateway-schemas';
+export { default } from '@fleetbase/storefront-engine/utils/get-gateway-schemas';

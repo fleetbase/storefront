@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/create-notification-channel';
+export { default } from '@fleetbase/storefront-engine/components/modals/create-notification-channel';

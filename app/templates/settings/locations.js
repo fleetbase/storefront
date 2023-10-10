@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/templates/settings/locations';
+export { default } from '@fleetbase/storefront-engine/templates/settings/locations';

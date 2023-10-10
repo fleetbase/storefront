@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/serializers/network';
+export { default } from '@fleetbase/storefront-engine/serializers/network';

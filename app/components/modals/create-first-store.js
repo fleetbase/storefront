@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/create-first-store';
+export { default } from '@fleetbase/storefront-engine/components/modals/create-first-store';

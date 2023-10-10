@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/serializers/addon-category';
+export { default } from '@fleetbase/storefront-engine/serializers/addon-category';

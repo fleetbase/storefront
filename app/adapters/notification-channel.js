@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/adapters/notification-channel';
+export { default } from '@fleetbase/storefront-engine/adapters/notification-channel';

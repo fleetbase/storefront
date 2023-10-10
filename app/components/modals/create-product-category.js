@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/create-product-category';
+export { default } from '@fleetbase/storefront-engine/components/modals/create-product-category';

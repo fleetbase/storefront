@@ -59,8 +59,8 @@ Install the PHP packages using Composer:
 
 ```bash
 composer require fleetbase/core-api
-composer require fleetbase/fleetops
-composer require fleetbase/storefront
+composer require fleetbase/fleetops-api
+composer require fleetbase/storefront-api
 ```
 ### Frontend
 

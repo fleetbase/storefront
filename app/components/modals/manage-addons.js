@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront/components/modals/manage-addons';
+export { default } from '@fleetbase/storefront-engine/components/modals/manage-addons';
