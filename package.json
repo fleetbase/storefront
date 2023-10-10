@@ -1,7 +1,7 @@
 {
-    "name": "@fleetbase/storefront",
-    "version": "0.0.1",
-    "description": "Fleetbase Storefront extension provides a headless commerce module for launching e-commerce stores, on-demand apps, or marketplaces.",
+    "name": "@fleetbase/storefront-engine",
+    "version": "0.1.7",
+    "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
         "dashboard": "storefront/int/v1/dashboard"

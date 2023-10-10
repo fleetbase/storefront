@@ -1,0 +1,10 @@
+{
+    "name": "Storefront",
+    "version": "0.1.7",
+    "description": "Headless Commerce & Marketplace Extension for Fleetbase",
+    "repository": "https://github.com/fleetbase/storefront",
+    "license": "MIT",
+    "author": "Fleetbase Pte Ltd <hello@fleetbase.io>",
+    "engine": "package.json",
+    "api": "composer.json"
+}

@@ -1,7 +1,7 @@
 {
-    "name": "fleetbase/storefront",
-    "version": "0.0.1",
-    "description": "Headless Commerce API for Storefront Fleetbase Extension.",
+    "name": "fleetbase/storefront-api",
+    "version": "0.1.7",
+    "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "keywords": [
         "fleetbase-extension",
         "storefront",
