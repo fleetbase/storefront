@@ -1,0 +1,8 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div>
+            <InputGroup @type="time" @name="Start time" @value={{@options.hours.start}} @helpText="When availability/operation start" />
+            <InputGroup @type="time" @name="End time" @value={{@options.hours.end}} @helpText="When availability/operation hours end" />
+        </div>
+    </div>
+</Modal::Default>

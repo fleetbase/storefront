@@ -1,0 +1,23 @@
+{{#if @activeStore}}
+    <DropdownButton @renderInPlace={{true}} @size="xs" @type="primary" @icon="store" @iconSize="sm" @text={{@activeStore.name}} @buttonClass={{concat "w-full " @buttonClass}} @buttonWrapperClass={{concat "w-full " @buttonWrapperClass}} @wrapperClass={{@wrapperClass}} as |dd|>
+        <div role="menu" class="store-selector-dropdown-menu next-dd-menu py-1">
+            <div role="group" class="px-1 overflow-y-scroll max-h-72">
+                {{#each @stores as |store|}}
+                    <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.onSwitchStore store)}}>
+                        {{or store.name "-"}}
+                    </a>
+                {{else}}
+                    <div class="next-dd-item" role="menuitem">No stores to select</div>
+                {{/each}}
+            </div>
+            <div class="px-1">
+                <div class="next-dd-menu-seperator"></div>
+                <div role="group" class="px-1">
+                    <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.onCreateStore)}}>
+                        Create a new storefront
+                    </a>
+                </div>
+            </div>
+        </div>
+    </DropdownButton>
+{{/if}}

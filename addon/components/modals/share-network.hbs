@@ -1,0 +1,35 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="flex flex-col items-center justify-center mb-2">
+            <FaIcon @icon="mail-bulk" @size="4x" class="text-sky-400" />
+            <div class="my-2 text-center">
+                <h2 class="dark:text-gray-100 font-semibold">Invite members to your network</h2>
+                <p class="my-2 px-6">
+                    Grab a shareable invitiation link or send individual invites via email below.
+                </p>
+            </div>
+        </div>
+
+        <div class="rounded-md border dark:border-gray-800 dark:bg-gray-800 p-4 mb-5">
+            <h4 class="dark:text-gray-50 font-semibold mb-2">Share with people and organizations</h4>
+            <p class="mb-4 text-sm dark:text-gray-200">
+                Enter the emails of people or organizations you want to send an invite to your network.
+            </p>
+            <div>
+                <TagInput class="form-input" @placeholder="Add emails" @tags={{@options.recipients}} @addTag={{@options.addRecipient}} @removeTagAtIndex={{@options.removeRecipient}} as |tag|>
+                    {{tag}}
+                </TagInput>
+            </div>
+        </div>
+
+        <div class="rounded-md border dark:border-gray-800 dark:bg-gray-800 p-4">
+            <h4 class="dark:text-gray-50 mb-4 font-semibold">Get link</h4>
+            <div class="input-group mb-0i">
+                <Toggle @isToggled={{@options.network.options.shareable_link_enabled}} @onToggle={{@options.toggleShareableLink}} @label="Enable shareable link" @helpText="Anyone with this link is able to join your network" />
+            </div>
+            {{#if @options.network.options.shareable_link_enabled}}
+                <ClickToCopy class="mt-4 rounded-md border dark:border-gray-900 dark:bg-gray-900 truncate px-4 py-2.5 text-sm text-green-400 dark:text-green-300 text-center" @value={{@options.shareableLink}} />
+            {{/if}}
+        </div>
+    </div>
+</Modal::Default>

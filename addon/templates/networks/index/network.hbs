@@ -1,0 +1,37 @@
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="800px" @minResizeWidth={{700}} @fullHeight={{true}}>
+    <Overlay::Header @title="Manage Network" @onPressCancel={{this.transitionBack}} />
+    <Overlay::Body class="p-0i" @increaseInnerBodyHeightBy="0" @wrapperClass="space-y-4 pt-4">
+        <div class="flex flex-col">
+            <div class="px-4 flex items-center section-header-title mb-4">
+                <FaIcon @icon="network-wired" @size="lg" class="text-sky-500 mr-3" />
+                <h3 class="text-lg font-semibold dark:text-white">
+                    {{@model.name}}
+                </h3>
+            </div>
+            <div class="section-header-actions w-full overflow-x-scroll lg:overflow-x-auto">
+                <div class="ui-tabs">
+                    <nav>
+                        <LinkTo @route="networks.index.network.index" class="ui-tab">
+                            <FaIcon @icon="cogs" class="mr-2" />
+                            <span>Settings</span>
+                        </LinkTo>
+                        <LinkTo @route="networks.index.network.stores" class="ui-tab">
+                            <FaIcon @icon="store" class="mr-2" />
+                            <span>Stores</span>
+                        </LinkTo>
+                        <LinkTo @route="networks.index.network.orders" class="ui-tab">
+                            <FaIcon @icon="file-invoice-dollar" class="mr-2" />
+                            <span>Orders</span>
+                        </LinkTo>
+                        <LinkTo @route="networks.index.network.customers" class="ui-tab">
+                            <FaIcon @icon="users" class="mr-2" />
+                            <span>Customers</span>
+                        </LinkTo>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <div>{{outlet}}</div>
+    </Overlay::Body>
+</Overlay>

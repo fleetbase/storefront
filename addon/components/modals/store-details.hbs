@@ -1,0 +1,22 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4 text-xs dark:text-gray-100">
+            <div class="field-info-container">
+                <div class="field-name">Name</div>
+                <div class="field-value">{{n-a @options.store.name}}</div>
+            </div>
+            <div class="field-info-container">
+                <div class="field-name">Description</div>
+                <div class="field-value">{{n-a @options.store.description}}</div>
+            </div>
+            <div class="field-info-container">
+                <div class="field-name">Tags</div>
+                <div class="field-value">{{n-a @options.store.tagsList}}</div>
+            </div>
+            <div class="field-info-container">
+                <div class="field-name">Currency</div>
+                <div class="field-value">{{n-a @options.store.currency}}</div>
+            </div>
+        </div>
+    </div>
+</Modal::Default>

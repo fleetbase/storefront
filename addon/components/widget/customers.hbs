@@ -1,0 +1,44 @@
+<ContentPanel @title={{this.title}} @titleStatusRight={{this.customers.length}} @titleStatuRightClass="info-status-badge" @hideStatusDot={{true}} @open={{this.customers.length}} @pad={{false}} @wrapperClass={{@wrapperClass}} @onInsert={{this.getCustomers}}>
+    {{#if this.isLoading}}
+        <div class="px-3 py-2">
+            <Spinner class="text-sky-400" />
+        </div>
+    {{/if}}
+    <div class="hidden md:flex table-wrapper table-fluid">
+        <table>
+            <thead>
+                <tr class="h-12 text-left py-1">
+                    <th>ID</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Orders</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each this.customers as |customer|}}
+                    <tr class="h-12">
+                        <td>{{customer.customerId}}</td>
+                        <td>{{n-a customer.phone}}</td>
+                        <td>{{n-a customer.email}}</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    <div class="flex flex-col md:hidden p-3 space-y-3">
+        {{#each this.customers as |customer|}}
+            <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
+                <div class="flex flex-row">
+                    <div class="flex-1 font-semibold">{{customer.name}}</div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-xs">Phone:{{n-a customer.phone}}</div>
+                    <div class="text-xs">Email: {{n-a customer.email}}</div>
+                </div>
+            </div>
+        {{/each}}
+    </div>
+</ContentPanel>

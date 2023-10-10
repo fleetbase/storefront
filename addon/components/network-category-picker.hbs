@@ -1,0 +1,40 @@
+<DropdownButton @renderInPlace={{true}} @size="xs" @type="magic" @icon="folder-tree" @iconSize="sm" @text={{this.buttonTitle}} @buttonClass={{concat "w-full truncate w-48" " " @buttonClass}} @buttonWrapperClass={{concat "w-full" " " @buttonWrapperClass}} @wrapperClass={{@wrapperClass}} as |dd|>
+    <div role="menu" class="store-selector-dropdown-menu next-dd-menu py-1">
+        <div role="group" class="px-1 overflow-y-scroll max-h-72">
+            {{#if this.isLoading}}
+                <div class="text-sm flex flex-row items-center px-3 py-0.5 border-0 my-1">
+                    <Spinner class="mr-2i" />
+                    <span class="dark:text-gray-100 test-sm">Loading...</span>
+                </div>
+            {{else}}
+                {{#if this.selectedCategory}}
+                    <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" this.loadParentCategories}}>
+                        <FaIcon @icon="arrow-left" class="mr-2" />
+                        <span>Back</span>
+                    </a>
+                {{/if}}
+                {{#each this.categories as |category|}}
+                    <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (fn this.onSelectCategory category)}}>
+                        {{category.name}}
+                    </a>
+                {{else}}
+                    <div class="text-sm flex flex-row items-center px-3 py-0.5 border-0 my-1 truncate">
+                        {{#if this.selectedCategory}}
+                            <span>No subcategories for {{this.selectedCategory.name}}</span>
+                        {{else}}
+                            <span>No categories for this network</span>
+                        {{/if}}
+                    </div>
+                {{/each}}
+            {{/if}}
+        </div>
+        <div class="px-1">
+            <div class="next-dd-menu-seperator"></div>
+            <div role="group" class="px-1">
+                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.onCreateNewCategory)}}>
+                    Create a new category
+                </a>
+            </div>
+        </div>
+    </div>
+</DropdownButton>

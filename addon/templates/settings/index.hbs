@@ -1,0 +1,229 @@
+<SettingsContainer>
+    <form class="h-screen" {{on "submit" this.saveSettings}}>
+        <div class="space-y-4 h-screen">
+            <div>
+                <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                    General Settings
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Provide the general settings for your storefront.
+                </p>
+            </div>
+
+            <InputGroup @id="storefront_name_input" @name="Name" @value={{@model.name}} @placeholder="Storefront Name" @helpText="The name of your store." />
+            <InputGroup @name="Description" @value={{@model.description}} @placeholder="Storefront Description" @helpText="Give your store a brief description to let users know what you sell." />
+            <InputGroup @name="Tags">
+                <TagInput class="form-input" @placeholder="Add tags" @allowSpacesInTags={{true}} @tags={{@model.tags}} @addTag={{this.addTag}} @removeTagAtIndex={{this.removeTag}} as |tag|>
+                    {{tag}}
+                </TagInput>
+            </InputGroup>
+            <InputGroup @name="Currency">
+                <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+            </InputGroup>
+
+            <ContentPanel @title="Contact & Social" @open={{false}} @pad={{true}}>
+                <InputGroup @name="Phone">
+                    <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
+                </InputGroup>
+                <InputGroup @name="Website" @value={{@model.website}} @placeholder="Website" @helpText="Your business website URL." />
+                <InputGroup @name="Facebook" @value={{@model.facebook}} @placeholder="Facebook ID" @helpText="Your business Facebook page ID." />
+                <InputGroup @name="Instagram" @value={{@model.instagram}} @placeholder="Instagram Username" @helpText="Your business Instagram username." />
+                <InputGroup @name="Twitter" @value={{@model.twitter}} @placeholder="Twitter Username" @helpText="Your business Twitter username." />
+            </ContentPanel>
+
+            <ContentPanel @title="Logo & Backdrop" @open={{false}} @pad={{true}}>
+                <InputGroup @name="Logo" @helpText="Logo for your store.">
+                    <div class="flex flex-row items-center">
+                        <img src={{@model.logo_url}} alt={{concat @model.name " logo"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
+                        <FileUpload @name="logo" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
+                            <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                                {{#if queue.files.length}}
+                                    <Spinner class="mr-1" />
+                                    <span>
+                                        Uploading...
+                                    </span>
+                                {{else}}
+                                    <FaIcon @icon="image" class="mr-1" />
+                                    <span>
+                                        Upload new logo
+                                    </span>
+                                {{/if}}
+                            </a>
+                        </FileUpload>
+                    </div>
+                </InputGroup>
+
+                <InputGroup @name="Backdrop" @helpText="Optional banner or background image for your store.">
+                    <div class="flex flex-row items-center">
+                        <img src={{@model.backdrop_url}} alt={{concat @model.name " backdrop"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
+                        <FileUpload @name="backdrop" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
+                            <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                                {{#if queue.files.length}}
+                                    <Spinner class="mr-1" />
+                                    <span>
+                                        Uploading...
+                                    </span>
+                                {{else}}
+                                    <FaIcon @icon="image" class="mr-1" />
+                                    <span>
+                                        Upload new backdrop
+                                    </span>
+                                {{/if}}
+                            </a>
+                        </FileUpload>
+                    </div>
+                </InputGroup>
+            </ContentPanel>
+
+            <ContentPanel @title="Images & Videos" @open={{false}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
+                <div class="p-6">
+                    {{#if this.isUploading}}
+                        <div class="min-h-56 dropzone w-full rounded px-4 py-8 min-h bg-black bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500">
+                            <div class="flex items-center justify-center py-5">
+                                <PageLoader class="text-sm dar:text-gray-100" @loadingMessage="Uploading..." />
+                            </div>
+                        </div>
+                    {{else}}
+                        <FileDropzone @name="files" @multiple={{true}} @onFileAdded={{this.queueFile}} @accept={{join "," this.acceptedFileTypes}} class="dropzone file-dropzone" as |dropzone queue|>
+                            {{#if dropzone.active}}
+                                {{#if dropzone.valid}}
+                                    Drop to upload
+                                {{else}}
+                                    Invalid
+                                {{/if}}
+                            {{else if queue.files.length}}
+                                <div class="my-2">
+                                    <FaIcon @icon="photo-video" class="text-indigo-500 mr-2" />
+                                    {{pluralize queue.files.length "file"}}
+                                    ready for upload.
+                                </div>
+                                <div class="my-2">({{queue.progress}}%)</div>
+                            {{else}}
+                                <h4 class="font-semibold mb-8">
+                                    <FaIcon @icon="photo-video" @size="2x" class="text-indigo-500 mr-2" />
+                                    Upload Images & Videos
+                                </h4>
+                                <div>
+                                    {{#if dropzone.supported}}
+                                        <p class="text-base font-semibold my-5">Drag and drop image and video files onto this dropzone</p>
+                                    {{/if}}
+                                    <FileUpload @name="files" @for="files" @accept={{join "," this.acceptedFileTypes}} @multiple={{true}} @onFileAdded={{this.queueFile}}>
+                                        <a tabindex={{0}} class="btn btn-magic cursor-pointer ml-1">or select files to upload.</a>
+                                    </FileUpload>
+                                </div>
+                            {{/if}}
+                        </FileDropzone>
+                        {{#if this.uploadQueue}}
+                            <div class="mx-4 my-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="leading-6 dark:text-gray-100">Upload Queue</span>
+                                </div>
+                                <div class="space-y-2 mb-5">
+                                    {{#each this.uploadQueue as |file|}}
+                                        <div class="flex items-center justify-between bg-green-100 border border-gray-300 dark:border-gray-900 py-2 shadow-sm rounded-lg px-4">
+                                            <div class="text-sm text-green-900">{{file.name}}</div>
+                                            <div class="flex items-center text-sm">
+                                                <Spinner class="text-green-400 mr-2" />
+                                                <span class="font-bold text-green-400">{{round file.progress}}%</span>
+                                            </div>
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            </div>
+                        {{/if}}
+                        <div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
+                                {{#each @model.files as |file|}}
+                                    <FileRecord @file={{file}} @onDelete={{this.removeFile}} />
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
+                </div>
+            </ContentPanel>
+
+            <ContentPanel @title="Alerts" @open={{false}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800">
+                <div>
+                    <p class="dark:text-gray-100 mb-4">Configure who should be alerted for certain events.</p>
+                    <InputGroup @name="New order alert" @wrapperClass="mb-0">
+                        <ModelSelectMultiple @modelName="user" @selectedModel={{@model.alertable.for_new_order}} @placeholder="Select users to alert for new order" @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn this.makeAlertable "for_new_order"}} as |model|>
+                            {{model.name}}
+                        </ModelSelectMultiple>
+                    </InputGroup>
+                </div>
+            </ContentPanel>
+
+            <div class="store-boolean-settings">
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.online}} @onToggle={{fn (mut @model.online)}}>
+                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Online</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.tax_enabled}} @onToggle={{fn (mut @model.options.tax_enabled)}}>
+                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tax</span>
+                    </Toggle>
+                    {{#if @model.options.tax_enabled}}
+                        <InputGroup @wrapperClass="mb-0 mt-2" @type="number" @name="Tax Percentage" @value={{@model.options.tax_percentage}} @placeholder="Tax Percentage" @helpText="The sales tax percentage to apply to orders." />
+                    {{/if}}
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
+                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto accept incoming orders</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.auto_dispatch}} @onToggle={{fn (mut @model.options.auto_dispatch)}}>
+                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto dispatch orders</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.require_pod}} @onToggle={{fn (mut @model.options.require_pod)}}>
+                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Require proof of delivery</span>
+                    </Toggle>
+                    {{#if @model.options.require_pod}}
+                        <InputGroup @wrapperClass="mb-0 mt-2" @name="Proof of Delivery Method">
+                            <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn (mut @model.pod_method)}} class="w-full" />
+                        </InputGroup>
+                    {{/if}}
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.cod_enabled}} @onToggle={{fn (mut @model.options.cod_enabled)}}>
+                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable cash on delivery</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.pickup_enabled}} @onToggle={{fn (mut @model.options.pickup_enabled)}}>
+                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable order pickup</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.tips_enabled}} @onToggle={{fn (mut @model.options.tips_enabled)}}>
+                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tips</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.delivery_tips_enabled}} @onToggle={{fn (mut @model.options.delivery_tips_enabled)}}>
+                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable delivery tips</span>
+                    </Toggle>
+                </div>
+                {{!-- <div class="input-group">
+                            <Toggle @isToggled={{@model.options.integrated_vendors_enabled}} @onToggle={{fn (mut @model.options.integrated_vendors_enabled)}}>
+                                <FaIcon @icon="truck" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable integrated vendors</span>
+                            </Toggle>
+                            {{#if @model.options.integrated_vendors_enabled}}
+                                <InputGroup @name="Select integrated vendors to use" @wrapperClass="mt-2 mb-0">
+                                    <ModelSelectMultiple @modelName="integrated-vendor" @selectedModel={{@model.options.integrated_vendors}} @placeholder="Select integrated vendors to use" @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut @model.options.integrated_vendors)}} as |model|>
+                                        {{model.name}}
+                                    </ModelSelectMultiple>
+                                </InputGroup>
+                            {{/if}}
+                        </div> --}}
+            </div>
+
+            <div class="flex justify-end pb-12">
+                <Button @buttonType="submit" @type="primary" @text="Save Changes" @icon="save" @size="lg" @isLoading={{this.isLoading}} @onClick={{this.saveSettings}} />
+            </div>
+        </div>
+    </form>
+</SettingsContainer>

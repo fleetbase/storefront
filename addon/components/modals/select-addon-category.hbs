@@ -1,0 +1,5 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <ComboBox @options={{@options.addonCategories}} @selected={{@options.product.addon_categories}} @optionLabel="name" @comparator="name" @selectionBoxLabel="Selected" @onChange={{@options.updateProductAddonCategories}} />
+    </div>
+</Modal::Default>

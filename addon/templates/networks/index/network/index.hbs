@@ -1,0 +1,254 @@
+<div class="space-y-4 px-6 py-4">
+    <ContentPanel @title="General Network Settings" @open={{true}} @pad={{true}}>
+        <div class="space-y-4">
+            <div>
+                <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                    General Network Settings
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Provide the general settings for your network or marketplace.
+                </p>
+            </div>
+
+            <InputGroup @name="Name" @value={{@model.name}} @placeholder="Storefront Name" @helpText="The name of your network or marketplace." />
+            <InputGroup @name="Description" @value={{@model.description}} @placeholder="Storefront Description" @helpText="Give your store a brief description to let users know what your network is about." />
+            <InputGroup @name="Currency">
+                <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+            </InputGroup>
+
+            <ContentPanel @title="Contact & Social" @open={{false}} @pad={{true}}>
+                <InputGroup @name="Phone">
+                    <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
+                </InputGroup>
+                <InputGroup @name="Email" @value={{@model.email}} @placeholder="Email" @helpText="Your business email." />
+                <InputGroup @name="Website" @value={{@model.website}} @placeholder="Website" @helpText="Your business website URL." />
+                <InputGroup @name="Facebook" @value={{@model.facebook}} @placeholder="Facebook ID" @helpText="Your business Facebook page ID." />
+                <InputGroup @name="Instagram" @value={{@model.instagram}} @placeholder="Instagram Username" @helpText="Your business Instagram username." />
+                <InputGroup @name="Twitter" @value={{@model.twitter}} @placeholder="Twitter Username" @helpText="Your business Twitter username." />
+            </ContentPanel>
+
+            <ContentPanel @title="Logo & Backdrop" @open={{false}} @pad={{true}}>
+                <InputGroup @name="Logo" @helpText="Logo for your store.">
+                    <div class="flex flex-row items-center">
+                        <img src={{@model.logo_url}} alt={{concat @model.name " logo"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
+                        <FileUpload @name="logo" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
+                            <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                                {{#if queue.files.length}}
+                                    <Spinner class="mr-1" />
+                                    <span>
+                                        Uploading...
+                                    </span>
+                                {{else}}
+                                    <FaIcon @icon="image" class="mr-1" />
+                                    <span>
+                                        Upload new logo
+                                    </span>
+                                {{/if}}
+                            </a>
+                        </FileUpload>
+                    </div>
+                </InputGroup>
+
+                <InputGroup @name="Backdrop" @helpText="Optional banner or background image for your store.">
+                    <div class="flex flex-row items-center">
+                        <img src={{@model.backdrop_url}} alt={{concat @model.name " backdrop"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
+                        <FileUpload @name="backdrop" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
+                            <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                                {{#if queue.files.length}}
+                                    <Spinner class="mr-1" />
+                                    <span>
+                                        Uploading...
+                                    </span>
+                                {{else}}
+                                    <FaIcon @icon="image" class="mr-1" />
+                                    <span>
+                                        Upload new backdrop
+                                    </span>
+                                {{/if}}
+                            </a>
+                        </FileUpload>
+                    </div>
+                </InputGroup>
+            </ContentPanel>
+
+            <ContentPanel @title="Alerts" @open={{false}} @pad={{true}} @panelBodyClass="bg-gray-800">
+                <div>
+                    <p class="dark:text-gray-100 mb-4">Configure who should be alerted for certain events.</p>
+                    <InputGroup @name="New order alert" @wrapperClass="mb-0">
+                        <ModelSelectMultiple @modelName="user" @selectedModel={{@model.alertable.for_new_order}} @placeholder="Select users to alert for new order" @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn this.makeAlertable "for_new_order"}} as |model|>
+                            {{model.name}}
+                        </ModelSelectMultiple>
+                    </InputGroup>
+                </div>
+            </ContentPanel>
+
+            <div class="store-boolean-settings">
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.online}} @onToggle={{fn (mut @model.online)}}>
+                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Online</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.tax_enabled}} @onToggle={{fn (mut @model.options.tax_enabled)}}>
+                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tax</span>
+                    </Toggle>
+                    {{#if @model.options.tax_enabled}}
+                        <InputGroup @wrapperClass="mb-0 mt-2" @type="number" @name="Tax Percentage" @value={{@model.options.tax_percentage}} @placeholder="Tax Percentage" @helpText="The sales tax percentage to apply to orders." />
+                    {{/if}}
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
+                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto accept incoming orders</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.auto_dispatch}} @onToggle={{fn (mut @model.options.auto_dispatch)}}>
+                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto dispatch orders</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.require_pod}} @onToggle={{fn (mut @model.options.require_pod)}}>
+                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Require proof of delivery</span>
+                    </Toggle>
+                    {{#if @model.options.require_pod}}
+                        <InputGroup @wrapperClass="mb-0 mt-2" @name="Proof of Delivery Method">
+                            <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn (mut @model.pod_method)}} class="w-full" />
+                        </InputGroup>
+                    {{/if}}
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.cod_enabled}} @onToggle={{fn (mut @model.options.cod_enabled)}}>
+                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable cash on delivery</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.pickup_enabled}} @onToggle={{fn (mut @model.options.pickup_enabled)}}>
+                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable order pickup</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.tips_enabled}} @onToggle={{fn (mut @model.options.tips_enabled)}}>
+                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tips</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.delivery_tips_enabled}} @onToggle={{fn (mut @model.options.delivery_tips_enabled)}}>
+                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable delivery tips</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.multi_cart_enabled}} @onToggle={{fn (mut @model.options.multi_cart_enabled)}}>
+                        <FaIcon @icon="gifts" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable multi-cart checkout</span>
+                    </Toggle>
+                </div>
+                <div class="input-group">
+                    <Toggle @isToggled={{@model.options.reviews_enabled}} @onToggle={{fn (mut @model.options.reviews_enabled)}}>
+                        <FaIcon @icon="star" @prefix="fas" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable user reviews</span>
+                    </Toggle>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <Button @type="primary" @text="Save Changes" @icon="save" @size="lg" @isLoading={{this.isLoading}} @onClick={{this.saveSettings}} />
+            </div>
+        </div>
+    </ContentPanel>
+
+    <ContentPanel @title="API" @open={{false}} @pad={{true}}>
+        <div class="space-y-6">
+            <div>
+                <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                    API Settings
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Access key for Storefront API & Integrations.
+                </p>
+            </div>
+
+            <InputGroup @name="Network Key" @helpText="This is your network key, use this to enable apps and integrations for your network.">
+                <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
+            </InputGroup>
+        </div>
+    </ContentPanel>
+
+    <ContentPanel @title="Payment Gateways" @open={{false}} @pad={{true}}>
+        <div class="space-y-6">
+            <div class="flex justify-between">
+                <div>
+                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                        Gateway Settings
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Add or manage your payment gateway settings here.
+                    </p>
+                </div>
+                <div>
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="Create new gateway" @onClick={{this.createGateway}} />
+                </div>
+            </div>
+
+            {{#each this.gateways as |gateway|}}
+                <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
+                    <InputGroup @name="Gateway name" @value={{gateway.name}} @helpText="Give your payment gateway a name, this will only be relevent internally" />
+                    <InputGroup @name="Gateway code" @value={{gateway.code}} @disabled={{true}} @helpText="Identifier code used to identify gateway to the SDK" />
+                    <InputGroup @name="Callback URL" @value={{gateway.callback_url}} @helpText="Callback URL if applicable" />
+                    <InputGroup @name="Return URL" @value={{gateway.return_url}} @helpText="Return URL if applicable" />
+                    <div class="input-group">
+                        <Checkbox @value={{gateway.sandbox}} @label="This is a sandbox gateway" @onToggle={{fn (mut gateway.sandbox)}} />
+                    </div>
+                    <div>
+                        <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
+                        {{#each-in gateway.config as |key value|}}
+                            {{#if (is-bool-value value)}}
+                                <div class="input-group">
+                                    <Checkbox @value={{value}} @label={{humanize key}} />
+                                </div>
+                            {{else}}
+                                <InputGroup @name={{humanize key}}>
+                                    <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} />
+                                </InputGroup>
+                            {{/if}}
+                        {{/each-in}}
+                    </div>
+                    <div>
+                        <Button @size="sm" @type="danger" @icon="trash" @text="Delete payment gateway" @onClick={{fn this.deleteGateway gateway}} />
+                    </div>
+                </ContentPanel>
+            {{/each}}
+        </div>
+    </ContentPanel>
+
+    <ContentPanel @title="Notification Channels" @open={{false}} @pad={{true}}>
+        <div class="space-y-6">
+            <div class="flex justify-between">
+                <div class="w-3/4">
+                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                        Notification Settings
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Configure notification channels for your storefront, each notification channel additionally can
+                        have
+                        it's own rules and options.
+                    </p>
+                </div>
+                <div>
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="New channel" @onClick={{this.createChannel}} />
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                {{#each this.channels as |notificationChannel|}}
+                    <div class="flex px-4 py-2 items-center justify-between shadow-sm rounded-md dark:bg-gray-900 bg-gray-200">
+                        <div>
+                            <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <Button @size="xs" @type="default" @text="Edit" @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
+                            <Button @size="xs" @type="danger" @text="Delete" @onClick={{fn this.deleteChannel notificationChannel}} />
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </ContentPanel>
+</div>

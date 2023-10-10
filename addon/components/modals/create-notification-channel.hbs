@@ -1,0 +1,45 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        {{#unless @options.channel.id}}
+            <div class="mb-4 w-full">
+                <InputGroup @name="Channel" @helpText="Select notification channel">
+                    <Select class="w-full" @placeholder="Select notification channel"
+                        @options={{@options.schemaOptions}} @optionLabel="name" @optionValue="value" @onSelect={{@options.selectSchema}} @humanize={{true}} />
+                </InputGroup>
+            </div>
+        {{/unless}}
+
+        {{#if @options.schema}}
+            <InputGroup @name="Channel name" @value={{@options.channel.name}}
+                @helpText="Give your notification channel a name, this will only be relevent internally" />
+            {{#if @options.channel.id}}
+                <InputGroup @name="Channel Key"
+                    @helpText="This is your notification channel key, use this to specify which apps should utilize this notification channel via sdk configs.">
+                    <ClickToReveal @value={{@options.channel.app_key}} @clickToCopy={{true}}
+                        class="form-input disabled" />
+                </InputGroup>
+            {{/if}}
+            <div class="p-2 rounded-md my-2 border border-gray-800">
+                <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
+                {{#each-in @options.schema as |key value|}}
+                    {{#if (is-bool-value value)}}
+                        <div class="input-group">
+                            <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey
+                                key}} />
+                        </div>
+                    {{else if (or (eq key 'private_key_content') (eq key 'firebase_credentials_json'))}}
+                        <InputGroup @name={{humanize key}}>
+                            <Textarea class="form-input w-full" rows="6" placeholder={{humanize key}} @value={{value}} {{on "blur"
+                                (fn @options.setConfigKey key)}} />
+                        </InputGroup>
+                    {{else}}
+                        <InputGroup @name={{humanize key}}>
+                            <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur"
+                                (fn @options.setConfigKey key)}} />
+                        </InputGroup>
+                    {{/if}}
+                {{/each-in}}
+            </div>
+        {{/if}}
+    </div>
+</Modal::Default>

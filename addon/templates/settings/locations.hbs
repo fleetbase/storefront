@@ -1,0 +1,39 @@
+<SettingsContainer>
+    <form>
+        <div class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div>
+                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                        Location Settings
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Manage your stores operating locations and hours.
+                    </p>
+                </div>
+                <div>
+                    <Button @wrapperClass="flex-shrink-0" @icon="plus" @iconPrefix="fas" @type="primary" @text="Create new location" @onClick={{this.createNewLocation}} />
+                </div>
+            </div>
+
+            {{#each @model as |storeLocation|}}
+                <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{true}}>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h4 class="dark:text-gray-100 text-base font-semibold">Manage store hours</h4>
+                        </div>
+                        <div class="flex items-center">
+                            <Button @icon="edit" @text="Edit" @onClick={{fn this.editStoreLocation storeLocation}} @wrapperClass="mr-2" />
+                            <Button @icon="trash" @type="danger" @text="Delete" @onClick={{fn this.removeStoreLocation storeLocation}} />
+                        </div>
+                    </div>
+                    <div class="mb-6 uppercase dark:text-gray-100">
+                        {{storeLocation.address}}
+                    </div>
+                    <div>
+                        <ScheduleManager @subject={{storeLocation}} @subjectKey="store_location_uuid" @hourModelType="store-hour" class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2" />
+                    </div>
+                </ContentPanel>
+            {{/each}}
+        </div>
+    </form>
+</SettingsContainer>

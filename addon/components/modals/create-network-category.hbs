@@ -1,0 +1,50 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <InputGroup @name="Parent category" @wrapperClass="border-b border-gray-200 dark:border-gray-700 pb-4 mb-3i">
+            <ModelSelect @modelName="category" @query={{hash for="storefront_network" owner_uuid=@options.network.id}} @selectedModel={{@options.parentCategory}} @placeholder="Select a parent category if any" @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{@options.setParentCategory}} as |model|>
+                {{model.name}}
+            </ModelSelect>
+        </InputGroup>
+        <InputGroup @name="Category name" @value={{@options.category.name}} @helpText="Enter a name for category" />
+        <InputGroup @name="Category description" @value={{@options.category.description}} @helpText="Give your network category a brief description" />
+        {{!-- <InputGroup @name="Category icon type" @wrapperClass="mb-0">
+            <div class="flex flex-row dark:text-gray-100 mt-4">
+                <div class="flex flex-row items-center mr-4">
+                    <RadioButton @radioClass="focus:ring-blue-500 mr-2" @radioId="image_icon_type" @value="image" @groupValue={{@options.iconType}} @name="icon_type" @changed={{fn (mut @options.iconType)}} />
+                    <span>Upload category icon</span>
+                </div>
+                <div class="flex flex-row items-center ">
+                    <RadioButton @radioClass="focus:ring-blue-500 mr-2" @radioId="svg_icon_type" @value="svg" @groupValue={{@options.iconType}} @name="icon_type" @changed={{fn (mut @options.iconType)}} />
+                    <span>Use svg (<a href="https://fontawesome.com/" target="_fa">FontAwesome</a>) category icon</span>
+                </div>
+            </div>
+        </InputGroup>
+        <InputGroup @name="Category icon">
+            <div class="w-32">
+                <img src={{@options.category.icon_url}} alt={{@options.category.name}} class="w-full rounded-md" />
+                <FileUpload @name="icons" @accept="image/*" @onFileAdded={{@options.uploadIcon}} as |queue|>
+                    <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                        {{#if queue.files.length}}
+                            <Spinner class="mr-1" />
+                            <span>
+                                Uploading...
+                            </span>
+                        {{else}}
+                            <FaIcon @icon="image" class="mr-1" />
+                            <span>
+                                Upload new
+                            </span>
+                        {{/if}}
+                    </a>
+                </FileUpload>
+                <a href="javascript:;" class="text-danger block mt-2" {{on "click" @options.clearImage}}>
+                    <FaIcon @icon="times" @prefix="fas" class="mr-1" />
+                    <span>Remove</span>
+                </a>
+            </div>
+        </InputGroup> --}}
+        <InputGroup>
+            <TranslationsEditor @value={{@options.category.translations}} @defaultKeys={{array "name" "description"}} @onChange={{fn (mut @options.category.translations)}} />
+        </InputGroup>
+    </div>
+</Modal::Default>

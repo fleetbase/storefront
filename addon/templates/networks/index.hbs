@@ -1,0 +1,60 @@
+<Layout::Section::Header @title="Networks" @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text="New" class="mr-2" @onClick={{this.createNetwork}} />
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    <div class="h-screen overflow-y-scroll p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 lg:gap-4">
+            {{#each @model as |network|}}
+                <div class="mr-4 w-full">
+                    <div class="rounded-md border dark:border-gray-700 shadow-sm">
+                        <div class="p-4 flex items-center justify-center rounded-t-md h-36" {{background-url network.backdrop_url overlay=true}}>
+                            <Image src={{network.logo_url}} class="w-32" alt={{network.name}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" />
+                        </div>
+                        <div class="border-t dark:border-gray-700 px-4 py-2">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <LinkTo @route="networks.index.network" @model={{network}} class="font-bold text-lg text-gray-700 dark:text-gray-100">{{network.name}}</LinkTo>
+                                </div>
+                                <div>
+                                    <DropdownButton @renderInPlace={{true}} @size="xs" @icon="cog" @iconPrefix="fas" @textClass="block truncate text-gray-700 dark:text-gray-100" as |dd|>
+                                        <div role="menu" class="next-dd-menu" aria-orientation="vertical" aria-labelledby="user-menu">
+                                            <div class="px-1">
+                                                <div class="next-dd-title">
+                                                    Network Options
+                                                </div>
+                                            </div>
+                                            <div class="next-dd-menu-seperator"></div>
+                                            <div role="group" class="px-1">
+                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.manageNetwork network)}}>
+                                                    <div class="w-7">
+                                                        <FaIcon @icon="network-wired" class="mr-2" />
+                                                    </div>
+                                                    <span>Manage Network</span>
+                                                </a>
+                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.sendInvites network)}}>
+                                                    <div class="w-7">
+                                                        <FaIcon @icon="envelope-open-text" class="mr-2" />
+                                                    </div>
+                                                    <span>Send Invites</span>
+                                                </a>
+                                                <a href="javascript:;" class="next-dd-item text-red-500 hover:bg-opacity-75" role="menuitem" {{on "click" (dropdown-fn dd this.deleteNetwork network)}}>
+                                                    <div class="w-7">
+                                                        <FaIcon @icon="trash" class="mr-2 text-red-500" />
+                                                    </div>
+                                                    <span class="text-red-500">Delete Network</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </DropdownButton>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    </div>
+</Layout::Section::Body>
+
+{{outlet}}

@@ -1,0 +1,9 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <InputGroup @name="Storefront name" @value={{@options.store.name}} @helpText="Enter the name of your store" />
+        <InputGroup @name="Storefront description" @value={{@options.store.description}} @helpText="Give your store a simple brief description on the types of things sold" />
+        <InputGroup @name="Storefront currency" @value={{@options.store.currency}} @helpText="Select the default currency for your storefront">
+            <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
+        </InputGroup>
+    </div>
+</Modal::Default>

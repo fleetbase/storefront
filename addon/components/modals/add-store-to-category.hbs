@@ -1,0 +1,5 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <NetworkCategoryPicker @network={{@options.network}} @onSelect={{@options.onSelectCategory}} @onCreateNewCategory={{@options.createNewCategory}} @wrapperClass="mr-2" />
+    </div>
+</Modal::Default>

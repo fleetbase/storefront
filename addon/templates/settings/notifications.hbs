@@ -1,0 +1,35 @@
+<SettingsContainer>
+    <form>
+        <div class="space-y-6">
+            <div class="flex justify-between">
+                <div class="w-3/4">
+                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                        Notification Settings
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Configure notification channels for your storefront, each notification channel additionally can
+                        have
+                        it's own rules and options.
+                    </p>
+                </div>
+                <div>
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="New channel" @onClick={{this.createChannel}} />
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                {{#each this.channels as |notificationChannel|}}
+                    <div class="flex px-4 py-2 items-center justify-between shadow-sm rounded-md dark:bg-gray-900 bg-gray-200">
+                        <div>
+                            <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <Button @size="xs" @type="default" @text="Edit" @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
+                            <Button @size="xs" @type="danger" @text="Delete" @onClick={{fn this.deleteChannel notificationChannel}} />
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </form>
+</SettingsContainer>

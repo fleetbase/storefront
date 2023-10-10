@@ -1,0 +1,22 @@
+<Layout::Section::Header @title="Products">
+    <Button @type="magic" @icon="tags" @text="Manage Addons" class="mr-2 flex-shrink-0" @onClick={{this.manageAddons}} />
+    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text="New" class="mr-2 flex-shrink-0" @onClick={{this.createNewProduct}} @disabled={{not this.category}} @helpText={{unless this.category "Select a category to create a product within"}} />
+    <Button @icon="file-import" @text="Import" class="mr-2" @wrapperClass="hidden lg:flex flex-shrink-0" @onClick={{this.importProducts}} />
+    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @wrapperClass="hidden lg:flex flex-shrink-0" @text="Export" />
+</Layout::Section::Header>
+
+<Layout::Section::Body class="section-content flex flex-col lg:flex-row">
+    <AsideItemScroller @title="Product Categories" @resource="category" @items={{@model}} @titleKey="name" @onCreate={{this.createNewProductCategory}} @onInit={{this.setAsideScroller}} @customTopItemComponent="aside-item-scroller/item" @customTopItemText="All Products" @customTopItemOnClick={{this.viewAllProducts}} @customTopItemClass="border-t border-gray-200 dark:border-gray-700" as |category|>
+        <a href="javascript:;" class="aside-item-link cursor-pointer flex w-full md:px-6 md:py-5" {{on "click" (fn this.switchCategory category)}}>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4>{{category.name}}</h4>
+                </div>
+            </div>
+        </a>
+    </AsideItemScroller>
+
+    <div id="productsViewPort" class="w-full h-full">
+        {{outlet}}
+    </div>
+</Layout::Section::Body>

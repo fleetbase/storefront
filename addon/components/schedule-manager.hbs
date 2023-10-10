@@ -1,0 +1,22 @@
+<div class="schedule-manager-wrapper" ...attributes>
+    {{#each-in this.schedule as |day hours|}}
+        <div class="content-panel {{@contentPanelClass}} shadow-sm">
+            <div class="content-panel-header items-center {{@contentPanelHeaderClass}}">
+                <h4 class="font-semibold dark:text-gray-100">{{day}}</h4>
+                <div>
+                    <Button @icon="calendar-week" @text="Add Hours" @onClick={{fn this.addHours @subject day}} class="{{@addHoursButtonClass}}" />
+                </div>
+            </div>
+            <div class="content-panel-body {{@contentPanelBodyClass}}">
+                {{#each hours as |hour|}}
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="dark:text-gray-100">{{hour.humanReadableHours}}</div>
+                        <div>
+                            <Button @iconPrefix="fas" @type="danger" @size="xs" @icon="times" @onClick={{fn this.removeHours hour}} class="{{@removeHoursButtonClass}}" />
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    {{/each-in}}
+</div>

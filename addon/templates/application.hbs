@@ -1,0 +1,16 @@
+<EmberWormhole @to="sidebar-menu-items">
+    <StoreSelector @stores={{@model}} @activeStore={{this.activeStore}} @wrapperClass="mb-2" @onCreateStore={{this.createNewStorefront}} @onSwitchStore={{this.switchActiveStore}} />
+    <Layout::Sidebar::Panel @open={{true}} @title="Storefront">
+        <Layout::Sidebar::Item @route="console.storefront.home" @icon="home">Dashboard</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.products" @icon="box" disabled={{not this.activeStore.id}}>Products</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.customers" @icon="users" disabled={{not this.activeStore.id}}>Customers</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.orders" @icon="file-invoice-dollar" disabled={{not this.activeStore.id}}>Orders</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.networks" @icon="network-wired" disabled={{not this.activeStore.id}}>Networks</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.settings" @icon="cogs" disabled={{not this.activeStore.id}}>Settings</Layout::Sidebar::Item>
+    </Layout::Sidebar::Panel>
+    <Layout::Sidebar::Item @url="https://github.com/fleetbase/storefront-app" @target="_github" @icon="rocket">Launch App</Layout::Sidebar::Item>
+</EmberWormhole>
+
+<Layout::Section::Container>
+    {{outlet}}
+</Layout::Section::Container>

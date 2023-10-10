@@ -1,0 +1,9 @@
+<Layout::Section::Header @title="Stores" @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
+    <Button @type="primary" @icon="plus" @text="Add Stores" @onClick={{this.addStores}} @wrapperClass="mr-2" />
+    <Button @type="primary" @icon="envelope-open-text" @text="Invite Stores" @onClick={{this.invite}} />
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    <NetworkCategoryPicker @network={{this.network}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @wrapperClass="my-4 ml-9" />
+    <Table @rows={{@model}} @columns={{this.columns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
+</Layout::Section::Body>
