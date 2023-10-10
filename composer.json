@@ -42,12 +42,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Fleetbase\\Storefront\\": "src/"
+            "Fleetbase\\Storefront\\": "server/src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Fleetbase\\Storefront\\Tests\\": "tests/"
+            "Fleetbase\\Storefront\\Tests\\": "server/tests/"
         }
     },
     "minimum-stability": "dev",
