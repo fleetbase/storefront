@@ -12,7 +12,7 @@ export default class ApplicationRoute extends Route {
     @service storefront;
 
     @action loading(transition) {
-        this.loader.showOnInitialTransition(transition, 'section.next-view-section', 'Loading storefront...');
+        this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading storefront...' });
     }
 
     @action willTransition() {
