@@ -12,7 +12,7 @@ export default class ApplicationController extends Controller {
     @action createNewStorefront() {
         return this.storefront.createNewStorefront({
             onSuccess: () => {
-                const loader = this.loader.show(`Switching to newly created store...`);
+                const loader = this.loader.show({ loadingMessage: `Switching to newly created store...` });
 
                 this.hostRouter.refresh().then(() => {
                     this.notifyPropertyChange('activeStore');
@@ -23,7 +23,7 @@ export default class ApplicationController extends Controller {
     }
 
     @action switchActiveStore(store) {
-        const loader = this.loader.show(`Switching Storefront to ${store.name}...`);
+        const loader = this.loader.show({ loadingMessage: `Switching Storefront to ${store.name}...` });
         this.storefront.setActiveStorefront(store);
         this.hostRouter.refresh().then(() => {
             this.notifyPropertyChange('activeStore');

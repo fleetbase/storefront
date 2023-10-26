@@ -47,7 +47,7 @@ export default class ProductsIndexCategoryNewController extends Controller {
 
     @action saveProduct() {
         const { category } = this.productsIndexCategoryController;
-        const loader = this.loader.showLoader('body', 'Creating new product...');
+        const loader = this.loader.showLoader('body', { loadingMessage: 'Creating new product...' });
         this.isSaving = true;
 
         if (category) {

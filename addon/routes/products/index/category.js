@@ -27,7 +27,7 @@ export default class ProductsIndexCategoryRoute extends Route {
     }
 
     loading(transition) {
-        this.loader.showOnInitialTransition(transition, 'section.next-view-section', 'Loading products...');
+        this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading products...' });
     }
 
     model({ slug, ...params }) {
