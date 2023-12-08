@@ -15,10 +15,10 @@ This monorepo contains both the frontend and backend components of the Storefron
 
 ### Requirements
 
-- PHP 7.3.0 or above
-- Ember.js v5.4 or above
-- Ember CLI v5.4 or above
-- Node.js v18 or above
+* PHP 7.3.0 or above
+* Ember.js v4.8 or above
+* Ember CLI v4.8 or above
+* Node.js v18 or above
 
 ## Structure
 
