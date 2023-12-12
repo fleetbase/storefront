@@ -29,7 +29,7 @@ module.exports = {
         'ember/classic-decorator-no-classic-methods': 'off',
         'ember/no-shadow-route-definition': 'off',
         'no-prototype-builtins': 'off',
-        'node/no-unpublished-require': [
+        'n/no-unpublished-require': [
             'error',
             {
                 allowModules: ['resolve', 'broccoli-funnel'],

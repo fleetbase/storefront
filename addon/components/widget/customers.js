@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action, computed } from '@ember/object';
+import { action } from '@ember/object';
 import setComponentArg from '@fleetbase/ember-core/utils/set-component-arg';
 
 export default class WidgetCustomersComponent extends Component {

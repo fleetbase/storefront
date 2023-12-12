@@ -11,3 +11,7 @@
 
 # ember-try
 /.node_modules.ember-try/
+
+# server
+/server/
+/server_vendor/

@@ -15,7 +15,6 @@ export default class NetworkModel extends Model {
     @hasMany('store') stores;
     @hasMany('notification-channel') notification_channels;
     @hasMany('gateway') gateways;
-    @hasMany('store') stores;
     @belongsTo('file') logo;
     @belongsTo('file') backdrop;
 

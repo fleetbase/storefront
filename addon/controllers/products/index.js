@@ -9,7 +9,6 @@ export default class ProductsIndexController extends BaseController {
     @service store;
     @service modalsManager;
     @service currentUser;
-    @service modalsManager;
     @service notifications;
     @service fetch;
     @service hostRouter;
