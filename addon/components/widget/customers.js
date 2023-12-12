@@ -2,15 +2,18 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, computed } from '@ember/object';
+import setComponentArg from '@fleetbase/ember-core/utils/set-component-arg';
 
 export default class WidgetCustomersComponent extends Component {
     @service store;
     @service storefront;
     @tracked isLoading = true;
     @tracked customers = [];
+    @tracked title = 'Recent Customers';
 
-    @computed('args.title') get title() {
-        return this.args.title || 'Recent Customers';
+    constructor(owner, { title }) {
+        super(...arguments);
+        setComponentArg(this, 'title', title);
     }
 
     @action async getCustomers() {
@@ -28,7 +31,7 @@ export default class WidgetCustomersComponent extends Component {
         this.isLoading = true;
 
         return new Promise((resolve) => {
-            const storefront = this.storefront?.activeStore?.public_id;
+            const storefront = this.storefront.getActiveStore('public_id');
 
             if (!storefront) {
                 this.isLoading = false;

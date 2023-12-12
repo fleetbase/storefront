@@ -1,4 +1,5 @@
-import Controller, { inject as controller } from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { inject as controller } from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { isArray } from '@ember/array';
 import { action } from '@ember/object';
@@ -6,7 +7,7 @@ import { alias } from '@ember/object/computed';
 import { underscore } from '@ember/string';
 import { inject as service } from '@ember/service';
 
-export default class ProductsIndexCategoryNewController extends Controller {
+export default class ProductsIndexCategoryNewController extends BaseController {
     @controller('products.index.category') productsIndexCategoryController;
     @service notifications;
     @service modalsManager;

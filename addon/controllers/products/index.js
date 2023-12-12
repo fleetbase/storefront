@@ -1,11 +1,11 @@
-import Controller from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { alias } from '@ember/object/computed';
 import { dasherize } from '@ember/string';
 
-export default class ProductsIndexController extends Controller {
+export default class ProductsIndexController extends BaseController {
     @service store;
     @service modalsManager;
     @service currentUser;

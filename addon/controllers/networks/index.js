@@ -1,4 +1,5 @@
-import Controller, { inject as controller } from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { inject as controller } from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
@@ -6,7 +7,7 @@ import { isBlank } from '@ember/utils';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 
-export default class NetworksIndexController extends Controller {
+export default class NetworksIndexController extends BaseController {
     /**
      * Inject the `NetworksIndexNetworkStoresController` controller
      *
