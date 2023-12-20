@@ -2,9 +2,9 @@
     {{#each-in this.schedule as |day hours|}}
         <div class="content-panel {{@contentPanelClass}} shadow-sm">
             <div class="content-panel-header items-center {{@contentPanelHeaderClass}}">
-                <h4 class="font-semibold dark:text-gray-100">{{day}}</h4>
+                <h4 class="font-semibold text-sm dark:text-gray-100">{{day}}</h4>
                 <div>
-                    <Button @icon="calendar-week" @text="Add Hours" @onClick={{fn this.addHours @subject day}} class="{{@addHoursButtonClass}}" />
+                    <Button @icon="calendar-week" @text="Add Hours" @textClass="truncate text-xs" @size="sm" @onClick={{fn this.addHours @subject day}} class="{{@addHoursButtonClass}}" />
                 </div>
             </div>
             <div class="content-panel-body {{@contentPanelBodyClass}}">

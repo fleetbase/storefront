@@ -32,7 +32,7 @@ module.exports = {
         'n/no-unpublished-require': [
             'error',
             {
-                allowModules: ['resolve', 'broccoli-funnel'],
+                allowModules: ['resolve', 'broccoli-funnel', 'broccoli-merge-trees'],
             },
         ],
     },

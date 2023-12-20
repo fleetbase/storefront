@@ -90,6 +90,12 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     }
 
     @action queueFile(file) {
+        // since we have dropzone and upload button within dropzone validate the file state first
+        // as this method can be called twice from both functions
+        if (['queued', 'failed', 'timed_out', 'aborted'].indexOf(file.state) === -1) {
+            return;
+        }
+
         this.uploadQueue.pushObject(file);
         this.fetch.uploadFile.perform(
             file,

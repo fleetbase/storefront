@@ -1,4 +1,4 @@
-<Overlay @position="right" @noBackdrop={{true}} @width="700px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+<Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="570px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
     <Overlay::Header @title={{this.overlayTitle}} @titleClass="truncate" @titleWrapperClass="w-3/4" @headerLeftClass="w-70pc" @headerLeftInnerClass="w-full flex-1" @onPressCancel={{this.transitionBack}}>
         <Button @icon={{this.overlayActionButtonIcon}} @type="primary" @text={{this.overlayActionButtonTitle}} @onClick={{this.saveProduct}} @isLoading={{this.isSaving}} @isSubscriptionRequired={{true}} />
     </Overlay::Header>
