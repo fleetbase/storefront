@@ -17,6 +17,10 @@ export default class WidgetOrdersComponent extends Component {
         return this.args.title ?? 'Recent Orders';
     }
 
+    constructor() {
+        super(...arguments);
+    }
+
     @action async setupWidget() {
         later(
             this,

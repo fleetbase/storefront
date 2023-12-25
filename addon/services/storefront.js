@@ -1,24 +1,86 @@
 import Service from '@ember/service';
 import Evented from '@ember/object/evented';
 import { inject as service } from '@ember/service';
+import { get } from '@ember/object';
 
+/**
+ * Service to manage storefront operations.
+ */
 export default class StorefrontService extends Service.extend(Evented) {
+    /**
+     * Ember service for data store.
+     * @type {Service}
+     */
     @service store;
+
+    /**
+     * Ember service for fetch operations.
+     * @type {Service}
+     */
     @service fetch;
+
+    /**
+     * Ember service for notifications.
+     * @type {Service}
+     */
     @service notifications;
+
+    /**
+     * Ember service for current user information.
+     * @type {Service}
+     */
     @service currentUser;
+
+    /**
+     * Ember service for managing modals.
+     * @type {Service}
+     */
     @service modalsManager;
+
+    /**
+     * Ember service for router operations.
+     * @type {Service}
+     */
     @service hostRouter;
 
+    /**
+     * Gets the active store.
+     * @returns {Object} The active store object.
+     */
     get activeStore() {
         return this.findActiveStore();
     }
 
+    /**
+     * Sets the active storefront.
+     * @param {Object} store - The store to set as active.
+     */
     setActiveStorefront(store) {
         this.currentUser.setOption('activeStorefront', store.id);
         this.trigger('storefront.changed', store);
     }
 
+    /**
+     * Gets the active store or a specific property of it.
+     * @param {string|null} property - The property to retrieve from the active store.
+     * @returns {Object|null} The active store or its specific property.
+     */
+    getActiveStore(property = null) {
+        if (this.activeStore) {
+            if (typeof property === 'string') {
+                return get(this.activeStore, property);
+            }
+
+            return this.activeStore;
+        }
+
+        return null;
+    }
+
+    /**
+     * Finds the active store based on the current user's settings.
+     * @returns {Object|null} The active store object or null if not found.
+     */
     findActiveStore() {
         const activeStoreId = this.currentUser.getOption('activeStorefront');
 
@@ -43,6 +105,11 @@ export default class StorefrontService extends Service.extend(Evented) {
         return activeStore;
     }
 
+    /**
+     * Alerts about an incoming order.
+     * @param {string} orderId - The ID of the incoming order.
+     * @param {Object} store - The store associated with the order.
+     */
     async alertIncomingOrder(orderId, store) {
         const order = await this.store.queryRecord('order', {
             public_id: orderId,
@@ -80,6 +147,9 @@ export default class StorefrontService extends Service.extend(Evented) {
         });
     }
 
+    /**
+     * Listens for incoming orders and handles them.
+     */
     async listenForIncomingOrders() {
         const store = this.findActiveStore();
 
@@ -109,6 +179,10 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.hostRouter.on('routeWillChange', channel.close);
     }
 
+    /**
+     * Creates the first store with given options.
+     * @param {Object} [options={}] - Options for creating the first store.
+     */
     createFirstStore(options = {}) {
         const store = this.store.createRecord('store');
         const currency = this.currentUser.getWhoisProperty('currency.code');
@@ -151,6 +225,10 @@ export default class StorefrontService extends Service.extend(Evented) {
         });
     }
 
+    /**
+     * Creates a new storefront with given options.
+     * @param {Object} [options={}] - Options for creating the new storefront.
+     */
     createNewStorefront(options = {}) {
         const store = this.store.createRecord('store');
         const currency = this.currentUser.getWhoisProperty('currency.code');
@@ -191,6 +269,9 @@ export default class StorefrontService extends Service.extend(Evented) {
         });
     }
 
+    /**
+     * Plays an alert sound.
+     */
     playAlert() {
         // eslint-disable-next-line no-undef
         const alert = new Audio('/sounds/storefront_order_alert.mp3');

@@ -1,4 +1,4 @@
-import Controller from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
@@ -7,7 +7,7 @@ import { isBlank } from '@ember/utils';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 
-export default class ProductsIndexCategoryController extends Controller {
+export default class ProductsIndexCategoryController extends BaseController {
     @service modalsManager;
     @service fetch;
     @service hostRouter;

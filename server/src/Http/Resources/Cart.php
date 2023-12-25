@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
+use Fleetbase\Support\Http;
 
 class Cart extends FleetbaseResource
 {
@@ -15,7 +16,14 @@ class Cart extends FleetbaseResource
     public function toArray($request)
     {
         return [
-            'id' => $this->public_id,
+            'id' => $this->when(Http::isInternalRequest(), $this->id,$this->public_id),
+            'uuid' => $this->when(Http::isInternalRequest(), $this->uuid),
+            'public_id' => $this->when(Http::isInternalRequest(), $this->public_id),
+            'company_uuid' => $this->when(Http::isInternalRequest(), $this->company_uuid),
+            'user_uuid' => $this->when(Http::isInternalRequest(), $this->user_uuid),
+            'checkout_uuid' => $this->when(Http::isInternalRequest(), $this->checkout_uuid),
+            'checkout_uuid' => $this->when(Http::isInternalRequest(), $this->checkout_uuid),
+            'customer_id' => $this->customer_id,
             'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'total_items' => $this->total_items,

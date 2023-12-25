@@ -1,6 +1,23 @@
-<Layout::Section::Header @title={{concat this.category.name " Products"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    <Button @type="default" @text="Edit this category" @icon="edit" @onClick={{fn this.editCategory this.category}} @disabled={{not this.category}} @wrapperClass="mr-2" />
-    <Button @type="danger" @text="Delete this category" @icon="trash" @onClick={{this.deleteCategory}} @disabled={{not this.category}} />
+<Layout::Section::Header @title={{concat this.category.name " Products"}} @titleClass="truncate" @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    {{!-- <Button @type="default" @text="Edit this category" @textClass="truncate" @icon="edit" @onClick={{fn this.editCategory this.category}} @disabled={{not this.category}} @wrapperClass="mr-2" />
+    <Button @type="danger" @text="Delete this category" @textClass="truncate" @icon="trash" @onClick={{this.deleteCategory}} @disabled={{not this.category}} /> --}}
+
+    {{#if this.category}}
+        <DropdownButton @icon="gear" @text="Category" @type="default" @size="sm" @contentClass="dropdown-menu" as |dd|>
+            <div class="next-dd-menu">
+                <div class="px-1">
+                    <a href="#" class="next-dd-item" {{on "click" (dropdown-fn dd this.editCategory this.category)}}>
+                        Edit this category...
+                    </a>
+                </div>
+                <div class="px-1">
+                    <a href="#" class="text-red-500 next-dd-item" {{on "click" (dropdown-fn dd this.deleteCategory)}}>
+                        Delete this category...
+                    </a>
+                </div>
+            </div>
+        </DropdownButton>
+    {{/if}}
 </Layout::Section::Header>
 
 <div class="h-screen overflow-y-scroll p-6">

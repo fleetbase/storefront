@@ -1,4 +1,4 @@
-<ContentPanel @title={{this.title}} @titleStatusRight={{this.customers.length}} @titleStatuRightClass="info-status-badge" @hideStatusDot={{true}} @open={{this.customers.length}} @pad={{false}} @wrapperClass={{@wrapperClass}} @onInsert={{this.getCustomers}}>
+<ContentPanel @title={{this.title}} @titleStatusRight={{this.customers.length}} @titleStatusRightClass="info-status-badge" @hideStatusDot={{true}} @open={{this.customers.length}} @pad={{false}} @wrapperClass={{@wrapperClass}} @onInsert={{this.getCustomers}}>
     {{#if this.isLoading}}
         <div class="px-3 py-2">
             <Spinner class="text-sky-400" />

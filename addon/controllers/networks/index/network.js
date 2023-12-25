@@ -1,8 +1,8 @@
-import Controller from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
-export default class NetworksIndexNetworkController extends Controller {
+export default class NetworksIndexNetworkController extends BaseController {
     @service modalsManager;
 
     @action transitionBack({ closeOverlay }) {

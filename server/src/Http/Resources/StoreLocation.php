@@ -3,7 +3,6 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\FleetOps\Http\Resources\v1\Place;
-use Fleetbase\FleetOps\Http\Resources\Internal\v1\Place as InternalPlace;
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
 
@@ -24,7 +23,7 @@ class StoreLocation extends FleetbaseResource
             'store' => data_get($this, 'store.public_id'),
             'store_data' => $this->when($request->boolean('with_store'), new Store($this->store)),
             'name' => $this->name,
-            'place' =>  $this->when(Http::isInternalRequest(), new InternalPlace($this->place), new Place($this->place)),
+            'place' => $this->place ? new Place($this->place) : null,
             'hours' => StoreHour::collection($this->hours),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
