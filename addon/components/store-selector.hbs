@@ -7,14 +7,14 @@
                         {{or store.name "-"}}
                     </a>
                 {{else}}
-                    <div class="next-dd-item" role="menuitem">No stores to select</div>
+                    <div class="next-dd-item" role="menuitem">{{t "storefront.component.store-selector.no-stores"}}</div>
                 {{/each}}
             </div>
             <div class="px-1">
                 <div class="next-dd-menu-seperator"></div>
                 <div role="group" class="px-1">
                     <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.onCreateStore)}}>
-                        Create a new storefront
+                        {{t "storefront.component.store-selector.create-storefront"}}
                     </a>
                 </div>
             </div>

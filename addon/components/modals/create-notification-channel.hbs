@@ -2,25 +2,25 @@
     <div class="modal-body-container">
         {{#unless @options.channel.id}}
             <div class="mb-4 w-full">
-                <InputGroup @name="Channel" @helpText="Select notification channel">
-                    <Select class="w-full" @placeholder="Select notification channel"
+                <InputGroup @name={{t "storefront.component.modals.create-notification-channel.title"}} @helpText={{t "storefront.component.modals.create-notification-channel.title-text"}}>
+                    <Select class="w-full" @placeholder={{t "storefront.component.modals.create-notification-channel.title-text"}}
                         @options={{@options.schemaOptions}} @optionLabel="name" @optionValue="value" @onSelect={{@options.selectSchema}} @humanize={{true}} />
                 </InputGroup>
             </div>
         {{/unless}}
 
         {{#if @options.schema}}
-            <InputGroup @name="Channel name" @value={{@options.channel.name}}
-                @helpText="Give your notification channel a name, this will only be relevent internally" />
+            <InputGroup @name={{t "storefront.component.modals.create-notification-channel.name"}} @value={{@options.channel.name}}
+                @helpText={{t "storefront.component.modals.create-notification-channel.name-text"}} />
             {{#if @options.channel.id}}
-                <InputGroup @name="Channel Key"
-                    @helpText="This is your notification channel key, use this to specify which apps should utilize this notification channel via sdk configs.">
+                <InputGroup @name={{t "storefront.component.modals.create-notification-channel.key"}}
+                    @helpText={{t "storefront.component.modals.create-notification-channel.key-text"}}>
                     <ClickToReveal @value={{@options.channel.app_key}} @clickToCopy={{true}}
                         class="form-input disabled" />
                 </InputGroup>
             {{/if}}
             <div class="p-2 rounded-md my-2 border border-gray-800">
-                <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
+                <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.common.config"}}</h4>
                 {{#each-in @options.schema as |key value|}}
                     {{#if (is-bool-value value)}}
                         <div class="input-group">

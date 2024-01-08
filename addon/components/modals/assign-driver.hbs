@@ -10,11 +10,11 @@
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                 <div class="mb-4">
                     <p class="text-sm leading-5 text-gray-500 dark:text-white">
-                        Select a driver to assign to this order.
+                        {{t "storefront.component.modals.assign-driver.message-driver"}}
                     </p>
                 </div>
-                <InputGroup class="mt-4" @name="Select Driver">
-                    <ModelSelect @modelName="driver" @selectedModel={{@options.order.driver_assigned}} @placeholder="Select Driver to Assign" @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut
+                <InputGroup class="mt-4" @name={{t "storefront.component.modals.assign-driver.name-driver"}}>
+                    <ModelSelect @modelName="driver" @selectedModel={{@options.order.driver_assigned}} @placeholder={{t "storefront.component.modals.assign-driver.placeholder-driver"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut
                         @options.order.driver_assigned)}} as |model|>
                         {{model.name}}
                     </ModelSelect>

@@ -3,17 +3,17 @@
         <div class="flex flex-col items-center justify-center mb-2">
             <FaIcon @icon="network-wired" @size="4x" class="text-sky-400" />
             <div class="my-2 text-center">
-                <h2 class="dark:text-gray-50 font-semibold">Start a Network</h2>
+                <h2 class="dark:text-gray-50 font-semibold">{{t "storefront.component.modals.create-network.title"}}</h2>
                 <p class="my-2 px-6 dark:text-gray-100">
-                    Storefront allows you to quickly create marketplaces, enabling multiple storefronts to sell under an umbrella.
-                    When you create the network you defined your rules and you're able to expand your network through invitiations.
-                    Get started by creating a network below.
+                    {{t "storefront.component.modals.create-network.message-line1"}}
+                    {{t "storefront.component.modals.create-network.message-line2"}}
+                    {{t "storefront.component.modals.create-network.message-line3"}}
                 </p>
             </div>
         </div>
-        <InputGroup @name="Network name" @value={{@options.network.name}} @helpText="Enter the name of your store" />
-        <InputGroup @name="Network description" @value={{@options.network.description}} @helpText="Give your store a simple brief description on the types of things sold" />
-        <InputGroup @name="Network currency" @value={{@options.network.currency}} @helpText="Select the default currency for your storefront">
+        <InputGroup @name={{t "storefront.component.modals.create-network.name"}} @value={{@options.network.name}} @helpText={{t "storefront.component.modals.create-network.name-text"}} />
+        <InputGroup @name={{t "storefront.component.modals.create-network.description"}} @value={{@options.network.description}} @helpText={{t "storefront.component.modals.create-network.description-text"}} />
+        <InputGroup @name={{t "storefront.component.modals.create-network.currency"}} @value={{@options.network.currency}} @helpText={{t "storefront.component.modals.create-network.currency-text"}}>
             <CurrencySelect @value={{@options.network.currency}} @onSelect={{fn (mut @options.network.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
     </div>

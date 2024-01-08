@@ -1,2 +1,138 @@
 storefront:
   extension-name: Storefront
+  common:
+    back: Back
+    cash: Cash
+    config: Config
+    customer: Customer
+    delivery: Delivery
+    invalid: Invalid
+    loading: Loading...
+    photos: photos
+    pickup: Pickup
+    remove: Remove
+    store: Store
+    total: Total
+    upload-new: Upload new
+    uploading: Uploading...
+
+  component:
+    modals:
+      add-store-hours: 
+        start-time: Start time
+        operation-start: When availability/operation start
+        end-time: End time
+        operation-end: When availability/operation hours end
+      assign-driver:
+        message-driver: Select a driver to assign to this order.
+        name-driver: Select Driver
+        placeholder-driver: Select Driver to Assign
+      create-first-store:
+        title: Welcome to Storefront!
+        message: Storefront allows you to quickly setup a headless and dynamic on-demand shop powered by Fleetbase.
+        submit-message: Submit the form below to create your first store.
+        storefront-name: Storefront name
+        enter-name: Enter the name of your store
+        description: Storefront description
+        brief-description: Give your store a simple brief description on the types of things sold
+        currency: Storefront currency
+        select-currency: Select the default currency for your storefront
+      create-getaway:
+        getaway: Gateway type
+        getaway-text: Select gateway type
+        getaway-name: Getaway name
+        name-text: Give your payment gateway a name, this will only be relevent internally
+        getaway-code: Getaway code
+        code-text: Identifier code used to identify gateway to the SDK
+        callback-url: Callback URL
+        callback-text: Callback URL if applicable
+        return-url: Return URL
+        return-text: Return URL if applicable
+        sandbox-getaway: This is a sandbox gateway
+      create-network-category:
+        parent-category: Parent category
+        select-parent: Select a parent category if any
+        category-name: Category name
+        name-text: Enter a name for category
+        description: Category description
+        description-text: Give your network category a brief description
+        category-icon: Category icon type
+      create-network:
+        title: Start a Network
+        messagle-line1: Storefront allows you to quickly create marketplaces, enabling multiple storefronts to sell under an umbrella.
+        messagle-line2: When you create the network you defined your rules and you're able to expand your network through invitiations.
+        messagle-line3: Get started by creating a network below.
+        name: Network name
+        name-text: Enter the name of your store
+        description: Network description
+        description-text: Give your store a simple brief description on the types of things sold
+        currency: Network currency
+        currency-text: Select the default currency for your storefront
+      create-new-variant:
+        name: Variant name
+        name-text: Give your product variant a name
+        description: Variant description
+        description-text: Short description of the variant
+        cheackbox-1: Allow user to select multiple variant options at once
+        cheackbox-2: This product variant selection is required
+      create-notification-channel:
+        title: Channel
+        title-text: Select notification channel
+        name: Channel name
+        name-text: Give your notification channel a name, this will only be relevent internally
+        key: Channel Key
+        key-text: This is your notification channel key, use this to specify which apps should utilize this notification channel via sdk configs.
+      create-product-category:
+        name: Category name
+        name-text: Enter a name for category
+        description: Category description
+        description-text: Give your product category a brief description
+        icon: Category icon
+        uploading-new: Upload new category icon
+      create-store:
+        name: Storefront name
+        name-text: Enter the name of your store
+        description: Storefront description
+        description-text: Give your store a simple brief description on the types of things sold
+        currency: Storefront currency
+        currency-text: Select the default currency for your storefront
+      import-products:
+        uploading-message: Processing import...
+        drop-upload: Drop to upload
+        ready-upload: ready for upload.
+        upload-spreadsheets: Upload Spreadsheets
+        drag-drop: Drag and drop spreadsheet files onto this dropzone
+        select-spreadsheets: or select spreadsheets to upload.
+        upload-queue: Upload Queue
+        optionally-select-category: Optionally select a category to import products into
+        select-category: Select Category
+      incoming-order:
+        assigned: Driver Assigned
+        not-assigned: No driver assigned
+        no-phone: No phone
+        change-driver: Change Driver
+        assign-driver: Assign Driver
+        pickup-order: Customer must pickup order from
+        address: Customer address
+        tracking: Tracking
+        summary: Order Summary
+        subtotal: Subtotal
+        fee: Delivery fee
+        tip: Tip
+        delivery-tip: Delivery Tip
+      manage-addons:
+        title: New Category
+        delete: Delete Category
+        new: New Addon
+        name: Addon Name
+        description: Addon Description
+
+    network-category-picker:
+      no-subcategory: No subcategories for
+      no-categories: No categories for this network
+      create-category: Create a new category
+    schedule-manager:
+      add-hours: Add Hours
+    store-selector:
+      no-stores: No stores to select
+      create-storefront: Create a new storefront
