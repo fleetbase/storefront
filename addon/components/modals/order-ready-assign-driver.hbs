@@ -12,18 +12,16 @@
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                 <div class="mb-4">
                     <p class="text-sm leading-5 text-gray-500 dark:text-white">
-                        You are about to set this order as ready and dispatch, use the dropdown below to select a driver
-                        to dispatch to. <br><br>Or optionally you can opt to dispatch order as adhoc which will ping the
-                        order to all nearby drivers to be accepted.
+                        {{t "storefront.component.modals.order-ready-assign-driver.driver-dispatch" htmlSafe=true}}
                     </p>
                 </div>
                 <div class="input-group">
                     <ShortToggle @isToggled={{@options.adhoc}} @onToggle={{fn (mut @options.adhoc)}} @label="Adhoc dispatch to nearby drivers" />
                 </div>
                 {{#unless @options.adhoc}}
-                    <InputGroup class="mt-4" @name="Select Driver">
+                    <InputGroup class="mt-4" @name={{t "storefront.components.modals.order-ready-assign-driver.name"}}>
                         <ModelSelect @modelName="driver" @selectedModel={{@options.driver}}
-                            @placeholder="Select Driver to Assign" @triggerClass="form-select form-input"
+                            @placeholder={{t "storefront.components.modals.order-ready-assign-driver.placeholder"}} @triggerClass="form-select form-input"
                             @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut
                             @options.driver)}} as |model|>
                             {{model.name}}

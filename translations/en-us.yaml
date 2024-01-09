@@ -126,6 +126,17 @@ storefront:
         new: New Addon
         name: Addon Name
         description: Addon Description
+      order-ready-assign-driver:  
+        driver-dispatch: You are about to set this order as ready and dispatch, use the dropdown below to select a driver to dispatch to. <br><br>Or optionally you can opt to dispatch order as adhoc which will ping the order to all nearby drivers to be accepted.
+        name: Select Driver
+        placeholder: Select Driver to Assign
+      share-network:  
+        invite-member: Invite members to your network
+        email-below: Grab a shareable invitiation link or send individual invites via email below.
+        invite-network: Enter the emails of people or organizations you want to send an invite to your network.
+        placeholder: Add emails
+        get-link: Get link
+        helpText: Anyone with this link is able to join your network
 
     network-category-picker:
       no-subcategory: No subcategories for
