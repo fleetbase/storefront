@@ -1,21 +1,51 @@
 storefront:
   extension-name: Storefront
   common:
+    alerts: Alerts
+    amount: Amount
+    api: API
     back: Back
+    backdrop: backdrop
+    building: Building
     cash: Cash
+    city: City
     config: Config
+    coordinates: Coordinates
+    country: Country
+    created: Created
+    currency: Currency
     customer: Customer
+    delivery-tip: Delivery Tip
     delivery: Delivery
+    description: Description
+    driver: Driver
+    earning: Earnings
+    email: Email
+    export: Export
+    id: ID
     invalid: Invalid
     loading: Loading...
+    logo: logo
+    name: Name 
+    neighborhood: Neighborhood
+    online: Online
+    order: Orders
+    phone: Phone
     photos: photos
     pickup: Pickup
     remove: Remove
+    state: State
+    status: Status
     store: Store
+    street-1: Street 1
+    tag: Tags
+    tip: Tip
+    total: Total
     total: Total
     upload-new: Upload new
     uploading: Uploading...
-
+    view: View
+    website: Website
   component:
     modals:
       add-store-hours: 
@@ -137,7 +167,34 @@ storefront:
         placeholder: Add emails
         get-link: Get link
         helpText: Anyone with this link is able to join your network
-
+      store-form:
+        placeholder: Storefront Name
+        helpText: The name of your store.
+        placeholder-description: Storefront Description
+        helpText-sell: Give your store a brief description to let users know what you sell.
+        placeholder-tags: Add tags
+      store-location:
+        name: Street 2
+        name-code: Security Access Code
+        name-postal: Postal Code
+    widget:
+      customers:
+        phone: "Phone:"
+        email: "Email:"
+      orders:
+        text: Accept Order!
+        text-ready: Mark as Ready!
+        text-completed: Mark as Completed
+        text-order: Accept Order!
+        text-mark: Mark as Ready!
+        text-completed: Mark as Completed
+        title: More Details
+        customer: "Customer:"
+        driver: "Driver:"
+        subtotal: Subtotal
+        delivery: Delivery fee
+      storefront-metrics: 
+        last-day: Last 30 days
     network-category-picker:
       no-subcategory: No subcategories for
       no-categories: No categories for this network
@@ -146,4 +203,62 @@ storefront:
       add-hours: Add Hours
     store-selector:
       no-stores: No stores to select
-      create-storefront: Create a new storefront
+      create-storefront: Create a new 
+  customers:
+    index:
+  networks:
+    index:
+      network: 
+        index: 
+          title: General Network Settings
+          general-network: General Network Settings
+          general-settings: Provide the general settings for your network or marketplace.
+          placeholder: Storefront Name
+          helpText: The name of your network or marketplace.
+          placeholder-description: Storefront Description
+          helpText-about: Give your store a brief description to let users know what your network is about.
+          title-contact: Contact & Social
+          helpText-email: Your business email.
+          helpText-url: Your business website URL.
+          facebook: Facebook
+          placeholder-facebook: Facebook ID
+          helpText-facebook: Your business Facebook page ID.
+          instagram: Instagram
+          placeholder-instagram: Instagram Username
+          helpText-instagram: Your business Instagram username.
+          twitter: Twitter
+          placeholder-twitter: Twitter Username
+          helpText-twitter: Your business Twitter username.
+          title-logo: Logo & Backdrop
+          helpText-logo: Logo for your store.
+          upload-logo: Upload new logo
+          name-backdrop: Backdrop
+          upload-backdrop: Upload new backdrop
+          certain-event: Configure who should be alerted for certain events.
+          new-order: New order alert
+          placeholder-order: Select users to alert for new order
+          enable-tax: Enable tax
+          name-tax: Tax Percentage
+          placeholder-tax: Tax Percentage
+          helpText-tax: The sales tax percentage to apply to orders.
+          auto-accept: Auto accept incoming orders
+          auto-dispatch: Auto dispatch orders
+          require-delivery: Require proof of delivery
+          name-method: Proof of Delivery Method
+          cash-delivery: Enable cash on delivery
+          enable-order: Enable order pickup
+          enable-tip: Enable tips
+          enable-delivery: Enable delivery tips
+          enable-cart: Enable multi-cart checkout
+          enable-review: Enable user reviews
+          save-changes: Save Changes
+          api-settings: API Settings
+          access-key: Access key for Storefront API & Integrations.
+          name-network: Network Key
+          helpText-network : This is your network key, use this to enable apps and integrations for your network.
+          title-gateways: Payment Gateways
+          gateways-settings: Gateway Settings
+          payment-gateways: Add or manage your payment gateway settings here.
+          text-gateways: Create new gateway
+          name-gateways: Gateway name
+          helpText-internally: Give your payment gateway a name, this will only be relevent internally

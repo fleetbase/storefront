@@ -8,12 +8,12 @@
         <table>
             <thead>
                 <tr class="h-12 text-left py-1">
-                    <th>ID</th>
-                    <th>Amount</th>
-                    <th>Customer</th>
-                    <th>Driver</th>
-                    <th>Created</th>
-                    <th>Status</th>
+                    <th>{{t "storefront.components.widget.orders.id"}}</th>
+                    <th>{{t "storefront.common.amount"}}</th>
+                    <th>{{t "storefront.common.customer"}}</th>
+                    <th>{{t "storefront.common.driver"}}</th>
+                    <th>{{t "storefront.common.created"}}</th>
+                    <th>{{t "storefront.common.status"}}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -30,13 +30,13 @@
                         </td>
                         <td>
                             {{#if order.isFresh}}
-                                <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text="Accept Order!" @onClick={{fn this.acceptOrder order}} />
+                                <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text={{t "storefront.components.widget.orders.text"}} @onClick={{fn this.acceptOrder order}} />
                             {{/if}}
                             {{#if order.isPreparing}}
-                                <Button @size="xs" @type="success" @icon="bells" @text="Mark as Ready!" @onClick={{fn this.markAsReady order}} />
+                                <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.components.widget.orders.text-ready"}} @onClick={{fn this.markAsReady order}} />
                             {{/if}}
                             {{#if order.isPickupReady}}
-                                <Button @size="xs" @type="success" @icon="check" @text="Mark as Completed" @onClick={{fn this.markAsCompleted order}} />
+                                <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.components.widget.orders.text-completed"}} @onClick={{fn this.markAsCompleted order}} />
                             {{/if}}
                         </td>
                     </tr>
@@ -59,48 +59,48 @@
                     </div>
                 </div>
                 <div class="flex flex-row space-x-2 flex-wrap">
-                    <Button @size="xs" @type="primary" @icon="eye" @text="View" @onClick={{fn this.viewOrder order}} />
+                    <Button @size="xs" @type="primary" @icon="eye" @text={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
                     <Button @size="xs" @type="default" @icon="steering-wheel" @text={{if order.has_driver_assigned "Change Driver" "Assign Driver"}} @onClick={{fn this.assignDriver order}} />
                     {{#if order.isFresh}}
-                        <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text="Accept Order!" @onClick={{fn this.acceptOrder order}} />
+                        <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text={{t "storefront.components.widget.orders.text-order"}} @onClick={{fn this.acceptOrder order}} />
                     {{/if}}
                     {{#if order.isPreparing}}
-                        <Button @size="xs" @type="success" @icon="bells" @text="Mark as Ready!" @onClick={{fn this.markAsReady order}} />
+                        <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.components.widget.orders.text-mark"}} @onClick={{fn this.markAsReady order}} />
                     {{/if}}
                     {{#if order.isPickupReady}}
-                        <Button @size="xs" @type="success" @icon="check" @text="Mark as Completed" @onClick={{fn this.markAsCompleted order}} />
+                        <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.components.widget.orders.text-completed"}} @onClick={{fn this.markAsCompleted order}} />
                     {{/if}}
                 </div>
-                <ContentPanel @title="More Details" class="mt-2">
+                <ContentPanel @title={{t "storefront.components.widget.orders.title"}} class="mt-2">
                     <div class="flex flex-col py-2 border-t dark:border-gray-800">
-                        <div>Customer: {{n-a order.customer_name}}</div>
-                        <div>Driver: {{n-a order.driver_name}}</div>
+                        <div>{{t "storefront.components.widget.orders.customer."}} {{n-a order.customer_name}}</div>
+                        <div>{{t "storefront.components.widget.orders.driver"}} {{n-a order.driver_name}}</div>
                     </div>
                     <div class="py-2 space-y-2 border-t dark:border-gray-800">
                         <div class="flex items-center justify-between">
-                            <span class="dark:text-gray-50">Subtotal</span>
+                            <span class="dark:text-gray-50">{{t "storefront.components.widget.orders.subtotal"}}</span>
                             <span class="dark:text-gray-50">{{format-currency order.meta.subtotal order.meta.currency}}</span>
                         </div>
                         {{#unless order.meta.is_pickup}}
                             <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">Delivery fee</span>
+                                <span class="dark:text-gray-50">{{t "storefront.components.widget.orders.delivery"}}</span>
                                 <span class="dark:text-gray-50">{{format-currency order.meta.delivery_fee order.meta.currency}}</span>
                             </div>
                         {{/unless}}
                         {{#if order.meta.tip}}
                             <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">Tip</span>
+                                <span class="dark:text-gray-50">{{t "storefront.common.tip"}}</span>
                                 <span class="dark:text-gray-50">{{get-tip-amount order.meta.tip order.meta.subtotal order.meta.currency}}</span>
                             </div>
                         {{/if}}
                         {{#if order.meta.delivery_tip}}
                             <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">Delivery Tip</span>
+                                <span class="dark:text-gray-50">{{t "storefront.components.widget.order.delivery-tip"}}</span>
                                 <span class="dark:text-gray-50">{{get-tip-amount order.meta.delivery_tip order.meta.subtotal order.meta.currency}}</span>
                             </div>
                         {{/if}}
                         <div class="flex items-center justify-between">
-                            <span class="dark:text-gray-50 font-bold">Total</span>
+                            <span class="dark:text-gray-50 font-bold">{{t "storefront.common.tip"}}</span>
                             <span class="dark:text-gray-50 font-bold">{{format-currency order.meta.total order.meta.currency}}</span>
                         </div>
                     </div>
