@@ -41,7 +41,6 @@ storefront:
     tag: Tags
     tip: Tip
     total: Total
-    total: Total
     upload-new: Upload new
     uploading: Uploading...
     view: View
@@ -184,7 +183,6 @@ storefront:
       orders:
         text: Accept Order!
         text-ready: Mark as Ready!
-        text-completed: Mark as Completed
         text-order: Accept Order!
         text-mark: Mark as Ready!
         text-completed: Mark as Completed
