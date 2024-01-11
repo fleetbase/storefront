@@ -279,12 +279,12 @@ export default class OrdersIndexController extends Controller {
             width: '12%',
             actions: [
                 {
-                    label: 'View Order',
+                    label: this.intl.t('storefront.orders.index.view-order'),
                     icon: 'eye',
                     fn: this.viewOrder,
                 },
                 {
-                    label: 'Cancel Order',
+                    label: this.intl.t('storefront.orders.index.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
                 },
@@ -292,7 +292,7 @@ export default class OrdersIndexController extends Controller {
                     separator: true,
                 },
                 {
-                    label: 'Delete Order',
+                    label: this.intl.t('storefront.orders.index.delete-order'),
                     icon: 'trash',
                     fn: this.deleteOrder,
                 },

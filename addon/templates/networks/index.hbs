@@ -1,5 +1,5 @@
-<Layout::Section::Header @title="Networks" @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text="New" class="mr-2" @onClick={{this.createNetwork}} />
+<Layout::Section::Header @title={{t "storefront.common.network"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} />
 </Layout::Section::Header>
 
 <Layout::Section::Body>
@@ -21,7 +21,7 @@
                                         <div role="menu" class="next-dd-menu" aria-orientation="vertical" aria-labelledby="user-menu">
                                             <div class="px-1">
                                                 <div class="next-dd-title">
-                                                    Network Options
+                                                    {{t "storefront.networks.index.network-option"}}
                                                 </div>
                                             </div>
                                             <div class="next-dd-menu-seperator"></div>
@@ -30,19 +30,19 @@
                                                     <div class="w-7">
                                                         <FaIcon @icon="network-wired" class="mr-2" />
                                                     </div>
-                                                    <span>Manage Network</span>
+                                                    <span>{{t "storefront.networks.index.manage-network"}}</span>
                                                 </a>
                                                 <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.sendInvites network)}}>
                                                     <div class="w-7">
                                                         <FaIcon @icon="envelope-open-text" class="mr-2" />
                                                     </div>
-                                                    <span>Send Invites</span>
+                                                    <span>{{t "storefront.networks.index.send-invite"}}</span>
                                                 </a>
                                                 <a href="javascript:;" class="next-dd-item text-red-500 hover:bg-opacity-75" role="menuitem" {{on "click" (dropdown-fn dd this.deleteNetwork network)}}>
                                                     <div class="w-7">
                                                         <FaIcon @icon="trash" class="mr-2 text-red-500" />
                                                     </div>
-                                                    <span class="text-red-500">Delete Network</span>
+                                                    <span class="text-red-500">{{t "storefront.networks.index.delete-network"}}</span>
                                                 </a>
                                             </div>
                                         </div>

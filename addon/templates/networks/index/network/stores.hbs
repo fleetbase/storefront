@@ -1,6 +1,6 @@
-<Layout::Section::Header @title="Stores" @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
-    <Button @type="primary" @icon="plus" @text="Add Stores" @textClass="truncate" @size="sm" @onClick={{this.addStores}} @wrapperClass="mr-2" />
-    <Button @type="primary" @icon="envelope-open-text" @textClass="truncate" @size="sm" @text="Invite Stores" @onClick={{this.invite}} />
+<Layout::Section::Header @title={{t "storefront.networks.index.network.stores.title"}} @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
+    <Button @type="primary" @icon="plus" @text={{t "storefront.networks.index.network.stores.text"}} @textClass="truncate" @size="sm" @onClick={{this.addStores}} @wrapperClass="mr-2" />
+    <Button @type="primary" @icon="envelope-open-text" @textClass="truncate" @size="sm" @text={{t "storefront.networks.index.network.stores.text-store"}} @onClick={{this.invite}} />
 </Layout::Section::Header>
 
 <Layout::Section::Body>

@@ -99,7 +99,7 @@ export default class ProductsIndexCategoryController extends BaseController {
         }
 
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this category?',
+            title: this.intl.t('storefront.product.index.category'),
             body: 'Warning! Deleting this category will also remove all products listed under this category.',
             confirm: (modal) => {
                 modal.startLoading();
@@ -113,7 +113,7 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action editCategory(category) {
         this.modalsManager.show('modals/create-product-category', {
-            title: `Edit category: ${category.name}`,
+            title: this.intl.t('storefront.product.index.edit-category',{ categoryName: category.name }),
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             declineButtonIcon: 'times',
@@ -149,7 +149,7 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this product?',
+            title: this.intl.t('storefront.product.index.category.delete-product'),
             body: 'Warning! Once this product is deleted it will no longer be accessible.',
             confirm: (modal) => {
                 modal.startLoading();

@@ -121,7 +121,7 @@ export default class ProductsIndexIndexController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this product?',
+            title: this.intl.t('storefront.products.index.product'),
             body: 'Warning! Once this product is deleted it will no longer be accessible.',
             confirm: (modal) => {
                 modal.startLoading();

@@ -1,5 +1,5 @@
 <Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="570px" @minResizeWidth={{570}} @fullHeight={{true}}>
-    <Overlay::Header @title="Manage Network" @onPressCancel={{this.transitionBack}} />
+    <Overlay::Header @title={{t "storefront.networks.index.network.index.title-network"}} @onPressCancel={{this.transitionBack}} />
     <Overlay::Body class="p-0i" @increaseInnerBodyHeightBy="0" @wrapperClass="space-y-4 pt-4">
         <div class="flex flex-col">
             <div class="px-4 flex items-center section-header-title mb-4">
@@ -13,7 +13,7 @@
                     <nav>
                         <LinkTo @route="networks.index.network.index" class="ui-tab">
                             <FaIcon @icon="cogs" class="mr-2" />
-                            <span>Settings</span>
+                            <span>{{t "storefront.networks.index.network.index.setting"}}</span>
                         </LinkTo>
                         <LinkTo @route="networks.index.network.stores" class="ui-tab">
                             <FaIcon @icon="store" class="mr-2" />
@@ -21,11 +21,11 @@
                         </LinkTo>
                         <LinkTo @route="networks.index.network.orders" class="ui-tab">
                             <FaIcon @icon="file-invoice-dollar" class="mr-2" />
-                            <span>Orders</span>
+                            <span>{{t "storefront.common.order"}}</span>
                         </LinkTo>
                         <LinkTo @route="networks.index.network.customers" class="ui-tab">
                             <FaIcon @icon="users" class="mr-2" />
-                            <span>Customers</span>
+                            <span>{{t "networks.index.network.index.customer"}}</span>
                         </LinkTo>
                     </nav>
                 </div>

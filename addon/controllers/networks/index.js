@@ -167,7 +167,7 @@ export default class NetworksIndexController extends BaseController {
         }
 
         this.modalsManager.show('modals/create-network', {
-            title: 'Create a new network',
+            title: this.intl.t('storefront.controllers.networks.index.title'),
             network,
             confirm: (modal) => {
                 modal.startLoading();
@@ -192,7 +192,7 @@ export default class NetworksIndexController extends BaseController {
      */
     @action deleteNetwork(network) {
         return this.crud.delete(network, {
-            title: `Are you sure you wish to delete this network (${network.name})? All assigned stores, customers, orders will no longer be reachable.`,
+            title: this.intl.t('storefront.networks.index.title-network', { networkName: network.name }),
             onSuccess: () => {
                 return this.hostRouter.refresh();
             },

@@ -42,6 +42,13 @@ export default class CustomersIndexController extends Controller {
     @service filters;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     */
+    @service intl;
+
+    /**
      * Queryable parameters for this controller's model
      *
      * @var {Array}
@@ -218,18 +225,19 @@ export default class CustomersIndexController extends Controller {
             width: '10%',
             actions: [
                 {
-                    label: 'View Customer Details',
+                    label: this.intl.t('storefront.controllers.customers.view-customer')
                     // fn: this.viewVendor,
                 },
                 {
-                    label: 'Edit Customer',
+                    label: this.intl.t('storefront.controllers.customers.edit-customer')
+
                     // fn: this.editVendor,
                 },
                 {
                     separator: true,
                 },
                 {
-                    label: 'Delete Customer',
+                    label: this.intl.t('storefront.controllers.customers.delete-customer')
                     // fn: this.deleteVendor,
                 },
             ],

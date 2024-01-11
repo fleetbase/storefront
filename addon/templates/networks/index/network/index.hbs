@@ -183,21 +183,21 @@
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.networks.index.network.index.text-getways"}} @onClick={{this.createGateway}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text=t{{ "storefront.networks.index.network.index.text-getways"}} @onClick={{this.createGateway}} />
                 </div>
             </div>
 
             {{#each this.gateways as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
                     <InputGroup @name={{t "storefront.networks.index.network.index.name-gateways"}} @value={{gateway.name}} @helpText={{t "storefront.networks.index.network.index.helpText-internally"}} />
-                    <InputGroup @name="Gateway code" @value={{gateway.code}} @disabled={{true}} @helpText="Identifier code used to identify gateway to the SDK" />
-                    <InputGroup @name="Callback URL" @value={{gateway.callback_url}} @helpText="Callback URL if applicable" />
-                    <InputGroup @name="Return URL" @value={{gateway.return_url}} @helpText="Return URL if applicable" />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.name-code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.networks.index.network.index.helpText-sdk"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.name-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.networks:index.network.index.helpText-url"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.name-return"}} @value={{gateway.return_url}} @helpText={{t "storefront.networks.index.network.index.helpText-return"}} />
                     <div class="input-group">
                         <Checkbox @value={{gateway.sandbox}} @label="This is a sandbox gateway" @onToggle={{fn (mut gateway.sandbox)}} />
                     </div>
                     <div>
-                        <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
+                        <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.common.config"}}</h4>
                         {{#each-in gateway.config as |key value|}}
                             {{#if (is-bool-value value)}}
                                 <div class="input-group">
@@ -211,28 +211,26 @@
                         {{/each-in}}
                     </div>
                     <div>
-                        <Button @size="sm" @type="danger" @icon="trash" @text="Delete payment gateway" @onClick={{fn this.deleteGateway gateway}} />
+                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.networks.index.network.index.text-delete"}} @onClick={{fn this.deleteGateway gateway}} />
                     </div>
                 </ContentPanel>
             {{/each}}
         </div>
     </ContentPanel>
 
-    <ContentPanel @title="Notification Channels" @open={{false}} @pad={{true}}>
+    <ContentPanel @title={{t "storefront.networks.index.network.index.title-channel"}} @open={{false}} @pad={{true}}>
         <div class="space-y-6">
             <div class="flex justify-between">
                 <div class="w-3/4">
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        Notification Settings
+                        {{t "storefront.networks.index.network.index.notification-setting"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        Configure notification channels for your storefront, each notification channel additionally can
-                        have
-                        it's own rules and options.
+                        {{t "storefront.networks.index.network.index.storefront-channel"}}
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="New channel" @onClick={{this.createChannel}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.networks.index.network.index.text-new-channel"}} @onClick={{this.createChannel}} />
                 </div>
             </div>
 
@@ -243,8 +241,8 @@
                             <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
                         </div>
                         <div class="flex items-center">
-                            <Button @size="xs" @type="default" @text="Edit" @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
-                            <Button @size="xs" @type="danger" @text="Delete" @onClick={{fn this.deleteChannel notificationChannel}} />
+                            <Button @size="xs" @type="default" @text={{t "storefront.common.edit"}} @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
+                            <Button @size="xs" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} />
                         </div>
                     </div>
                 {{/each}}

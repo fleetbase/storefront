@@ -1,25 +1,25 @@
-<Layout::Section::Header @title="Settings" class="align-items-unset" @actionsWrapperClass="align-items-end-i">
+<Layout::Section::Header @title={{t "storefront.common.setting"}} class="align-items-unset" @actionsWrapperClass="align-items-end-i">
     <div class="ui-tabs w-full border-b-0i">
         <nav>
             <LinkTo @route="settings.index" class="ui-tab">
                 <FaIcon @icon="cog" @prefix="fas" class="mr-1" />
-                <span>General</span>
+                <span>{{t "storefront.common.general"}}</span>
             </LinkTo>
             <LinkTo @route="settings.locations" class="ui-tab">
                 <FaIcon @icon="map-marker-alt" class="mr-1" />
-                <span>Locations</span>
+                <span>{{t "storefront.common.location"}}</span>
             </LinkTo>
             <LinkTo @route="settings.gateways" class="ui-tab">
                 <FaIcon @icon="cash-register" class="mr-1" />
-                <span>Gateways</span>
+                <span>{{t "storefront.common.gateways"}}</span>
             </LinkTo>
             <LinkTo @route="settings.api" class="ui-tab">
                 <FaIcon @icon="code" class="mr-1" />
-                <span>API</span>
+                <span>{{t "storefront.common.api"}}</span>
             </LinkTo>
             <LinkTo @route="settings.notifications" class="ui-tab">
                 <FaIcon @icon="bells" class="mr-1" />
-                <span>Notifications</span>
+                <span>{{t "storefront.common.notification."}}</span>
             </LinkTo>
         </nav>
     </div>
