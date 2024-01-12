@@ -59,7 +59,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         this.product
             .serializeMeta()
             .save()
-            .then((product) => {
+            .then(() => {
                 this.loader.removeLoader(loader);
                 this.isSaving = false;
                 this.notifications.success('New product created successfully!');

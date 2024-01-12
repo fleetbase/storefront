@@ -29,7 +29,7 @@ export default class ProductSerializer extends ApplicationSerializer.extend(Embe
                 json.addon_categories = addonCategories;
             }
             return;
-        } 
+        }
 
         return super.serializeHasMany(...arguments);
     }
