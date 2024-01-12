@@ -17,6 +17,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @service fetch;
     @service loader;
     @service crud;
+    @service hostRouter;
     @alias('storefront.activeStore') activeStore;
     @tracked product = this.store.createRecord('product', { store_uuid: this.activeStore.id, currency: this.activeStore.currency, tags: [], meta_array: [] });
     @tracked uploadQueue = [];
@@ -58,15 +59,13 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         this.product
             .serializeMeta()
             .save()
-            .then((product) => {
+            .then(() => {
                 this.loader.removeLoader(loader);
                 this.isSaving = false;
                 this.notifications.success('New product created successfully!');
 
                 return this.transitionToRoute('products.index.category').then(() => {
-                    console.log(this.productsIndexCategoryController);
-                    console.log(this.productsIndexCategoryController.products);
-                    this.productsIndexCategoryController?.products?.pushObject(product);
+                    return this.hostRouter.refresh();
                 });
             })
             .catch((error) => {
@@ -81,8 +80,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             this.product.tags = [];
         }
 
-        this.product.tags?.pushObject(tag);
-        console.log('this.product.tags', this.product.tags);
+        this.product.tags.pushObject(tag);
     }
 
     @action removeTag(index) {
@@ -191,7 +189,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                         });
                     });
 
-                    product.addon_categories = productAddonCategories;
+                    product.addon_categories.pushObjects(productAddonCategories);
                 },
             });
         });
@@ -265,8 +263,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         } else {
             productAddonCategory.excluded_addons.pushObject(id);
         }
-
-        console.log(productAddonCategory);
     }
 
     @action addMetaField() {

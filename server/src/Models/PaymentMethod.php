@@ -3,18 +3,20 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
-use Fleetbase\Models\User;
 use Fleetbase\Models\Company;
-use Fleetbase\Traits\HasUuid;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 
 class PaymentMethod extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -28,7 +30,7 @@ class PaymentMethod extends StorefrontModel
     protected $table = 'payment_methods';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -47,11 +49,11 @@ class PaymentMethod extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'meta' => Json::class
+        'meta' => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */

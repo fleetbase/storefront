@@ -2,26 +2,26 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Exception;
-use Fleetbase\Casts\Json;
-use Fleetbase\Models\Company;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Models\Company;
 use Fleetbase\Traits\Expirable;
-use Fleetbase\Traits\HasUuid;
-Use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicId;
+use Fleetbase\Traits\HasUuid;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use stdClass;
 
 class Cart extends StorefrontModel
 {
-    use HasUuid, HasPublicId, HasApiModelBehavior, Expirable;
+    use HasUuid;
+    use HasPublicId;
+    use HasApiModelBehavior;
+    use Expirable;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -35,7 +35,7 @@ class Cart extends StorefrontModel
     protected $table = 'carts';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -54,11 +54,11 @@ class Cart extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'expires_at' => 'datetime'
+        'expires_at' => 'datetime',
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -73,7 +73,6 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * 
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()
@@ -99,7 +98,7 @@ class Cart extends StorefrontModel
 
     /**
      * Set cart items.
-     * 
+     *
      * @return void
      */
     public function setItemsAttribute($items)
@@ -109,7 +108,7 @@ class Cart extends StorefrontModel
 
     /**
      * Set cart events.
-     * 
+     *
      * @return void
      */
     public function setEventsAttribute($events)
@@ -119,7 +118,7 @@ class Cart extends StorefrontModel
 
     /**
      * Get cart items.
-     * 
+     *
      * @return array
      */
     public function getItemsAttribute($items)
@@ -133,7 +132,7 @@ class Cart extends StorefrontModel
 
     /**
      * Get cart events.
-     * 
+     *
      * @return array
      */
     public function getEventsAttribute($events)
@@ -152,7 +151,7 @@ class Cart extends StorefrontModel
      */
     public function getSubtotalAttribute()
     {
-        $items = $this->getAttribute('items') ?? [];
+        $items    = $this->getAttribute('items') ?? [];
         $subtotal = 0;
 
         foreach ($items as $item) {
@@ -191,8 +190,8 @@ class Cart extends StorefrontModel
 
     /**
      * The last cart event.
-     * 
-     * @return stdClass|null
+     *
+     * @return \stdClass|null
      */
     public function getLastEventAttribute()
     {
@@ -202,9 +201,9 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * If the cart is a multi cart
-     * 
-     * @return boolean
+     * If the cart is a multi cart.
+     *
+     * @return bool
      */
     public function getIsMultiCartAttribute()
     {
@@ -212,8 +211,8 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * Returns the checkout store id
-     * 
+     * Returns the checkout store id.
+     *
      * @return string
      */
     public function getCheckoutStoreIdAttribute()
@@ -222,8 +221,8 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * Returns the checkout store ids for all stores being checked out from
-     * 
+     * Returns the checkout store ids for all stores being checked out from.
+     *
      * @return array
      */
     public function getCheckoutStoreIdsAttribute()
@@ -232,8 +231,8 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * Returns cart items for a specific store only
-     * 
+     * Returns cart items for a specific store only.
+     *
      * @return array
      */
     public function getItemsForStore($id)
@@ -254,7 +253,7 @@ class Cart extends StorefrontModel
      */
     public function getSubtotalForStore($id)
     {
-        $items = $this->getItemsForStore($id);
+        $items    = $this->getItemsForStore($id);
         $subtotal = 0;
 
         foreach ($items as $item) {
@@ -268,12 +267,14 @@ class Cart extends StorefrontModel
      * Adds item to cart.
      *
      * @param Product|string $product
-     * @param integer $quantity
-     * @param array $variants
-     * @param array $addons
-     * @param string|null $createdAt
-     * @return stdClass
-     * @throws Exception
+     * @param int            $quantity
+     * @param array          $variants
+     * @param array          $addons
+     * @param string|null    $createdAt
+     *
+     * @return \stdClass
+     *
+     * @throws \Exception
      */
     public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
     {
@@ -287,22 +288,22 @@ class Cart extends StorefrontModel
             return $this->add($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt);
         }
 
-        throw new Exception('Invalid product provided to cart!');
+        throw new \Exception('Invalid product provided to cart!');
     }
 
     /**
      * Adds an item to cart.
-     * 
+     *
      * @param \Fleetbase\Models\Storefront\Product $product
-     * @param integer $quantity
-     * @param array $variants
-     * @param array $addons
-     * @param string $createdAt
+     * @param int                                  $quantity
+     * @param array                                $variants
+     * @param array                                $addons
+     * @param string                               $createdAt
      */
     public function addItem(Product $product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
     {
-        $id = Utils::generatePublicId('cart_item');
-        $cartItem = new stdClass();
+        $id       = Utils::generatePublicId('cart_item');
+        $cartItem = new \stdClass();
 
         // set base price
         $price = Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
@@ -310,27 +311,27 @@ class Cart extends StorefrontModel
         // calculate subtotal
         $subtotal = static::calculateProductSubtotal($product, $quantity, $variants, $addons);
 
-        // if no store location id, default to first store location 
+        // if no store location id, default to first store location
         if (empty($storeLocationId)) {
             $storeLocationId = Utils::get($product, 'store.locations.0.public_id');
         }
 
         $properties = [
-            'id' => $id,
-            'store_id' => $product->store_id,
+            'id'                => $id,
+            'store_id'          => $product->store_id,
             'store_location_id' => $storeLocationId,
-            'product_id' => $product->public_id,
+            'product_id'        => $product->public_id,
             'product_image_url' => $product->primary_image_url,
-            'name' => $product->name,
-            'description' => $product->description,
-            'scheduled_at' => $scheduledAt,
-            'created_at' => $createdAt ?? time(),
-            'updated_at' => time(),
-            'quantity' => $quantity,
-            'price' => $price,
-            'subtotal' => $subtotal,
-            'variants' => $variants,
-            'addons' => $addons
+            'name'              => $product->name,
+            'description'       => $product->description,
+            'scheduled_at'      => $scheduledAt,
+            'created_at'        => $createdAt ?? time(),
+            'updated_at'        => time(),
+            'quantity'          => $quantity,
+            'price'             => $price,
+            'subtotal'          => $subtotal,
+            'variants'          => $variants,
+            'addons'            => $addons,
         ];
 
         foreach ($properties as $prop => $value) {
@@ -351,17 +352,18 @@ class Cart extends StorefrontModel
     /**
      * Adds item to cart.
      *
-     * @param stdClass|string $cartItem
-     * @param integer $quantity
-     * @param array $variants
-     * @param array $addons
-     * @param string|null $createdAt
-     * @return stdClass
-     * @throws Exception
+     * @param \stdClass|string $cartItem
+     * @param int              $quantity
+     * @param array            $variants
+     * @param array            $addons
+     *
+     * @return \stdClass
+     *
+     * @throws \Exception
      */
     public function updateItem($cartItem, $quantity = 1, $variants = [], $addons = [], $scheduledAt = null)
     {
-        if ($cartItem instanceof stdClass) {
+        if ($cartItem instanceof \stdClass) {
             return $this->updateCartItem($cartItem, $quantity, $variants, $addons, $scheduledAt);
         }
 
@@ -371,23 +373,24 @@ class Cart extends StorefrontModel
             return $this->updateItem($cartItem, $quantity, $variants, $addons, $scheduledAt);
         }
 
-        throw new Exception('Invalid cart item provided to cart!');
+        throw new \Exception('Invalid cart item provided to cart!');
     }
 
     /**
      * Updates an item in cart.
      *
      * @param [type] $cartItem
-     * @param integer $quantity
+     * @param int   $quantity
      * @param array $variants
      * @param array $addons
-     * @return stdClass
+     *
+     * @return \stdClass
      */
-    public function updateCartItem($cartItem, $quantity = 1, $variants = [], $addons = [],  $scheduledAt = null)
+    public function updateCartItem($cartItem, $quantity = 1, $variants = [], $addons = [], $scheduledAt = null)
     {
         // get the line item product
         $productId = $cartItem->product_id;
-        $product = static::findProduct($productId);
+        $product   = static::findProduct($productId);
 
         // set base price
         $price = Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
@@ -401,23 +404,23 @@ class Cart extends StorefrontModel
         // find the item from cart
         $index = $this->findCartItemIndex($cartItem->id);
 
-        $existingCartItem = $items[$index] ?? new stdClass();
+        $existingCartItem = $items[$index] ?? new \stdClass();
 
         $properties = [
-            'id' => $cartItem->id,
-            'store_id' => $product->store_id,
-            'product_id' => $product->public_id,
+            'id'                => $cartItem->id,
+            'store_id'          => $product->store_id,
+            'product_id'        => $product->public_id,
             'product_image_url' => $product->primary_image_url,
-            'name' => $product->name,
-            'description' => $product->description,
-            'scheduled_at' => $scheduledAt,
-            'created_at' => $cartItem->created_at,
-            'updated_at' => time(),
-            'quantity' => $quantity ?? $cartItem->quantity,
-            'price' => $price,
-            'subtotal' => $subtotal,
-            'variants' => $variants ?? $cartItem->variants,
-            'addons' => $addons ?? $cartItem->addons
+            'name'              => $product->name,
+            'description'       => $product->description,
+            'scheduled_at'      => $scheduledAt,
+            'created_at'        => $cartItem->created_at,
+            'updated_at'        => time(),
+            'quantity'          => $quantity ?? $cartItem->quantity,
+            'price'             => $price,
+            'subtotal'          => $subtotal,
+            'variants'          => $variants ?? $cartItem->variants,
+            'addons'            => $addons ?? $cartItem->addons,
         ];
 
         foreach ($properties as $prop => $value) {
@@ -436,11 +439,11 @@ class Cart extends StorefrontModel
     /**
      * Updates a cart item by id.
      *
-     * @param string $id
-     * @param integer $quantity
+     * @param int   $quantity
      * @param array $variants
      * @param array $addons
-     * @return stdClass
+     *
+     * @return \stdClass
      */
     public function updateCartItemById(string $id, $quantity = 1, $variants = [], $addons = [], $scheduledAt = null)
     {
@@ -452,13 +455,15 @@ class Cart extends StorefrontModel
     /**
      * Remove item from cart.
      *
-     * @param stdClass|string $cartItem
-     * @return stdClass
-     * @throws Exception
+     * @param \stdClass|string $cartItem
+     *
+     * @return \stdClass
+     *
+     * @throws \Exception
      */
     public function remove($cartItem)
     {
-        if ($cartItem instanceof stdClass) {
+        if ($cartItem instanceof \stdClass) {
             return $this->removeItem($cartItem);
         }
 
@@ -468,13 +473,14 @@ class Cart extends StorefrontModel
             return $this->remove($cartItem);
         }
 
-        throw new Exception('Invalid cart item provided to cart!');
+        throw new \Exception('Invalid cart item provided to cart!');
     }
 
     /**
      * Removes an item from cart.
      *
-     * @param stdClass $cartItem
+     * @param \stdClass $cartItem
+     *
      * @return \Fleetbase\Models\Storefront\Cart
      */
     public function removeItem($cartItem)
@@ -494,7 +500,6 @@ class Cart extends StorefrontModel
     /**
      * Removes a cart item by id.
      *
-     * @param string $id
      * @return \Fleetbase\Models\Storefront\Cart
      */
     public function removeItemById(string $id)
@@ -521,11 +526,8 @@ class Cart extends StorefrontModel
 
     /**
      * Finds an item in cart by id.
-     *
-     * @param string $id
-     * @return stdClass|null
      */
-    public function findCartItem(string $id): ?stdClass
+    public function findCartItem(string $id): ?\stdClass
     {
         $items = $this->getAttribute('items');
 
@@ -538,9 +540,6 @@ class Cart extends StorefrontModel
 
     /**
      * Finds index of a cart item.
-     *
-     * @param string $id
-     * @return integer|null
      */
     public function findCartItemIndex(string $id): ?int
     {
@@ -558,8 +557,8 @@ class Cart extends StorefrontModel
     /**
      * Create a new cart event.
      *
-     * @param string $eventName
      * @param string|null $cartItemId
+     *
      * @return \Fleetbase\Models\Storefront\Cart
      */
     public function createEvent(string $eventName, $cartItemId = null, $save = true)
@@ -567,9 +566,9 @@ class Cart extends StorefrontModel
         $events = $this->getAttribute('events') ?? [];
 
         $events[] = Utils::createObject([
-            'event' => $eventName,
+            'event'        => $eventName,
             'cart_item_id' => $cartItemId,
-            'time' => time()
+            'time'         => time(),
         ]);
 
         $this->attributes['events'] = $events;
@@ -584,11 +583,11 @@ class Cart extends StorefrontModel
     /**
      * Update the cart session currency code.
      *
-     * @param string $currencyCode
-     * @param boolean $save
+     * @param bool $save
+     *
      * @return \Fleetbase\Models\Storefront\Cart
      */
-    public function updateCurrency(?string $currencyCode = null, $save = false)
+    public function updateCurrency(string $currencyCode = null, $save = false)
     {
         $this->attributes['currency'] = $currencyCode ?? session('storefront_currency');
 
@@ -613,26 +612,24 @@ class Cart extends StorefrontModel
      * Creates a new cart.
      *
      * @param string|null $uniqueId
+     *
      * @return \Fleetbase\Models\Storefront\Cart
      */
     public static function newCart($uniqueId = null): Cart
     {
         return Cart::create([
             'unique_identifier' => $uniqueId,
-            'company_uuid' => session('company'),
-            'expires_at' => Carbon::now()->addDays(7),
-            'currency' => session('storefront_currency'),
-            'customer_id' => session('customer_id'),
-            'items' => [],
-            'events' => []
+            'company_uuid'      => session('company'),
+            'expires_at'        => Carbon::now()->addDays(7),
+            'currency'          => session('storefront_currency'),
+            'customer_id'       => session('customer_id'),
+            'items'             => [],
+            'events'            => [],
         ]);
     }
 
     /**
      * Retrieve a cart by id or unique id.
-     *
-     * @param string $id
-     * @return Cart
      */
     public static function retrieve(string $id, bool $excludeCheckedout = true): Cart
     {
@@ -644,7 +641,7 @@ class Cart extends StorefrontModel
         if ($excludeCheckedout) {
             $query->whereNull('checkout_uuid');
         }
-        
+
         $cart = $query->first();
 
         if (!$cart) {
@@ -658,10 +655,9 @@ class Cart extends StorefrontModel
      * Calculates the subtotal for a product using quantity vairants and addons.
      *
      * @param \Fleetbase\Models\Storefront\Product $product
-     * @param integer $quantity
-     * @param array $variants
-     * @param array $addons
-     * @return integer
+     * @param int                                  $quantity
+     * @param array                                $variants
+     * @param array                                $addons
      */
     public static function calculateProductSubtotal(Product $product, $quantity = 1, $variants = [], $addons = []): int
     {
@@ -680,9 +676,6 @@ class Cart extends StorefrontModel
 
     /**
      * Finds a product via id.
-     *
-     * @param string $id
-     * @return Product|null
      */
     public static function findProduct(string $id): ?Product
     {

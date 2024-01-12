@@ -3,9 +3,9 @@
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Storefront\Http\Resources\Product as StorefrontProduct;
 use Fleetbase\Http\Resources\v1\DeletedResource;
 use Fleetbase\Models\Category;
+use Fleetbase\Storefront\Http\Resources\Product as StorefrontProduct;
 use Fleetbase\Storefront\Models\Product;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -15,7 +15,6 @@ class ProductController extends Controller
     /**
      * Query for Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\DriverCollection
      */
     public function query(Request $request)
@@ -54,7 +53,6 @@ class ProductController extends Controller
     /**
      * Finds a single Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\EntityCollection
      */
     public function find($id)
@@ -73,7 +71,6 @@ class ProductController extends Controller
     /**
      * Deletes a Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\v1\DeletedResource
      */
     public function delete($id)

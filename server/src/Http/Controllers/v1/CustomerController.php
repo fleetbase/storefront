@@ -2,11 +2,6 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
-use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
-use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
-use Fleetbase\Storefront\Http\Resources\Customer;
-use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
 use Fleetbase\FleetOps\Http\Resources\v1\Order as OrderResource;
@@ -15,9 +10,14 @@ use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\User;
 use Fleetbase\Models\UserDevice;
 use Fleetbase\Models\VerificationCode;
+use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
+use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
+use Fleetbase\Storefront\Http\Resources\Customer;
+use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +28,6 @@ class CustomerController extends Controller
     /**
      * Query for Storefront Customer orders.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function registerDevice(Request $request)
@@ -41,27 +40,26 @@ class CustomerController extends Controller
 
         $device = UserDevice::firstOrCreate(
             [
-                'token' => $request->input('token'),
+                'token'    => $request->input('token'),
                 'platform' => $request->or(['platform', 'os']),
             ],
             [
                 'user_uuid' => $customer->user_uuid,
-                'platform' => $request->or(['platform', 'os']),
-                'token' => $request->input('token'),
-                'status' => 'active'
+                'platform'  => $request->or(['platform', 'os']),
+                'token'     => $request->input('token'),
+                'status'    => 'active',
             ]
         );
 
         return response()->json([
             'status' => 'OK',
-            'device' => $device->public_id
+            'device' => $device->public_id,
         ]);
     }
 
     /**
      * Query for Storefront Customer orders.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function orders(Request $request)
@@ -72,7 +70,7 @@ class CustomerController extends Controller
             return response()->error('Not authorized to view customers orders');
         }
 
-        $results = Order::queryWithRequest($request, function (&$query) use ($customer, $request) {
+        $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
             $query->where('customer_uuid', $customer->uuid)->whereNull('deleted_at')->withoutGlobalScopes();
 
             // dont query any master orders if its a network
@@ -90,7 +88,6 @@ class CustomerController extends Controller
     /**
      * Query for Storefront Customer places.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function places(Request $request)
@@ -111,16 +108,15 @@ class CustomerController extends Controller
     /**
      * Setups a verification request to create a new storefront customer.
      *
-     * @param  \Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest  $request
      * @return \Fleetbase\Http\Resources\Contact
      */
     public function requestCustomerCreationCode(VerifyCreateCustomerRequest $request)
     {
-        $mode = $request->input('mode', 'email');
+        $mode     = $request->input('mode', 'email');
         $identity = $request->input('identity');
-        $isEmail = Utils::isEmail($identity);
-        $isPhone = $mode === 'sms' && !$isEmail;
-        $about = Storefront::about(['company_uuid']);
+        $isEmail  = Utils::isEmail($identity);
+        $isPhone  = $mode === 'sms' && !$isEmail;
+        $about    = Storefront::about(['company_uuid']);
 
         // validate identity
         if ($mode === 'email' && !$isEmail) {
@@ -137,7 +133,7 @@ class CustomerController extends Controller
 
         // create a customer instance
         $customer = new Contact($attributes);
-        $meta = ['identity' => $identity];
+        $meta     = ['identity' => $identity];
 
         if ($isEmail) {
             VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', function ($verification) use ($about) {
@@ -155,17 +151,16 @@ class CustomerController extends Controller
     /**
      * Creates a new Storefront Customer resource.
      *
-     * @param  \Fleetbase\Storefront\Http\Requests\CreateCustomerRequest  $request
      * @return \Fleetbase\Http\Resources\Contact
      */
     public function create(CreateCustomerRequest $request)
     {
         // get the verification token
-        $code = $request->input('code');
-        $about = Storefront::about(['company_uuid']);
-        $input = $request->only(['name', 'type', 'title', 'email', 'phone', 'meta']);
+        $code     = $request->input('code');
+        $about    = Storefront::about(['company_uuid']);
+        $input    = $request->only(['name', 'type', 'title', 'email', 'phone', 'meta']);
         $identity = $request->input('identity');
-        $user = null;
+        $user     = null;
 
         if (!Utils::isEmail($identity)) {
             $identity = static::phone($identity);
@@ -181,7 +176,7 @@ class CustomerController extends Controller
         // check for existing user to attach contact to
         if (Utils::isEmail($identity)) {
             $user = User::where('email', $identity)->whereNull('deleted_at')->withoutGlobalScopes()->first();
-        } else if (Str::startsWith($identity, '+')) {
+        } elseif (Str::startsWith($identity, '+')) {
             $user = User::where('phone', $identity)->whereNull('deleted_at')->withoutGlobalScopes()->first();
         }
 
@@ -189,22 +184,22 @@ class CustomerController extends Controller
             // create the user
             $user = User::create(array_merge(
                 [
-                    'type' => 'customer',
+                    'type'         => 'customer',
                     'company_uuid' => session('company'),
-                    'phone' => static::phone($request->input('phone'))
+                    'phone'        => static::phone($request->input('phone')),
                 ],
                 $request->only(['name', 'type', 'email', 'phone', 'meta'])
             ));
         }
 
         // always customer type
-        $input['type'] = 'customer';
+        $input['type']         = 'customer';
         $input['company_uuid'] = session('company');
-        $input['phone'] = static::phone($request->input('phone'));
-        $input['user_uuid'] = $user->uuid;
-        $input['meta'] = [
+        $input['phone']        = static::phone($request->input('phone'));
+        $input['user_uuid']    = $user->uuid;
+        $input['meta']         = [
             'storefront_id' => $about->public_id,
-            'origin' => 'storefront'
+            'origin'        => 'storefront',
         ];
 
         // create the customer/contact
@@ -226,8 +221,9 @@ class CustomerController extends Controller
     /**
      * Updates a Storefront Customer resource.
      *
-     * @param  string  $id
-     * @param  \Fleetbase\Http\Requests\UpdateContactRequest  $request
+     * @param string                                        $id
+     * @param \Fleetbase\Http\Requests\UpdateContactRequest $request
+     *
      * @return \Fleetbase\Http\Resources\Contact
      */
     public function update($id, UpdateContactRequest $request)
@@ -259,7 +255,6 @@ class CustomerController extends Controller
     /**
      * Query for Storefront Customer resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function query(Request $request)
@@ -274,7 +269,6 @@ class CustomerController extends Controller
     /**
      * Finds a single Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function find($id)
@@ -297,7 +291,6 @@ class CustomerController extends Controller
     /**
      * Deletes a Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\v1\DeletedResource
      */
     public function delete($id)
@@ -323,14 +316,13 @@ class CustomerController extends Controller
     /**
      * Authenticates customer using login credentials and returns with auth token.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function login(Request $request)
     {
         $identity = $request->input('identity');
         $password = $request->input('password');
-        $attrs = $request->input(['name', 'phone', 'email']);
+        $attrs    = $request->input(['name', 'phone', 'email']);
 
         $user = User::where('email', $identity)->orWhere('phone', static::phone($identity))->first();
 
@@ -338,23 +330,23 @@ class CustomerController extends Controller
             return response()->error('Authentication failed using password provided.', 401);
         }
 
-        // get the storefront or network logging in for 
+        // get the storefront or network logging in for
         $about = Storefront::about(['company_uuid']);
 
         // get contact record
         $contact = Contact::firstOrCreate(
             [
-                'user_uuid' => $user->uuid,
+                'user_uuid'    => $user->uuid,
                 'company_uuid' => $about->company_uuid,
-                'type' => 'customer'
+                'type'         => 'customer',
             ],
             [
-                'user_uuid' => $user->uuid,
+                'user_uuid'    => $user->uuid,
                 'company_uuid' => $about->company_uuid,
-                'name' => $attrs['name'] ?? $user->name,
-                'phone' => $attrs['phone'] ?? $user->phone,
-                'email' => $attrs['email'] ?? $user->email,
-                'type' => 'customer'
+                'name'         => $attrs['name'] ?? $user->name,
+                'phone'        => $attrs['phone'] ?? $user->phone,
+                'email'        => $attrs['email'] ?? $user->email,
+                'type'         => 'customer',
             ]
         );
 
@@ -371,9 +363,8 @@ class CustomerController extends Controller
     }
 
     /**
-     * Attempts authentication with phone number via SMS verification
+     * Attempts authentication with phone number via SMS verification.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function loginWithPhone()
@@ -387,7 +378,7 @@ class CustomerController extends Controller
             return response()->error('No customer with this phone # found.');
         }
 
-        // get the storefront or network logging in for 
+        // get the storefront or network logging in for
         $about = Storefront::about();
 
         // generate verification token
@@ -401,15 +392,14 @@ class CustomerController extends Controller
     /**
      * Verifys SMS code and sends auth token with customer resource.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function verifyCode(Request $request)
     {
         $identity = Utils::isEmail($request->identity) ? $request->identity : static::phone($request->identity);
-        $code = $request->input('code');
-        $for = $request->input('for', 'storefront_login');
-        $attrs = $request->input(['name', 'phone', 'email']);
+        $code     = $request->input('code');
+        $for      = $request->input('for', 'storefront_login');
+        $attrs    = $request->input(['name', 'phone', 'email']);
 
         if ($for === 'storefront_create_customer') {
             return $this->create($request);
@@ -429,23 +419,23 @@ class CustomerController extends Controller
             return response()->error('Invalid verification code!');
         }
 
-        // get the storefront or network logging in for 
+        // get the storefront or network logging in for
         $about = Storefront::about(['company_uuid']);
 
         // get contact record
         $contact = Contact::firstOrCreate(
             [
-                'user_uuid' => $user->uuid,
+                'user_uuid'    => $user->uuid,
                 'company_uuid' => $about->company_uuid,
-                'type' => 'customer'
+                'type'         => 'customer',
             ],
             [
-                'user_uuid' => $user->uuid,
+                'user_uuid'    => $user->uuid,
                 'company_uuid' => $about->company_uuid,
-                'name' => $attrs['name'] ?? $user->name,
-                'phone' => $attrs['phone'] ?? $user->phone,
-                'email' => $attrs['email'] ?? $user->email,
-                'type' => 'customer'
+                'name'         => $attrs['name'] ?? $user->name,
+                'phone'        => $attrs['phone'] ?? $user->phone,
+                'email'        => $attrs['email'] ?? $user->email,
+                'type'         => 'customer',
             ]
         );
 
@@ -463,11 +453,8 @@ class CustomerController extends Controller
 
     /**
      * Patches phone number with international code.
-     *
-     * @param string|null $phone
-     * @return string
      */
-    public static function phone(?string $phone = null): string
+    public static function phone(string $phone = null): string
     {
         if ($phone === null) {
             $phone = request()->input('phone');

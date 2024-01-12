@@ -12,7 +12,7 @@ class OrderFilter extends FleetOpsOrderFilter
             ->where(
                 [
                     'company_uuid' => $this->session->get('company'),
-                    'type' => 'storefront'
+                    'type'         => 'storefront',
                 ]
             )
             ->whereHas(
@@ -34,7 +34,7 @@ class OrderFilter extends FleetOpsOrderFilter
                 [
                     'payload',
                     'trackingNumber',
-                    'trackingStatuses'
+                    'trackingStatuses',
                 ]
             );
     }

@@ -2,21 +2,21 @@
 
 namespace Fleetbase\Storefront\Http\Controllers;
 
+use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Models\Category;
+use Fleetbase\Models\Invite;
 use Fleetbase\Storefront\Http\Requests\AddStoreToNetworkCategory;
 use Fleetbase\Storefront\Http\Requests\NetworkActionRequest;
 use Fleetbase\Storefront\Mail\StorefrontNetworkInvite;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NetworkStore;
-use Fleetbase\Models\Category;
-use Fleetbase\Models\Invite;
-use Fleetbase\FleetOps\Support\Utils;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class NetworkController extends StorefrontController
 {
     /**
-     * The resource to query
+     * The resource to query.
      *
      * @var string
      */
@@ -25,12 +25,11 @@ class NetworkController extends StorefrontController
     /**
      * Find network by public_id or invitation code.
      *
-     * @param string $id 
      * @return \Illuminate\Http\Response
      */
     public function findNetwork(string $id)
     {
-        $id = trim($id);
+        $id         = trim($id);
         $isPublicId = Str::startsWith($id, ['storefront_network_', 'network_']);
 
         if ($isPublicId) {
@@ -49,24 +48,22 @@ class NetworkController extends StorefrontController
     /**
      * Add stores to a network.
      *
-     * @param string $id 
-     * @param  \Fleetbase\Storefront\Http\Requests\NetworkActionRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function sendInvites(string $id, NetworkActionRequest $request)
     {
-        $network = Network::find($id);
+        $network    = Network::find($id);
         $recipients = $request->input('recipients', []);
 
         // create invitation
         $invitation = Invite::create([
-            'company_uuid' => session('company'),
+            'company_uuid'    => session('company'),
             'created_by_uuid' => session('user'),
-            'subject_uuid' => $network->uuid,
-            'subject_type' => Utils::getMutationType($network),
-            'protocol' => 'email',
-            'recipients' => $recipients,
-            'reason' => 'join_storefront_network'
+            'subject_uuid'    => $network->uuid,
+            'subject_type'    => Utils::getMutationType($network),
+            'protocol'        => 'email',
+            'recipients'      => $recipients,
+            'reason'          => 'join_storefront_network',
         ]);
 
         // make sure subject is set
@@ -82,15 +79,13 @@ class NetworkController extends StorefrontController
     /**
      * Add stores to a network.
      *
-     * @param string $id 
-     * @param  \Fleetbase\Storefront\Http\Requests\NetworkActionRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function addStores(string $id, NetworkActionRequest $request)
     {
         $network = Network::find($id);
-        $stores = collect($request->input('stores', []));
-        $remove = collect($request->input('remove', []));
+        $stores  = collect($request->input('stores', []));
+        $remove  = collect($request->input('remove', []));
 
         // firstOrCreate each
         foreach ($stores as $storeId) {
@@ -111,8 +106,6 @@ class NetworkController extends StorefrontController
     /**
      * Remove stores from a network.
      *
-     * @param string $id 
-     * @param  \Fleetbase\Storefront\Http\Requests\NetworkActionRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function removeStores(string $id, NetworkActionRequest $request)
@@ -130,14 +123,12 @@ class NetworkController extends StorefrontController
     /**
      * Remove stores to a network.
      *
-     * @param string $id 
-     * @param  \Fleetbase\Storefront\Http\Requests\AddStoreToNetworkCategory  $request
      * @return \Illuminate\Http\Response
      */
     public function addStoreToCategory(string $id, AddStoreToNetworkCategory $request)
     {
         $category = $request->input('category');
-        $store = $request->input('store');
+        $store    = $request->input('store');
 
         // get network store instance
         $networkStore = NetworkStore::where(['network_uuid' => $id, 'store_uuid' => $store])->first();
@@ -148,11 +139,10 @@ class NetworkController extends StorefrontController
 
         return response()->json(['status' => 'ok']);
     }
+
     /**
      * Remove stores to a network.
      *
-     * @param string $id 
-     * @param  \Fleetbase\Storefront\Http\Requests\NetworkActionRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function deleteCategory(string $id, NetworkActionRequest $request)

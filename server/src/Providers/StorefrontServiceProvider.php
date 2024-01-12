@@ -2,8 +2,8 @@
 
 namespace Fleetbase\Storefront\Providers;
 
-use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
+use Fleetbase\Providers\CoreServiceProvider;
 
 if (!class_exists(CoreServiceProvider::class)) {
     throw new \Exception('Storefront cannot be loaded without `fleetbase/core-api` installed!');
@@ -15,8 +15,6 @@ if (!class_exists(FleetOpsServiceProvider::class)) {
 
 /**
  * Storefront service provider.
- *
- * @package \Fleetbase\Storefront\Providers
  */
 class StorefrontServiceProvider extends CoreServiceProvider
 {
@@ -37,7 +35,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
      */
     public $middleware = [
         'storefront.api' => [
-            'throttle:60,1',
+            'throttle:80,1',
             \Illuminate\Session\Middleware\StartSession::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Fleetbase\Storefront\Http\Middleware\SetStorefrontSession::class,
@@ -54,15 +52,15 @@ class StorefrontServiceProvider extends CoreServiceProvider
      * @var array
      */
     public $commands = [
-        \Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby::class
+        \Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby::class,
     ];
 
     /**
      * Register any application services.
      *
-     * Within the register method, you should only bind things into the 
-     * service container. You should never attempt to register any event 
-     * listeners, routes, or any other piece of functionality within the 
+     * Within the register method, you should only bind things into the
+     * service container. You should never attempt to register any event
+     * listeners, routes, or any other piece of functionality within the
      * register method.
      *
      * More information on this can be found in the Laravel documentation:
@@ -81,8 +79,8 @@ class StorefrontServiceProvider extends CoreServiceProvider
      *
      * @return void
      *
-     * @throws \Exception If the `fleetbase/core-api` package is not installed.
-     * @throws \Exception If the `fleetbase/fleetops-api` package is not installed.
+     * @throws \Exception if the `fleetbase/core-api` package is not installed
+     * @throws \Exception if the `fleetbase/fleetops-api` package is not installed
      */
     public function boot()
     {

@@ -1,5 +1,6 @@
 import Model, { attr, belongsTo } from '@ember-data/model';
 import { format, formatDistanceToNow } from 'date-fns';
+import getWithDefault from '@fleetbase/ember-core/utils/get-with-default';
 
 export default class ProductAddonCategoryModel extends Model {
     /** @ids */
@@ -19,7 +20,15 @@ export default class ProductAddonCategoryModel extends Model {
 
     /** @methods */
     toJSON() {
-        return this.serialize();
+        return {
+            uuid: this.id,
+            category_uuid: this.category_uuid,
+            product_uuid: this.product_uuid,
+            name: this.name,
+            excluded_addons: getWithDefault(this, 'excluded_addons', []),
+            updated_at: this.updated_at,
+            created_at: this.created_at,
+        };
     }
 
     /** @computed */

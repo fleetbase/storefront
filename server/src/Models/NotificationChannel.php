@@ -4,17 +4,19 @@ namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
 use Fleetbase\Casts\PolymorphicType;
-use Fleetbase\Models\User;
-use Fleetbase\Models\Company;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Models\Company;
+use Fleetbase\Models\User;
+use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasUuid;
-use Fleetbase\Traits\HasApiModelBehavior;
 use Illuminate\Support\Str;
 
 class NotificationChannel extends StorefrontModel
 {
-    use HasUuid, HasApiModelBehavior, HasOptionsAttributes;
+    use HasUuid;
+    use HasApiModelBehavior;
+    use HasOptionsAttributes;
 
     /**
      * The database table used by the model.
@@ -24,7 +26,7 @@ class NotificationChannel extends StorefrontModel
     protected $table = 'notification_channels';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -44,12 +46,12 @@ class NotificationChannel extends StorefrontModel
      */
     protected $casts = [
         // 'config' => Json::class,
-        'options' => Json::class,
-        'owner_type' => PolymorphicType::class
+        'options'    => Json::class,
+        'owner_type' => PolymorphicType::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -97,7 +99,7 @@ class NotificationChannel extends StorefrontModel
     }
 
     /**
-     * Sets the owner type
+     * Sets the owner type.
      */
     public function setOwnerTypeAttribute($type)
     {

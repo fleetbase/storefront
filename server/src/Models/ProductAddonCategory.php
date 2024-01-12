@@ -3,12 +3,13 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasUuid;
 
 class ProductAddonCategory extends StorefrontModel
 {
-    use HasUuid, HasApiModelBehavior;
+    use HasUuid;
+    use HasApiModelBehavior;
 
     /**
      * The database table used by the model.
@@ -18,7 +19,7 @@ class ProductAddonCategory extends StorefrontModel
     protected $table = 'product_addon_categories';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -32,8 +33,8 @@ class ProductAddonCategory extends StorefrontModel
     protected $fillable = [
         'product_uuid',
         'category_uuid',
-        'exluded_addons',
-        'max_selectable'
+        'excluded_addons',
+        'max_selectable',
     ];
 
     /**
@@ -42,18 +43,18 @@ class ProductAddonCategory extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'exluded_addons' => Json::class
+        'excluded_addons' => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
     protected $appends = ['name'];
 
     /**
-     * Dynamic attributes should be hidden
+     * Dynamic attributes should be hidden.
      *
      * @var array
      */

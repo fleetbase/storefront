@@ -4,17 +4,20 @@ namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
 use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Traits\HasMetaAttributes;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 
 class ProductVariantOption extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasMetaAttributes, HasApiModelBehavior;
+    use HasUuid;
+    use HasPublicid;
+    use HasMetaAttributes;
+    use HasApiModelBehavior;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -28,7 +31,7 @@ class ProductVariantOption extends StorefrontModel
     protected $table = 'product_variant_options';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -46,7 +49,7 @@ class ProductVariantOption extends StorefrontModel
         'description',
         'translations',
         'meta',
-        'additional_cost'
+        'additional_cost',
     ];
 
     /**
@@ -56,11 +59,11 @@ class ProductVariantOption extends StorefrontModel
      */
     protected $casts = [
         'translations' => Json::class,
-        'meta' => Json::class
+        'meta'         => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -75,7 +78,7 @@ class ProductVariantOption extends StorefrontModel
     }
 
     /**
-     * Set the price as only numbers
+     * Set the price as only numbers.
      *
      * @void
      */

@@ -33,17 +33,17 @@ class NotifyStorefrontOrderNearby extends Command
         // Get storefront orders that are enroute
         $orders = $this->getActiveStorefrontOrders();
 
-        // Notify and update 
+        // Notify and update
         $this->alert('Found (' . $orders->count() . ') Storefront Orders which are Enroute.');
 
         // Iterate each order
         $orders->each(
             function ($order) {
-                $origin = $order->payload->getPickupOrFirstWaypoint();
+                $origin      = $order->payload->getPickupOrFirstWaypoint();
                 $destination = $order->payload->getDropoffOrLastWaypoint();
-                $matrix = Utils::getDrivingDistanceAndTime($origin, $destination);
-                $distance = $matrix->distance;
-                $time = $matrix->time;
+                $matrix      = Utils::getDrivingDistanceAndTime($origin, $destination);
+                $distance    = $matrix->distance;
+                $time        = $matrix->time;
 
                 if (!$distance || !$time) {
                     return;
@@ -63,21 +63,19 @@ class NotifyStorefrontOrderNearby extends Command
 
     /**
      * Fetches active storefront orders based on certain criteria.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getActiveStorefrontOrders(): \Illuminate\Database\Eloquent\Collection
     {
         return Order::where(
             [
-                'status' => 'driver_enroute',
-                'type' => 'storefront',
-                'dispatched' => true
+                'status'     => 'driver_enroute',
+                'type'       => 'storefront',
+                'dispatched' => true,
             ]
         )->with(
             [
                 'payload',
-                'customer'
+                'customer',
             ]
         )
             ->withoutGlobalScopes()

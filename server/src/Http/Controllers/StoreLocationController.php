@@ -5,7 +5,7 @@ namespace Fleetbase\Storefront\Http\Controllers;
 class StoreLocationController extends StorefrontController
 {
     /**
-     * The resource to query
+     * The resource to query.
      *
      * @var string
      */

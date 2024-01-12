@@ -3,9 +3,7 @@
 namespace Fleetbase\Storefront\Http\Requests;
 
 use Fleetbase\Http\Requests\FleetbaseRequest;
-use Fleetbase\Rules\ExistsInAny;
 use Illuminate\Validation\Rule;
-
 
 class CreateCustomerRequest extends FleetbaseRequest
 {
@@ -27,18 +25,18 @@ class CreateCustomerRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'code' => 'required|exists:verification_codes,code',
-            'name' => 'required',
+            'code'  => 'required|exists:verification_codes,code',
+            'name'  => 'required',
             'email' => [
                 'email', 'nullable', Rule::unique('contacts')->where(function ($query) {
                     return $query->whereNull('deleted_at');
-                })
+                }),
             ],
             'phone' => [
                 'nullable', Rule::unique('contacts')->where(function ($query) {
                     return $query->whereNull('deleted_at');
-                })
-            ]
+                }),
+            ],
         ];
     }
 }
