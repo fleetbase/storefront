@@ -9,8 +9,8 @@ export default class NetworksIndexNetworkController extends BaseController {
         if (this.model.hasDirtyAttributes) {
             // warn user about unsaved changes
             return this.modalsManager.confirm({
-                title: 'Network changes not saved!',
-                body: 'Going back will rollback all unsaved changes, are you sure you wish to continue?',
+                title: this.intl.t('storefront.controllers.networks.index.network.title'),
+                body: this.intl.t('storefront.controllers.networks.index.network.body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);

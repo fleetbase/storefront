@@ -64,7 +64,7 @@ export default class SettingsLocationsController extends Controller {
         });
 
         return this.editStoreLocation(storeLocation, {
-            title: 'New store location',
+            title: this.intl.t('storefront.controllers.settings.locations.title'),
             acceptButtonText: 'Add new Location',
             acceptButtonIcon: 'save',
         });
@@ -82,7 +82,7 @@ export default class SettingsLocationsController extends Controller {
         }
 
         this.modalsManager.show('modals/store-location-form', {
-            title: 'Edit store location',
+            title: this.intl.t('storefront.controllers.settings.locations.title-edit'),
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             place,
@@ -134,8 +134,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeStoreLocation(storeLocation) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove this store location?',
-            body: 'All products that are solely assosciated with this location will no longer be accessible.',
+            title: this.intl.t('storefront.controllers.settings.locations.title-location'),
+            body: this.intl.t('storefront.controllers.settings.locations.body'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -156,7 +156,7 @@ export default class SettingsLocationsController extends Controller {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: `Add new store hours for ${day}`,
+            title: this.intl.t('storefront.controllers.settings.locations.title-hour', {Day: day}),
             acceptButtonText: 'Add hours',
             acceptButtonIcon: 'save',
             storeHours,
@@ -165,7 +165,7 @@ export default class SettingsLocationsController extends Controller {
 
                 return storeHours.save().then((storeHours) => {
                     storeLocation.hours.pushObject(storeHours);
-                    this.notifications.success(`New store hours added for ${day}`);
+                    this.notifications.success(this.intl.t('storefront.controllers.settings.location.success',{Day: day}));
                 });
             },
         });
@@ -173,8 +173,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeHours(storeHours) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove these hours?',
-            body: 'By removing these operation hours, your store may become inactive according to the updated schedule for this location..',
+            title: this.intl.t('storefront.controllers.settings.locations.title-remove'),
+            body: this.intl.t('storefront.controllers.settings.locations.body-location'),
             confirm: (modal) => {
                 modal.startLoading();
 

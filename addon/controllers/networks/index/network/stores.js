@@ -263,8 +263,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action deleteCategory(category) {
         this.modalsManager.confirm({
-            title: 'Delete network category?',
-            body: 'Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?',
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.title'),
+            body: this.intl.t('storefront.controllers.networks.index.network.stores.body'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -287,7 +287,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action assignStoreToCategory(store, options = {}) {
         this.modalsManager.show('modals/add-store-to-category', {
-            title: 'Add store to category',
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-category'),
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             selectedCategory: null,
@@ -366,7 +366,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
         const category = this.store.createRecord('category', categoryAttrs);
 
         return this.editCategory(category, {
-            title: 'Add new network category',
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-network'),
             acceptButtonIcon: 'check',
             acceptButtonText: 'Create new category',
             successMessage: 'New category created.',
@@ -378,7 +378,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                 category
                     .save()
                     .then((category) => {
-                        this.notifications.success('New network category created.');
+                        this.notifications.success(this.intl.t('storefront.controllers.networks.index.network.stores.success-message'));
                         networkCategoriesPicker.categories.pushObject(category);
                         modal.done();
                     })
@@ -400,7 +400,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editCategory(category, options = {}) {
         this.modalsManager.show('modals/create-network-category', {
-            title: `Edit category (${category.name})`,
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.category-name', {categoryName: category.name}),
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             iconType: category.icon_file_uuid ? 'image' : 'svg',
@@ -467,7 +467,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
 
         return this.modalsManager.done().then(() => {
             this.modalsManager.show('modals/add-stores-to-network', {
-                title: 'Add stores to network',
+                title: this.intl.t('storefront.controllers.networks.index.network.stores.title-store'),
                 acceptButtonIcon: 'check',
                 stores,
                 members,
@@ -502,8 +502,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action async removeStore(store) {
         this.modalsManager.confirm({
-            title: `Remove this store (${store.name}) from this network (${this.network.name})?`,
-            body: 'Are you sure you wish to remove this store from this network? It will no longer be findable by this network.',
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-remove', {storeName: store.name, networkName: this.network.name}),
+            body: this.intl.t('storefront.controllers.networks.index.network.stores.body-network'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
@@ -535,7 +535,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action viewStoreDetails(store, options = {}) {
         this.modalsManager.show('modals/store-details', {
-            title: `Viewing ${store.name} storefront`,
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-storefront.', {storeName: store.name}),
             acceptButtonText: 'Done',
             hideDeclineButton: true,
             store,
@@ -553,7 +553,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editStore(store, options = {}) {
         this.modalsManager.show('modals/store-form', {
-            title: `Editing ${store.name} storefront`,
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.store-name.', {storeName: store.name}),
             acceptButtonText: 'Save Changes',
             hideDeclineButton: true,
             store,
@@ -586,7 +586,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
         const shareableLink = createShareableLink(`join/network/${this.network.public_id}`);
 
         this.modalsManager.show('modals/share-network', {
-            title: 'Add stores to network',
+            title: this.intl.t('storefront.controllers.networks.index.network.stores.add-store'),
             acceptButtonText: 'Send Invitations',
             acceptButtonIcon: 'paper-plane',
             acceptButtonDisabled: true,
@@ -631,7 +631,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
 
                 return this.network.sendInvites(recipients).then(() => {
                     modal.stopLoading();
-                    this.notifications.success('Invitations sent to recipients!');
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.network.stores.invitation'));
                 });
             },
         });

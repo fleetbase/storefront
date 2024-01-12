@@ -82,7 +82,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         this.model
             .save()
             .then(() => {
-                this.notifications.success('Changes to network saved.');
+                this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-message'));
             })
             .catch((error) => {
                 this.notifications.serverError(error);
@@ -134,13 +134,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         });
 
         this.editGateway(gateway, {
-            title: `Create a new payment gateway`,
+            title: this.intl.t('storefront.controllers.networks.index.title'),
             acceptButtonText: 'Save Gateway',
             confirm: (modal) => {
                 modal.startLoading();
 
                 return gateway.save().then((gateway) => {
-                    this.notifications.success(`New gateway added to network`);
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-network'));
                     this.gateways.pushObject(gateway);
                 });
             },
@@ -169,7 +169,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
                 modal.startLoading();
 
                 return gateway.save().then(() => {
-                    this.notifications.success(`Payment gateway changes saved!`);
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-payment'));
                 });
             };
         }
@@ -200,13 +200,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         });
 
         this.editChannel(channel, {
-            title: `Create a new notification channel`,
+            title: this.intl.t('storefront.controllers.networks.index.title-channel'),
             acceptButtonText: 'Create Notification Channel',
             confirm: (modal) => {
                 modal.startLoading();
 
                 return channel.save().then((channel) => {
-                    this.notifications.success(`New notification channel added to network!`);
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-channel'));
                     this.channels.pushObject(channel);
                 });
             },
@@ -235,7 +235,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
                 modal.startLoading();
 
                 return channel.save().then(() => {
-                    this.notifications.success(`Notification channel changes saved!`);
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-save'));
                 });
             };
         }

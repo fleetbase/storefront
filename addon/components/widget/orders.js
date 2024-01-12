@@ -139,7 +139,7 @@ export default class WidgetOrdersComponent extends Component {
         await order.loadCustomer();
 
         this.modalsManager.show('modals/incoming-order', {
-            title: 'Accept Order',
+            title: this.intl.t('storefront.components.widget.orders.accept-order'),
             acceptButtonText: 'Accept Order',
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
@@ -162,8 +162,8 @@ export default class WidgetOrdersComponent extends Component {
         // for pickup orders
         if (order.meta?.is_pickup === true) {
             this.modalsManager.confirm({
-                title: 'Mark order ready for pickup?',
-                body: 'Marking the order as ready will notify the customer their order is ready for pickup!',
+                title: this.intl.t('storefront.components.widget.orders.title-pickup'),
+                body: this.intl.t('storefront.components.widget.orders.body'),
                 acceptButtonText: 'Ready for Pickup!',
                 acceptButtonIcon: 'check',
                 acceptButtonScheme: 'success',
@@ -183,7 +183,7 @@ export default class WidgetOrdersComponent extends Component {
         if (!order.adhoc) {
             // prompt to assign driver then dispatch
             return this.modalsManager.show('modals/order-ready-assign-driver', {
-                title: 'Assign driver and dispatch orders',
+                title: this.intl.t('storefront.components.widget.orders.title-order'),
                 acceptButtonText: 'Assign & Dispatch!',
                 acceptButtonScheme: 'success',
                 acceptButtonIcon: 'check',
@@ -206,8 +206,8 @@ export default class WidgetOrdersComponent extends Component {
         }
 
         this.modalsManager.confirm({
-            title: 'Are you want to mark order as ready?',
-            body: 'Marking the order as ready will dispatch the order to nearby drivers, only mark the order as ready when it can be picked up.',
+            title: this.intl.t('storefront.components.widget.orders.title-ready'),
+            body: this.intl.t('storefront.components.widget.orders.-body-pickup'),
             acceptButtonText: 'Dispatch!',
             acceptButtonIcon: 'check',
             acceptButtonScheme: 'success',
@@ -226,8 +226,8 @@ export default class WidgetOrdersComponent extends Component {
 
     @action markAsCompleted(order) {
         this.modalsManager.confirm({
-            title: 'Are you sure you want to mark order as completed?',
-            body: 'Marking the order as completed is a confirmation that the customer has picked up the order and the order is completed.',
+            title: this.intl.t('storefront.components.widget.orders.title-complete'),
+            body: this.intl.t('storefront.components.widget.orders.body-complete'),
             acceptButtonText: 'Order Completed!',
             acceptButtonIcon: 'check',
             acceptButtonScheme: 'success',
@@ -248,7 +248,7 @@ export default class WidgetOrdersComponent extends Component {
         await order.loadDriver();
 
         this.modalsManager.show('modals/assign-driver', {
-            title: 'Assign driver',
+            title: this.intl.t('storefront.components.widget.orders.assign-drive'),
             acceptButtonText: 'Assign Driver',
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',

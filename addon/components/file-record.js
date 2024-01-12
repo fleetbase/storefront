@@ -27,8 +27,8 @@ export default class FileRecordComponent extends Component {
 
     @action deleteFile(file) {
         return this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this file?',
-            body: 'Once you delete this file you will be unable to recover it.',
+            title: this.intl.t('storefront.components.file-record.title'),
+            body: this.intl.t('storefront.components.file-record.body'),
             confirm: (modal) => {
                 file.destroyRecord();
 

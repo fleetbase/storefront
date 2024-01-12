@@ -173,7 +173,7 @@ export default class NetworksIndexController extends BaseController {
                 modal.startLoading();
 
                 return network.save().then(() => {
-                    this.notifications.success('Your new storefront network has been created!');
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-message'));
                     return this.hostRouter.refresh();
                 });
             },

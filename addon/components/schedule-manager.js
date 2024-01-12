@@ -43,7 +43,7 @@ export default class ScheduleManagerComponent extends Component {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: `Add new hours for ${day}`,
+            title: this.intl.t('storefront.components.schedule-manager-title',{Day: day}),
             acceptButtonText: 'Add hours',
             acceptButtonIcon: 'save',
             hours,
@@ -60,8 +60,8 @@ export default class ScheduleManagerComponent extends Component {
 
     @action removeHours(hours) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove these hours?',
-            body: 'By removing these operation/availability hours, your store or product may become inactive or unavailable according to the updated schedule...',
+            title: this.intl.t('storefront.components.schedule-manager.title-hour'),
+            body: this.intl.t('storefront.components.schedule-manager.body'),
             acceptButtonIcon: 'trash',
             confirm: (modal) => {
                 modal.startLoading();

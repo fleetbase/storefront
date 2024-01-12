@@ -37,8 +37,8 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
         if (this.product.hasDirtyAttributes) {
             // details have been added warn user it will lost
             return this.modalsManager.confirm({
-                title: 'Product is not saved!',
-                body: 'You will loose all unsaved changes, are you sure you wish to cancel?',
+                title: this.intl.t('storefront.controllers.products.index.category.edit.title'),
+                body: this.intl.t('storefront.controllers.products.index.category.edit.body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);

@@ -225,11 +225,11 @@ export default class CustomersIndexController extends Controller {
             width: '10%',
             actions: [
                 {
-                    label: this.intl.t('storefront.controllers.customers.view-customer')
+                    label: this.intl.t('storefront.customers.index.view-customer')
                     // fn: this.viewVendor,
                 },
                 {
-                    label: this.intl.t('storefront.controllers.customers.edit-customer')
+                    label: this.intl.t('storefront.customers.index.edit-customer')
 
                     // fn: this.editVendor,
                 },
@@ -237,7 +237,7 @@ export default class CustomersIndexController extends Controller {
                     separator: true,
                 },
                 {
-                    label: this.intl.t('storefront.controllers.customers.delete-customer')
+                    label: this.intl.t('storefront.customers.index.delete-customer')
                     // fn: this.deleteVendor,
                 },
             ],

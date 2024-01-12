@@ -20,7 +20,7 @@ export default class SettingsGatewaysController extends Controller {
         });
 
         this.editGateway(gateway, {
-            title: `Create a new payment gateway`,
+            title: this.intl.t('storefront.controllers.settings.gateways.title'),
             acceptButtonText: 'Save Gateway',
             decline: (modal) => {
                 gateway.destroyRecord();
@@ -42,7 +42,7 @@ export default class SettingsGatewaysController extends Controller {
         const schemaOptions = Object.keys(schemas);
 
         this.modalsManager.show('modals/create-gateway', {
-            title: `Edit payment gateway`,
+            title: this.intl.t('storefront.controllers.settings.gateways.title-edit'),
             acceptButtonText: 'Save Changes',
             schema: null,
             schemas,
@@ -95,8 +95,8 @@ export default class SettingsGatewaysController extends Controller {
 
     @action deleteGateway(gateway) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove this gateway?',
-            body: 'All applications and websites utilizing this gateway in configuration could be disrupted if gateway is not replaced beforehand',
+            title: this.intl.t('storefront.controllers.settings.gateways.title-remove'),
+            body: this.intl.t('storefront.controllers.settings.gateways.body'),
             confirm: (modal) => {
                 modal.startLoading();
 

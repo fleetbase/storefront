@@ -34,7 +34,7 @@ export default class ProductsIndexController extends BaseController {
 
     @action manageAddons() {
         this.modalsManager.show('modals/manage-addons', {
-            title: 'Manage Addons',
+            title: this.intl.t('storefront.controllers.products.index.title'),
             modalClass: 'modal-lg',
             acceptButtonText: 'Done',
             store: this.activeStore,
@@ -60,7 +60,7 @@ export default class ProductsIndexController extends BaseController {
         });
 
         this.modalsManager.show('modals/create-product-category', {
-            title: 'Create a new product category',
+            title: this.intl.t('storefront.controllers.products.index.title-create'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
@@ -88,7 +88,7 @@ export default class ProductsIndexController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success('New product category created.');
+                    this.notifications.success(this.intl.t('storefront.controllers.products.index.product-category'));
                     return this.hostRouter.refresh();
                 });
             },
@@ -107,7 +107,7 @@ export default class ProductsIndexController extends BaseController {
         };
 
         this.modalsManager.show('modals/import-products', {
-            title: 'Import products via spreadsheets',
+            title: this.intl.t('storefront.controllers.products.index.import'),
             acceptButtonText: 'Start Upload',
             acceptButtonScheme: 'magic',
             acceptButtonIcon: 'upload',
@@ -185,6 +185,7 @@ export default class ProductsIndexController extends BaseController {
                 modal.done().then(() => {
                     if (results?.length) {
                         this.notifications.success(`Successfully imported ${results.length} products...`);
+                        this.notifications.success(this.intl.t('storefront.controllers.products.index.success', {resultsLength: results.length}));
                         return this.hostRouter.refresh();
                     }
                 });

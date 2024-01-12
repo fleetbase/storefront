@@ -9,7 +9,7 @@ export default class WidgetCustomersComponent extends Component {
     @service storefront;
     @tracked isLoading = true;
     @tracked customers = [];
-    @tracked title = 'Recent Customers';
+    @tracked title = this.intl.t('storefront.components.widget.customers.title');
 
     constructor(owner, { title }) {
         super(...arguments);

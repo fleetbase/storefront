@@ -192,6 +192,7 @@ storefront:
       customers:
         phone: "Phone:"
         email: "Email:"
+        title: Recent Customers
       orders:
         text: Accept Order!
         text-ready: Mark as Ready!
@@ -203,6 +204,19 @@ storefront:
         driver: "Driver:"
         subtotal: Subtotal
         delivery: Delivery fee
+        accept-order: Accept Order
+        title-pickup: Mark order ready for pickup?
+        body: Marking the order as ready will notify the customer their order is ready for pickup!
+        title-order: Assign driver and dispatch orders
+        title-ready: Are you want to mark order as ready?
+        body-pickup: Marking the order as ready will dispatch the order to nearby drivers, only mark the order as ready when it can be picked up.
+        title-complete : Are you sure you want to mark order as completed?
+        body-complete: Marking the order as completed is a confirmation that the customer has picked up the order and the order is completed.
+        assign-drive: Assign driver
+    file-record:
+      title: Are you sure you wish to delete this file?
+      body: Once you delete this file you will be unable to recover it.
+
       storefront-metrics: 
         last-day: Last 30 days
     network-category-picker:
@@ -211,17 +225,95 @@ storefront:
       create-category: Create a new category
     schedule-manager:
       add-hours: Add Hours
+      title: Add new hours for {day}
+      title-hour: Are you sure you wish to remove these hours?
+      body: By removing these operation/availability hours, your store or product may become inactive or unavailable according to the updated schedule...
     store-selector:
       no-stores: No stores to select
       create-storefront: Create a new 
-  customers:
+  controllers:
+    customers:
+      index:
+        view-customer: View Customer Details
+        edit-customer: Edit Customer
+        success-message: Your new storefront network has been created!
+        delete-customer: Delete Customer 
+    networks:
+      index:
+        network:
+      success-message: Changes to network saved.
+      title: Create a new payment gateway
+      success-network: New gateway added to network
+      success-payment: Payment gateway changes saved!
+      title-channel: Create a new notification channel
+      success-channel: New notification channel added to network!
+      success-save: Notification channel changes saved!
+              stores:
+                title: Delete network category?
+                body: Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?
+                title-category: Add store to category
+                title-network: Add new network category
+                success-message: New network category created.
+                category-name: Edit category ({categoryName})
+                title-store: Add stores to network
+                title-remove: Remove this store ({store.name}) from this network ({this.network.name})?
+                body-network: Are you sure you wish to remove this store from this network? It will no longer be findable by this network.
+                title-storefront: Viewing {store.name} storefront
+                store-name: Editing {store.name} storefront
+                add-store: Add stores to network
+                invitation: Invitations sent to recipients!
+        title: Network changes not saved!
+        body: Going back will rollback all unsaved changes, are you sure you wish to continue?
+
+                network-option: Network Options
+                manage-network: Manage Network
+                send-invite: Send Invites
+                delete-network: Delete Network
+
+      title: Create a new network
+      success-message: Yout new storefront network has been created!
+      title-network: Are you sure you wish to delete this network ({networkName})? All assigned stores, customers, orders will no longer be reachable. 
+  orders:
+    index: 
+      view-order: View Order
+      cancel-order: Cancel Order 
+      delete-order: Delete Order 
+  products:  
     index:
-  networks:
-    index:
-    network-option: Network Options
-    manage-network: Manage Network
-    send-invite: Send Invites
-    delete-network: Delete Network
+      category:
+      edit:
+        title: Product is not saved!
+        body: You will loose all unsaved changes, are you sure you wish to cancel?
+      index:
+        category: 
+          category: category
+          body: Warning! Deleting this category will also remove all products listed under this category.
+         edit-category: Edit category
+          delete-product: Are you sure you wish to delete this product?
+          body-warning: Warning! Once this product is deleted it will no longer be accessible.
+      product: Are you sure you wish to delete this product?
+      body: Warning! Once this product is deleted it will no longer be accessible.
+  index:    
+    title: Manage Addons
+    title-create: Create a new product category
+    product-category: New product category created.
+    import: Import products via spreadsheets
+    success: Successfully imported {results.length} products...
+  settings:
+    gateways:
+      title: Create a new payment gateway
+      title-edit: Edit payment gateway
+      title-remove: Are you sure you wish to remove this gateway?
+      body: All applications and websites utilizing this gateway in configuration could be disrupted if gateway is not replaced beforehand
+    locations:
+      title: New store location
+      title-edit: Edit store location
+      title-location: Are you sure you wish to remove this store location?
+      body: All products that are solely assosciated with this location will no longer be accessible.
+      title-hour: Add new store hours for {day}
+      success: New store hours added for {day}
+      title-remove: Are you sure you wish to remove these hours?
+      body-location: By removing these operation hours, your store may become inactive according to the updated schedule for this location..
       network: 
         index: 
           title: General Network Settings
@@ -380,3 +472,4 @@ storefront:
       home:
         title: Storefront Dashboard
       settings: 
+  con
