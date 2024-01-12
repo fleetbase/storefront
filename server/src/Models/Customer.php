@@ -8,9 +8,7 @@ use Illuminate\Support\Str;
 class Customer extends Contact
 {
     /**
-     * The key to use in the payload responses
-     *
-     * @var string
+     * The key to use in the payload responses.
      */
     protected string $payloadKey = 'customer';
 
@@ -47,7 +45,7 @@ class Customer extends Contact
     }
 
     /**
-     * @return integer
+     * @return int
      */
     public function getReviewsCountAttribute()
     {
@@ -55,26 +53,28 @@ class Customer extends Contact
     }
 
     /**
-     * Count the number of orders for the storefront with the given ID
+     * Count the number of orders for the storefront with the given ID.
      *
      * @param int $id The ID of the storefront to count orders for
+     *
      * @return int The number of storefront orders for the customer with this UUID
      */
     public function countStorefrontOrdersFrom($id)
     {
         return \Fleetbase\FleetOps\Models\Order::where(
             [
-                'customer_uuid' => $this->uuid,
-                'type' => 'storefront',
-                'meta->storefront_id' => $id
+                'customer_uuid'       => $this->uuid,
+                'type'                => 'storefront',
+                'meta->storefront_id' => $id,
             ]
         )->count();
     }
 
     /**
-     * Find a customer with the given public ID
+     * Find a customer with the given public ID.
      *
      * @param string $publicId The public ID of the customer to find
+     *
      * @return static|null The customer with the given public ID, or null if none was found
      */
     public static function findFromCustomerId($publicId)

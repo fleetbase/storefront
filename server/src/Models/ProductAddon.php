@@ -3,21 +3,24 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\User;
-use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
 class ProductAddon extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior, HasSlug;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
+    use HasSlug;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -31,7 +34,7 @@ class ProductAddon extends StorefrontModel
     protected $table = 'product_addons';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -52,7 +55,7 @@ class ProductAddon extends StorefrontModel
         'price',
         'sale_price',
         'is_on_sale',
-        'slug'
+        'slug',
     ];
 
     /**
@@ -61,12 +64,12 @@ class ProductAddon extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'is_on_sale' => 'boolean',
-        'translations' => Json::class
+        'is_on_sale'   => 'boolean',
+        'translations' => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -107,7 +110,7 @@ class ProductAddon extends StorefrontModel
     }
 
     /**
-     * Set the price as only numbers
+     * Set the price as only numbers.
      *
      * @void
      */
@@ -117,7 +120,7 @@ class ProductAddon extends StorefrontModel
     }
 
     /**
-     * Set the sale price as only numbers
+     * Set the sale price as only numbers.
      *
      * @void
      */

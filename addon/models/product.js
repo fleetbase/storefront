@@ -20,7 +20,7 @@ export default class ProductModel extends Model {
     @belongsTo('file') primary_image;
     @hasMany('file') files;
     @hasMany('product-variant', { async: false }) variants;
-    @hasMany('product-addon-category') addon_categories;
+    @hasMany('product-addon-category', { async: false }) addon_categories;
     @hasMany('product-hour') hours;
 
     /** @attributes */
@@ -56,7 +56,40 @@ export default class ProductModel extends Model {
 
     /** @methods */
     toJSON() {
-        return this.serialize();
+        return {
+            uuid: this.id,
+            created_by_uuid: this.created_by_uuid,
+            company_uuid: this.company_uuid,
+            store_uuid: this.store_uuid,
+            category_uuid: this.category_uuid,
+            primary_image_uuid: this.primary_image_uuid,
+            public_id: this.public_id,
+            name: this.name,
+            category: this.category,
+            primary_image: this.primary_image,
+            files: this.files,
+            variants: this.variants,
+            addon_categories: this.addon_categories,
+            hours: this.hours,
+            description: this.description,
+            primary_image_url: this.primary_image_url,
+            sku: this.sku,
+            currency: this.currency,
+            price: this.price,
+            sale_price: this.sale_price,
+            tags: this.tags,
+            youtube_urls: this.youtube_urls,
+            translations: this.translations,
+            is_on_sale: this.is_on_sale,
+            is_recommended: this.is_recommended,
+            is_service: this.is_service,
+            is_available: this.is_available,
+            is_bookable: this.is_bookable,
+            status: this.status,
+            slug: this.slug,
+            created_at: this.created_at,
+            updated_at: this.updated_at
+        };
     }
 
     /** @computed */

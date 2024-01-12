@@ -21,7 +21,6 @@ class StoreController extends Controller
     /**
      * Returns general information and settings about the storefront or network given the key.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function about()
@@ -42,7 +41,6 @@ class StoreController extends Controller
     /**
      * Returns all locations and their hours for the current store.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function locations(Request $request)
@@ -65,8 +63,6 @@ class StoreController extends Controller
     /**
      * Returns a specific store location given the id.
      *
-     * @param  string $id
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function location(string $id, Request $request)
@@ -76,11 +72,11 @@ class StoreController extends Controller
         }
 
         $storeId = $request->input('store', session('storefront_store'));
-        $store = Store::where('public_id', $storeId)->orWhere('uuid', $storeId)->first();
+        $store   = Store::where('public_id', $storeId)->orWhere('uuid', $storeId)->first();
 
         $location = StoreLocation::where([
-            'public_id' => $id,
-            'store_uuid' => $store->uuid
+            'public_id'  => $id,
+            'store_uuid' => $store->uuid,
         ])
             ->with(['place', 'hours'])
             ->first();
@@ -91,7 +87,6 @@ class StoreController extends Controller
     /**
      * Returns all payment gateways for the current store.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function gateways(Request $request)
@@ -99,7 +94,7 @@ class StoreController extends Controller
         $id = session('storefront_store') ?? session('storefront_network');
 
         $sandbox = $request->input('sandbox', false);
-        $query = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])->where('owner_uuid', $id);
+        $query   = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])->where('owner_uuid', $id);
 
         if ($sandbox) {
             $query->where('sandbox', 1);
@@ -123,8 +118,6 @@ class StoreController extends Controller
     /**
      * Returns a specific payment gateway given the id.
      *
-     * @param  string $id
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function gateway(string $id, Request $request)
@@ -132,7 +125,7 @@ class StoreController extends Controller
         $ownerId = session('storefront_store') ?? session('storefront_network');
 
         $sandbox = $request->input('sandbox', false);
-        $query = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])->where(['public_id' => $id, 'owner_uuid' => $ownerId]);
+        $query   = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])->where(['public_id' => $id, 'owner_uuid' => $ownerId]);
 
         if ($sandbox) {
             $query->where('sandbox', 1);
@@ -147,15 +140,14 @@ class StoreController extends Controller
     /**
      * Search current store or network.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function search(Request $request)
     {
         $searchQuery = $request->input('query', '');
-        $limit = $request->input('limit', 14);
-        $store = $request->input('store');
-        $key = session('storefront_key');
+        $limit       = $request->input('limit', 14);
+        $store       = $request->input('store');
+        $key         = session('storefront_key');
 
         if (Str::startsWith($key, 'store')) {
             $results = Product::where('store_uuid', session('storefront_store'))

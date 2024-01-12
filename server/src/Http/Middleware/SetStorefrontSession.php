@@ -2,9 +2,9 @@
 
 namespace Fleetbase\Storefront\Http\Middleware;
 
+use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\FleetOps\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -13,10 +13,6 @@ class SetStorefrontSession
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
      */
     public function handle(Request $request, \Closure $next)
     {
@@ -38,9 +34,6 @@ class SetStorefrontSession
 
     /**
      * Checks if storefront key is valid.
-     *
-     * @param string $key
-     * @return boolean
      */
     public function isValidKey(string $key): bool
     {
@@ -57,9 +50,6 @@ class SetStorefrontSession
 
     /**
      * Sets the storefront key to session.
-     *
-     * @param string $key
-     * @return void
      */
     public function setKey(string $key): void
     {
@@ -69,17 +59,17 @@ class SetStorefrontSession
             $store = Store::select(['uuid', 'company_uuid', 'currency'])->where('key', $key)->first();
 
             if ($store) {
-                $session['storefront_store'] = $store->uuid;
+                $session['storefront_store']    = $store->uuid;
                 $session['storefront_currency'] = $store->currency;
-                $session['company'] = $store->company_uuid;
+                $session['company']             = $store->company_uuid;
             }
-        } else if (Str::startsWith($key, 'network')) {
+        } elseif (Str::startsWith($key, 'network')) {
             $network = Network::select(['uuid', 'company_uuid', 'currency'])->where('key', $key)->first();
 
             if ($network) {
-                $session['storefront_network'] = $network->uuid;
+                $session['storefront_network']  = $network->uuid;
                 $session['storefront_currency'] = $network->currency;
-                $session['company'] = $network->company_uuid;
+                $session['company']             = $network->company_uuid;
             }
         }
 
@@ -89,9 +79,8 @@ class SetStorefrontSession
     }
 
     /**
-     * Set the customer id to session if applicable
+     * Set the customer id to session if applicable.
      *
-     * @param Request $request
      * @return void
      */
     public function setupCustomerSession(Request $request)
@@ -112,8 +101,8 @@ class SetStorefrontSession
 
                 session([
                     'customer_id' => Str::replaceFirst('contact', 'customer', $contact->public_id),
-                    'contact_id' => $contact->public_id,
-                    'customer' => $contact->uuid
+                    'contact_id'  => $contact->public_id,
+                    'customer'    => $contact->uuid,
                 ]);
             }
         }

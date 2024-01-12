@@ -17,7 +17,7 @@ class EntityExpansion implements Expansion
     }
 
     /**
-     * Create a new Entity from a Storefront Product
+     * Create a new Entity from a Storefront Product.
      *
      * @return \Fleetbase\FleetOps\Models\Entity
      */
@@ -26,18 +26,18 @@ class EntityExpansion implements Expansion
         return static function (\Fleetbase\Storefront\Models\Product $product) {
             return new static([
                 'company_uuid' => session('company'),
-                'photo_uuid' => $product->primary_image_uuid,
-                'internal_id' => $product->public_id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'currency' => $product->currency,
-                'sku' => $product->sku,
-                'price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'meta' => [
+                'photo_uuid'   => $product->primary_image_uuid,
+                'internal_id'  => $product->public_id,
+                'name'         => $product->name,
+                'description'  => $product->description,
+                'currency'     => $product->currency,
+                'sku'          => $product->sku,
+                'price'        => $product->price,
+                'sale_price'   => $product->sale_price,
+                'meta'         => [
                     'product_id' => $product->public_id,
-                    'image_url' => $product->primary_image_url,
-                ]
+                    'image_url'  => $product->primary_image_url,
+                ],
             ]);
         };
     }

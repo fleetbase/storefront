@@ -2,16 +2,18 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 
 class Vote extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -25,7 +27,7 @@ class Vote extends StorefrontModel
     protected $table = 'votes';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -41,7 +43,7 @@ class Vote extends StorefrontModel
         'customer_uuid',
         'subject_uuid',
         'subject_type',
-        'type'
+        'type',
     ];
 
     /**
@@ -52,7 +54,7 @@ class Vote extends StorefrontModel
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */

@@ -4,8 +4,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 export default class ProductVariantModel extends Model {
     /** @ids */
     @attr('string') product_uuid;
-    @attr('string') created_by_uuid;
-    @attr('string') company_uuid;
 
     /** @relationships */
     @hasMany('product-variant-option') options;

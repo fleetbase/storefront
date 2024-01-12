@@ -12,7 +12,7 @@ class AddonCategoryFilter extends Filter
         $this->builder->where(
             [
                 'company_uuid' => $this->session->get('company'),
-                'for' => 'storefront_product_addon'
+                'for'          => 'storefront_product_addon',
             ]
         );
     }

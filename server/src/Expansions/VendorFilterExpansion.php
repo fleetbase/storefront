@@ -24,7 +24,7 @@ class VendorFilterExpansion implements Expansion
     public function storefront()
     {
         return function (?string $storefront) {
-            /** @var \Fleetbase\FleetOps\Http\Filter\VendorFilter $this */
+            /* @var \Fleetbase\FleetOps\Http\Filter\VendorFilter $this */
             $this->builder->whereHas(
                 'customerOrders',
                 function ($query) use ($storefront) {

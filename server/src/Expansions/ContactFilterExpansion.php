@@ -24,7 +24,7 @@ class ContactFilterExpansion implements Expansion
     public function storefront()
     {
         return function (?string $storefront) {
-            /** @var \Fleetbase\FleetOps\Http\Filter\ContactFilter $this */
+            /* @var \Fleetbase\FleetOps\Http\Filter\ContactFilter $this */
             $this->builder->whereHas(
                 'customerOrders',
                 function ($query) use ($storefront) {

@@ -24,7 +24,7 @@ class OrderFilterExpansion implements Expansion
     public function storefront()
     {
         return function (?string $storefront) {
-            /** @var \Fleetbase\FleetOps\Http\Filter\OrderFilter $this */
+            /* @var \Fleetbase\FleetOps\Http\Filter\OrderFilter $this */
             $this->builder->where('meta->storefront_id', $storefront);
         };
     }

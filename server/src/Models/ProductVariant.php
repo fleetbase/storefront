@@ -5,19 +5,23 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\Casts\Json;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\User;
-use Fleetbase\Traits\HasMetaAttributes;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
 class ProductVariant extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior, HasMetaAttributes, HasSlug;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
+    use HasMetaAttributes;
+    use HasSlug;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -31,7 +35,7 @@ class ProductVariant extends StorefrontModel
     protected $table = 'product_variants';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -52,7 +56,7 @@ class ProductVariant extends StorefrontModel
         'is_multiselect',
         'is_required',
         'min',
-        'max'
+        'max',
     ];
 
     /**
@@ -62,20 +66,20 @@ class ProductVariant extends StorefrontModel
      */
     protected $casts = [
         'is_multiselect' => 'boolean',
-        'is_required' => 'boolean',
-        'meta' => Json::class,
-        'translations' => Json::class
+        'is_required'    => 'boolean',
+        'meta'           => Json::class,
+        'translations'   => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
     protected $appends = [];
 
     /**
-     * Relationships to auto load with driver
+     * Relationships to auto load with driver.
      *
      * @var array
      */

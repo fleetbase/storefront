@@ -8,7 +8,6 @@ class CreateReviewRequest extends FleetbaseRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * 
      *
      * @return bool
      */
@@ -25,10 +24,10 @@ class CreateReviewRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'rating' => 'required|numeric',
-            'content' => 'required',
-            'files' => 'sometimes|array',
-            'rejected' => 'sometimes|boolean'
+            'rating'   => 'required|numeric',
+            'content'  => 'required',
+            'files'    => 'sometimes|array',
+            'rejected' => 'sometimes|boolean',
         ];
     }
 }

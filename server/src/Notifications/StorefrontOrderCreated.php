@@ -2,15 +2,15 @@
 
 namespace Fleetbase\Storefront\Notifications;
 
-use Illuminate\Bus\Queueable;
+use Fleetbase\FleetOps\Models\Order;
 // use Illuminate\Contracts\Queue\ShouldQueue;
+use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Storefront\Support\Storefront;
+use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
-use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Storefront\Support\Storefront;
-use Fleetbase\FleetOps\Support\Utils;
 
 class StorefrontOrderCreated extends Notification
 {
@@ -27,14 +27,13 @@ class StorefrontOrderCreated extends Notification
     {
         $storefrontId = $order->getMeta('storefront_id');
 
-        $this->order = $order;
+        $this->order      = $order;
         $this->storefront = Storefront::findAbout($storefrontId);
     }
 
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -45,27 +44,26 @@ class StorefrontOrderCreated extends Notification
     /**
      * Get the twilio sms representation of the notification.
      *
-     * @param  mixed  $notifiable
      * @return \NotificationChannels\Twilio\TwilioSmsMessage;
      */
     public function toTwilio($notifiable)
     {
-        $storeName = $this->storefront->name;
-        $isPickup = $this->order->getMeta('is_pickup');
+        $storeName  = $this->storefront->name;
+        $isPickup   = $this->order->getMeta('is_pickup');
         $isDelivery = !$isPickup;
-        $method = $isPickup ? 'pickup' : 'delivery';
-        $items = $this->order->payload->entities->map(function ($entity) {
+        $method     = $isPickup ? 'pickup' : 'delivery';
+        $items      = $this->order->payload->entities->map(function ($entity) {
             return $entity->name;
         })->join(',');
-        $customerName = $this->order->customer->name;
-        $customerPhone = $this->order->customer->phone;
+        $customerName    = $this->order->customer->name;
+        $customerPhone   = $this->order->customer->phone;
         $deliveryAddress = $this->order->payload->dropoff->address;
-        $subtotal = $this->order->getMeta('subtotal');
-        $deliveryFee = $this->order->getMeta('delivery_fee');
-        $tip = $this->order->getMeta('tip');
-        $deliveryTip = $this->order->getMeta('delivery_tip');
-        $total = $this->order->getMeta('total');
-        $currency = $this->order->getMeta('currency');
+        $subtotal        = $this->order->getMeta('subtotal');
+        $deliveryFee     = $this->order->getMeta('delivery_fee');
+        $tip             = $this->order->getMeta('tip');
+        $deliveryTip     = $this->order->getMeta('delivery_tip');
+        $total           = $this->order->getMeta('total');
+        $currency        = $this->order->getMeta('currency');
 
         $content = '🚨 ' . $storeName . ' has received new order!' . "\n\n" .
             'A new ' . $method . ' order was just created!' . "\n\n" .
@@ -94,29 +92,28 @@ class StorefrontOrderCreated extends Notification
     /**
      * Get the mail representation of the notification.
      *
-     * @param  mixed  $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     public function toMail($notifiable)
     {
-        $storeName = $this->storefront->name;
-        $isPickup = $this->order->getMeta('is_pickup');
+        $storeName  = $this->storefront->name;
+        $isPickup   = $this->order->getMeta('is_pickup');
         $isDelivery = !$isPickup;
-        $method = $isPickup ? 'pickup' : 'delivery';
-        $items = $this->order->payload->entities->map(function ($entity) {
+        $method     = $isPickup ? 'pickup' : 'delivery';
+        $items      = $this->order->payload->entities->map(function ($entity) {
             return $entity->name;
         })->join(',');
-        $customerName = $this->order->customer->name;
-        $customerPhone = $this->order->customer->phone;
+        $customerName    = $this->order->customer->name;
+        $customerPhone   = $this->order->customer->phone;
         $deliveryAddress = $this->order->payload->dropoff->address;
-        $subtotal = $this->order->getMeta('subtotal');
-        $deliveryFee = $this->order->getMeta('delivery_fee');
-        $tip = $this->order->getMeta('tip');
-        $deliveryTip = $this->order->getMeta('delivery_tip');
-        $total = $this->order->getMeta('total');
-        $currency = $this->order->getMeta('currency');
+        $subtotal        = $this->order->getMeta('subtotal');
+        $deliveryFee     = $this->order->getMeta('delivery_fee');
+        $tip             = $this->order->getMeta('tip');
+        $deliveryTip     = $this->order->getMeta('delivery_tip');
+        $total           = $this->order->getMeta('total');
+        $currency        = $this->order->getMeta('currency');
 
-        $message = (new MailMessage)
+        $message = (new MailMessage())
             ->subject('🚨 ' . $storeName . ' has received new order!')
             ->greeting('Hello!')
             ->line('A new ' . $method . ' order was just created!')
@@ -145,13 +142,11 @@ class StorefrontOrderCreated extends Notification
     /**
      * Get the array representation of the notification.
      *
-     * @param  mixed  $notifiable
      * @return array
      */
     public function toArray($notifiable)
     {
         return [
-            //
         ];
     }
 }

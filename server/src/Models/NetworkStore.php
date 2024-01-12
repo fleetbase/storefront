@@ -3,13 +3,14 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Models\Category;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class NetworkStore extends Pivot
 {
-    use HasUuid, HasApiModelBehavior;
+    use HasUuid;
+    use HasApiModelBehavior;
 
     /**
      * The database table used by the model.
@@ -19,7 +20,7 @@ class NetworkStore extends Pivot
     protected $table = 'network_stores';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -40,7 +41,7 @@ class NetworkStore extends Pivot
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -49,7 +50,7 @@ class NetworkStore extends Pivot
     /**
      * Create a new instance of the model.
      *
-     * @param array $attributes The attributes to set on the model.
+     * @param array $attributes the attributes to set on the model
      *
      * @return void
      */

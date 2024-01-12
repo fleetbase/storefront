@@ -2,13 +2,13 @@
 
 namespace Fleetbase\Storefront\Support;
 
+use Fleetbase\FleetOps\Models\Contact;
+use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Models\User;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\FleetOps\Models\Contact;
-use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Models\User;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCreated;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redis;
@@ -22,6 +22,7 @@ class Storefront
      * with bare minimum columns, but can optionally pass in more columns to receive.
      *
      * @param array $columns
+     *
      * @return \Fleetbase\Models\Storefront\Network|\Fleetbase\Models\Storefront\Store
      */
     public static function about($columns = [], $with = [])
@@ -42,7 +43,7 @@ class Storefront
             $about = Network::select($columns)->where('key', $key)->with($with)->first();
         }
 
-        $about->is_store = Str::startsWith($key, 'store');
+        $about->is_store   = Str::startsWith($key, 'store');
         $about->is_network = Str::startsWith($key, 'network');
 
         return $about;
@@ -64,7 +65,7 @@ class Storefront
             return $about;
         }
 
-        $about->is_store = Str::startsWith($id, 'store');
+        $about->is_store   = Str::startsWith($id, 'store');
         $about->is_network = Str::startsWith($id, 'network');
 
         return $about;
@@ -114,7 +115,7 @@ class Storefront
         }
 
         return Gateway::where([
-            'code' => $code,
+            'code'       => $code,
             'owner_uuid' => session('storefront_store') ?? session('storefront_network'),
         ])->first();
     }
@@ -150,21 +151,21 @@ class Storefront
 
     public static function alertNewOrder(Order $order, $sendNow = false)
     {
-        $about = static::about(['alertable']);
+        $about      = static::about(['alertable']);
         $alertables = [];
 
         if ($about->is_network) {
             $store = static::findAbout($order->getMeta('storefront_id'), ['alertable']);
 
             if ($store && $store->public_id !== $about->public_id) {
-                $merge = Utils::get($store, 'alertable.for_new_order', []);
+                $merge      = Utils::get($store, 'alertable.for_new_order', []);
                 $alertables = array_merge($alertables, $merge);
             }
         }
 
-        $merge = Utils::get($about, 'alertable.for_new_order', []);
+        $merge      = Utils::get($about, 'alertable.for_new_order', []);
         $alertables = array_merge($alertables, $merge);
-        $users = collect($alertables)->map(function ($id) {
+        $users      = collect($alertables)->map(function ($id) {
             return User::where('public_id', $id)->first();
         });
 
@@ -183,14 +184,14 @@ class Storefront
     {
         $stripeCustomer = \Stripe\Customer::create([
             'description' => 'Customer created in Fleetbase Storefront',
-            'email' => $customer->email,
-            'name' => $customer->name,
-            'phone' => $customer->phone,
-            'metadata' => [
-                'contact_id' => $customer->public_id,
+            'email'       => $customer->email,
+            'name'        => $customer->name,
+            'phone'       => $customer->phone,
+            'metadata'    => [
+                'contact_id'    => $customer->public_id,
                 'storefront_id' => session('storefront_store') ?? session('storefront_network'),
-                'company_id' => session('company')
-            ]
+                'company_id'    => session('company'),
+            ],
         ]);
 
         // set the stripe customer to customer meta

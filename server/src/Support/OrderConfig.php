@@ -2,7 +2,8 @@
 
 namespace Fleetbase\Storefront\Support;
 
-class OrderConfig {
+class OrderConfig
+{
     /**
      * Provides default order configs for Storefront.
      */

@@ -3,17 +3,17 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\Models\Category;
-use Fleetbase\Models\User;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
-use Fleetbase\FleetOps\Models\Place;
+use Fleetbase\Models\User;
 use Fleetbase\Support\Utils as FleetbaseUtils;
+use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasOptionsAttributes;
-use Fleetbase\Traits\HasUuid;
-use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -22,10 +22,16 @@ use Spatie\Sluggable\SlugOptions;
 
 class Store extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior, HasOptionsAttributes, HasMetaAttributes, HasSlug, Searchable;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
+    use HasOptionsAttributes;
+    use HasMetaAttributes;
+    use HasSlug;
+    use Searchable;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -39,7 +45,7 @@ class Store extends StorefrontModel
     protected $table = 'stores';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -58,17 +64,17 @@ class Store extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'options' => Json::class,
-        'meta' => Json::class,
-        'translations' => Json::class,
-        'alertable' => Json::class,
-        'tags' => 'array',
+        'options'         => Json::class,
+        'meta'            => Json::class,
+        'translations'    => Json::class,
+        'alertable'       => Json::class,
+        'tags'            => 'array',
         'require_account' => 'boolean',
-        'online' => 'boolean'
+        'online'          => 'boolean',
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -82,7 +88,7 @@ class Store extends StorefrontModel
     protected $hidden = ['logo', 'backdrop', 'files'];
 
     /**
-     * Attributes that is filterable on this model
+     * Attributes that is filterable on this model.
      *
      * @var array
      */
@@ -156,7 +162,7 @@ class Store extends StorefrontModel
                     'type',
                     'caption',
                     'created_at',
-                    'updated_at'
+                    'updated_at',
                 ]
             )->where('type', 'storefront_store_media');
     }
@@ -302,8 +308,9 @@ class Store extends StorefrontModel
     /**
      * Retrieves the category of the store belonging to the specified network using the network id.
      *
-     * @param  string $id The ID of the network for which the category is to be retrieved.
-     * @return \Fleetbase\Models\Category|null The category of the store in the given network, or null if the store does not belong to the network.
+     * @param string $id the ID of the network for which the category is to be retrieved
+     *
+     * @return \Fleetbase\Models\Category|null the category of the store in the given network, or null if the store does not belong to the network
      */
     public function getNetworkCategoryUsingId(?string $id)
     {
@@ -325,8 +332,9 @@ class Store extends StorefrontModel
     /**
      * Retrieves the category of the store belonging to the specified network.
      *
-     * @param  \Fleetbase\Storefront\Models\Network $network The network for which the category is to be retrieved.
-     * @return \Fleetbase\Models\Category|null The category of the store in the given network, or null if the store does not belong to the network.
+     * @param \Fleetbase\Storefront\Models\Network $network the network for which the category is to be retrieved
+     *
+     * @return \Fleetbase\Models\Category|null the category of the store in the given network, or null if the store does not belong to the network
      */
     public function getNetworkCategory(Network $network)
     {
@@ -347,18 +355,12 @@ class Store extends StorefrontModel
     }
 
     /**
-     *'Create a new product category for this store record
+     *'Create a new product category for this store record.
      *
-     * @param string $name
-     * @param string $description
-     * @param array|null $meta
-     * @param array|null $translations
-     * @param Category|null $parent
      * @param File|string|null $icon
-     * @param string $iconColor
-     * @return Category
+     * @param string           $iconColor
      */
-    public function createCategory(string $name, string $description = '', ?array $meta = [],  ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $iconFile = null;
         $iconName = null;
@@ -373,35 +375,29 @@ class Store extends StorefrontModel
 
         return Category::create(
             [
-                'company_uuid' => $this->company_uuid,
-                'owner_uuid' => $this->uuid,
-                'owner_type' => FleetbaseUtils::getMutationType('storefront:store'),
-                'parent_uuid' => $parent instanceof Category ? $parent->uuid : null,
+                'company_uuid'   => $this->company_uuid,
+                'owner_uuid'     => $this->uuid,
+                'owner_type'     => FleetbaseUtils::getMutationType('storefront:store'),
+                'parent_uuid'    => $parent instanceof Category ? $parent->uuid : null,
                 'icon_file_uuid' => $iconFile instanceof File ? $iconFile->uuid : null,
-                'for' => 'storefront_product',
-                'name' => $name,
-                'description' => $description,
-                'translations' => $translations,
-                'meta' => $meta,
-                'icon' => $iconName,
-                'icon_color' => $iconColor
+                'for'            => 'storefront_product',
+                'name'           => $name,
+                'description'    => $description,
+                'translations'   => $translations,
+                'meta'           => $meta,
+                'icon'           => $iconName,
+                'icon_color'     => $iconColor,
             ]
         );
     }
 
     /**
-     * Create a new product category if it doesn't already exists for this store record
+     * Create a new product category if it doesn't already exists for this store record.
      *
-     * @param string $name
-     * @param string $description
-     * @param array|null $meta
-     * @param array|null $translations
-     * @param Category|null $parent
      * @param File|string|null $icon
-     * @param string $iconColor
-     * @return Category
+     * @param string           $iconColor
      */
-    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [],  ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $existingCategory = Category::where(['company_uuid' => $this->company_uuid, 'owner_uuid' => $this->uuid, 'name' => $name])->first();
 
@@ -414,42 +410,30 @@ class Store extends StorefrontModel
 
     /**
      * Creates a new product in the store.
-     *
-     * @param string $name
-     * @param string $description
-     * @param array $tags
-     * @param Category|null $category
-     * @param File|null $image
-     * @param User|null $createdBy
-     * @param string $sku
-     * @param integer $price
-     * @param string $status
-     * @param array $options
-     * @return Product
      */
-    public function createProduct(string $name, string $description, array $tags = [], ?Category $category = null, ?File $image = null, ?User $createdBy = null, string $sku = '', int $price = 0, string $status = 'available', array $options = []): Product
+    public function createProduct(string $name, string $description, array $tags = [], Category $category = null, File $image = null, User $createdBy = null, string $sku = '', int $price = 0, string $status = 'available', array $options = []): Product
     {
         return Product::create(
             [
-                'company_uuid' => $this->company_uuid,
+                'company_uuid'       => $this->company_uuid,
                 'primary_image_uuid' => $image instanceof File ? $image->uuid : null,
-                'created_by_uuid' => $createdBy instanceof User ? $createdBy->uuid : null,
-                'store_uuid' => $this->uuid,
-                'category_uuid' => $category instanceof Category ? $category->uuid : null,
-                'name' => $name,
-                'description' => $description,
-                'tags' => $tags,
-                'sku' => $sku,
-                'price' => $price,
-                'sale_price' => isset($options['sale_price']) ? $options['sale_price'] : null,
-                'currency' => $this->currency,
-                'is_service' => isset($options['is_service']) ? $options['is_service'] : false,
-                'is_bookable' => isset($options['is_bookable']) ? $options['is_bookable'] : false,
-                'is_available' => isset($options['is_available']) ? $options['is_available'] : true,
-                'is_on_sale' => isset($options['is_on_sale']) ? $options['is_on_sale'] : false,
-                'is_recommended' => isset($options['is_recommended']) ? $options['is_recommended'] : false,
-                'can_pickup' => isset($options['can_pickup']) ? $options['can_pickup'] : false,
-                'status' => $status
+                'created_by_uuid'    => $createdBy instanceof User ? $createdBy->uuid : null,
+                'store_uuid'         => $this->uuid,
+                'category_uuid'      => $category instanceof Category ? $category->uuid : null,
+                'name'               => $name,
+                'description'        => $description,
+                'tags'               => $tags,
+                'sku'                => $sku,
+                'price'              => $price,
+                'sale_price'         => isset($options['sale_price']) ? $options['sale_price'] : null,
+                'currency'           => $this->currency,
+                'is_service'         => isset($options['is_service']) ? $options['is_service'] : false,
+                'is_bookable'        => isset($options['is_bookable']) ? $options['is_bookable'] : false,
+                'is_available'       => isset($options['is_available']) ? $options['is_available'] : true,
+                'is_on_sale'         => isset($options['is_on_sale']) ? $options['is_on_sale'] : false,
+                'is_recommended'     => isset($options['is_recommended']) ? $options['is_recommended'] : false,
+                'can_pickup'         => isset($options['can_pickup']) ? $options['can_pickup'] : false,
+                'status'             => $status,
             ]
         );
     }
@@ -465,10 +449,10 @@ class Store extends StorefrontModel
         if ($place instanceof Place) {
             return StoreLocation::create(
                 [
-                    'store_uuid' => $this->uuid,
+                    'store_uuid'      => $this->uuid,
                     'created_by_uuid' => $createdBy instanceof User ? $createdBy->uuid : null,
-                    'place_uuid' => $place->uuid,
-                    'name' => $name
+                    'place_uuid'      => $place->uuid,
+                    'name'            => $name,
                 ]
             );
         }

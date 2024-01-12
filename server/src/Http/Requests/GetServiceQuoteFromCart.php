@@ -27,9 +27,9 @@ class GetServiceQuoteFromCart extends FleetbaseRequest
     {
         // valid origin is only required if store_ key
         return [
-            'origin' => $this->isStoreKey() ? ['required',  new IsValidLocation()] : [],
+            'origin'      => $this->isStoreKey() ? ['required',  new IsValidLocation()] : [],
             'destination' => ['required', new IsValidLocation()],
-            'cart' => 'required'
+            'cart'        => 'required',
         ];
     }
 
