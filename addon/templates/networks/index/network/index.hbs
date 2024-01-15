@@ -1,37 +1,37 @@
 <div class="space-y-4 px-6 py-4">
-    <ContentPanel @title={{t "storefront.networks.index.network.index.title"}} @open={{true}} @pad={{true}}>
+    <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-title"}} @open={{true}} @pad={{true}}>
         <div class="space-y-4">
             <div>
                 <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                    {{t "storefront.network.index.general-network"}}
+                    {{t "storefront.networks.index.network.index.general-network-settings-title"}}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{t "storefront.network.index.general-settings"}}
+                    {{t "storefront.networks.index.network.index.general-network-settings-subtitle"}}
                 </p>
             </div>
 
-            <InputGroup @name={{t "storefront.common.name"}} @value={{@model.name}} @placeholder={{t "storefront.networks.index.network.index.placeholder"}} @helpText={{t "storefront.networks.index.network.index.helpText"}} />
-            <InputGroup @name={{t "storefront.common.description"}} @value={{@model.description}} @placeholder={{t "storefront.networks.index.network.index.placeholder-description"}} @helpText={{t "storefront.networks.index.network.index.helpText-about"}} />
-            <InputGroup @name={{t "storefront.common.currency"}}>
+            <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.name"}} @value={{@model.name}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.name-placeholder"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.name-help-text"}} />
+            <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.description"}} @value={{@model.description}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.description-placeholder"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.description-help-text"}} />
+            <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.currency"}}>
                 <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
 
-            <ContentPanel @title={{t "storefront.networks.index.network.index.title-contact"}} @open={{false}} @pad={{true}}>
-                <InputGroup @name={{t "storefront.common.phone"}}>
+            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.panel-title"}} @open={{false}} @pad={{true}}>
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.phone"}}>
                     <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.common.email"}} @value={{@model.email}} @placeholder={{t "storefront.common.email"}} @helpText={{t "storefront.networks.index.network.index.helpText-email"}} />
-                <InputGroup @name={{t "storefront.common.website"}} @value={{@model.website}} @placeholder={{t "storefront.common.website"}} @helpText={{t "storefront.networks.index.network.index.helpText-url"}} />
-                <InputGroup @name={{t "storefront.networks.index.network.index.facebook"}} @value={{@model.facebook}} @placeholder={{t "storefront.networks.index.network.index.placeholder-facebook"}} @helpText={{t "storefront.networks.index.network.index.helpText-facebook"}} />
-                <InputGroup @name={{t "storefront.networks.index.network.index.instagram"}} @value={{@model.instagram}} @placeholder={{t "storefront.networks.index.network.index.placeholder-instagram"}} @helpText={{t "storefront.networks.index.network.index.helpText-instagram"}} />
-                <InputGroup @name={{t "storefront.networks.index.network.index.twitter"}} @value={{@model.twitter}} @placeholder={{t "storefront.networks.index.network.index.placeholder-twitter"}} @helpText={{t "storefront.networks.index.network.index.helpText-twitter"}} />
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.email"}} @value={{@model.email}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.email"}} @helpText={{t "storefront.networks.index.network.index.email-help-text"}} />
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.website"}} @value={{@model.website}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.website"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.website-help-text"}} />
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.facebook"}} @value={{@model.facebook}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.facebook"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.facebook-help-text"}} />
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.instagram"}} @value={{@model.instagram}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.instagram"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.instagram-help-text"}} />
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.twitter"}} @value={{@model.twitter}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.twitter"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.twitter-help-text"}} />
             </ContentPanel>
 
-            <ContentPanel @title={{t "storefront.common.logo"}} @open={{false}} @pad={{true}}>
-                <InputGroup @name={{t "storefront.networks.index.network.index.name"}} @helpText={{t "storefront.networks.index.network.index.helpText-logo"}}>
+            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.panel-title"}} @open={{false}} @pad={{true}}>
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.logo"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.logo-help-text"}}>
                     <div class="flex flex-row items-center">
                         <img src={{@model.logo_url}} alt={{concat @model.name " logo"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
-                        <FileUpload @name={{t "storefront.common.logo"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
+                        <FileUpload @name="logo" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
                             <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
                                 {{#if queue.files.length}}
                                     <Spinner class="mr-1" />
@@ -41,7 +41,7 @@
                                 {{else}}
                                     <FaIcon @icon="image" class="mr-1" />
                                     <span>
-                                        {{t "storefront.networks.index.network.index.upload-logo"}}
+                                        {{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.upload-logo-button-text"}}
                                     </span>
                                 {{/if}}
                             </a>
@@ -49,10 +49,10 @@
                     </div>
                 </InputGroup>
 
-                <InputGroup @name={{t "storefront.networks.index.network.index.name-backdrop"}} @helpText={{t "storefront.networks.index.network.index.helpText-store"}}>
+                <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.backdrop-label"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.backdrop-help-text"}}>
                     <div class="flex flex-row items-center">
                         <img src={{@model.backdrop_url}} alt={{concat @model.name " backdrop"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
-                        <FileUpload @name={{t "storefront.common.backdrop"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
+                        <FileUpload @name="backdrop" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
                             <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
                                 {{#if queue.files.length}}
                                     <Spinner class="mr-1" />
@@ -62,7 +62,7 @@
                                 {{else}}
                                     <FaIcon @icon="image" class="mr-1" />
                                     <span>
-                                        {{t "storefront.networks.index.network.index.upload-backdrop"}}
+                                        {{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.upload-backdrop-button-text"}}
                                     </span>
                                 {{/if}}
                             </a>
@@ -71,11 +71,11 @@
                 </InputGroup>
             </ContentPanel>
 
-            <ContentPanel @title={{t "storefront.alerts"}} @open={{false}} @pad={{true}} @panelBodyClass="bg-gray-800">
+            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.panel-title"}} @open={{false}} @pad={{true}} @panelBodyClass="bg-gray-800">
                 <div>
-                    <p class="dark:text-gray-100 mb-4">{{t "storefront.networks.index.network.index.certain-event"}}</p>
-                    <InputGroup @name={{t "storefront.networks.index.network.index.new-order"}} @wrapperClass="mb-0">
-                        <ModelSelectMultiple @modelName="user" @selectedModel={{@model.alertable.for_new_order}} @placeholder={{t "storefront.networks.index.network.index.placeholder-order"}} @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn this.makeAlertable "for_new_order"}} as |model|>
+                    <p class="dark:text-gray-100 mb-4">{{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.panel-description"}}</p>
+                    <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-label"}} @wrapperClass="mb-0">
+                        <ModelSelectMultiple @modelName="user" @selectedModel={{@model.alertable.for_new_order}} @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-placeholder"}} @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn this.makeAlertable "for_new_order"}} as |model|>
                             {{model.name}}
                         </ModelSelectMultiple>
                     </InputGroup>
@@ -85,119 +85,119 @@
             <div class="store-boolean-settings">
                 <div class="input-group">
                     <Toggle @isToggled={{@model.online}} @onToggle={{fn (mut @model.online)}}>
-                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.common.online"}}</span>
+                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.online"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.tax_enabled}} @onToggle={{fn (mut @model.options.tax_enabled)}}>
-                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-tax"}}</span>
+                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-tax"}}</span>
                     </Toggle>
                     {{#if @model.options.tax_enabled}}
-                        <InputGroup @wrapperClass="mb-0 mt-2" @type="number" @name={{t "storefront.networks.index.network.index.name-tax"}} @value={{@model.options.tax_percentage}} @placeholder={{t "storefront.networks.index.network.index.placeholder-tax"}} @helpText={{t "storefront.networks.index.network.index.helpText-tax"}} />
+                        <InputGroup @wrapperClass="mb-0 mt-2" @type="number" @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.tax-percentage-input-label"}} @value={{@model.options.tax_percentage}} @placeholder={{t "storefront.networks.index.network.index.placeholder-tax"}} @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.tax-percentage-input-help-text"}} />
                     {{/if}}
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
-                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.auto-accept"}}</span>
+                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.auto-accept-incoming-orders"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_dispatch}} @onToggle={{fn (mut @model.options.auto_dispatch)}}>
-                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.auto-dispatch"}}</span>
+                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.auto-dispatch-orders"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.require_pod}} @onToggle={{fn (mut @model.options.require_pod)}}>
-                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.require-delivery"}}</span>
+                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.require-proof-of-delivery"}}</span>
                     </Toggle>
                     {{#if @model.options.require_pod}}
-                        <InputGroup @wrapperClass="mb-0 mt-2" @name={{t "storefront.networks.index.network.index.name-method"}}>
+                        <InputGroup @wrapperClass="mb-0 mt-2" @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.proof-of-delivery-method"}}>
                             <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn (mut @model.pod_method)}} class="w-full" />
                         </InputGroup>
                     {{/if}}
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.cod_enabled}} @onToggle={{fn (mut @model.options.cod_enabled)}}>
-                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.cash-delivery"}}</span>
+                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-cash-on-delivery"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.pickup_enabled}} @onToggle={{fn (mut @model.options.pickup_enabled)}}>
-                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-order"}}</span>
+                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-order-pickup"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.tips_enabled}} @onToggle={{fn (mut @model.options.tips_enabled)}}>
-                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-tip"}}</span>
+                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-tips"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.delivery_tips_enabled}} @onToggle={{fn (mut @model.options.delivery_tips_enabled)}}>
-                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-delivery"}}</span>
+                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-delivery-tips"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.multi_cart_enabled}} @onToggle={{fn (mut @model.options.multi_cart_enabled)}}>
-                        <FaIcon @icon="gifts" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-cart"}}</span>
+                        <FaIcon @icon="gifts" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-multi-cart-checkout"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.reviews_enabled}} @onToggle={{fn (mut @model.options.reviews_enabled)}}>
-                        <FaIcon @icon="star" @prefix="fas" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.enable-review"}}</span>
+                        <FaIcon @icon="star" @prefix="fas" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-user-reviews"}}</span>
                     </Toggle>
                 </div>
             </div>
 
             <div class="flex justify-end">
-                <Button @type="primary" @text={{t "storefront.networks.index.network.index.save-changes"}} @icon="save" @size="lg" @isLoading={{this.isLoading}} @onClick={{this.saveSettings}} />
+                <Button @type="primary" @text={{t "storefront.networks.index.network.index.general-network-settings-form.save-changes-button-text"}} @icon="save" @size="lg" @isLoading={{this.isLoading}} @onClick={{this.saveSettings}} />
             </div>
         </div>
     </ContentPanel>
 
-    <ContentPanel @title={{t "storefront.common.api"}} @open={{false}} @pad={{true}}>
+    <ContentPanel @title={{t "storefront.networks.index.network.index.api-panel.panel-title"}} @open={{false}} @pad={{true}}>
         <div class="space-y-6">
             <div>
                 <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                    {{t "storefront.networks.index.network.index.api-settings"}}
+                    {{t "storefront.networks.index.network.index.api-panel.panel-header"}}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{t "storefront.networks.index.network.index.access-key"}}
+                    {{t "storefront.networks.index.network.index.api-panel.panel-description"}}
                 </p>
             </div>
 
-            <InputGroup @name={{t "storefront.networks.index.network.index.name-network"}} @helpText={{t "storefront.networks.index.network.index.helpText-network"}}>
+            <InputGroup @name={{t "storefront.networks.index.network.index.api-panel.network-key-label"}} @helpText={{t "storefront.networks.index.network.index.api-panel.network-key-help-text"}}>
                 <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
             </InputGroup>
         </div>
     </ContentPanel>
 
-    <ContentPanel @title={{t "storefront.networks.index.network.index.title-gateways"}} @open={{false}} @pad={{true}}>
+    <ContentPanel @title={{t "storefront.networks.index.network.index.payment-gateways-panel.panel-title"}} @open={{false}} @pad={{true}}>
         <div class="space-y-6">
             <div class="flex justify-between">
                 <div>
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.networks.index.network.index.gateways-settings"}}
+                        {{t "storefront.networks.index.network.index.payment-gateways-panel.panel-title"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.networks.index.network.index.payment-gateways"}}
+                        {{t "storefront.networks.index.network.index.payment-gateways-panel.panel-description"}}
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text=t{{ "storefront.networks.index.network.index.text-getways"}} @onClick={{this.createGateway}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.networks.index.network.index.payment-gateways-panel.new-gateway-button-text"}} @onClick={{this.createGateway}} />
                 </div>
             </div>
 
             {{#each this.gateways as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
-                    <InputGroup @name={{t "storefront.networks.index.network.index.name-gateways"}} @value={{gateway.name}} @helpText={{t "storefront.networks.index.network.index.helpText-internally"}} />
-                    <InputGroup @name={{t "storefront.networks.index.network.index.name-code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.networks.index.network.index.helpText-sdk"}} />
-                    <InputGroup @name={{t "storefront.networks.index.network.index.name-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.networks:index.network.index.helpText-url"}} />
-                    <InputGroup @name={{t "storefront.networks.index.network.index.name-return"}} @value={{gateway.return_url}} @helpText={{t "storefront.networks.index.network.index.helpText-return"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.name"}} @value={{gateway.name}} @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.name-help-text"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.code-help-text"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.callback-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.callback-url-help-text"}} />
+                    <InputGroup @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.return-url"}} @value={{gateway.return_url}} @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.return-url-help-text"}} />
                     <div class="input-group">
-                        <Checkbox @value={{gateway.sandbox}} @label="This is a sandbox gateway" @onToggle={{fn (mut gateway.sandbox)}} />
+                        <Checkbox @value={{gateway.sandbox}} @label={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.sandbox-toggle-label"}} @onToggle={{fn (mut gateway.sandbox)}} />
                     </div>
                     <div>
-                        <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.common.config"}}</h4>
+                        <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.config-header-label"}}</h4>
                         {{#each-in gateway.config as |key value|}}
                             {{#if (is-bool-value value)}}
                                 <div class="input-group">
@@ -211,26 +211,26 @@
                         {{/each-in}}
                     </div>
                     <div>
-                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.networks.index.network.index.text-delete"}} @onClick={{fn this.deleteGateway gateway}} />
+                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.delete-gateway-button-text"}} @onClick={{fn this.deleteGateway gateway}} />
                     </div>
                 </ContentPanel>
             {{/each}}
         </div>
     </ContentPanel>
 
-    <ContentPanel @title={{t "storefront.networks.index.network.index.title-channel"}} @open={{false}} @pad={{true}}>
+    <ContentPanel @title={{t "storefront.networks.index.network.index.notification-channels-panel.panel-title"}} @open={{false}} @pad={{true}}>
         <div class="space-y-6">
             <div class="flex justify-between">
                 <div class="w-3/4">
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.networks.index.network.index.notification-setting"}}
+                        {{t "storefront.networks.index.network.index.notification-channels-panel.panel-header"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.networks.index.network.index.storefront-channel"}}
+                        {{t "storefront.networks.index.network.index.notification-channels-panel.panel-description"}}
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.networks.index.network.index.text-new-channel"}} @onClick={{this.createChannel}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.networks.index.network.index.notification-channels-panel.new-channel-button-text"}} @onClick={{this.createChannel}} />
                 </div>
             </div>
 

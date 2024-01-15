@@ -1,14 +1,14 @@
 <EmberWormhole @to="sidebar-menu-items">
     <StoreSelector @stores={{@model}} @activeStore={{this.activeStore}} @wrapperClass="mb-2" @onCreateStore={{this.createNewStorefront}} @onSwitchStore={{this.switchActiveStore}} />
-    <Layout::Sidebar::Panel @open={{true}} @title={{t "storefront.common.storefront"}}>
-        <Layout::Sidebar::Item @route="console.storefront.home" @icon="home">{{t "storefront.common.dashboard"}}</Layout::Sidebar::Item>
-        <Layout::Sidebar::Item @route="console.storefront.products" @icon="box" disabled={{not this.activeStore.id}}>{{t "storefront.common.product"}}</Layout::Sidebar::Item>
-        <Layout::Sidebar::Item @route="console.storefront.customers" @icon="users" disabled={{not this.activeStore.id}}>{{t "storefront.common.customer"}}</Layout::Sidebar::Item>
-        <Layout::Sidebar::Item @route="console.storefront.orders" @icon="file-invoice-dollar" disabled={{not this.activeStore.id}}>{{t "storefront.common.order"}}</Layout::Sidebar::Item>
-        <Layout::Sidebar::Item @route="console.storefront.networks" @icon="network-wired" disabled={{not this.activeStore.id}}>{{t "storefront.common.network"}}</Layout::Sidebar::Item>
-        <Layout::Sidebar::Item @route="console.storefront.settings" @icon="cogs" disabled={{not this.activeStore.id}}>{{t "storefront.common.setting"}}</Layout::Sidebar::Item>
+    <Layout::Sidebar::Panel @open={{true}} @title={{t "storefront.sidebar.storefront"}}>
+        <Layout::Sidebar::Item @route="console.storefront.home" @icon="home">{{t "storefront.sidebar.dashboard"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.products" @icon="box" disabled={{not this.activeStore.id}}>{{t "storefront.sidebar.products"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.customers" @icon="users" disabled={{not this.activeStore.id}}>{{t "storefront.sidebar.customers"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.orders" @icon="file-invoice-dollar" disabled={{not this.activeStore.id}}>{{t "storefront.sidebar.orders"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.networks" @icon="network-wired" disabled={{not this.activeStore.id}}>{{t "storefront.sidebar.networks"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item @route="console.storefront.settings" @icon="cogs" disabled={{not this.activeStore.id}}>{{t "storefront.sidebar.settings"}}</Layout::Sidebar::Item>
     </Layout::Sidebar::Panel>
-    <Layout::Sidebar::Item @url="https://github.com/fleetbase/storefront-app" @target="_github" @icon="rocket">{{t "storefront.application.launch-app"}}</Layout::Sidebar::Item>
+    <Layout::Sidebar::Item @url="https://github.com/fleetbase/storefront-app" @target="_github" @icon="rocket">{{t "storefront.sidebar.launch-app"}}</Layout::Sidebar::Item>
 </EmberWormhole>
 
 <Layout::Section::Container>

@@ -7,9 +7,10 @@ import setComponentArg from '@fleetbase/ember-core/utils/set-component-arg';
 export default class WidgetCustomersComponent extends Component {
     @service store;
     @service storefront;
+    @service intl;
     @tracked isLoading = true;
     @tracked customers = [];
-    @tracked title = this.intl.t('storefront.components.widget.customers.title');
+    @tracked title = this.intl.t('storefront.component.widget.customers.widget-title');
 
     constructor(owner, { title }) {
         super(...arguments);

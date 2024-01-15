@@ -13,6 +13,7 @@ export default class ProductsIndexController extends BaseController {
     @service fetch;
     @service hostRouter;
     @service storefront;
+    @service intl;
 
     /**
      * the current storefront store session.
@@ -184,8 +185,7 @@ export default class ProductsIndexController extends BaseController {
 
                 modal.done().then(() => {
                     if (results?.length) {
-                        this.notifications.success(`Successfully imported ${results.length} products...`);
-                        this.notifications.success(this.intl.t('storefront.controllers.products.index.success', {resultsLength: results.length}));
+                        this.notifications.success(this.intl.t('storefront.products.index.import-products-success-message', { resultsLength: results.length }));
                         return this.hostRouter.refresh();
                     }
                 });
