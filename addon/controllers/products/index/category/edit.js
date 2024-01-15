@@ -4,6 +4,7 @@ import { alias } from '@ember/object/computed';
 import { action } from '@ember/object';
 
 export default class ProductsIndexCategoryEditController extends ProductsIndexCategoryNewController {
+    @service intl; 
     @alias('model') product;
     @tracked overlayActionButtonTitle = 'Save Changes';
     @tracked overlayActionButtonIcon = 'save';
@@ -21,7 +22,7 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
             .save()
             .then(() => {
                 this.isSaving = false;
-                this.notifications.success('Changes saved!');
+                this.notifications.success(this.intl.t('storefront.controllers.products.index.category.changes-saved'));
             })
             .catch((error) => {
                 this.isSaving = false;

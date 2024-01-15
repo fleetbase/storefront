@@ -37,7 +37,7 @@ export default class ProductsIndexController extends BaseController {
         this.modalsManager.show('modals/manage-addons', {
             title: this.intl.t('storefront.controllers.products.index.title'),
             modalClass: 'modal-lg',
-            acceptButtonText: 'Done',
+            acceptButtonText: this.intl.t('storefront.controllers.products.index.done'),
             store: this.activeStore,
         });
     }
@@ -61,7 +61,7 @@ export default class ProductsIndexController extends BaseController {
         });
 
         this.modalsManager.show('modals/create-product-category', {
-            title: this.intl.t('storefront.controllers.products.index.title-create'),
+            title: this.intl.t('storefront.controllers.products.index.create-new-product-category'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
@@ -89,7 +89,7 @@ export default class ProductsIndexController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.controllers.products.index.product-category'));
+                    this.notifications.success(this.intl.t('storefront.controllers.products.index.product-category-created-success'));
                     return this.hostRouter.refresh();
                 });
             },
@@ -108,8 +108,8 @@ export default class ProductsIndexController extends BaseController {
         };
 
         this.modalsManager.show('modals/import-products', {
-            title: this.intl.t('storefront.controllers.products.index.import'),
-            acceptButtonText: 'Start Upload',
+            title: this.intl.t('storefront.controllers.products.index.import-products-via-spreadsheets'),
+            acceptButtonText: this.intl.t('storefront.controllers.products.index.start-upload'),
             acceptButtonScheme: 'magic',
             acceptButtonIcon: 'upload',
             acceptButtonDisabled: true,
@@ -161,7 +161,7 @@ export default class ProductsIndexController extends BaseController {
                 };
 
                 if (!uploadQueue.length) {
-                    return this.notifications.warning('No files in queue to upload!');
+                    return this.notifications.warning(this.intl.t('storefront.controllers.products.index.warning-no-file-upload'));
                 }
 
                 modal.startLoading();
@@ -185,7 +185,7 @@ export default class ProductsIndexController extends BaseController {
 
                 modal.done().then(() => {
                     if (results?.length) {
-                        this.notifications.success(this.intl.t('storefront.products.index.import-products-success-message', { resultsLength: results.length }));
+                        this.notifications.success(this.intl.t('storefront.controllers.products.index.import-products-success-message', { resultsLength: results.length }));
                         return this.hostRouter.refresh();
                     }
                 });
