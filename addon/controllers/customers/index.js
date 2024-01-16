@@ -98,6 +98,13 @@ export default class CustomersIndexController extends Controller {
     @tracked email;
 
     /**
+     * The filterable param `intl`
+     *
+     * @var {String}
+     */
+    @tracked intl;
+
+    /**
      * The filterable param `phone`
      *
      * @var {String}
@@ -118,7 +125,7 @@ export default class CustomersIndexController extends Controller {
      */
     @tracked columns = [
         {
-            label: 'Name',
+            label: this.intl.t('storefront.common.name'),
             valuePath: 'name',
             width: '15%',
             cellComponent: 'table/cell/media-name',
@@ -129,7 +136,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'ID',
+            label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             cellComponent: 'click-to-copy',
             width: '15%',
@@ -139,7 +146,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Internal ID',
+            label: this.intl.t('storefront.controllers.customers.index.internal-id'),
             valuePath: 'internal_id',
             cellComponent: 'click-to-copy',
             width: '15%',
@@ -149,7 +156,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Email',
+            label: this.intl.t('storefront.common.email'),
             valuePath: 'email',
             cellComponent: 'table/cell/base',
             width: '15%',
@@ -159,7 +166,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Phone',
+            label: this.intl.t('storefront.common.phone'),
             valuePath: 'phone',
             cellComponent: 'table/cell/base',
             width: '15%',
@@ -169,7 +176,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Address',
+            label: this.intl.t('storefront.common.address'),
             valuePath: 'address',
             cellComponent: 'table/cell/anchor',
             // action: this.viewVendorPlace,
@@ -181,7 +188,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Country',
+            label: this.intl.t('storefront.common.country'),
             valuePath: 'country',
             cellComponent: 'table/cell/base',
             cellClassNames: 'uppercase',
@@ -193,7 +200,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Created At',
+            label: this.intl.t('storefront.controllers.customers.index.create-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
             width: '15%',
@@ -203,7 +210,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/date',
         },
         {
-            label: 'Updated At',
+            label: this.intl.t('storefront.controllers.customers.index.update-at'),
             valuePath: 'updatedAt',
             sortParam: 'updated_at',
             width: '15%',
@@ -219,13 +226,13 @@ export default class CustomersIndexController extends Controller {
             ddButtonText: false,
             ddButtonIcon: 'ellipsis-h',
             ddButtonIconPrefix: 'fas',
-            ddMenuLabel: 'Vendor Actions',
+            ddMenuLabel: this.intl.t('storefront.controllers.customers.index.vendor-action'),
             cellClassNames: 'overflow-visible',
             wrapperClass: 'flex items-center justify-end mx-2',
             width: '10%',
             actions: [
                 {
-                    label: this.intl.t('storefront.customers.index.view-customer')
+                    label: this.intl.t('storefront.customers.index.view-customer-details')
                     // fn: this.viewVendor,
                 },
                 {

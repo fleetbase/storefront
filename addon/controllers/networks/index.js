@@ -23,6 +23,13 @@ export default class NetworksIndexController extends BaseController {
     @service notifications;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     */
+    @service intl;
+
+    /**
      * Inject the `modals-manager` service
      *
      * @var {Service}
@@ -167,13 +174,13 @@ export default class NetworksIndexController extends BaseController {
         }
 
         this.modalsManager.show('modals/create-network', {
-            title: this.intl.t('storefront.controllers.networks.index.title'),
+            title: this.intl.t('storefront.networks.index.create-new-network'),
             network,
             confirm: (modal) => {
                 modal.startLoading();
 
                 return network.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.success-message'));
+                    this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
                     return this.hostRouter.refresh();
                 });
             },
@@ -192,7 +199,7 @@ export default class NetworksIndexController extends BaseController {
      */
     @action deleteNetwork(network) {
         return this.crud.delete(network, {
-            title: this.intl.t('storefront.networks.index.title-network', { networkName: network.name }),
+            title: this.intl.t('storefront.networks.index.delete-this-network-all-assigned-stores-customer-order', { networkName: network.name }),
             onSuccess: () => {
                 return this.hostRouter.refresh();
             },

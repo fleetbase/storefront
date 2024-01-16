@@ -19,6 +19,14 @@ export default class NetworksIndexNetworkStoresController extends Controller {
     @service notifications;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     * @memberof NetworksIndexNetworkStoresController
+     */
+    @service intl;
+
+    /**
      * Inject the `modals-manager` service
      *
      * @var {Service}
@@ -128,7 +136,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @tracked columns = [
         {
-            label: 'Store',
+            label: this.intl.t('storefront.networks.index.network.stores.title'),
             valuePath: 'name',
             width: '130px',
             resizable: true,
@@ -138,7 +146,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             showOnlineIndicator: true,
         },
         {
-            label: 'ID',
+            label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             cellComponent: 'click-to-copy',
             width: '120px',
@@ -148,7 +156,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Category',
+            label: this.intl.t('storefront.common.category'),
             valuePath: 'category.name',
             cellComponent: 'table/cell/base',
             width: '100px',
@@ -158,7 +166,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Currency',
+            label: this.intl.t('storefront.common.currency'),
             valuePath: 'currency',
             cellComponent: 'table/cell/base',
             width: '100px',
@@ -168,7 +176,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Created At',
+            label: this.intl.t('storefront.networks.index.network.stores.created-at'),
             valuePath: 'createdAtShort',
             sortParam: 'created_at',
             width: '100px',
@@ -189,22 +197,22 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             width: '50px',
             actions: [
                 {
-                    label: 'View Store Details',
+                    label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
                     fn: this.viewStoreDetails,
                 },
                 {
-                    label: 'Edit Store',
+                    label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
                     fn: this.editStore,
                 },
                 {
-                    label: 'Assign Category',
+                    label: this.intl.t('storefront.networks.index.network.stotes.assign-category'),
                     fn: this.assignStoreToCategory,
                 },
                 {
                     separator: true,
                 },
                 {
-                    label: 'Remove Store from Network',
+                    label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
                     fn: this.removeStore,
                 },
             ],
@@ -263,8 +271,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action deleteCategory(category) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.title'),
-            body: this.intl.t('storefront.controllers.networks.index.network.stores.body'),
+            title: this.intl.t('storefront.networks.index.network.stores.delete-network-category'),
+            body: this.intl.t('storefront.networks.index.network.stores.deleting-category-move-all-stores-inside-on-top-level'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -287,8 +295,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action assignStoreToCategory(store, options = {}) {
         this.modalsManager.show('modals/add-store-to-category', {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-category'),
-            acceptButtonText: 'Save Changes',
+            title: this.intl.t('storefront.networks.index.network.stores.add-store-to-category'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
             acceptButtonIcon: 'save',
             selectedCategory: null,
             network: this.network,
@@ -366,10 +374,10 @@ export default class NetworksIndexNetworkStoresController extends Controller {
         const category = this.store.createRecord('category', categoryAttrs);
 
         return this.editCategory(category, {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-network'),
+            title: this.intl.t('storefront.networks.index.network.stores.add-new-network-category'),
             acceptButtonIcon: 'check',
-            acceptButtonText: 'Create new category',
-            successMessage: 'New category created.',
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.create-new-category'),
+            successMessage: this.intl.t('storefront.networks.index.network.stores.new-category-created'),
             parentCategory,
             category,
             confirm: (modal) => {
@@ -378,7 +386,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                 category
                     .save()
                     .then((category) => {
-                        this.notifications.success(this.intl.t('storefront.controllers.networks.index.network.stores.success-message'));
+                        this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-category-create'));
                         networkCategoriesPicker.categories.pushObject(category);
                         modal.done();
                     })
@@ -400,8 +408,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editCategory(category, options = {}) {
         this.modalsManager.show('modals/create-network-category', {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.category-name', {categoryName: category.name}),
-            acceptButtonText: 'Save Changes',
+            title: this.intl.t('storefront.networks.index.network.stores.edit-category', {categoryName: category.name}),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
             acceptButtonIcon: 'save',
             iconType: category.icon_file_uuid ? 'image' : 'svg',
             network: this.network,
@@ -467,7 +475,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
 
         return this.modalsManager.done().then(() => {
             this.modalsManager.show('modals/add-stores-to-network', {
-                title: this.intl.t('storefront.controllers.networks.index.network.stores.title-store'),
+                title: this.intl.t('storefront.networks.index.network.stores.add-stores-to-network'),
                 acceptButtonIcon: 'check',
                 stores,
                 members,
@@ -485,7 +493,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
 
                     return network.addStores(stores, remove).then(() => {
                         return this.hostRouter.refresh().then(() => {
-                            this.notifications.success('Network stores updated.');
+                            this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-stores-update'));
                         });
                     });
                 },
@@ -502,8 +510,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action async removeStore(store) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-remove', {storeName: store.name, networkName: this.network.name}),
-            body: this.intl.t('storefront.controllers.networks.index.network.stores.body-network'),
+            title: this.intl.t('storefront.networks.index.network.stores.remove-this-store', {storeName: store.name, networkName: this.network.name}),
+            body: this.intl.t('storefront.networks.index.network.stores.longer-findable-by-this-network'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
@@ -535,8 +543,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action viewStoreDetails(store, options = {}) {
         this.modalsManager.show('modals/store-details', {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.title-storefront.', {storeName: store.name}),
-            acceptButtonText: 'Done',
+            title: this.intl.t('storefront.networks.index.network.stores.viewing-storefront', {storeName: store.name}),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.done'),
             hideDeclineButton: true,
             store,
             ...options,
@@ -553,8 +561,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editStore(store, options = {}) {
         this.modalsManager.show('modals/store-form', {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.store-name.', {storeName: store.name}),
-            acceptButtonText: 'Save Changes',
+            title: this.intl.t('storefront.networks.index.network.stores.editing-storefront', {storeName: store.name}),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
             hideDeclineButton: true,
             store,
             confirm: (modal) => {
@@ -586,8 +594,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
         const shareableLink = createShareableLink(`join/network/${this.network.public_id}`);
 
         this.modalsManager.show('modals/share-network', {
-            title: this.intl.t('storefront.controllers.networks.index.network.stores.add-store'),
-            acceptButtonText: 'Send Invitations',
+            title: this.intl.t('storefront.networks.index.network.stores.add-stores-to-network'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.send-invitations'),
             acceptButtonIcon: 'paper-plane',
             acceptButtonDisabled: true,
             shareableLink,
@@ -626,12 +634,12 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                 if (!isValid) {
                     modal.stopLoading();
 
-                    return this.notifications.error('Invalid emails provided!');
+                    return this.notifications.error(this.intl.t('storefront.networks.index.network.stores.invalid-emails-provided-error'));
                 }
 
                 return this.network.sendInvites(recipients).then(() => {
                     modal.stopLoading();
-                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.network.stores.invitation'));
+                    this.notifications.success(this.intl.t('storefront.networks.index.network.stores.invitation-sent-recipients'));
                 });
             },
         });

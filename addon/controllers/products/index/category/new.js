@@ -62,7 +62,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             .then((product) => {
                 this.loader.removeLoader(loader);
                 this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.controllers.products.index.category.new.new-product-created-success'));
+                this.notifications.success(this.intl.t('storefront.products.index.category.new.new-product-created-success'));
 
                 return this.transitionToRoute('products.index.category').then(() => {
                     console.log(this.productsIndexCategoryController);
@@ -137,10 +137,10 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
     @action makePrimaryFile(file) {
         if (file.isNotImage) {
-            return this.notifications.warning(this.intl.t('storefront.controllers.products.index.category.new.warning-only-select-an-image-file-to-be-primary'));
+            return this.notifications.warning(this.intl.t('storefront.products.index.category.new.warning-only-select-an-image-file-to-be-primary'));
         }
 
-        this.notifications.success(this.intl.t('storefront.controllers.products.index.category.new.made-the-primary-success.image', {fileName: file.original_filename}));
+        this.notifications.success(this.intl.t('storefront.products.index.category.new.made-the-primary-success.image', {fileName: file.original_filename}));
         this.product.primary_image_uuid = file.id;
         this.product.primary_image_url = file.url;
         this.product.primary_image = file;
@@ -150,8 +150,8 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         if (this.product.hasDirtyAttributes) {
             // details have been added warn user it will lost
             return this.modalsManager.confirm({
-                title: this.intl.t('storefront.controllers.products.index.category.new.title'),
-                body: this.intl.t('storefront.controllers.products.index.category.new.body'),
+                title: this.intl.t('storefront.products.index.category.new.title'),
+                body: this.intl.t('storefront.products.index.category.new.body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);
@@ -178,7 +178,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
         return this.modalsManager.done().then(() => {
             this.modalsManager.show('modals/select-addon-category', {
-                title: this.intl.t('storefront.controllers.products.index.category.new.select-addon-categories'),
+                title: this.intl.t('storefront.products.index.category.new.select-addon-categories'),
                 addonCategories,
                 product,
                 updateProductAddonCategories: (categories) => {
@@ -203,7 +203,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         const productVariant = this.store.createRecord('product-variant');
 
         return this.modalsManager.show('modals/create-new-variant', {
-            title: this.intl.t('storefront.controllers.products.index.category.new.add-new-product-variant'),
+            title: this.intl.t('storefront.products.index.category.new.add-new-product-variant'),
             productVariant,
             confirm: (modal) => {
                 modal.startLoading();
@@ -216,7 +216,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
     @action editProductVariant(productVariant) {
         return this.modalsManager.show('modals/create-new-variant', {
-            title: this.intl.t('storefront.controllers.products.index.category.new.edit-product-variant'),
+            title: this.intl.t('storefront.products.index.category.new.edit-product-variant'),
             productVariant,
         });
     }
@@ -277,7 +277,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             meta_array = [];
         }
 
-        const label = this.intl.t('storefront.controllers.products.index.category.new.untitled-field');
+        const label = this.intl.t('storefront.products.index.category.new.untitled-field');
 
         meta_array.pushObject({
             key: underscore(label),

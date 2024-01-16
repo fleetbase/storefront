@@ -100,8 +100,8 @@ export default class ProductsIndexCategoryController extends BaseController {
         }
 
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.products.index..category.category'),
-            body: this.intl.t('storefront.controllers.products.index.category.body'),
+            title: this.intl.t('storefront.products.index..category.category'),
+            body: this.intl.t('storefront.products.index.category.body'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -114,8 +114,8 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action editCategory(category) {
         this.modalsManager.show('modals/create-product-category', {
-            title: this.intl.t('storefront.controllers.products.index.category.edit-category',{ categoryName: category.name }),
-            acceptButtonText: this.intl.t('storefront.controllers.products.index.category.save-changes'),
+            title: this.intl.t('storefront.products.index.category.edit-category',{ categoryName: category.name }),
+            acceptButtonText: this.intl.t('storefront.products.index.category.save-changes'),
             acceptButtonIcon: 'save',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
@@ -142,7 +142,7 @@ export default class ProductsIndexCategoryController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.controllers.products.index.category.category-changes-saved-success'));
+                    this.notifications.success(this.intl.t('storefront.products.index.category.category-changes-saved-success'));
                 });
             },
         });
@@ -150,8 +150,8 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.products.index.category.delete-product'),
-            body: this.intl.t('storefront.controllers.products.index.category.body-warning'),
+            title: this.intl.t('storefront.products.index.category.delete-product'),
+            body: this.intl.t('storefront.products.index.category.body-warning'),
             confirm: (modal) => {
                 modal.startLoading();
 

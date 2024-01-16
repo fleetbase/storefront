@@ -22,7 +22,7 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
             .save()
             .then(() => {
                 this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.controllers.products.index.category.changes-saved'));
+                this.notifications.success(this.intl.t('storefront.products.index.category.changes-saved'));
             })
             .catch((error) => {
                 this.isSaving = false;
@@ -38,8 +38,8 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
         if (this.product.hasDirtyAttributes) {
             // details have been added warn user it will lost
             return this.modalsManager.confirm({
-                title: this.intl.t('storefront.controllers.products.index.category.edit.title'),
-                body: this.intl.t('storefront.controllers.products.index.category.edit.body'),
+                title: this.intl.t('storefront.products.index.category.edit.title'),
+                body: this.intl.t('storefront.products.index.category.edit.body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);
