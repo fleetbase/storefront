@@ -175,27 +175,31 @@ storefront:
       manage-addons:
         title: New Category
         delete: Delete Category
-        new: New Addon
-        name: Addon Name
+        new-addon: New Addon
+        addon-name: Addon Name
         description: Addon Description
+        delete-this-addon-category-assosiated-will-lost: Are you sure you wish to delete this addon category? All addons assosciated will be lost!
+        untitled-addon-category: Untitled Addon Category
       order-ready-assign-driver:  
         driver-dispatch: You are about to set this order as ready and dispatch, use the dropdown below to select a driver to dispatch to. <br><br>Or optionally you can opt to dispatch order as adhoc which will ping the order to all nearby drivers to be accepted.
-        name: Select Driver
-        placeholder: Select Driver to Assign
+        adhoc-dispatch-nearby-drivers: Adhoc dispatch to nearby drivers
+        select-driver: Select Driver
+        select-driver-to-assign: Select Driver to Assign
       share-network:  
         invite-member: Invite members to your network
         email-below: Grab a shareable invitiation link or send individual invites via email below.
         invite-network: Enter the emails of people or organizations you want to send an invite to your network.
-        placeholder: Add emails
+        add-email: Add emails
         get-link: Get link
-        helpText: Anyone with this link is able to join your network
+        enable-shareable-link: Enable shareable link
+        anyone-with-this-link-able-to-join-your-network: Anyone with this link is able to join your network
       store-form:
-        placeholder: Storefront Name
-        helpText: The name of your store.
-        placeholder-description: Storefront Description
-        helpText-sell: Give your store a brief description to let users know what you sell.
-        placeholder-tags: Add tags
-      store-location:
+        storefront-name: Storefront Name
+        the-name-of-your-store: The name of your store.
+        storefront-description-placeholder: Storefront Description
+        give-your-store-brief-description: Give your store a brief description to let users know what you sell.
+        add-tags-placeholder: Add tags
+      store-location-form:
         name: Street 2
         name-code: Security Access Code
         name-postal: Postal Code
@@ -451,6 +455,9 @@ storefront:
     warning-no-file-upload: No files in queue to upload!
     products-success-message: Successfully imported {resultsLength} products...
   settings: 
+
+
+    api: 
     gateways:
       create-new-payment-gateway: Create a new payment gateway
       save-gateway: Save Gateway

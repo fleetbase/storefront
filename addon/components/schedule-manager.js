@@ -6,6 +6,7 @@ export default class ScheduleManagerComponent extends Component {
     @service notifications;
     @service modalsManager;
     @service store;
+    @service intl;
 
     @computed('args.subject.hours.@each.id', 'hours.length') get schedule() {
         const schedule = {};
@@ -43,8 +44,8 @@ export default class ScheduleManagerComponent extends Component {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: this.intl.t('storefront.components.schedule-manager-title',{Day: day}),
-            acceptButtonText: 'Add hours',
+            title: this.intl.t('storefront.component.schedule-manager.add-new-hours-for-day',{Day: day}),
+            acceptButtonText: this.intl.t('storefront.component.schedule-manager-add-hours'),
             acceptButtonIcon: 'save',
             hours,
             confirm: (modal) => {
@@ -52,7 +53,7 @@ export default class ScheduleManagerComponent extends Component {
 
                 return hours.save().then((hours) => {
                     subject.hours.pushObject(hours);
-                    this.notifications.success(`New hours added for ${day}`);
+                    this.notifications.success(this.intl.t('storefront.component.schedule-manager.new-hours-added-for-day',{day}));
                 });
             },
         });
@@ -60,8 +61,8 @@ export default class ScheduleManagerComponent extends Component {
 
     @action removeHours(hours) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.components.schedule-manager.title-hour'),
-            body: this.intl.t('storefront.components.schedule-manager.body'),
+            title: this.intl.t('storefront.component.schedule-manager.you-wish-to-remove-these-hour'),
+            body: this.intl.t('storefront.component.schedule-manager.by-removing-these-operation'),
             acceptButtonIcon: 'trash',
             confirm: (modal) => {
                 modal.startLoading();

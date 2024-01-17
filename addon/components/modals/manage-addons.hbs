@@ -20,7 +20,7 @@ s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpen
                             <Input @type="text" @value={{category.name}} {{on "blur" (fn this.saveCategory category)}} class="w-full px-2 m-0 border-none bg-transparent dark:text-gray-100" />
                         </div>
                         <div class="flex items-center">
-                            <Button @text={{t "storefront.component.modals.manage-addons.new"}} @icon="plus" @iconPrefix="fas" @onClick={{fn this.insertNewAddon category}} class="mr-3" />
+                            <Button @text={{t "storefront.component.modals.manage-addons.new-addon"}} @icon="plus" @iconPrefix="fas" @onClick={{fn this.insertNewAddon category}} class="mr-3" />
                             <a href="javascript:;" {{on "click" (fn this.deleteCategory index)}} class="destroy-action opacity-50 hover:opacity-100 text-sm">{{t "storefront.component.modals.manage-addons.delete"}}</a>
                         </div>
                     </div>
@@ -29,7 +29,7 @@ s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpen
                             <div class="grid grid-cols-10 gap-1 px-3 py-2 rounded-md dark:bg-gray-900 bg-gray-200">
                                 <div class="col-span-3 flex items-center">
                                     <FaIcon @icon="tag" class="text-sky-400 mr-2" />
-                                    <Input @type="text" @value={{addon.name}} {{on "blur" (fn this.saveAddon addon)}} class="form-input flex-1 w-full" placeholder={{t "storefront.component.modals.manage-addons.name"}} />
+                                    <Input @type="text" @value={{addon.name}} {{on "blur" (fn this.saveAddon addon)}} class="form-input flex-1 w-full" placeholder={{t "storefront.component.modals.manage-addons.addon-name"}} />
                                 </div>
                                 <div class="col-span-4">
                                     <Input @type="text" @value={{addon.description}} {{on "blur" (fn this.saveAddon addon)}} class="form-input w-full" placeholder={{t "storefront.component.modals.manage-addons.description"}} />

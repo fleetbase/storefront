@@ -16,12 +16,12 @@
                     </p>
                 </div>
                 <div class="input-group">
-                    <ShortToggle @isToggled={{@options.adhoc}} @onToggle={{fn (mut @options.adhoc)}} @label="Adhoc dispatch to nearby drivers" />
+                    <ShortToggle @isToggled={{@options.adhoc}} @onToggle={{fn (mut @options.adhoc)}} @label={{t "storefront.component.modals.order-ready-assign-driver.adhoc-dispatch-nearby-drivers"}} />
                 </div>
                 {{#unless @options.adhoc}}
-                    <InputGroup class="mt-4" @name={{t "storefront.components.modals.order-ready-assign-driver.name"}}>
+                    <InputGroup class="mt-4" @name={{t "storefront.component.modals.order-ready-assign-driver.select-driver"}}>
                         <ModelSelect @modelName="driver" @selectedModel={{@options.driver}}
-                            @placeholder={{t "storefront.components.modals.order-ready-assign-driver.placeholder"}} @triggerClass="form-select form-input"
+                            @placeholder={{t "storefront.component.modals.order-ready-assign-driver.select-driver-to-assign"}} @triggerClass="form-select form-input"
                             @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut
                             @options.driver)}} as |model|>
                             {{model.name}}
