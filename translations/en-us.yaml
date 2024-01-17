@@ -200,9 +200,9 @@ storefront:
         give-your-store-brief-description: Give your store a brief description to let users know what you sell.
         add-tags-placeholder: Add tags
       store-location-form:
-        name: Street 2
-        name-code: Security Access Code
-        name-postal: Postal Code
+        street-2: Street 2
+        security-access-code: Security Access Code
+        postal-code: Postal Code
     widget:
       customers:
         widget-title: Recent Customers
@@ -239,17 +239,18 @@ storefront:
       storefront-metrics: 
         last-day: Last 30 days
     file-record:
-      title: Are you sure you wish to delete this file?
-      body: Once you delete this file you will be unable to recover it.
+      delete-this-file: Are you sure you wish to delete this file?
+      delete-this-file-you-will-unable-recover: Once you delete this file you will be unable to recover it.
     network-category-picker:
       no-subcategory: No subcategories for
       no-categories: No categories for this network
       create-category: Create a new category
     schedule-manager:
       add-hours: Add Hours
-      title: Add new hours for {day}
-      title-hour: Are you sure you wish to remove these hours?
-      body: By removing these operation/availability hours, your store or product may become inactive or unavailable according to the updated schedule...
+      add-new-hours-for-day: Add new hours for {day}
+      new-hours-added-for-day: New hours added for {day}
+      you-wish-to-remove-these-hour: Are you sure you wish to remove these hours?
+      by-removing-these-operation: By removing these operation/availability hours, your store or product may become inactive or unavailable according to the updated schedule...
     store-selector:
       no-stores: No stores to select
       create-storefront: Create a new 
@@ -455,8 +456,6 @@ storefront:
     warning-no-file-upload: No files in queue to upload!
     products-success-message: Successfully imported {resultsLength} products...
   settings: 
-
-
     api: 
     gateways:
       create-new-payment-gateway: Create a new payment gateway
@@ -503,214 +502,3 @@ storefront:
       storefront-create-success: Your new storefront has been created!
   application:    
     launch-app: Launch App
-
-  #           description-help-text: Give your store a brief description to let users know what your network is about.
-  #           website: Store
-  #           title-contact: Contact & Social
-  #           helpText-email: Your business email.
-  #           helpText-url: Your business website URL.
-  #           facebook: Facebook
-  #           placeholder-facebook: Facebook ID
-  #           helpText-facebook: Your business Facebook page ID.
-  #           instagram: Instagram
-  #           placeholder-instagram: Instagram Username
-  #           helpText-instagram: Your business Instagram username.
-  #           twitter: Twitter
-  #           placeholder-twitter: Twitter Username
-  #           helpText-twitter: Your business Twitter username.
-  #       success-message: Changes to network saved.
-  #       title: Create a new payment gateway
-  #       success-network: New gateway added to network
-  #       success-payment: Payment gateway changes saved!
-  #       title-channel: Create a new notification channel
-  #       success-channel: New notification channel added to network!
-  #       success-save: Notification channel changes saved!
-  #               stores:
-  #                 title: Delete network category?
-  #                 body: Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?
-  #                 title-category: Add store to category
-                  
-  #                 success-message: New network category created.
-  #                 category-name: Edit category ({categoryName})
-  #                 title-store: Add stores to network
-  #                 title-remove: Remove this store ({store.name}) from this network ({this.network.name})?
-  #                 body-network: Are you sure you wish to remove this store from this network? It will no longer be findable by this network.
-  #                 title-storefront: Viewing {store.name} storefront
-  #                 store-name: Editing {store.name} storefront
-  #                 add-store: Add stores to network
-  #                 invitation: Invitations sent to recipients!
-  #         title: Network changes not saved!
-  #         body: Going back will rollback all unsaved changes, are you sure you wish to continue?
-
-                  
-
-  #       title: Create a new network
-  #       success-message: Yout new storefront network has been created!
-  #       title-network: Are you sure you wish to delete this network ({networkName})? All assigned stores, customers, orders will no longer be reachable. 
-
-  # orders:
-  #     index: 
-  #       view-order: View Order
-  #       cancel-order: Cancel Order 
-  #       delete-order: Delete Order 
-
- 
-
-  # settings:
-  #  
-
-  #       network: 
-  #         index: 
-  #           title: General Network Settings
-  #           general-network: General Network Settings
-  #           general-settings: Provide the general settings for your network or marketplace.
-  #           placeholder: Storefront Name
-  #           helpText: The name of your network or marketplace.
-  #           placeholder-description: Storefront Description
-  #           helpText-about: Give your store a brief description to let users know what your network is about.
-  #           title-contact: Contact & Social
-  #           helpText-email: Your business email.
-  #           helpText-url: Your business website URL.
-  #           facebook: Facebook
-  #           placeholder-facebook: Facebook ID
-  #           helpText-facebook: Your business Facebook page ID.
-  #           instagram: Instagram
-  #           placeholder-instagram: Instagram Username
-  #           helpText-instagram: Your business Instagram username.
-  #           twitter: Twitter
-  #           placeholder-twitter: Twitter Username
-  #           helpText-twitter: Your business Twitter username.
-  #           title-logo: Logo & Backdrop
-  #           helpText-logo: Logo for your store.
-  #           upload-logo: Upload new logo
-  #           name-backdrop: Backdrop
-  #           upload-backdrop: Upload new backdrop
-  #           certain-event: Configure who should be alerted for certain events.
-  #           new-order: New order alert
-  #           placeholder-order: Select users to alert for new order
-  #           enable-tax: Enable tax
-  #           name-tax: Tax Percentage
-  #           placeholder-tax: Tax Percentage
-  #           helpText-tax: The sales tax percentage to apply to orders.
-  #           auto-accept: Auto accept incoming orders
-  #           auto-dispatch: Auto dispatch orders
-  #           require-delivery: Require proof of delivery
-  #           name-method: Proof of Delivery Method
-  #           cash-delivery: Enable cash on delivery
-  #           enable-order: Enable order pickup
-  #           enable-tip: Enable tips
-  #           enable-delivery: Enable delivery tips
-  #           enable-cart: Enable multi-cart checkout
-  #           enable-review: Enable user reviews
-  #           save-changes: Save Changes
-  #           api-settings: API Settings
-  #           access-key: Access key for Storefront API & Integrations.
-  #           name-network: Network Key
-  #           helpText-network : This is your network key, use this to enable apps and integrations for your network.
-  #           title-gateways: Payment Gateways
-  #           gateways-settings: Gateway Settings
-  #           payment-gateways: Add or manage your payment gateway settings here.
-  #           text-gateways: Create new gateway
-  #           name-gateways: Gateway name
-  #           helpText-internally: Give your payment gateway a name, this will only be relevent internally
-  #           name-code: Gateway code
-  #           helpText-sdk: Identifier code used to identify gateway to the SDK
-  #           name-url: Callback URL
-  #           helpText-callback: Callback URL if applicable
-  #           name-return: Return URL
-  #           helpText-return: Return URL if applicable
-  #           text-delete: Delete payment gateway
-  #           title-channel: Notification Channels
-  #           notification-setting: Notification Settings
-  #           storefront-channel: Configure notification channels for your storefront, each notification channel additionally can have it's own rules and options.
-  #           text-new-channel: New channel
-  #         stores:
-  #           title: Stores
-  #           text: Add Stores
-  #           text-store: Invite Stores       
-  #         title-network: Manage Network
-  #         setting: Settings
-  #         store: Stores
-  #         customer: Customers
-  #       orders:
-  #         index: 
-  #           delete-order: Delete Orders
-  #       products:
-  #         index:
-  #           text: Manage Addons
-  #           title: Product Categories
-  #       settings:
-  #         api:
-  #           api-setting: API Settings
-  #           access-key: Access key for Storefront API & Integrations.
-  #           name: Store Key
-  #           helpText: This is your store key, use this to enable apps and integrations for your storefront.
-  #         gateways:
-  #           gateway-setting: Gateway Settings
-  #           payment: Add or manage your payment gateway settings here.
-  #           text: Create new gateway
-  #           name: Gateway name
-  #           name-code: Gateway code
-  #           name-callback: Callback URL
-  #           name-return: Return URL
-  #           helpText: Give your payment gateway a name, this will only be relevent internally
-  #           helpText-sdk: Identifier code used to identify gateway to the SDK
-  #           helpText-callback: Callback URL if applicable
-  #           helpText-return: Return URL if applicable
-  #           text-delete: Delete payment gateway
-  #         index:
-  #           general-setting: General Settings
-  #           storefront: Provide the general settings for your storefront.
-  #           placeholder: Storefront Name
-  #           helpText: The name of your store.
-  #           placeholder-storefront: Storefront Description
-  #           helpText-description: Give your store a brief description to let users know what you sell.
-  #           placeholder-tag: Add tags
-  #           title: Contact & Social
-  #           helpText-website: Your business website URL.
-  #           placeholder-facebook: Facebook ID 
-  #           helpText-facebook: Your business Facebook page ID.
-  #           placeholder-instagram: Instagram Username
-  #           helpText-instagram: Your business Instagram username.
-  #           placeholder-twitter: Twitter Username 
-  #           helpText-twitter: Your business Twitter username.
-  #           title-logo: Logo & Backdrop
-  #           helpText-logo: Logo for your store.
-  #           upload-logo: Upload new logo
-  #           helpText-store: Optional banner or background image for your store.
-  #           upload-backdrop: Upload new backdrop
-  #           title-image: Images & Videos
-  #           drop-upload: Drop to upload
-  #           ready-upload: ready for upload.
-  #           upload-image: Upload Images & Videos
-  #           dropzone: Drag and drop image and video files onto this dropzone
-  #           upload-queue: Upload Queue
-  #           event: Configure who should be alerted for certain events.
-  #           name-alert: New order alert
-  #           placeholder-alert: Select users to alert for new order
-  #           enable-tax: Enable tax
-  #           name-tax: Tax Percentage
-  #           placeholder-tax: Tax Percentage
-  #           helpText-tax: The sales tax percentage to apply to orders.
-  #           auto-accept: Auto accept incoming orders
-  #           auto-dispatch: Auto dispatch orders
-  #           delivery: Require proof of delivery
-  #           name-method: Proof of Delivery Method
-  #           enable-method: Enable cash on delivery
-  #           order-pickup: Enable order pickup
-  #           enable-tip: Enable tips
-  #           enable-delivery: Enable delivery tips
-  #           name-select: Select integrated vendors to use
-  #           placeholder-select: Select integrated vendors to use
-  #           text-save: Save Changes
-  #         locations:
-  #           location-setting: Location Settings
-  #           manage-store: Manage your stores operating locations and hours
-  #           text-location: Create new location
-  #           store-hour: Manage store hours
-  #         notification:
-  #           notification-setting: Notification Settings
-  #           notification-storefront: Configure notification channels for your storefront, each notification channel additionally can have it's own rules and options.
-  #           text: New channel
-  #       application:    
-  #         launch-app: Launch App
