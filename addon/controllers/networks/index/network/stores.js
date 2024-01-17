@@ -408,7 +408,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editCategory(category, options = {}) {
         this.modalsManager.show('modals/create-network-category', {
-            title: this.intl.t('storefront.networks.index.network.stores.edit-category', {categoryName: category.name}),
+            title: this.intl.t('storefront.networks.index.network.stores.edit-category', { categoryName: category.name }),
             acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
             acceptButtonIcon: 'save',
             iconType: category.icon_file_uuid ? 'image' : 'svg',
@@ -510,7 +510,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action async removeStore(store) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.networks.index.network.stores.remove-this-store', {storeName: store.name, networkName: this.network.name}),
+            title: this.intl.t('storefront.networks.index.network.stores.remove-this-store', { storeName: store.name, networkName: this.network.name }),
             body: this.intl.t('storefront.networks.index.network.stores.longer-findable-by-this-network'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
@@ -543,7 +543,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action viewStoreDetails(store, options = {}) {
         this.modalsManager.show('modals/store-details', {
-            title: this.intl.t('storefront.networks.index.network.stores.viewing-storefront', {storeName: store.name}),
+            title: this.intl.t('storefront.networks.index.network.stores.viewing-storefront', { storeName: store.name }),
             acceptButtonText: this.intl.t('storefront.networks.index.network.stores.done'),
             hideDeclineButton: true,
             store,
@@ -561,7 +561,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @action editStore(store, options = {}) {
         this.modalsManager.show('modals/store-form', {
-            title: this.intl.t('storefront.networks.index.network.stores.editing-storefront', {storeName: store.name}),
+            title: this.intl.t('storefront.networks.index.network.stores.editing-storefront', { storeName: store.name }),
             acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
             hideDeclineButton: true,
             store,

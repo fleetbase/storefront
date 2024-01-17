@@ -38,7 +38,12 @@
                                                     </div>
                                                     <span>{{t "storefront.networks.index.send-invite"}}</span>
                                                 </a>
-                                                <a href="javascript:;" class="next-dd-item text-red-500 hover:bg-opacity-75" role="menuitem" {{on "click" (dropdown-fn dd this.deleteNetwork network)}}>
+                                                <a
+                                                    href="javascript:;"
+                                                    class="next-dd-item text-red-500 hover:bg-opacity-75"
+                                                    role="menuitem"
+                                                    {{on "click" (dropdown-fn dd this.deleteNetwork network)}}
+                                                >
                                                     <div class="w-7">
                                                         <FaIcon @icon="trash" class="mr-2 text-red-500" />
                                                     </div>

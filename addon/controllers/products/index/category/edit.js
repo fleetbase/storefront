@@ -4,7 +4,7 @@ import { alias } from '@ember/object/computed';
 import { action } from '@ember/object';
 
 export default class ProductsIndexCategoryEditController extends ProductsIndexCategoryNewController {
-    @service intl; 
+    @service intl;
     @alias('model') product;
     @tracked overlayActionButtonTitle = 'Save Changes';
     @tracked overlayActionButtonIcon = 'save';

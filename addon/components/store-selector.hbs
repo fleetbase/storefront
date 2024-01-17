@@ -1,5 +1,16 @@
 {{#if @activeStore}}
-    <DropdownButton @renderInPlace={{true}} @size="xs" @type="primary" @icon="store" @iconSize="sm" @text={{@activeStore.name}} @buttonClass={{concat "w-full " @buttonClass}} @buttonWrapperClass={{concat "w-full " @buttonWrapperClass}} @wrapperClass={{@wrapperClass}} as |dd|>
+    <DropdownButton
+        @renderInPlace={{true}}
+        @size="xs"
+        @type="primary"
+        @icon="store"
+        @iconSize="sm"
+        @text={{@activeStore.name}}
+        @buttonClass={{concat "w-full " @buttonClass}}
+        @buttonWrapperClass={{concat "w-full " @buttonWrapperClass}}
+        @wrapperClass={{@wrapperClass}}
+        as |dd|
+    >
         <div role="menu" class="store-selector-dropdown-menu next-dd-menu py-1">
             <div role="group" class="px-1 overflow-y-scroll max-h-72">
                 {{#each @stores as |store|}}

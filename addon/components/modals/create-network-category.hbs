@@ -1,12 +1,30 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         <InputGroup @name={{t "storefront.component.modals.create-network-category.parent-category"}} @wrapperClass="border-b border-gray-200 dark:border-gray-700 pb-4 mb-3i">
-            <ModelSelect @modelName="category" @query={{hash for="storefront_network" owner_uuid=@options.network.id}} @selectedModel={{@options.parentCategory}} @placeholder={{t "storefront.component.modals.create-network-category.select-parent"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{@options.setParentCategory}} as |model|>
+            <ModelSelect
+                @modelName="category"
+                @query={{hash for="storefront_network" owner_uuid=@options.network.id}}
+                @selectedModel={{@options.parentCategory}}
+                @placeholder={{t "storefront.component.modals.create-network-category.select-parent"}}
+                @triggerClass="form-select form-input"
+                @infiniteScroll={{false}}
+                @renderInPlace={{true}}
+                @onChange={{@options.setParentCategory}}
+                as |model|
+            >
                 {{model.name}}
             </ModelSelect>
         </InputGroup>
-        <InputGroup @name={{t "storefront.component.modals.create-network-category.category-name"}} @value={{@options.category.name}} @helpText={{t "storefront.component.modals.create-network-category.name-text"}} />
-        <InputGroup @name={{t "storefront.component.modals.create-network-category.description"}} @value={{@options.category.description}} @helpText={{t "storefront.component.modals.create-network-category.description-text"}} />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-network-category.category-name"}}
+            @value={{@options.category.name}}
+            @helpText={{t "storefront.component.modals.create-network-category.name-text"}}
+        />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-network-category.description"}}
+            @value={{@options.category.description}}
+            @helpText={{t "storefront.component.modals.create-network-category.description-text"}}
+        />
         {{!-- <InputGroup @name={{t "storefront.component.modals.create-network-category.category-icon"}} @wrapperClass="mb-0">
             <div class="flex flex-row dark:text-gray-100 mt-4">
                 <div class="flex flex-row items-center mr-4">

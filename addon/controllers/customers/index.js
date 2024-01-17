@@ -98,13 +98,6 @@ export default class CustomersIndexController extends Controller {
     @tracked email;
 
     /**
-     * The filterable param `intl`
-     *
-     * @var {String}
-     */
-    @tracked intl;
-
-    /**
      * The filterable param `phone`
      *
      * @var {String}
@@ -232,11 +225,11 @@ export default class CustomersIndexController extends Controller {
             width: '10%',
             actions: [
                 {
-                    label: this.intl.t('storefront.customers.index.view-customer-details')
+                    label: this.intl.t('storefront.customers.index.view-customer-details'),
                     // fn: this.viewVendor,
                 },
                 {
-                    label: this.intl.t('storefront.customers.index.edit-customer')
+                    label: this.intl.t('storefront.customers.index.edit-customer'),
 
                     // fn: this.editVendor,
                 },
@@ -244,7 +237,7 @@ export default class CustomersIndexController extends Controller {
                     separator: true,
                 },
                 {
-                    label: this.intl.t('storefront.customers.index.delete-customer')
+                    label: this.intl.t('storefront.customers.index.delete-customer'),
                     // fn: this.deleteVendor,
                 },
             ],

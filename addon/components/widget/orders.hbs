@@ -1,4 +1,13 @@
-<ContentPanel @title={{this.title}} @titleStatusRight={{this.orders.length}} @titleStatuRightClass="info-status-badge" @hideStatusDot={{true}} @open={{this.orders.length}} @pad={{false}} @wrapperClass={{@wrapperClass}} @onInsert={{this.setupWidget}}>
+<ContentPanel
+    @title={{this.title}}
+    @titleStatusRight={{this.orders.length}}
+    @titleStatuRightClass="info-status-badge"
+    @hideStatusDot={{true}}
+    @open={{this.orders.length}}
+    @pad={{false}}
+    @wrapperClass={{@wrapperClass}}
+    @onInsert={{this.setupWidget}}
+>
     {{#if this.isLoading}}
         <div class="px-3 py-2">
             <Spinner class="text-sky-400" />
@@ -30,13 +39,26 @@
                         </td>
                         <td>
                             {{#if order.isFresh}}
-                                <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}} @onClick={{fn this.acceptOrder order}} />
+                                <Button
+                                    @size="xs"
+                                    @type="success"
+                                    @iconPrefix="fas"
+                                    @icon="check"
+                                    @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
+                                    @onClick={{fn this.acceptOrder order}}
+                                />
                             {{/if}}
                             {{#if order.isPreparing}}
                                 <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-ready"}} @onClick={{fn this.markAsReady order}} />
                             {{/if}}
                             {{#if order.isPickupReady}}
-                                <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.component.widget.orders.mark-as-completed"}} @onClick={{fn this.markAsCompleted order}} />
+                                <Button
+                                    @size="xs"
+                                    @type="success"
+                                    @icon="check"
+                                    @text={{t "storefront.component.widget.orders.mark-as-completed"}}
+                                    @onClick={{fn this.markAsCompleted order}}
+                                />
                             {{/if}}
                         </td>
                     </tr>
@@ -60,9 +82,22 @@
                 </div>
                 <div class="flex flex-row space-x-2 flex-wrap">
                     <Button @size="xs" @type="primary" @icon="eye" @text={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
-                    <Button @size="xs" @type="default" @icon="steering-wheel" @text={{if order.has_driver_assigned (t "storefront.component.widget.order.change-driver") (t "storefront.component.widget.order.assign-driver")}} @onClick={{fn this.assignDriver order}} />
+                    <Button
+                        @size="xs"
+                        @type="default"
+                        @icon="steering-wheel"
+                        @text={{if order.has_driver_assigned (t "storefront.component.widget.order.change-driver") (t "storefront.component.widget.order.assign-driver")}}
+                        @onClick={{fn this.assignDriver order}}
+                    />
                     {{#if order.isFresh}}
-                        <Button @size="xs" @type="success" @iconPrefix="fas" @icon="check" @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}} @onClick={{fn this.acceptOrder order}} />
+                        <Button
+                            @size="xs"
+                            @type="success"
+                            @iconPrefix="fas"
+                            @icon="check"
+                            @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
+                            @onClick={{fn this.acceptOrder order}}
+                        />
                     {{/if}}
                     {{#if order.isPreparing}}
                         <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />

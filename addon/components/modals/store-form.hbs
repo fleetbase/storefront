@@ -1,9 +1,28 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
-        <InputGroup @id="storefront_name_input" @name={{t "storefront.common.name"}} @value={{@options.store.name}} @placeholder={{t "storefront.component.modals.store-form.storefront-name"}} @helpText={{t "storefront.component.modals.store-form.the-name-of-your-store"}} />
-        <InputGroup @name={{t "storefront.common.Description"}} @value={{@options.store.description}} @placeholder={{t "storefront.component.modals.store-form.storefront-description-placeholder"}} @helpText={{t "storefront.component.modals.store-form.give-your-store-brief-description"}} />
+        <InputGroup
+            @id="storefront_name_input"
+            @name={{t "storefront.common.name"}}
+            @value={{@options.store.name}}
+            @placeholder={{t "storefront.component.modals.store-form.storefront-name"}}
+            @helpText={{t "storefront.component.modals.store-form.the-name-of-your-store"}}
+        />
+        <InputGroup
+            @name={{t "storefront.common.Description"}}
+            @value={{@options.store.description}}
+            @placeholder={{t "storefront.component.modals.store-form.storefront-description-placeholder"}}
+            @helpText={{t "storefront.component.modals.store-form.give-your-store-brief-description"}}
+        />
         <InputGroup @name="Tags">
-            <TagInput class="form-input" @placeholder={{t "storefront.component.modals.store-form.add-tags-placeholder"}} @allowSpacesInTags={{true}} @tags={{@options.store.tags}} @addTag={{this.addTag}} @removeTagAtIndex={{this.removeTag}} as |tag|>
+            <TagInput
+                class="form-input"
+                @placeholder={{t "storefront.component.modals.store-form.add-tags-placeholder"}}
+                @allowSpacesInTags={{true}}
+                @tags={{@options.store.tags}}
+                @addTag={{this.addTag}}
+                @removeTagAtIndex={{this.removeTag}}
+                as |tag|
+            >
                 {{tag}}
             </TagInput>
         </InputGroup>

@@ -12,8 +12,16 @@
             </div>
         </div>
         <InputGroup @name={{t "storefront.component.modals.create-network.name"}} @value={{@options.network.name}} @helpText={{t "storefront.component.modals.create-network.name-text"}} />
-        <InputGroup @name={{t "storefront.component.modals.create-network.description"}} @value={{@options.network.description}} @helpText={{t "storefront.component.modals.create-network.description-text"}} />
-        <InputGroup @name={{t "storefront.component.modals.create-network.currency"}} @value={{@options.network.currency}} @helpText={{t "storefront.component.modals.create-network.currency-text"}}>
+        <InputGroup
+            @name={{t "storefront.component.modals.create-network.description"}}
+            @value={{@options.network.description}}
+            @helpText={{t "storefront.component.modals.create-network.description-text"}}
+        />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-network.currency"}}
+            @value={{@options.network.currency}}
+            @helpText={{t "storefront.component.modals.create-network.currency-text"}}
+        >
             <CurrencySelect @value={{@options.network.currency}} @onSelect={{fn (mut @options.network.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
     </div>

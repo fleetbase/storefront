@@ -7,7 +7,7 @@ import getGatewaySchemas from '../../utils/get-gateway-schemas';
 
 export default class SettingsGatewaysController extends Controller {
     @service notifications;
-    @service intl; 
+    @service intl;
     @service modalsManager;
     @service store;
     @service crud;

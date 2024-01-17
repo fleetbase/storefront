@@ -8,7 +8,7 @@ import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 
 export default class ProductsIndexCategoryController extends BaseController {
-    @service intl; 
+    @service intl;
     @service modalsManager;
     @service fetch;
     @service hostRouter;
@@ -114,7 +114,7 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action editCategory(category) {
         this.modalsManager.show('modals/create-product-category', {
-            title: this.intl.t('storefront.products.index.category.edit-category',{ categoryName: category.name }),
+            title: this.intl.t('storefront.products.index.category.edit-category', { categoryName: category.name }),
             acceptButtonText: this.intl.t('storefront.products.index.category.save-changes'),
             acceptButtonIcon: 'save',
             declineButtonIcon: 'times',

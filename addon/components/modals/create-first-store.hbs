@@ -11,9 +11,21 @@
             </div>
         </div>
         <div>
-            <InputGroup @name={{t "storefront.component.modals.create-first-store.storefront-name"}} @value={{@options.store.name}} @helpText={{t "storefront.component.modals.create-first-store.enter-name"}} />
-            <InputGroup @name={{t "storefront.component.modals.create-first-store.description"}} @value={{@options.store.description}} @helpText={{t "storefront.component.modals.create-first-store.brief-description"}} />
-            <InputGroup @name={{t "storefront.component.modals.create-first-store.currency"}} @value={{@options.store.currency}} @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}>
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.storefront-name"}}
+                @value={{@options.store.name}}
+                @helpText={{t "storefront.component.modals.create-first-store.enter-name"}}
+            />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.description"}}
+                @value={{@options.store.description}}
+                @helpText={{t "storefront.component.modals.create-first-store.brief-description"}}
+            />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.currency"}}
+                @value={{@options.store.currency}}
+                @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}
+            >
                 <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
         </div>

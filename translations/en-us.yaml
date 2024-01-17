@@ -35,7 +35,7 @@ storefront:
     online: Online
     orders: Orders
     phone: Phone
-    photos: photos
+    photos: Photos
     pickup: Pickup
     product: Products
     remove: Remove
@@ -59,6 +59,7 @@ storefront:
     location: Location
     notification: Notification
     gateways: Gateways
+    new: New
   sidebar:
     storefront: Storefront
     dashboard: Dashboard
@@ -397,7 +398,6 @@ storefront:
       viewing-storefront: Viewing {storeName} storefront
       editing-storefront: Editing {storeName} storefront
       send-invitations: Send Invitations
-      add-stores-to-network: Add stores to network
       invitation-sent-recipients: Invitations sent to recipients!
       invalid-emails-provided-error: Invalid emails provided!
   orders:
@@ -421,6 +421,17 @@ storefront:
      delete-order: Delete Order 
   products:  
     index:
+      manage-addons: Manage Addons
+      done: Done
+      create-new-product-category: Create a new product category
+      product-category-created-success: New product category created.
+      import-products-via-spreadsheets: Import products via spreadsheets
+      start-upload: Start Upload
+      warning-no-file-upload: No files in queue to upload!
+      products-success-message: Successfully imported {resultsLength} products...
+      aside-scroller: 
+        title: Product Categories
+        custom-top-item-text: All Products
       import-products-success-message: Successfully imported {resultsLength} products...
       edit:
         title: Product is not saved!
@@ -429,7 +440,8 @@ storefront:
       new:
         new-product-created-success: New product created successfully!
         warning-only-select-an-image-file-to-be-primary: You can only select an image file to be primary!
-        made-the-primary-success.image: {fileName} was made the primary image.
+        made-the-primary-success-image: >-
+          {fileName} was made the primary image.
         title: Product is not saved! 
         body: Going back will cancel this product creation, if you continue all input fields will be cleared!
         select-addon-categories: Select addon categories
@@ -445,16 +457,6 @@ storefront:
           category-changes-saved-success: Category changes saved.
           delete-product: Are you sure you wish to delete this product?
           body-warning: Warning! Once this product is deleted it will no longer be accessible.
-      title: Are you sure you wish to delete this product?
-      body: Warning! Once this product is deleted it will no longer be accessible. 
-    title: Manage Addons
-    done: Done
-    create-new-product-category: Create a new product category
-    product-category-created-success: New product category created.
-    import-products-via-spreadsheets: Import products via spreadsheets
-    start-upload: Start Upload
-    warning-no-file-upload: No files in queue to upload!
-    products-success-message: Successfully imported {resultsLength} products...
   settings: 
     api: 
     gateways:

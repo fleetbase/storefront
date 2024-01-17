@@ -40,7 +40,17 @@
                 {{/if}}
                 {{#if @options.assignDriver}}
                     <div class="mt-2.5">
-                        <Button @size="xs" @type="default" @icon="steering-wheel" @text={{if @options.order.has_driver_assigned (t "storefront.component.modals.incoming-order.change-driver") (t "storefront.component.modals.incoming-order.assign-driver")}} @onClick={{@options.assignDriver}} />
+                        <Button
+                            @size="xs"
+                            @type="default"
+                            @icon="steering-wheel"
+                            @text={{if
+                                @options.order.has_driver_assigned
+                                (t "storefront.component.modals.incoming-order.change-driver")
+                                (t "storefront.component.modals.incoming-order.assign-driver")
+                            }}
+                            @onClick={{@options.assignDriver}}
+                        />
                     </div>
                 {{/if}}
             </div>
@@ -104,7 +114,7 @@
         </div>
         <div class="w-full my-2 flex flex-col">
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
-                <div class="flex-1 ">
+                <div class="flex-1">
                     <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
                 </div>
             </div>

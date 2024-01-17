@@ -1,11 +1,26 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
-        <InputGroup @name={{t "storefront.component.modals.create-product-category.name"}} @value={{@options.category.name}} @helpText={{t "storefront.component.modals.create-product-category.name-text"}} />
-        <InputGroup @name={{t "storefront.component.modals.create-product-category.description"}} @value={{@options.category.description}} @helpText={{t "storefront.component.modals.create-product-category.description-text"}} />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-product-category.name"}}
+            @value={{@options.category.name}}
+            @helpText={{t "storefront.component.modals.create-product-category.name-text"}}
+        />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-product-category.description"}}
+            @value={{@options.category.description}}
+            @helpText={{t "storefront.component.modals.create-product-category.description-text"}}
+        />
         <InputGroup @name={{t "storefront.component.modals.create-product-category.icon"}}>
             <div class="flex flex-row">
                 <div class="mr-4">
-                    <Image src={{@options.category.icon_url}} @fallbackSrc={{config "defaultValues.categoryImage"}} alt={{@options.category.name}} height="80" width="80" class="h-20 w-20 rounded-md" />
+                    <Image
+                        src={{@options.category.icon_url}}
+                        @fallbackSrc={{config "defaultValues.categoryImage"}}
+                        alt={{@options.category.name}}
+                        height="80"
+                        width="80"
+                        class="h-20 w-20 rounded-md"
+                    />
                 </div>
                 <div class="flex-1">
                     <FileUpload @name={{t "storefront.common.photos"}} @accept="image/*" @onFileAdded={{@options.uploadNewPhoto}} as |queue|>

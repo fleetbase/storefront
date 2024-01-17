@@ -15,10 +15,20 @@
             <InputGroup @name={{t "storefront.common.city"}} @autocomplete="nope" @value={{@options.place.city}} />
             <InputGroup @name={{t "storefront.common.state"}} @autocomplete="nope" @value={{@options.place.province}} />
             <InputGroup @name={{t "storefront.common.country"}} @wrapperClass="col-span-2">
-                <CountrySelect class="w-full form-input form-select form-datalist" @value={{@options.place.country}} @onChange={{fn (mut @options.place.country)}} placeholder={{t "storefront.common.country"}} />
+                <CountrySelect
+                    class="w-full form-input form-select form-datalist"
+                    @value={{@options.place.country}}
+                    @onChange={{fn (mut @options.place.country)}}
+                    placeholder={{t "storefront.common.country"}}
+                />
             </InputGroup>
             <InputGroup @name={{t "storefront.common.coordinates"}} @wrapperClass="col-span-2">
-                <CoordinatesInput @value={{@options.place.location}} @onChange={{@options.updatePlaceCoordinates}} @onGeocode={{@options.autocomplete}} @onInit={{@options.setCoordinatesInput}} />
+                <CoordinatesInput
+                    @value={{@options.place.location}}
+                    @onChange={{@options.updatePlaceCoordinates}}
+                    @onGeocode={{@options.autocomplete}}
+                    @onInit={{@options.setCoordinatesInput}}
+                />
             </InputGroup>
             <div class="col-span-1"></div>
             <InputGroup @name={{t "storefront.common.phone"}}>

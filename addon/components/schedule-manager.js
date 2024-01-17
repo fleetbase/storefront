@@ -44,7 +44,7 @@ export default class ScheduleManagerComponent extends Component {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: this.intl.t('storefront.component.schedule-manager.add-new-hours-for-day',{Day: day}),
+            title: this.intl.t('storefront.component.schedule-manager.add-new-hours-for-day', { Day: day }),
             acceptButtonText: this.intl.t('storefront.component.schedule-manager-add-hours'),
             acceptButtonIcon: 'save',
             hours,
@@ -53,7 +53,7 @@ export default class ScheduleManagerComponent extends Component {
 
                 return hours.save().then((hours) => {
                     subject.hours.pushObject(hours);
-                    this.notifications.success(this.intl.t('storefront.component.schedule-manager.new-hours-added-for-day',{day}));
+                    this.notifications.success(this.intl.t('storefront.component.schedule-manager.new-hours-added-for-day', { day }));
                 });
             },
         });

@@ -91,7 +91,7 @@ export default class OrdersIndexController extends Controller {
 
     @tracked columns = [
         {
-            label: this.intl.this.t('storefront.common.id'),
+            label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
             cellComponent: 'table/cell/link-to',

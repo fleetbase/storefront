@@ -62,11 +62,9 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             .then((product) => {
                 this.loader.removeLoader(loader);
                 this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.products.index.category.new.new-product-created-success'));
+                this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
 
                 return this.transitionToRoute('products.index.category').then(() => {
-                    console.log(this.productsIndexCategoryController);
-                    console.log(this.productsIndexCategoryController.products);
                     this.productsIndexCategoryController?.products?.pushObject(product);
                 });
             })
@@ -140,7 +138,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             return this.notifications.warning(this.intl.t('storefront.products.index.category.new.warning-only-select-an-image-file-to-be-primary'));
         }
 
-        this.notifications.success(this.intl.t('storefront.products.index.category.new.made-the-primary-success.image', {fileName: file.original_filename}));
+        this.notifications.success(this.intl.t('storefront.products.index.category.new.made-the-primary-success-image', { fileName: file.original_filename }));
         this.product.primary_image_uuid = file.id;
         this.product.primary_image_url = file.url;
         this.product.primary_image = file;

@@ -11,7 +11,7 @@ export default class SettingsLocationsController extends Controller {
      * @var {Service}
      */
     @service notifications;
-    
+
     /**
      * Inject the `intl` service
      *
@@ -163,7 +163,7 @@ export default class SettingsLocationsController extends Controller {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: this.intl.t('storefront.controllers.settings.locations.new-store-hour', {Day: day}),
+            title: this.intl.t('storefront.controllers.settings.locations.new-store-hour', { Day: day }),
             acceptButtonText: this.intl.t('storefront.controllers.settings.locations.add-hours'),
             acceptButtonIcon: 'save',
             storeHours,
@@ -172,7 +172,7 @@ export default class SettingsLocationsController extends Controller {
 
                 return storeHours.save().then((storeHours) => {
                     storeLocation.hours.pushObject(storeHours);
-                    this.notifications.success(this.intl.t('storefront.controllers.settings.locations.store-hour-added',{Day: day}));
+                    this.notifications.success(this.intl.t('storefront.controllers.settings.locations.store-hour-added', { Day: day }));
                 });
             },
         });
