@@ -71,8 +71,8 @@ export default class SettingsLocationsController extends Controller {
         });
 
         return this.editStoreLocation(storeLocation, {
-            title: this.intl.t('storefront.controllers.settings.locations.new-store-location'),
-            acceptButtonText: this.intl.t('storefront.controllers.settings.location.add-new-location'),
+            title: this.intl.t('storefront.settings.locations.new-store-location'),
+            acceptButtonText: this.intl.t('storefront.settings.location.add-new-location'),
             acceptButtonIcon: 'save',
         });
     }
@@ -89,8 +89,8 @@ export default class SettingsLocationsController extends Controller {
         }
 
         this.modalsManager.show('modals/store-location-form', {
-            title: this.intl.t('storefront.controllers.settings.locations.edit-store-location'),
-            acceptButtonText: this.intl.t('storefront.controllers.settings.locations.save-changes'),
+            title: this.intl.t('storefront.settings.locations.edit-store-location'),
+            acceptButtonText: this.intl.t('storefront.settings.locations.save-changes'),
             acceptButtonIcon: 'save',
             place,
             autocomplete: (selected) => {
@@ -141,8 +141,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeStoreLocation(storeLocation) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.settings.locations.remove-this-store-location'),
-            body: this.intl.t('storefront.controllers.settings.locations.solely-accosciated-location'),
+            title: this.intl.t('storefront.settings.locations.remove-this-store-location'),
+            body: this.intl.t('storefront.settings.locations.solely-accosciated-location'),
             confirm: (modal) => {
                 modal.startLoading();
 

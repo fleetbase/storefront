@@ -23,8 +23,8 @@ export default class SettingsNotificationsController extends Controller {
         });
 
         this.editChannel(channel, {
-            title: this.intl.t('storefront.controllers.settings.notification.create-new-notification-channel'),
-            acceptButtonText: this.intl.t('storefront.controllers.settings.notification.create-notification-channel'),
+            title: this.intl.t('storefront.settings.notification.create-new-notification-channel'),
+            acceptButtonText: this.intl.t('storefront.settings.notification.create-notification-channel'),
             decline: (modal) => {
                 channel.destroyRecord();
                 modal.done();
@@ -40,8 +40,8 @@ export default class SettingsNotificationsController extends Controller {
         ];
 
         this.modalsManager.show('modals/create-notification-channel', {
-            title: this.intl.t('storefront.controllers.settings.notification.edit-notification-channel'),
-            acceptButtonText: this.intl.t('storefront.controllers.settings.notification.save-changes'),
+            title: this.intl.t('storefront.settings.notification.edit-notification-channel'),
+            acceptButtonText: this.intl.t('storefront.settings.notification.save-changes'),
             schema: channel.id ? channel.config : null,
             schemas,
             schemaOptions,
@@ -72,7 +72,7 @@ export default class SettingsNotificationsController extends Controller {
                 return channel
                     .save()
                     .then((channel) => {
-                        this.notifications.success(this.intl.t('storefront.controllers.settings.notification.new-notification-channel-added'));
+                        this.notifications.success(this.intl.t('storefront.settings.notification.new-notification-channel-added'));
                         this.channels.pushObject(channel);
                     })
                     .catch((error) => {
@@ -87,8 +87,8 @@ export default class SettingsNotificationsController extends Controller {
 
     @action deleteChannel(channel) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.settings.notification.remove-this-notification-channel'),
-            body: this.intl.t('storefront.controllers.settings.notification.application-websites-utillizing-channel'),
+            title: this.intl.t('storefront.settings.notification.remove-this-notification-channel'),
+            body: this.intl.t('storefront.settings.notification.application-websites-utillizing-channel'),
             confirm: (modal) => {
                 modal.startLoading();
 
