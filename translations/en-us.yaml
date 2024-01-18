@@ -458,9 +458,9 @@ storefront:
         add-new-product-variant: Add new product variant
         edit-product-variant: Edit product variant
         untitled-field: Untitled Field
-    
       category: 
         category: category
+        title: Product is not saved!
         body: Warning! Deleting this category will also remove all products listed under this category.
         edit-category: Edit category
         save-changes: Save Changes
