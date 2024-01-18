@@ -89,7 +89,7 @@ export default class ProductsIndexController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.products.index.aside-scroller.product-category-created-success'));
+                    this.notifications.success(this.intl.t('storefront.products.index.product-category-created-success'));
                     return this.hostRouter.refresh();
                 });
             },
