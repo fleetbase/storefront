@@ -31,9 +31,9 @@
                 {{else}}
                     <div class="text-sm flex flex-row items-center px-3 py-0.5 border-0 my-1 truncate">
                         {{#if this.selectedCategory}}
-                            <span>{{t "storefront.network-category-picker.no-subcategory"}} {{this.selectedCategory.name}}</span>
+                            <span>{{t "storefront.component.network-category-picker.no-subcategory"}} {{this.selectedCategory.name}}</span>
                         {{else}}
-                            <span>{{t "storefront.network-category-picker.no-categories"}}</span>
+                            <span>{{t "storefront.component.network-category-picker.no-categories"}}</span>
                         {{/if}}
                     </div>
                 {{/each}}
@@ -43,7 +43,7 @@
             <div class="next-dd-menu-seperator"></div>
             <div role="group" class="px-1">
                 <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.onCreateNewCategory)}}>
-                    {{t "storefront.network-category-picker.create-category"}}
+                    {{t "storefront.component.network-category-picker.create-category"}}
                 </a>
             </div>
         </div>

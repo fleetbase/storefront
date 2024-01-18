@@ -35,7 +35,7 @@ export default class ProductsIndexController extends BaseController {
 
     @action manageAddons() {
         this.modalsManager.show('modals/manage-addons', {
-            title: this.intl.t('storefront.products.index.title'),
+            title: this.intl.t('storefront.products.index.aside-scroller.title'), 
             modalClass: 'modal-lg',
             acceptButtonText: this.intl.t('storefront.products.index.done'),
             store: this.activeStore,
@@ -89,7 +89,7 @@ export default class ProductsIndexController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.products.index.product-category-created-success'));
+                    this.notifications.success(this.intl.t('storefront.products.index.aside-scroller.product-category-created-success'));
                     return this.hostRouter.refresh();
                 });
             },

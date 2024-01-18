@@ -3,14 +3,14 @@
         <div class="space-y-6">
             <div>
                 <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                    {{t "storefront.settings.api.api-setting"}}
+                    {{t "storefront.settings.api.api-settings"}}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{t "storefront.settings.api.access-key"}}
+                    {{t "storefront.settings.api.access-key-for-storefront-api-integrations"}}
                 </p>
             </div>
 
-            <InputGroup @name={{t "storefront.settings.api.name"}} @helpText={{t "storefront.settings.api.helpText"}}>
+            <InputGroup @name={{t "storefront.settings.api.store-key"}} @helpText={{t "storefront.settings.api.store-key-help-text"}}>
                 <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
             </InputGroup>
         </div>

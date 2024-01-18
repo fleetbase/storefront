@@ -139,7 +139,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: this.intl.t('storefront.controllers.customers.index.internal-id'),
+            label: this.intl.t('storefront.customers.index.internal-id'),
             valuePath: 'internal_id',
             cellComponent: 'click-to-copy',
             width: '15%',
@@ -193,7 +193,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: this.intl.t('storefront.controllers.customers.index.create-at'),
+            label: this.intl.t('storefront.customers.index.create-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
             width: '15%',
@@ -203,7 +203,7 @@ export default class CustomersIndexController extends Controller {
             filterComponent: 'filter/date',
         },
         {
-            label: this.intl.t('storefront.controllers.customers.index.update-at'),
+            label: this.intl.t('storefront.customers.index.update-at'),
             valuePath: 'updatedAt',
             sortParam: 'updated_at',
             width: '15%',
@@ -219,7 +219,7 @@ export default class CustomersIndexController extends Controller {
             ddButtonText: false,
             ddButtonIcon: 'ellipsis-h',
             ddButtonIconPrefix: 'fas',
-            ddMenuLabel: this.intl.t('storefront.controllers.customers.index.vendor-action'),
+            ddMenuLabel: this.intl.t('storefront.customers.index.vendor-action'),
             cellClassNames: 'overflow-visible',
             wrapperClass: 'flex items-center justify-end mx-2',
             width: '10%',

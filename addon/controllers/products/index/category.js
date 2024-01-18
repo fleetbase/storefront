@@ -100,7 +100,7 @@ export default class ProductsIndexCategoryController extends BaseController {
         }
 
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.products.index..category.category'),
+            title: this.intl.t('storefront.products.index.category.category'),
             body: this.intl.t('storefront.products.index.category.body'),
             confirm: (modal) => {
                 modal.startLoading();

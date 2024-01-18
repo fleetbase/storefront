@@ -128,8 +128,8 @@ export default class ProductsIndexIndexController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.products.index.title'),
-            body: this.intl.t('storefront.products.index.body'),
+            title: this.intl.t('storefront.products.index.delete-product'),
+            body: this.intl.t('storefront.products.index.body-warning'),
             confirm: (modal) => {
                 modal.startLoading();
 

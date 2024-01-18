@@ -136,7 +136,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @tracked columns = [
         {
-            label: this.intl.t('storefront.networks.index.network.stores.title'),
+            label: this.intl.t('storefront.networks.index.network.stores.store'),
             valuePath: 'name',
             width: '130px',
             resizable: true,
@@ -205,7 +205,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                     fn: this.editStore,
                 },
                 {
-                    label: this.intl.t('storefront.networks.index.network.stotes.assign-category'),
+                    label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
                     fn: this.assignStoreToCategory,
                 },
                 {

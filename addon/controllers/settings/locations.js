@@ -72,7 +72,7 @@ export default class SettingsLocationsController extends Controller {
 
         return this.editStoreLocation(storeLocation, {
             title: this.intl.t('storefront.settings.locations.new-store-location'),
-            acceptButtonText: this.intl.t('storefront.settings.location.add-new-location'),
+            acceptButtonText: this.intl.t('storefront.settings.locations.add-new-location'),
             acceptButtonIcon: 'save',
         });
     }
@@ -163,8 +163,8 @@ export default class SettingsLocationsController extends Controller {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: this.intl.t('storefront.controllers.settings.locations.new-store-hour', { Day: day }),
-            acceptButtonText: this.intl.t('storefront.controllers.settings.locations.add-hours'),
+            title: this.intl.t('storefront.settings.locations.new-store-hour', { Day: day }),
+            acceptButtonText: this.intl.t('storefront.settings.locations.add-hours'),
             acceptButtonIcon: 'save',
             storeHours,
             confirm: (modal) => {
@@ -172,7 +172,7 @@ export default class SettingsLocationsController extends Controller {
 
                 return storeHours.save().then((storeHours) => {
                     storeLocation.hours.pushObject(storeHours);
-                    this.notifications.success(this.intl.t('storefront.controllers.settings.locations.store-hour-added', { Day: day }));
+                    this.notifications.success(this.intl.t('storefront.settings.locations.store-hour-added', { Day: day }));
                 });
             },
         });
@@ -180,8 +180,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeHours(storeHours) {
         this.modalsManager.confirm({
-            title: this.intl.t('storefront.controllers.settings.locations.remove-these-hour'),
-            body: this.intl.t('storefront.controllers.settings.locations.update-schedule-location'),
+            title: this.intl.t('storefront.settings.locations.remove-these-hour'),
+            body: this.intl.t('storefront.settings.locations.update-schedule-location'),
             confirm: (modal) => {
                 modal.startLoading();
 

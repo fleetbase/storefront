@@ -4,10 +4,10 @@
             <div class="flex flex-col md:flex-row justify-between">
                 <div>
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.locations.index.location-setting"}}
+                        {{t "storefront.settings.locations.location-setting"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.locations.index.manage-store"}}
+                        {{t "storefront.settings.locations.manage-store"}}
                     </p>
                 </div>
                 <div>
@@ -16,7 +16,7 @@
                         @icon="plus"
                         @iconPrefix="fas"
                         @type="primary"
-                        @text={{t "storefront.locations.index.text-location"}}
+                        @text={{t "storefront.settings.locations.text-location"}}
                         @onClick={{this.createNewLocation}}
                     />
                 </div>
@@ -26,7 +26,7 @@
                 <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{true}}>
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h4 class="dark:text-gray-100 text-base font-semibold">{{t "storefront.locations.index.store-hour"}}</h4>
+                            <h4 class="dark:text-gray-100 text-base font-semibold">{{t "storefront.settings.locations.store-hour"}}</h4>
                         </div>
                         <div class="flex items-center">
                             <Button @icon="edit" @text={{t "storefront.common.edit"}} @onClick={{fn this.editStoreLocation storeLocation}} @wrapperClass="mr-2" />

@@ -55,7 +55,7 @@ export default class ModalsManageAddonsComponent extends Component {
 
     @action createCategory(store) {
         const category = this.store.createRecord('addon-category', {
-            name: this.intl.t('storefront.component.modals.manage-addons-untitled-addon-category'),
+            name: this.intl.t('storefront.component.modals.manage-addons.untitled-addon-category'),
             for: 'storefront_product_addon',
             owner_type: 'storefront:store',
             owner_uuid: store.id,
