@@ -2,17 +2,17 @@
 
 namespace Fleetbase\Storefront\Support;
 
+use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\Company;
 use Fleetbase\Storefront\Models\Network;
-use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\Product;
-use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Models\Store;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
  * Metrics service to pull analyitcs and metrics from Storefront.
- * 
+ *
  * Ex:
  * $metrics = Metrics::new($company)->withTotalStores()->withOrdersCanceled()->get();
  */
@@ -23,15 +23,15 @@ class Metrics
     protected Company $company;
     protected array $metrics = [];
 
-    public static function new(Company $company, ?\DateTime $start = null, ?\DateTime $end = null): Metrics
+    public static function new(Company $company, \DateTime $start = null, \DateTime $end = null): Metrics
     {
         $start = $start === null ? Carbon::create(1900)->toDateTime() : $start;
-        $end = $end === null ? Carbon::tomorrow()->toDateTime() : $end;
+        $end   = $end === null ? Carbon::tomorrow()->toDateTime() : $end;
 
         return (new static())->setCompany($company)->between($start, $end);
     }
 
-    public static function forCompany(Company $company, ?\DateTime $start = null, ?\DateTime $end = null): Metrics
+    public static function forCompany(Company $company, \DateTime $start = null, \DateTime $end = null): Metrics
     {
         return static::new($company, $start, $end);
     }
@@ -104,7 +104,7 @@ class Metrics
         return $this;
     }
 
-    public function totalProducts(?callable $callback = null): Metrics
+    public function totalProducts(callable $callback = null): Metrics
     {
         $query = Product::where('company_uuid', $this->company->uuid);
 
@@ -117,7 +117,7 @@ class Metrics
         return $this->set('total_products', $data);
     }
 
-    public function totalStores(?callable $callback = null): Metrics
+    public function totalStores(callable $callback = null): Metrics
     {
         $query = Store::where('company_uuid', $this->company->uuid);
 
@@ -130,7 +130,7 @@ class Metrics
         return $this->set('total_stores', $data);
     }
 
-    public function totalNetworks(?callable $callback = null): Metrics
+    public function totalNetworks(callable $callback = null): Metrics
     {
         $query = Network::where('company_uuid', $this->company->uuid);
 
@@ -143,7 +143,7 @@ class Metrics
         return $this->set('total_networks', $data);
     }
 
-    public function ordersInProgress(?callable $callback = null): Metrics
+    public function ordersInProgress(callable $callback = null): Metrics
     {
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])
@@ -159,7 +159,7 @@ class Metrics
         return $this->set('orders_in_progress', $data);
     }
 
-    public function ordersCompleted(?callable $callback = null): Metrics
+    public function ordersCompleted(callable $callback = null): Metrics
     {
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])
@@ -175,7 +175,7 @@ class Metrics
         return $this->set('orders_completed', $data);
     }
 
-    public function ordersCanceled(?callable $callback = null): Metrics
+    public function ordersCanceled(callable $callback = null): Metrics
     {
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])

@@ -2,18 +2,20 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\Models\File;
 use Fleetbase\FleetOps\Models\Contact;
-use Fleetbase\Traits\HasUuid;
+use Fleetbase\Models\File;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 
 class Review extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -27,7 +29,7 @@ class Review extends StorefrontModel
     protected $table = 'reviews';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -56,14 +58,14 @@ class Review extends StorefrontModel
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
     protected $appends = [];
 
     /**
-     * Attributes that is filterable on this model
+     * Attributes that is filterable on this model.
      *
      * @var array
      */

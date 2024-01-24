@@ -10,8 +10,7 @@ class NetworkObserver
     /**
      * Handle the Network "updated" event.
      *
-     * @param  \Fleetbase\Storefront\Models\Network  $network The Network that is updating.
-     * @return void
+     * @param \Fleetbase\Storefront\Models\Network $network the Network that is updating
      */
     public function updating(Network $network): void
     {
@@ -32,7 +31,7 @@ class NetworkObserver
                         }
                     )
                         ->values()
-                        ->toArray()
+                        ->toArray(),
                 ];
             }
         )->toArray();

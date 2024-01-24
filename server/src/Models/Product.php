@@ -3,32 +3,38 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
-use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Traits\HasMetaAttributes;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
-use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 
 class ProductStatus
 {
     public const AVAILABLE = 'available';
-    public const DRAFT = 'draft';
+    public const DRAFT     = 'draft';
 }
 
 class Product extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior, HasMetaAttributes, HasSlug, Searchable;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
+    use HasMetaAttributes;
+    use HasSlug;
+    use Searchable;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -42,7 +48,7 @@ class Product extends StorefrontModel
     protected $table = 'products';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -78,7 +84,7 @@ class Product extends StorefrontModel
         'is_recommended',
         'can_pickup',
         'status',
-        'slug'
+        'slug',
     ];
 
     /**
@@ -87,27 +93,27 @@ class Product extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'is_service' => 'boolean',
-        'is_bookable' => 'boolean',
-        'is_on_sale' => 'boolean',
-        'is_available' => 'boolean',
+        'is_service'     => 'boolean',
+        'is_bookable'    => 'boolean',
+        'is_on_sale'     => 'boolean',
+        'is_available'   => 'boolean',
         'is_recommended' => 'boolean',
-        'can_pickup' => 'boolean',
-        'tags' => 'array',
-        'meta' => Json::class,
-        'translations' => Json::class,
-        'youtube_urls' => Json::class
+        'can_pickup'     => 'boolean',
+        'tags'           => 'array',
+        'meta'           => Json::class,
+        'translations'   => Json::class,
+        'youtube_urls'   => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
     protected $appends = ['primary_image_url', 'store_id', 'meta_array'];
 
     /**
-     * Attributes that is filterable on this model
+     * Attributes that is filterable on this model.
      *
      * @var array
      */
@@ -230,9 +236,9 @@ class Product extends StorefrontModel
 
         foreach ($this->meta as $key => $value) {
             $_meta[] = [
-                'key' => Str::snake($key),
+                'key'   => Str::snake($key),
                 'label' => Utils::smartHumanize($key),
-                'value' => $value
+                'value' => $value,
             ];
         }
 
@@ -244,9 +250,9 @@ class Product extends StorefrontModel
      */
     public function getPrimaryImageUrlAttribute()
     {
-        $default = $this->primaryImage->url ?? null;
+        $default   = $this->primaryImage->url ?? null;
         $secondary = $this->files->first()->url ?? null;
-        $backup = 'https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png';
+        $backup    = 'https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png';
 
         return $default ?? $secondary ?? $backup;
     }
@@ -262,7 +268,7 @@ class Product extends StorefrontModel
     }
 
     /**
-     * Set the price as only numbers
+     * Set the price as only numbers.
      *
      * @void
      */
@@ -272,7 +278,7 @@ class Product extends StorefrontModel
     }
 
     /**
-     * Set the sale price as only numbers
+     * Set the sale price as only numbers.
      *
      * @void
      */
@@ -282,14 +288,130 @@ class Product extends StorefrontModel
     }
 
     /**
+     * Sets or updates addon categories for the product.
+     *
+     * This function iterates over each addon category in the given array. If the category exists (identified by UUID),
+     * it updates the existing category. Otherwise, it creates a new category and adds it to the product.
+     *
+     * @param array $addonCategories An array of addon categories data. Each category should have keys like 'uuid',
+     *                               'excluded_addons', 'max_selectable', and 'is_required'.
+     *
+     * @return Product returns the instance of the Product for method chaining
+     */
+    public function setAddonCategories(array $addonCategories = []): Product
+    {
+        foreach ($addonCategories as $addonCategory) {
+            // get uuid if set
+            $id = data_get($addonCategory, 'uuid');
+
+            // update product addon category
+            if (Str::isUuid($id)) {
+                ProductAddonCategory::where('uuid', $id)->update([
+                    'excluded_addons' => data_get($addonCategory, 'excluded_addons'),
+                    'max_selectable'  => data_get($addonCategory, 'max_selectable'),
+                    'is_required'     => data_get($addonCategory, 'is_required'),
+                ]);
+                continue;
+            }
+
+            // create new product addon category
+            $productAddonCategory = ProductAddonCategory::create([
+                'product_uuid'    => $this->uuid,
+                'category_uuid'   => data_get($addonCategory, 'category_uuid'),
+                'excluded_addons' => data_get($addonCategory, 'excluded_addons'),
+                'max_selectable'  => data_get($addonCategory, 'max_selectable'),
+                'is_required'     => data_get($addonCategory, 'is_required'),
+            ]);
+
+            // insert to hasmany relation
+            $this->addonCategories->push($productAddonCategory);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sets or updates product variants for the product.
+     *
+     * Iterates through each variant in the provided array. If the variant exists (identified by UUID), it updates
+     * the variant with new values. If it doesn't exist, a new variant is created. Also handles the setting or
+     * updating of product variant options.
+     *
+     * @param array $variants An array of product variants data. Each variant should have keys like 'uuid', 'name',
+     *                        'description', 'translations', 'meta', 'is_multiselect', 'is_required', 'min', 'max',
+     *                        and 'options'.
+     *
+     * @return Product returns the instance of the Product for method chaining
+     */
+    public function setProductVariants(array $variants = []): Product
+    {
+        foreach ($variants as $variant) {
+            $id = data_get($variant, 'uuid');
+
+            if (Str::isUuid($id)) {
+                // Update the existing product variant with new values if any changed
+                ProductVariant::where('uuid', $id)->update([
+                    'name'           => data_get($variant, 'name'),
+                    'description'    => data_get($variant, 'name'),
+                    'translations'   => data_get($variant, 'translations', []),
+                    'meta'           => data_get($variant, 'meta', []),
+                    'is_multiselect' => data_get($variant, 'is_multiselect'),
+                    'is_required'    => data_get($variant, 'is_required'),
+                    'min'            => data_get($variant, 'min'),
+                    'max'            => data_get($variant, 'max'),
+                ]);
+
+                // Update product variant options if applicable
+                if (is_array($variant['options'])) {
+                    foreach ($variant['options'] as $option) {
+                        $optionId = data_get($option, 'uuid');
+
+                        if (Str::isUuid($optionId)) {
+                            // make sure additional cost is always numbers only
+                            if (isset($option['additional_cost'])) {
+                                $option['additional_cost'] = Utils::numbersOnly($option['additional_cost']);
+                            }
+
+                            $productVariantOptionInput = Arr::except($option, ['uuid']);
+                            ProductVariantOption::where('uuid', $option['uuid'])->update($productVariantOptionInput);
+                            continue;
+                        }
+
+                        $option['product_variant_uuid'] = $id;
+                        ProductVariantOption::create($option);
+                    }
+                }
+
+                continue;
+            }
+
+            $variant['created_by_uuid'] = session('user');
+            $variant['company_uuid']    = session('company');
+            $variant['product_uuid']    = $this->uuid;
+
+            $productVariantInput = Arr::except($variant, ['options']);
+            $productVariant      = ProductVariant::create($productVariantInput);
+
+            if (is_array($variant['options'])) {
+                foreach ($variant['options'] as $option) {
+                    $option['product_variant_uuid'] = $productVariant->uuid;
+                    ProductVariantOption::create($option);
+                }
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Finds products that match the specified search query, store, and network.
      *
-     * @param string $search The search query to use to find products.
-     * @param string|null $store The store to search for products in. If null, all stores are searched.
-     * @param int $limit The maximum number of products to return.
+     * @param string      $search  the search query to use to find products
+     * @param string|null $store   The store to search for products in. If null, all stores are searched.
+     * @param int         $limit   the maximum number of products to return
      * @param string|null $network The network to search for products on. If null, the session network is used.
      *
-     * @return \Illuminate\Database\Eloquent\Collection The collection of products that match the search query, store, and network.
+     * @return \Illuminate\Database\Eloquent\Collection the collection of products that match the search query, store, and network
      */
     public static function findFromNetwork($search, $store = null, $limit = 20, $network = null): ?\Illuminate\Database\Eloquent\Collection
     {

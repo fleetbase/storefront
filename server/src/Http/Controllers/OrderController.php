@@ -2,22 +2,22 @@
 
 namespace Fleetbase\Storefront\Http\Controllers;
 
-use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
+use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
 use Illuminate\Http\Request;
 
 class OrderController extends FleetbaseOrderController
 {
     /**
-     * The resource to query
+     * The resource to query.
      *
      * @var string
      */
     public $resource = 'order';
 
     /**
-     * The filter to use
+     * The filter to use.
      *
      * @var \Fleetbase\Http\Filter\Filter
      */
@@ -26,7 +26,6 @@ class OrderController extends FleetbaseOrderController
     /**
      * Accept an order by incrementing status to preparing.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function acceptOrder(Request $request)
@@ -35,7 +34,7 @@ class OrderController extends FleetbaseOrderController
 
         if (!$order) {
             return response()->json([
-                'error' => 'No order to accept!'
+                'error' => 'No order to accept!',
             ], 400);
         }
 
@@ -45,27 +44,26 @@ class OrderController extends FleetbaseOrderController
 
         return response()->json([
             'status' => 'ok',
-            'order' => $order->public_id,
-            'status' => $order->status
+            'order'  => $order->public_id,
+            'status' => $order->status,
         ]);
     }
 
     /**
      * Accept an order by incrementing status to preparing.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function markOrderAsReady(Request $request)
     {
-        $adhoc = $request->boolean('adhoc');
+        $adhoc  = $request->boolean('adhoc');
         $driver = $request->input('driver');
         /** @var \Fleetbase\Models\Order $order */
         $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
 
         if (!$order) {
             return response()->json([
-                'error' => 'No order to update!'
+                'error' => 'No order to update!',
             ], 400);
         }
 
@@ -74,8 +72,8 @@ class OrderController extends FleetbaseOrderController
 
             return response()->json([
                 'status' => 'ok',
-                'order' => $order->public_id,
-                'status' => $order->status
+                'order'  => $order->public_id,
+                'status' => $order->status,
             ]);
         }
 
@@ -94,15 +92,14 @@ class OrderController extends FleetbaseOrderController
 
         return response()->json([
             'status' => 'ok',
-            'order' => $order->public_id,
-            'status' => $order->status
+            'order'  => $order->public_id,
+            'status' => $order->status,
         ]);
     }
 
     /**
      * Accept an order by incrementing status to preparing.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function markOrderAsCompleted(Request $request)
@@ -112,7 +109,7 @@ class OrderController extends FleetbaseOrderController
 
         if (!$order) {
             return response()->json([
-                'error' => 'No order to update!'
+                'error' => 'No order to update!',
             ], 400);
         }
 
@@ -121,15 +118,14 @@ class OrderController extends FleetbaseOrderController
 
         return response()->json([
             'status' => 'ok',
-            'order' => $order->public_id,
-            'status' => $order->status
+            'order'  => $order->public_id,
+            'status' => $order->status,
         ]);
     }
 
     /**
      * Reject order and notify customer order is rejected/canceled.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function rejectOrder(Request $request)
@@ -138,7 +134,7 @@ class OrderController extends FleetbaseOrderController
 
         if (!$order) {
             return response()->json([
-                'error' => 'No order to cancel!'
+                'error' => 'No order to cancel!',
             ], 400);
         }
 
@@ -147,8 +143,8 @@ class OrderController extends FleetbaseOrderController
 
         return response()->json([
             'status' => 'ok',
-            'order' => $order->public_id,
-            'status' => $order->status
+            'order'  => $order->public_id,
+            'status' => $order->status,
         ]);
     }
 }

@@ -3,16 +3,16 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
-use Fleetbase\Models\User;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
 use Fleetbase\Models\Invite;
-use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Traits\HasOptionsAttributes;
-use Fleetbase\Traits\HasUuid;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
@@ -20,10 +20,15 @@ use Spatie\Sluggable\SlugOptions;
 
 class Network extends StorefrontModel
 {
-    use HasUuid, HasPublicId, HasApiModelBehavior, HasOptionsAttributes, HasSlug, Searchable;
+    use HasUuid;
+    use HasPublicId;
+    use HasApiModelBehavior;
+    use HasOptionsAttributes;
+    use HasSlug;
+    use Searchable;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -37,7 +42,7 @@ class Network extends StorefrontModel
     protected $table = 'networks';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -56,15 +61,15 @@ class Network extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'options' => Json::class,
+        'options'      => Json::class,
         'translations' => Json::class,
-        'alertable' => Json::class,
-        'tags' => 'array',
-        'online' => 'boolean'
+        'alertable'    => Json::class,
+        'tags'         => 'array',
+        'online'       => 'boolean',
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -205,7 +210,7 @@ class Network extends StorefrontModel
     }
 
     /**
-     * @var integer
+     * @var int
      */
     public function getStoresCountAttribute()
     {
@@ -213,40 +218,30 @@ class Network extends StorefrontModel
     }
 
     /**
-     * Adds a new store to the network
-     *
-     * @param Store $store
-     * @param Category|null $category
-     * @return NetworkStore
+     * Adds a new store to the network.
      */
-    public function addStore(Store $store, ?Category $category = null): NetworkStore
+    public function addStore(Store $store, Category $category = null): NetworkStore
     {
         return NetworkStore::updateOrCreate(
             [
                 'network_uuid' => $this->uuid,
-                'store_uuid' => $store->uuid
+                'store_uuid'   => $store->uuid,
             ],
             [
-                'network_uuid' => $this->uuid,
-                'store_uuid' => $store->uuid,
-                'category_uuid' => $category instanceof Category ? $category->uuid : null
+                'network_uuid'  => $this->uuid,
+                'store_uuid'    => $store->uuid,
+                'category_uuid' => $category instanceof Category ? $category->uuid : null,
             ]
         );
     }
 
     /**
-     *'Create a new network store category for this store record
+     *'Create a new network store category for this store record.
      *
-     * @param string $name
-     * @param string $description
-     * @param array|null $meta
-     * @param array|null $translations
-     * @param Category|null $parent
      * @param File|string|null $icon
-     * @param string $iconColor
-     * @return Category
+     * @param string           $iconColor
      */
-    public function createCategory(string $name, string $description = '', ?array $meta = [],  ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $iconFile = null;
         $iconName = null;
@@ -260,34 +255,28 @@ class Network extends StorefrontModel
         }
 
         return Category::create([
-            'company_uuid' => $this->company_uuid,
-            'owner_uuid' => $this->uuid,
-            'owner_type' => Utils::getMutationType('network:storefront'),
-            'parent_uuid' => $parent instanceof Category ? $parent->uuid : null,
+            'company_uuid'   => $this->company_uuid,
+            'owner_uuid'     => $this->uuid,
+            'owner_type'     => Utils::getMutationType('network:storefront'),
+            'parent_uuid'    => $parent instanceof Category ? $parent->uuid : null,
             'icon_file_uuid' => $iconFile->uuid,
-            'for' => 'storefront_network',
-            'name' => $name,
-            'description' => $description,
-            'translations' => $translations,
-            'meta' => $meta,
-            'icon' => $iconName,
-            'icon_color' => $iconColor
+            'for'            => 'storefront_network',
+            'name'           => $name,
+            'description'    => $description,
+            'translations'   => $translations,
+            'meta'           => $meta,
+            'icon'           => $iconName,
+            'icon_color'     => $iconColor,
         ]);
     }
 
     /**
-     * Create a new network store category if it doesn't already exists for this store record
+     * Create a new network store category if it doesn't already exists for this store record.
      *
-     * @param string $name
-     * @param string $description
-     * @param array|null $meta
-     * @param array|null $translations
-     * @param Category|null $parent
      * @param File|string|null $icon
-     * @param string $iconColor
-     * @return Category
+     * @param string           $iconColor
      */
-    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [],  ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $existingCategory = Category::where(['company_uuid' => $this->company_uuid, 'owner_uuid' => $this->uuid, 'name' => $name])->first();
 

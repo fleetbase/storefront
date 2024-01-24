@@ -2,13 +2,13 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StorefrontStoreLocation;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
-use Fleetbase\Models\Category;
-use Fleetbase\FleetOps\Support\Utils;
 use Grimzy\LaravelMysqlSpatial\Types\Point;
 use Illuminate\Http\Request;
 
@@ -17,7 +17,6 @@ class NetworkController extends Controller
     /**
      * Returns all stores within the network.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function stores(Request $request)
@@ -26,15 +25,15 @@ class NetworkController extends Controller
             return response()->error('Stores cannot have stores!');
         }
 
-        $sort = $request->input('sort', false);
-        $limit = $request->input('limit', false);
-        $offset = $request->input('offset', false);
-        $ids = $request->input('ids', []);
-        $tagged = $request->input('tagged', []);
-        $query = $request->input('query', false);
-        $location = $request->input('location');
+        $sort        = $request->input('sort', false);
+        $limit       = $request->input('limit', false);
+        $offset      = $request->input('offset', false);
+        $ids         = $request->input('ids', []);
+        $tagged      = $request->input('tagged', []);
+        $query       = $request->input('query', false);
+        $location    = $request->input('location');
         $maxDistance = $request->input('maximum_distance', null);
-        $exclude = $request->input('exclude', []);
+        $exclude     = $request->input('exclude', []);
 
         if (is_string($tagged)) {
             $tagged = explode(',', $tagged);
@@ -103,12 +102,16 @@ class NetworkController extends Controller
         switch ($sort) {
             case 'highest_rated':
                 $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating');
+                // no break
             case 'lowest_rated':
                 $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating');
+                // no break
             case 'newest':
                 $query->orderByDesc('created_at');
+                // no break
             case 'oldest':
                 $query->orderBy('created_at');
+                // no break
             case 'popular':
                 $query->withCount('checkouts')->orderByDesc('checkouts_count');
         }
@@ -135,6 +138,7 @@ class NetworkController extends Controller
                     return $distanceA - $distanceB;
                 })->map(function ($location) use ($coordinates) {
                     $location->distance = Utils::vincentyGreatCircleDistance($coordinates, $location->place->location);
+
                     return $location;
                 })->first()->distance;
 
@@ -145,6 +149,7 @@ class NetworkController extends Controller
                     return $distanceA - $distanceB;
                 })->map(function ($location) use ($coordinates) {
                     $location->distance = Utils::vincentyGreatCircleDistance($coordinates, $location->place->location);
+
                     return $location;
                 })->first()->distance;
 
@@ -163,20 +168,19 @@ class NetworkController extends Controller
     /**
      * Returns all store locations within the network.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function storeLocations(Request $request)
     {
-        $limit = $request->input('limit', 30);
-        $ids = $request->input('ids', []);
-        $exclude = $request->input('exclude', []);
-        $offset = $request->input('offset');
-        $location = $request->input('location');
-        $tagged = $request->input('tagged', []);
-        $searchQuery = $request->input('query', false);
+        $limit              = $request->input('limit', 30);
+        $ids                = $request->input('ids', []);
+        $exclude            = $request->input('exclude', []);
+        $offset             = $request->input('offset');
+        $location           = $request->input('location');
+        $tagged             = $request->input('tagged', []);
+        $searchQuery        = $request->input('query', false);
         $shouldIncludeStore = $request->input('with_store', false);
-        $coordinates = Utils::getPointFromCoordinates($location);
+        $coordinates        = Utils::getPointFromCoordinates($location);
 
         if (is_string($tagged)) {
             $tagged = explode(',', $tagged);
@@ -190,7 +194,7 @@ class NetworkController extends Controller
             $ids = explode(',', $ids);
         }
 
-        $databaseName = config('database.connections.mysql.database');
+        $databaseName    = config('database.connections.mysql.database');
         $placesTableName = $databaseName . '.places';
 
         $query = StoreLocation::select(['store_locations.*', $placesTableName . '.location', $placesTableName . '.uuid'])
@@ -249,9 +253,8 @@ class NetworkController extends Controller
     }
 
     /**
-     * Returns all tags from stores/categories throughout the network
+     * Returns all tags from stores/categories throughout the network.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function tags(Request $request)

@@ -159,7 +159,7 @@
         </ContentPanel>
 
         <ContentPanel @title="Add-Ons" @open={{this.product.addon_categories.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
-            <div class="px-4 py-3">
+            <div class="px-4">
                 <div class="flex items-center justify-end mb-3">
                     <Button @text="Select Addon Categories" @icon="plus" @iconPrefix="fas" @onClick={{this.selectAddonCategory}} />
                 </div>
@@ -181,7 +181,7 @@
                                 {{#each addonCategory.category.addons as |addon|}}
                                     <div class="grid grid-cols-10 gap-1 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-900 dark:text-gray-100 dark:bg-gray-800 bg-gray-200">
                                         <div class="flex items-center">
-                                            <Checkbox @value={{not-in-array addon.id addonCategory.excluded_addons}} @onToggle={{fn this.excludeAddon index addon}} />
+                                            <Checkbox @value={{not (in-array addon.id addonCategory.excluded_addons)}} @onToggle={{fn this.excludeAddon index addon}} />
                                         </div>
                                         <div class="col-span-3 flex items-center">
                                             {{addon.name}}

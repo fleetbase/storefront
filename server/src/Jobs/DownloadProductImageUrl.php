@@ -2,9 +2,9 @@
 
 namespace Fleetbase\Storefront\Jobs;
 
-use Fleetbase\Storefront\Models\Product;
-use Fleetbase\Models\File;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Models\File;
+use Fleetbase\Storefront\Models\Product;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +13,10 @@ use Illuminate\Queue\SerializesModels;
 
 class DownloadProductImageUrl implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The uuid of the product.
@@ -37,7 +40,7 @@ class DownloadProductImageUrl implements ShouldQueue
     public function __construct(Product $product, string $url)
     {
         $this->product = $product->uuid;
-        $this->url = $url;
+        $this->url     = $url;
     }
 
     /**

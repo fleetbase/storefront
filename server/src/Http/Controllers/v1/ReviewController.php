@@ -2,15 +2,15 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\File;
 use Fleetbase\Storefront\Http\Requests\CreateReviewRequest;
 use Fleetbase\Storefront\Http\Resources\Review as StorefrontReview;
-use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
-use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\Review;
+use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
-use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Models\File;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,14 +20,13 @@ class ReviewController extends Controller
     /**
      * Query for Storefront Review resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function query(Request $request)
     {
-        $limit = $request->input('limit', false);
+        $limit  = $request->input('limit', false);
         $offset = $request->input('offset', false);
-        $sort = $request->input('sort');
+        $sort   = $request->input('sort');
 
         if (session('storefront_store')) {
             $results = Review::queryWithRequest($request, function (&$query) use ($limit, $offset, $sort) {
@@ -71,7 +70,7 @@ class ReviewController extends Controller
             if ($request->filled('store')) {
                 $store = Store::where([
                     'company_uuid' => session('company'),
-                    'public_id' => $request->input('store')
+                    'public_id'    => $request->input('store'),
                 ])->whereHas('networks', function ($q) {
                     $q->where('network_uuid', session('storefront_network'));
                 })->first();
@@ -124,13 +123,12 @@ class ReviewController extends Controller
     /**
      * Coutns the number of ratings between 1-5 for a store.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function count(Request $request)
     {
         $counts = [];
-        $range = range(1, 5);
+        $range  = range(1, 5);
 
         if (session('storefront_store')) {
             foreach ($range as $rating) {
@@ -142,7 +140,7 @@ class ReviewController extends Controller
             if ($request->filled('store')) {
                 $store = Store::where([
                     'company_uuid' => session('company'),
-                    'public_id' => $request->input('store')
+                    'public_id'    => $request->input('store'),
                 ])->whereHas('networks', function ($q) {
                     $q->where('network_uuid', session('storefront_network'));
                 })->first();
@@ -163,7 +161,8 @@ class ReviewController extends Controller
     /**
      * Finds a single Storefront Review resources.
      *
-     * @param  string $id
+     * @param string $id
+     *
      * @return \Fleetbase\Http\Response
      */
     public function find($id)
@@ -182,13 +181,12 @@ class ReviewController extends Controller
     /**
      * Create a review.
      *
-     * @param  \Fleetbase\Storefront\Http\Requests\CreateReviewRequest  $request
      * @return \Fleetbase\Http\Response
      */
     public function create(CreateReviewRequest $request)
     {
         $customer = Storefront::getCustomerFromToken();
-        $about = Storefront::about();
+        $about    = Storefront::about();
 
         if (!$customer) {
             return response()->error('Not authorized to create reviews');
@@ -202,11 +200,11 @@ class ReviewController extends Controller
 
         $review = Review::create([
             'created_by_uuid' => $customer->user_uuid,
-            'customer_uuid' => $customer->uuid,
-            'subject_uuid' => $subject->uuid,
-            'subject_type' => Utils::getMutationType($subject),
-            'rating' => $request->input('rating'),
-            'content' => $request->input('content')
+            'customer_uuid'   => $customer->uuid,
+            'subject_uuid'    => $subject->uuid,
+            'subject_type'    => Utils::getMutationType($subject),
+            'rating'          => $request->input('rating'),
+            'content'         => $request->input('content'),
         ]);
 
         // if files provided
@@ -214,10 +212,9 @@ class ReviewController extends Controller
             $files = $request->input('files');
 
             foreach ($files as $upload) {
-
-                $data = Utils::get($upload, 'data');
-                $mimeType = Utils::get($upload, 'type');
-                $extension = File::getExtensionFromMimeType($mimeType);
+                $data       = Utils::get($upload, 'data');
+                $mimeType   = Utils::get($upload, 'type');
+                $extension  = File::getExtensionFromMimeType($mimeType);
                 $bucketPath = 'hyperstore/' . $about->public_id . '/review-photos/' . $review->uuid . '/' . File::randomFileName($extension);
 
                 // upload file to path
@@ -225,18 +222,18 @@ class ReviewController extends Controller
 
                 // create the file
                 $file = File::create([
-                    'company_uuid' => session('company'),
-                    'uploader_uuid' => $customer->user_uuid,
-                    'subject_uuid' => $review->uuid,
-                    'subject_type' => Utils::getMutationType($review),
-                    'name' => basename($bucketPath),
+                    'company_uuid'      => session('company'),
+                    'uploader_uuid'     => $customer->user_uuid,
+                    'subject_uuid'      => $review->uuid,
+                    'subject_type'      => Utils::getMutationType($review),
+                    'name'              => basename($bucketPath),
                     'original_filename' => basename($bucketPath),
-                    'extension' => $extension,
-                    'content_type' => $mimeType,
-                    'path' => $bucketPath,
-                    'bucket' => config('filesystems.disks.s3.bucket'),
-                    'type' => 'storefront_review_upload',
-                    'size' => Utils::getBase64ImageSize($data)
+                    'extension'         => $extension,
+                    'content_type'      => $mimeType,
+                    'path'              => $bucketPath,
+                    'bucket'            => config('filesystems.disks.s3.bucket'),
+                    'type'              => 'storefront_review_upload',
+                    'size'              => Utils::getBase64ImageSize($data),
                 ]);
 
                 $review->files->push($file);
@@ -249,7 +246,6 @@ class ReviewController extends Controller
     /**
      * Deletes a Storefront Review resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Fleetbase\Http\Resources\v1\DeletedResource
      */
     public function delete($id)

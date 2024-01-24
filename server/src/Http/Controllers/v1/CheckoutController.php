@@ -2,18 +2,6 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
-use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
-use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
-use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
-use Fleetbase\Storefront\Models\Cart;
-use Fleetbase\Storefront\Models\Checkout;
-use Fleetbase\Storefront\Models\Gateway;
-use Fleetbase\Storefront\Models\Product;
-use Fleetbase\Storefront\Models\StoreLocation;
-use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Storefront\Support\QPay;
-use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\FleetOps\Http\Resources\v1\Order as OrderResource;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Entity;
@@ -22,8 +10,20 @@ use Fleetbase\FleetOps\Models\Payload;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
+use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
+use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
+use Fleetbase\Storefront\Models\Cart;
+use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\Gateway;
+use Fleetbase\Storefront\Models\Product;
+use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Models\StoreLocation;
+use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
+use Fleetbase\Storefront\Support\QPay;
+use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -33,27 +33,27 @@ class CheckoutController extends Controller
 {
     public function beforeCheckout(InitializeCheckoutRequest $request)
     {
-        $gatewayCode = $request->input('gateway');
-        $customerId = $request->input('customer');
-        $cartId = $request->input('cart');
-        $serviceQuoteId = $request->or(['serviceQuote', 'service_quote']);
+        $gatewayCode      = $request->input('gateway');
+        $customerId       = $request->input('customer');
+        $cartId           = $request->input('cart');
+        $serviceQuoteId   = $request->or(['serviceQuote', 'service_quote']);
         $isCashOnDelivery = $request->input('cash') || $gatewayCode === 'cash';
-        $isPickup = $request->input('pickup', false);
-        $tip = $request->input('tip', false);
-        $deliveryTip = $request->or(['delivery_tip', 'deliveryTip'], false);
+        $isPickup         = $request->input('pickup', false);
+        $tip              = $request->input('tip', false);
+        $deliveryTip      = $request->or(['delivery_tip', 'deliveryTip'], false);
 
         // create checkout options
         $checkoutOptions = Utils::createObject([
-            'is_pickup' => $isPickup,
-            'is_cod' => $isCashOnDelivery,
-            'tip' => $tip,
-            'delivery_tip' => $deliveryTip
+            'is_pickup'    => $isPickup,
+            'is_cod'       => $isCashOnDelivery,
+            'tip'          => $tip,
+            'delivery_tip' => $deliveryTip,
         ]);
 
         // find and validate cart session
-        $cart = Cart::retrieve($cartId);
-        $gateway = Storefront::findGateway($gatewayCode);
-        $customer = Contact::findFromCustomerId($customerId);
+        $cart         = Cart::retrieve($cartId);
+        $gateway      = Storefront::findGateway($gatewayCode);
+        $customer     = Contact::findFromCustomerId($customerId);
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
         // handle cash orders
@@ -84,7 +84,7 @@ class CheckoutController extends Controller
         $isPickup = $checkoutOptions->is_pickup;
 
         // get amount/subtotal
-        $amount = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
         $currency = $cart->currency ?? session('storefront_currency');
 
         // get store id if applicable
@@ -106,24 +106,24 @@ class CheckoutController extends Controller
 
         // create checkout token
         $checkout = Checkout::create([
-            'company_uuid' => session('company'),
-            'store_uuid' => $storeId,
-            'network_uuid' => session('storefront_network'),
-            'cart_uuid' => $cart->uuid,
-            'gateway_uuid' => $gateway->uuid ?? null,
+            'company_uuid'       => session('company'),
+            'store_uuid'         => $storeId,
+            'network_uuid'       => session('storefront_network'),
+            'cart_uuid'          => $cart->uuid,
+            'gateway_uuid'       => $gateway->uuid ?? null,
             'service_quote_uuid' => $serviceQuote->uuid,
-            'owner_uuid' => $customer->uuid,
-            'owner_type' => 'contact',
-            'amount' => $amount,
-            'currency' => $currency,
-            'is_cod' => true,
-            'is_pickup' => $isPickup,
-            'options' => $checkoutOptions,
-            'cart_state' => $cart->toArray()
+            'owner_uuid'         => $customer->uuid,
+            'owner_type'         => 'contact',
+            'amount'             => $amount,
+            'currency'           => $currency,
+            'is_cod'             => true,
+            'is_pickup'          => $isPickup,
+            'options'            => $checkoutOptions,
+            'cart_state'         => $cart->toArray(),
         ]);
 
         return response()->json([
-            'token' => $checkout->token
+            'token' => $checkout->token,
         ]);
     }
 
@@ -133,7 +133,7 @@ class CheckoutController extends Controller
         $isPickup = $checkoutOptions->is_pickup;
 
         // get amount/subtotal
-        $amount = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
         $currency = $cart->currency ?? session('storefront_currency');
 
         // check for secret key first
@@ -173,33 +173,33 @@ class CheckoutController extends Controller
         }
 
         $paymentIntent = \Stripe\PaymentIntent::create([
-            'amount' => $amount,
+            'amount'   => $amount,
             'currency' => $currency,
-            'customer' => $customer->getMeta('stripe_id')
+            'customer' => $customer->getMeta('stripe_id'),
         ]);
 
         // create checkout token
         $checkout = Checkout::create([
-            'company_uuid' => session('company'),
-            'store_uuid' => session('storefront_store'),
-            'network_uuid' => session('storefront_network'),
-            'cart_uuid' => $cart->uuid,
-            'gateway_uuid' => $gateway->uuid,
+            'company_uuid'       => session('company'),
+            'store_uuid'         => session('storefront_store'),
+            'network_uuid'       => session('storefront_network'),
+            'cart_uuid'          => $cart->uuid,
+            'gateway_uuid'       => $gateway->uuid,
             'service_quote_uuid' => $serviceQuote->uuid,
-            'owner_uuid' => $customer->uuid,
-            'owner_type' => 'contact',
-            'amount' => $amount,
-            'currency' => $currency,
-            'is_pickup' => $isPickup,
-            'options' => $checkoutOptions,
-            'cart_state' => $cart->toArray()
+            'owner_uuid'         => $customer->uuid,
+            'owner_type'         => 'contact',
+            'amount'             => $amount,
+            'currency'           => $currency,
+            'is_pickup'          => $isPickup,
+            'options'            => $checkoutOptions,
+            'cart_state'         => $cart->toArray(),
         ]);
 
         return response()->json([
             'paymentIntent' => $paymentIntent->client_secret,
-            'ephemeralKey' => $ephemeralKey->secret,
-            'customerId' => $customer->getMeta('stripe_id'),
-            'token' => $checkout->token
+            'ephemeralKey'  => $ephemeralKey->secret,
+            'customerId'    => $customer->getMeta('stripe_id'),
+            'token'         => $checkout->token,
         ]);
     }
 
@@ -212,7 +212,7 @@ class CheckoutController extends Controller
         $isPickup = $checkoutOptions->is_pickup;
 
         // get amount/subtotal
-        $amount = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
         $currency = $cart->currency ?? session('storefront_currency');
 
         // check for secret key first
@@ -231,41 +231,41 @@ class CheckoutController extends Controller
         $qpay = $qpay->setAuthToken();
 
         // Create invoice description
-        $invoiceAmount = round($amount / 100);
-        $invoiceCode = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
-        $invoiceDescription = $about->name . ' cart checkout';
+        $invoiceAmount       = round($amount / 100);
+        $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
+        $invoiceDescription  = $about->name . ' cart checkout';
         $invoiceReceiverCode = $gateway->public_id;
-        $senderInvoiceNo = $cart->id;
+        $senderInvoiceNo     = $cart->id;
 
         // Create qpay invoice
         $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
 
         // Create checkout token
         $checkout = Checkout::create([
-            'company_uuid' => session('company'),
-            'store_uuid' => session('storefront_store'),
-            'network_uuid' => session('storefront_network'),
-            'cart_uuid' => $cart->uuid,
-            'gateway_uuid' => $gateway->uuid,
+            'company_uuid'       => session('company'),
+            'store_uuid'         => session('storefront_store'),
+            'network_uuid'       => session('storefront_network'),
+            'cart_uuid'          => $cart->uuid,
+            'gateway_uuid'       => $gateway->uuid,
             'service_quote_uuid' => $serviceQuote->uuid,
-            'owner_uuid' => $customer->uuid,
-            'owner_type' => 'contact',
-            'amount' => $amount,
-            'currency' => $currency,
-            'is_pickup' => $isPickup,
-            'options' => $checkoutOptions,
-            'cart_state' => $cart->toArray()
+            'owner_uuid'         => $customer->uuid,
+            'owner_type'         => 'contact',
+            'amount'             => $amount,
+            'currency'           => $currency,
+            'is_pickup'          => $isPickup,
+            'options'            => $checkoutOptions,
+            'cart_state'         => $cart->toArray(),
         ]);
 
         return response()->json([
             'invoice' => $invoice,
-            'token' => $checkout->token
+            'token'   => $checkout->token,
         ]);
     }
 
     public function captureOrder(CaptureOrderRequest $request)
     {
-        $token = $request->input('token');
+        $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
 
         // validate transaction details
@@ -274,31 +274,31 @@ class CheckoutController extends Controller
         }
 
         // get checkout data to create order
-        $about = Storefront::about();
-        $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
-        $customer = $checkout->owner;
+        $about        = Storefront::about();
+        $checkout     = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
+        $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
-        $gateway = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
-        $origin = $serviceQuote->getMeta('origin', []);
-        $destination = $serviceQuote->getMeta('destination');
-        $cart = $checkout->cart;
+        $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
+        $origin       = $serviceQuote->getMeta('origin', []);
+        $destination  = $serviceQuote->getMeta('destination');
+        $cart         = $checkout->cart;
 
         // if cart is null then cart has either been deleted or expired
         if (!$cart) {
             return response()->json([
-                'error' => 'Cart expired'
+                'error' => 'Cart expired',
             ], 400);
         }
 
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
-        $amount = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? ($cart->currency ?? session('storefront_currency'));
-        $store = $about;
+        $store    = $about;
 
         // check if order is via network for a single store
-        $isNetworkOrder = $about->is_network === true;
-        $isMultiCart = $cart->isMultiCart;
-        $isSingleStoreCheckout = $isNetworkOrder && !$isMultiCart;
+        $isNetworkOrder          = $about->is_network === true;
+        $isMultiCart             = $cart->isMultiCart;
+        $isSingleStoreCheckout   = $isNetworkOrder && !$isMultiCart;
         $isMultipleStoreCheckout = $isNetworkOrder && $isMultiCart;
 
         // if multi store checkout send to captureMultipleOrders()
@@ -331,40 +331,40 @@ class CheckoutController extends Controller
 
         // setup transaction meta
         $transactionMeta = [
-            'storefront' => $store->name,
+            'storefront'    => $store->name,
             'storefront_id' => $store->public_id,
-            ...$transactionDetails
+            ...$transactionDetails,
         ];
 
         if ($about->is_network) {
-            $transactionMeta['storefront_network'] = $about->name;
+            $transactionMeta['storefront_network']    = $about->name;
             $transactionMeta['storefront_network_id'] = $about->public_id;
         }
 
         // create transactions for cart
         $transaction = Transaction::create([
-            'company_uuid' => session('company'),
-            'customer_uuid' => $customer->uuid,
-            'customer_type' => 'contact',
+            'company_uuid'           => session('company'),
+            'customer_uuid'          => $customer->uuid,
+            'customer_type'          => 'contact',
             'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
-            'gateway' => $gateway->code,
-            'gateway_uuid' => $gateway->uuid,
-            'amount' => $amount,
-            'currency' => $currency,
-            'description' => 'Storefront order',
-            'type' => 'storefront',
-            'status' => 'success',
-            'meta' => $transactionMeta
+            'gateway'                => $gateway->code,
+            'gateway_uuid'           => $gateway->uuid,
+            'amount'                 => $amount,
+            'currency'               => $currency,
+            'description'            => 'Storefront order',
+            'type'                   => 'storefront',
+            'status'                 => 'success',
+            'meta'                   => $transactionMeta,
         ]);
 
         // create transaction items
         foreach ($cart->items as $cartItem) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => $cartItem->subtotal,
-                'currency' => $checkout->currency,
-                'details' => Storefront::getFullDescriptionFromCartItem($cartItem),
-                'code' => 'product',
+                'amount'           => $cartItem->subtotal,
+                'currency'         => $checkout->currency,
+                'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
+                'code'             => 'product',
             ]);
         }
 
@@ -372,10 +372,10 @@ class CheckoutController extends Controller
         if (!$checkout->is_pickup) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => $serviceQuote->amount,
-                'currency' => $serviceQuote->currency,
-                'details' => 'Delivery fee',
-                'code' => 'delivery_fee',
+                'amount'           => $serviceQuote->amount,
+                'currency'         => $serviceQuote->currency,
+                'details'          => 'Delivery fee',
+                'code'             => 'delivery_fee',
             ]);
         }
 
@@ -383,10 +383,10 @@ class CheckoutController extends Controller
         if ($checkout->hasOption('tip')) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
-                'currency' => $checkout->currency,
-                'details' => 'Tip',
-                'code' => 'tip',
+                'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
+                'currency'         => $checkout->currency,
+                'details'          => 'Tip',
+                'code'             => 'tip',
             ]);
         }
 
@@ -394,10 +394,10 @@ class CheckoutController extends Controller
         if ($checkout->hasOption('delivery_tip')) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
-                'currency' => $checkout->currency,
-                'details' => 'Delivery Tip',
-                'code' => 'delivery_tip',
+                'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
+                'currency'         => $checkout->currency,
+                'details'          => 'Delivery Tip',
+                'code'             => 'delivery_tip',
             ]);
         }
 
@@ -410,16 +410,16 @@ class CheckoutController extends Controller
         if (!$origin) {
             $storeLocation = collect($cart->items)->map(function ($cartItem) {
                 $storeLocationId = $cartItem->store_location_id;
-    
+
                 // if no store location id set, use first locations id
                 if (!$storeLocationId) {
                     $store = Store::where('public_id', $cartItem->store_id)->first();
-    
+
                     if ($store) {
                         $storeLocationId = Utils::get($store, 'locations.0.public_id');
                     }
                 }
-    
+
                 return $storeLocationId;
             })->unique()->filter()->map(function ($storeLocationId) {
                 return StoreLocation::where('public_id', $storeLocationId)->first();
@@ -431,22 +431,22 @@ class CheckoutController extends Controller
         }
 
         // convert payload destinations to Place
-        $origin = Place::createFromMixed($origin);
+        $origin      = Place::createFromMixed($origin);
         $destination = Place::createFromMixed($destination);
 
         // create payload for order
         $payloadDetails = [
-            'company_uuid' => session('company'),
-            'pickup_uuid' => $origin instanceof Place ? $origin->uuid : null,
-            'dropoff_uuid' => $destination instanceof Place ? $destination->uuid : null,
-            'return_uuid' => $origin instanceof Place ? $origin->uuid : null,
+            'company_uuid'   => session('company'),
+            'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+            'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+            'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
             'payment_method' => $gateway->type,
-            'type' => 'storefront'
+            'type'           => 'storefront',
         ];
 
         // if cash on delivery set cod attributes
         if ($checkout->is_cod) {
-            $payloadDetails['cod_amount'] = $amount;
+            $payloadDetails['cod_amount']   = $amount;
             $payloadDetails['cod_currency'] = $checkout->currency;
             // @todo could be card if card swipe on delivery
             $payloadDetails['cod_payment_method'] = 'cash';
@@ -458,17 +458,17 @@ class CheckoutController extends Controller
         // create entities
         foreach ($cart->items as $cartItem) {
             $product = Product::where('public_id', $cartItem->product_id)->first();
-            $entity = Entity::fromStorefrontProduct($product)->fill([
-                'company_uuid' => session('company'),
-                'payload_uuid' => $payload->uuid,
+            $entity  = Entity::fromStorefrontProduct($product)->fill([
+                'company_uuid'  => session('company'),
+                'payload_uuid'  => $payload->uuid,
                 'customer_uuid' => $customer->uuid,
                 'customer_type' => 'contact',
             ])->setMetas([
-                'variants' => $cartItem->variants,
-                'addons' => $cartItem->addons,
-                'subtotal' => $cartItem->subtotal,
-                'quantity' => $cartItem->quantity,
-                'scheduled_at' => $cartItem->scheduled_at ?? null
+                'variants'     => $cartItem->variants,
+                'addons'       => $cartItem->addons,
+                'subtotal'     => $cartItem->subtotal,
+                'quantity'     => $cartItem->quantity,
+                'scheduled_at' => $cartItem->scheduled_at ?? null,
             ]);
 
             $entity->save();
@@ -476,46 +476,46 @@ class CheckoutController extends Controller
 
         // create order meta
         $orderMeta = [
-            'storefront' => $store->name,
+            'storefront'    => $store->name,
             'storefront_id' => $store->public_id,
         ];
 
         // if network add network to order meta
         if ($isNetworkOrder) {
-            $orderMeta['storefront_network'] = $about->name;
+            $orderMeta['storefront_network']    = $about->name;
             $orderMeta['storefront_network_id'] = $about->public_id;
         }
 
         $orderMeta = array_merge($orderMeta, [
-            'checkout_id' => $checkout->public_id,
-            'subtotal' =>  Utils::numbersOnly($cart->subtotal),
-            'delivery_fee' =>  $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
-            'tip' =>  $checkout->getOption('tip'),
-            'delivery_tip' =>  $checkout->getOption('delivery_tip'),
-            'total' => Utils::numbersOnly($amount),
-            'currency' => $currency,
-            'require_pod' => $about->getOption('require_pod'),
-            'pod_method' => $about->pod_method,
-            'is_pickup' => $checkout->is_pickup,
-            ...$transactionDetails
+            'checkout_id'  => $checkout->public_id,
+            'subtotal'     => Utils::numbersOnly($cart->subtotal),
+            'delivery_fee' => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'tip'          => $checkout->getOption('tip'),
+            'delivery_tip' => $checkout->getOption('delivery_tip'),
+            'total'        => Utils::numbersOnly($amount),
+            'currency'     => $currency,
+            'require_pod'  => $about->getOption('require_pod'),
+            'pod_method'   => $about->pod_method,
+            'is_pickup'    => $checkout->is_pickup,
+            ...$transactionDetails,
         ]);
 
         // initialize order creation input
         $orderInput = [
-            'company_uuid' => $store->company_uuid ?? session('company'),
-            'payload_uuid' => $payload->uuid,
-            'customer_uuid' => $customer->uuid,
-            'customer_type' => 'contact',
+            'company_uuid'     => $store->company_uuid ?? session('company'),
+            'payload_uuid'     => $payload->uuid,
+            'customer_uuid'    => $customer->uuid,
+            'customer_type'    => 'contact',
             'transaction_uuid' => $transaction->uuid,
-            'adhoc' => $about->isOption('auto_dispatch'),
-            'type' => 'storefront',
-            'status' => 'created',
-            'meta' => $orderMeta
+            'adhoc'            => $about->isOption('auto_dispatch'),
+            'type'             => 'storefront',
+            'status'           => 'created',
+            'meta'             => $orderMeta,
         ];
 
         // if it's integrated vendor order apply to meta
         if ($integratedVendorOrder) {
-            $orderMeta['integrated_vendor'] = $serviceQuote->integratedVendor->public_id;
+            $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
             $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
             // order input
             $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
@@ -550,7 +550,7 @@ class CheckoutController extends Controller
         $checkout->update([
             'order_uuid' => $order->uuid,
             // 'store_uuid' => $about->uuid,
-            'captured' => true
+            'captured' => true,
         ]);
 
         return new OrderResource($order);
@@ -558,7 +558,7 @@ class CheckoutController extends Controller
 
     public function captureMultipleOrders(CaptureOrderRequest $request)
     {
-        $token = $request->input('token');
+        $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
 
         // validate transaction details
@@ -567,19 +567,19 @@ class CheckoutController extends Controller
         }
 
         // get checkout data to create order
-        $about = Storefront::about();
-        $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
-        $customer = $checkout->owner;
+        $about        = Storefront::about();
+        $checkout     = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
+        $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
-        $gateway = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
-        $origins = $serviceQuote->getMeta('origin');
+        $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
+        $origins      = $serviceQuote->getMeta('origin');
         // set origin
-        $origin = Arr::first($origins);
-        $waypoints = array_slice($origins, 1);
+        $origin      = Arr::first($origins);
+        $waypoints   = array_slice($origins, 1);
         $destination = $serviceQuote->getMeta('destination');
-        $cart = $checkout->cart;
+        $cart        = $checkout->cart;
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
-        $amount = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? ($cart->currency ?? session('storefront_currency'));
 
         if (!$about) {
@@ -601,25 +601,25 @@ class CheckoutController extends Controller
 
         // setup transaction meta
         $transactionMeta = [
-            'storefront_network' => $about->name,
+            'storefront_network'    => $about->name,
             'storefront_network_id' => $about->public_id,
-            ...$transactionDetails
+            ...$transactionDetails,
         ];
 
         // create transactions for cart
         $transaction = Transaction::create([
-            'company_uuid' => session('company'),
-            'customer_uuid' => $customer->uuid,
-            'customer_type' => 'contact',
+            'company_uuid'           => session('company'),
+            'customer_uuid'          => $customer->uuid,
+            'customer_type'          => 'contact',
             'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
-            'gateway' => $gateway->code,
-            'gateway_uuid' => $gateway->uuid,
-            'amount' => $amount,
-            'currency' => $currency,
-            'description' => 'Storefront network order',
-            'type' => 'storefront',
-            'status' => 'success',
-            'meta' => $transactionMeta
+            'gateway'                => $gateway->code,
+            'gateway_uuid'           => $gateway->uuid,
+            'amount'                 => $amount,
+            'currency'               => $currency,
+            'description'            => 'Storefront network order',
+            'type'                   => 'storefront',
+            'status'                 => 'success',
+            'meta'                   => $transactionMeta,
         ]);
 
         // create transaction items
@@ -628,16 +628,16 @@ class CheckoutController extends Controller
 
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => $cartItem->subtotal,
-                'currency' => $checkout->currency,
-                'details' => Storefront::getFullDescriptionFromCartItem($cartItem),
-                'code' => 'product',
-                'meta' => [
-                    'storefront_network' => $about->name,
+                'amount'           => $cartItem->subtotal,
+                'currency'         => $checkout->currency,
+                'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
+                'code'             => 'product',
+                'meta'             => [
+                    'storefront_network'    => $about->name,
                     'storefront_network_id' => $about->public_id,
-                    'storefront' => $store->name ?? null,
-                    'storefront_id' => $store->public_id ?? null
-                ]
+                    'storefront'            => $store->name ?? null,
+                    'storefront_id'         => $store->public_id ?? null,
+                ],
             ]);
         }
 
@@ -645,10 +645,10 @@ class CheckoutController extends Controller
         if (!$checkout->is_pickup) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => $serviceQuote->amount,
-                'currency' => $serviceQuote->currency,
-                'details' => 'Delivery fee',
-                'code' => 'delivery_fee',
+                'amount'           => $serviceQuote->amount,
+                'currency'         => $serviceQuote->currency,
+                'details'          => 'Delivery fee',
+                'code'             => 'delivery_fee',
             ]);
         }
 
@@ -656,10 +656,10 @@ class CheckoutController extends Controller
         if ($checkout->hasOption('tip')) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
-                'currency' => $checkout->currency,
-                'details' => 'Tip',
-                'code' => 'tip',
+                'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
+                'currency'         => $checkout->currency,
+                'details'          => 'Tip',
+                'code'             => 'tip',
             ]);
         }
 
@@ -667,10 +667,10 @@ class CheckoutController extends Controller
         if ($checkout->hasOption('delivery_tip')) {
             TransactionItem::create([
                 'transaction_uuid' => $transaction->uuid,
-                'amount' => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
-                'currency' => $checkout->currency,
-                'details' => 'Delivery Tip',
-                'code' => 'delivery_tip',
+                'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
+                'currency'         => $checkout->currency,
+                'details'          => 'Delivery Tip',
+                'code'             => 'delivery_tip',
             ]);
         }
 
@@ -687,12 +687,12 @@ class CheckoutController extends Controller
 
             // create payload
             $payload = Payload::create([
-                'company_uuid' => $store->company_uuid,
-                'pickup_uuid' => $pickup instanceof Place ? $pickup->uuid : null,
-                'dropoff_uuid' => $destination instanceof Place ? $destination->uuid : null,
-                'return_uuid' => $pickup instanceof Place ? $pickup->uuid : null,
+                'company_uuid'   => $store->company_uuid,
+                'pickup_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
+                'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+                'return_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
                 'payment_method' => $gateway->type,
-                'type' => 'storefront'
+                'type'           => 'storefront',
             ]);
 
             // get cart items from this store
@@ -703,16 +703,16 @@ class CheckoutController extends Controller
                 $product = Product::where('public_id', $cartItem->product_id)->first();
 
                 $entity = Entity::fromStorefrontProduct($product)->fill([
-                    'company_uuid' => $store->company_uuid,
-                    'payload_uuid' => $payload->uuid,
+                    'company_uuid'  => $store->company_uuid,
+                    'payload_uuid'  => $payload->uuid,
                     'customer_uuid' => $customer->uuid,
                     'customer_type' => 'contact',
                 ])->setMetas([
-                    'variants' => $cartItem->variants,
-                    'addons' => $cartItem->addons,
-                    'subtotal' => $cartItem->subtotal,
-                    'quantity' => $cartItem->quantity,
-                    'scheduled_at' => $cartItem->scheduled_at ?? null
+                    'variants'     => $cartItem->variants,
+                    'addons'       => $cartItem->addons,
+                    'subtotal'     => $cartItem->subtotal,
+                    'quantity'     => $cartItem->quantity,
+                    'scheduled_at' => $cartItem->scheduled_at ?? null,
                 ]);
 
                 $entity->save();
@@ -723,39 +723,39 @@ class CheckoutController extends Controller
 
             // prepare order meta
             $orderMeta = [
-                'is_master_order' => false,
-                'storefront' => $store->name,
-                'storefront_id' => $store->public_id,
-                'storefront_network' => $about->name,
+                'is_master_order'       => false,
+                'storefront'            => $store->name,
+                'storefront_id'         => $store->public_id,
+                'storefront_network'    => $about->name,
                 'storefront_network_id' => $about->public_id,
-                'checkout_id' => $checkout->public_id,
-                'subtotal' =>  $subtotal,
-                'delivery_fee' => 0,
-                'tip' =>  0,
-                'delivery_tip' =>  0,
-                'total' => $subtotal,
-                'currency' => $currency,
-                'require_pod' => $about->getOption('require_pod'),
-                'pod_method' => $about->pod_method,
-                'is_pickup' => $checkout->is_pickup,
-                ...$transactionDetails
+                'checkout_id'           => $checkout->public_id,
+                'subtotal'              => $subtotal,
+                'delivery_fee'          => 0,
+                'tip'                   => 0,
+                'delivery_tip'          => 0,
+                'total'                 => $subtotal,
+                'currency'              => $currency,
+                'require_pod'           => $about->getOption('require_pod'),
+                'pod_method'            => $about->pod_method,
+                'is_pickup'             => $checkout->is_pickup,
+                ...$transactionDetails,
             ];
 
             // prepare order input
             $orderInput = [
-                'company_uuid' => $store->company_uuid,
-                'payload_uuid' => $payload->uuid,
-                'customer_uuid' => $customer->uuid,
-                'customer_type' => 'contact',
+                'company_uuid'     => $store->company_uuid,
+                'payload_uuid'     => $payload->uuid,
+                'customer_uuid'    => $customer->uuid,
+                'customer_type'    => 'contact',
                 'transaction_uuid' => $transaction->uuid,
-                'adhoc' => $about->isOption('auto_dispatch'),
-                'type' => 'storefront',
-                'status' => 'created',
+                'adhoc'            => $about->isOption('auto_dispatch'),
+                'type'             => 'storefront',
+                'status'           => 'created',
             ];
 
             // if it's integrated vendor order apply to meta
             if ($integratedVendorOrder) {
-                $orderMeta['integrated_vendor'] = $serviceQuote->integratedVendor->public_id;
+                $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
                 $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
                 // order input
                 $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
@@ -795,12 +795,12 @@ class CheckoutController extends Controller
 
         // create master payload
         $payload = Payload::create([
-            'company_uuid' => session('company'),
-            'pickup_uuid' => $origin instanceof Place ? $origin->uuid : null,
-            'dropoff_uuid' => $destination instanceof Place ? $destination->uuid : null,
-            'return_uuid' => $origin instanceof Place ? $origin->uuid : null,
+            'company_uuid'   => session('company'),
+            'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+            'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+            'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
             'payment_method' => $gateway->type,
-            'type' => 'storefront'
+            'type'           => 'storefront',
         ])->setWaypoints($waypoints);
 
         // create entities
@@ -808,16 +808,16 @@ class CheckoutController extends Controller
             $product = Product::where('public_id', $cartItem->product_id)->first();
 
             $entity = Entity::fromStorefrontProduct($product)->fill([
-                'company_uuid' => session('company'),
-                'payload_uuid' => $payload->uuid,
+                'company_uuid'  => session('company'),
+                'payload_uuid'  => $payload->uuid,
                 'customer_uuid' => $customer->uuid,
                 'customer_type' => 'contact',
             ])->setMetas([
-                'variants' => $cartItem->variants,
-                'addons' => $cartItem->addons,
-                'subtotal' => $cartItem->subtotal,
-                'quantity' => $cartItem->quantity,
-                'scheduled_at' => $cartItem->scheduled_at ?? null
+                'variants'     => $cartItem->variants,
+                'addons'       => $cartItem->addons,
+                'subtotal'     => $cartItem->subtotal,
+                'quantity'     => $cartItem->quantity,
+                'scheduled_at' => $cartItem->scheduled_at ?? null,
             ]);
 
             $entity->save();
@@ -825,40 +825,40 @@ class CheckoutController extends Controller
 
         // prepare master order meta
         $masterOrderMeta = [
-            'is_master_order' => true,
-            'related_orders' => collect($multipleOrders)->pluck('public_id')->toArray(),
-            'storefront' => $about->name,
-            'storefront_id' => $about->public_id,
-            'storefront_network' => $about->name,
+            'is_master_order'       => true,
+            'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
+            'storefront'            => $about->name,
+            'storefront_id'         => $about->public_id,
+            'storefront_network'    => $about->name,
             'storefront_network_id' => $about->public_id,
-            'checkout_id' => $checkout->public_id,
-            'subtotal' => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee' =>  $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
-            'tip' =>  $checkout->getOption('tip'),
-            'delivery_tip' =>  $checkout->getOption('delivery_tip'),
-            'total' => Utils::numbersOnly($amount),
-            'currency' => $currency,
-            'require_pod' => $about->getOption('require_pod'),
-            'pod_method' => $about->pod_method,
-            'is_pickup' => $checkout->is_pickup,
-            ...$transactionDetails
+            'checkout_id'           => $checkout->public_id,
+            'subtotal'              => Utils::numbersOnly($cart->subtotal),
+            'delivery_fee'          => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'tip'                   => $checkout->getOption('tip'),
+            'delivery_tip'          => $checkout->getOption('delivery_tip'),
+            'total'                 => Utils::numbersOnly($amount),
+            'currency'              => $currency,
+            'require_pod'           => $about->getOption('require_pod'),
+            'pod_method'            => $about->pod_method,
+            'is_pickup'             => $checkout->is_pickup,
+            ...$transactionDetails,
         ];
 
         // prepare master order input
         $masterOrderInput = [
-            'company_uuid' => session('company'),
-            'payload_uuid' => $payload->uuid,
-            'customer_uuid' => $customer->uuid,
-            'customer_type' => 'contact',
+            'company_uuid'     => session('company'),
+            'payload_uuid'     => $payload->uuid,
+            'customer_uuid'    => $customer->uuid,
+            'customer_type'    => 'contact',
             'transaction_uuid' => $transaction->uuid,
-            'adhoc' => $about->isOption('auto_dispatch'),
-            'type' => 'storefront',
-            'status' => 'created',
+            'adhoc'            => $about->isOption('auto_dispatch'),
+            'type'             => 'storefront',
+            'status'           => 'created',
         ];
 
         // if it's integrated vendor order apply to meta
         if ($integratedVendorOrder) {
-            $masterOrderMeta['integrated_vendor'] = $serviceQuote->integratedVendor->public_id;
+            $masterOrderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
             $masterOrderMeta['integrated_vendor_order'] = $integratedVendorOrder;
             // order input
             $masterOrderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
@@ -895,7 +895,7 @@ class CheckoutController extends Controller
         $checkout->update([
             'order_uuid' => $order->uuid,
             // 'store_uuid' => $about->uuid,
-            'captured' => true
+            'captured' => true,
         ]);
 
         return new OrderResource($order);
@@ -908,20 +908,17 @@ class CheckoutController extends Controller
     /**
      * Calculates the total checkout amount.
      *
-     * @param Cart $cart
-     * @param ServiceQuote $serviceQuote
      * @param stdClass $checkoutOptions
-     * @return integer
      */
     private static function calculateCheckoutAmount(Cart $cart, ServiceQuote $serviceQuote, $checkoutOptions): int
     {
         // cast checkout options to object always
         $checkoutOptions = (object) $checkoutOptions;
-        $subtotal = (int) $cart->subtotal;
-        $total = $subtotal;
-        $tip = $checkoutOptions->tip ?? false;
-        $deliveryTip = $checkoutOptions->delivery_tip ?? false;
-        $isPickup = $checkoutOptions->is_pickup ?? false;
+        $subtotal        = (int) $cart->subtotal;
+        $total           = $subtotal;
+        $tip             = $checkoutOptions->tip ?? false;
+        $deliveryTip     = $checkoutOptions->delivery_tip ?? false;
+        $isPickup        = $checkoutOptions->is_pickup ?? false;
 
         if ($tip) {
             $tipAmount = static::calculateTipAmount($tip, $subtotal);

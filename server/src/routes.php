@@ -161,7 +161,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->group(
                             [],
                             function ($router) {
-                                /** Dashboard Build */
+                                /* Dashboard Build */
                                 $router->get('dashboard', 'MetricsController@dashboard');
 
                                 $router->group(

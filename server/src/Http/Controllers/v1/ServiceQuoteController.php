@@ -2,21 +2,21 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
-use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
 use Fleetbase\FleetOps\Http\Resources\v1\ServiceQuote as ServiceQuoteResource;
 use Fleetbase\FleetOps\Models\Entity;
+use Fleetbase\FleetOps\Models\IntegratedVendor;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
-use Fleetbase\FleetOps\Models\IntegratedVendor;
-use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Storefront\Models\Cart;
-use Fleetbase\Storefront\Models\Product;
-use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\FleetOps\Support\Flow;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
+use Fleetbase\Storefront\Models\Cart;
+use Fleetbase\Storefront\Models\Product;
+use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Models\StoreLocation;
 use Illuminate\Support\Str;
 
 class ServiceQuoteController extends Controller
@@ -24,23 +24,24 @@ class ServiceQuoteController extends Controller
     /**
      * Query for Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
+     *
      * @return \Fleetbase\Http\Resources\DriverCollection
      */
     public function fromCart(GetServiceQuoteFromCart $request)
     {
-        $requestId = ServiceQuote::generatePublicId('request');
-        $origin = $this->getPlaceFromId($request->input('origin'));
-        $destination = $this->getPlaceFromId($request->input('destination'));
-        $facilitator = $request->input('facilitator');
-        $scheduledAt = $request->input('scheduled_at');
-        $serviceType = $request->input('service_type');
-        $cart = Cart::retrieve($request->input('cart'));
-        $currency = $cart->currency;
-        $config = $request->input('config', 'storefront');
-        $all = $request->boolean('all');
+        $requestId        = ServiceQuote::generatePublicId('request');
+        $origin           = $this->getPlaceFromId($request->input('origin'));
+        $destination      = $this->getPlaceFromId($request->input('destination'));
+        $facilitator      = $request->input('facilitator');
+        $scheduledAt      = $request->input('scheduled_at');
+        $serviceType      = $request->input('service_type');
+        $cart             = Cart::retrieve($request->input('cart'));
+        $currency         = $cart->currency;
+        $config           = $request->input('config', 'storefront');
+        $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
-        $isNetwork = Str::startsWith(session('storefront_key'), 'network_');
+        $isNetwork        = Str::startsWith(session('storefront_key'), 'network_');
 
         if ($isNetwork) {
             return $this->fromCartForNetwork($request);
@@ -77,7 +78,7 @@ class ServiceQuoteController extends Controller
 
             // set origin and destination in service quote meta
             $serviceQuote->updateMeta([
-                'origin' => $origin->public_id,
+                'origin'      => $origin->public_id,
                 'destination' => $destination->public_id,
             ]);
 
@@ -120,7 +121,7 @@ class ServiceQuoteController extends Controller
 
                 // set origin and destination in service quote meta
                 $serviceQuote->updateMeta([
-                    'origin' => $origin->public_id,
+                    'origin'      => $origin->public_id,
                     'destination' => $destination->public_id,
                 ]);
 
@@ -135,24 +136,24 @@ class ServiceQuoteController extends Controller
             [$subTotal, $lines] = $serviceRate->quoteFromPreliminaryData($entities, [$origin, $destination], $matrix->distance, $matrix->time, false);
 
             $quote = ServiceQuote::create([
-                'request_id' => $requestId,
-                'company_uuid' => $serviceRate->company_uuid,
+                'request_id'        => $requestId,
+                'company_uuid'      => $serviceRate->company_uuid,
                 'service_rate_uuid' => $serviceRate->uuid,
-                'amount' => $subTotal,
-                'currency' => $serviceRate->currency,
-                'meta' => [
-                    'origin' => $origin->public_id,
+                'amount'            => $subTotal,
+                'currency'          => $serviceRate->currency,
+                'meta'              => [
+                    'origin'      => $origin->public_id,
                     'destination' => $destination->public_id,
-                ]
+                ],
             ]);
 
             $items = $lines->map(function ($line) use ($quote) {
                 return ServiceQuoteItem::create([
                     'service_quote_uuid' => $quote->uuid,
-                    'amount' => $line['amount'],
-                    'currency' => $line['currency'],
-                    'details' => $line['details'],
-                    'code' => $line['code'],
+                    'amount'             => $line['amount'],
+                    'currency'           => $line['currency'],
+                    'details'            => $line['details'],
+                    'code'               => $line['code'],
                 ]);
             });
 
@@ -179,24 +180,26 @@ class ServiceQuoteController extends Controller
 
         return new ServiceQuoteResource($bestQuote);
     }
+
     /**
      * Query for Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
+     *
      * @return \Fleetbase\Http\Resources\DriverCollection
      */
     public function fromCartForNetwork(GetServiceQuoteFromCart $request)
     {
         $requestId = ServiceQuote::generatePublicId('request');
         // $origin = $this->getPlaceFromId($request->input('origin'));
-        $destination = $this->getPlaceFromId($request->input('destination'));
-        $facilitator = $request->input('facilitator');
-        $scheduledAt = $request->input('scheduled_at');
-        $serviceType = $request->input('service_type');
-        $cart = Cart::retrieve($request->input('cart'));
-        $currency = $cart->currency;
-        $config = $request->input('config', 'storefront');
-        $all = $request->boolean('all');
+        $destination      = $this->getPlaceFromId($request->input('destination'));
+        $facilitator      = $request->input('facilitator');
+        $scheduledAt      = $request->input('scheduled_at');
+        $serviceType      = $request->input('service_type');
+        $cart             = Cart::retrieve($request->input('cart'));
+        $currency         = $cart->currency;
+        $config           = $request->input('config', 'storefront');
+        $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
 
         // make sure destination is set
@@ -263,7 +266,7 @@ class ServiceQuoteController extends Controller
 
             // set origin and destination in service quote meta
             $serviceQuote->updateMeta([
-                'origin' => $origins->pluck('public_id')->toArray(),
+                'origin'      => $origins->pluck('public_id')->toArray(),
                 'destination' => $destination->public_id,
             ]);
 
@@ -307,7 +310,7 @@ class ServiceQuoteController extends Controller
 
                 // set origin and destination in service quote meta
                 $serviceQuote->updateMeta([
-                    'origin' => $origins->pluck('public_id')->toArray(),
+                    'origin'      => $origins->pluck('public_id')->toArray(),
                     'destination' => $destination->public_id,
                 ]);
 
@@ -322,24 +325,24 @@ class ServiceQuoteController extends Controller
             [$subTotal, $lines] = $serviceRate->quoteFromPreliminaryData($entities, [...$origins, $destination], $matrix->distance, $matrix->time, false);
 
             $quote = ServiceQuote::create([
-                'request_id' => $requestId,
-                'company_uuid' => $serviceRate->company_uuid,
+                'request_id'        => $requestId,
+                'company_uuid'      => $serviceRate->company_uuid,
                 'service_rate_uuid' => $serviceRate->uuid,
-                'amount' => $subTotal,
-                'currency' => $serviceRate->currency,
-                'meta' => [
-                    'origin' => $origins->pluck('public_id')->toArray(),
+                'amount'            => $subTotal,
+                'currency'          => $serviceRate->currency,
+                'meta'              => [
+                    'origin'      => $origins->pluck('public_id')->toArray(),
                     'destination' => $destination->public_id,
-                ]
+                ],
             ]);
 
             $items = $lines->map(function ($line) use ($quote) {
                 return ServiceQuoteItem::create([
                     'service_quote_uuid' => $quote->uuid,
-                    'amount' => $line['amount'],
-                    'currency' => $line['currency'],
-                    'details' => $line['details'],
-                    'code' => $line['code'],
+                    'amount'             => $line['amount'],
+                    'currency'           => $line['currency'],
+                    'details'            => $line['details'],
+                    'code'               => $line['code'],
                 ]);
             });
 
@@ -371,6 +374,7 @@ class ServiceQuoteController extends Controller
      * Returns a place from either a place id or store location id.
      *
      * @param string $id
+     *
      * @return Place
      */
     public function getPlaceFromId($id)

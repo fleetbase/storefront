@@ -24,8 +24,8 @@ class VerifyCreateCustomerRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'mode' => 'required|in:email,sms',
-            'identity' => 'required'
+            'mode'     => 'required|in:email,sms',
+            'identity' => 'required',
         ];
     }
 }

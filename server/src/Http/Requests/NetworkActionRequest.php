@@ -13,7 +13,7 @@ class NetworkActionRequest extends FleetbaseRequest
      */
     public function all($keys = null)
     {
-        $data = parent::all($keys);
+        $data       = parent::all($keys);
         $data['id'] = $this->route('id');
 
         return $data;
@@ -37,7 +37,7 @@ class NetworkActionRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'id' => ['required', 'exists:storefront.networks,uuid']
+            'id' => ['required', 'exists:storefront.networks,uuid'],
         ];
     }
 }

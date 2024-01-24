@@ -3,20 +3,22 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\ServiceQuote;
-use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Traits\HasOptionsAttributes;
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Illuminate\Support\Str;
 
 class Checkout extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasOptionsAttributes;
+    use HasUuid;
+    use HasPublicid;
+    use HasOptionsAttributes;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -30,7 +32,7 @@ class Checkout extends StorefrontModel
     protected $table = 'checkouts';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -50,14 +52,14 @@ class Checkout extends StorefrontModel
      */
     protected $casts = [
         'cart_state' => Json::class,
-        'options' => Json::class,
-        'captured' => 'boolean',
-        'is_cod' => 'boolean',
-        'is_pickup' => 'boolean'
+        'options'    => Json::class,
+        'captured'   => 'boolean',
+        'is_cod'     => 'boolean',
+        'is_pickup'  => 'boolean',
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -137,8 +139,8 @@ class Checkout extends StorefrontModel
     }
 
     /**
-     * Sets the owner type
-     * 
+     * Sets the owner type.
+     *
      * @return void
      */
     public function setOwnerTypeAttribute($type)

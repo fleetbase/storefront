@@ -3,20 +3,22 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
-use Fleetbase\Models\User;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
-use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Traits\HasUuid;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 
 class Gateway extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -30,7 +32,7 @@ class Gateway extends StorefrontModel
     protected $table = 'gateways';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -50,12 +52,12 @@ class Gateway extends StorefrontModel
      */
     protected $casts = [
         'sandbox' => 'boolean',
-        'meta' => Json::class,
-        'config' => Json::class
+        'meta'    => Json::class,
+        'config'  => Json::class,
     ];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -106,13 +108,13 @@ class Gateway extends StorefrontModel
     public function getLogoUrlAttribute()
     {
         $default = $this->logoFile->url ?? null;
-        $backup = 'https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png';
+        $backup  = 'https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png';
 
         return $default ?? $backup;
     }
 
     /**
-     * Sets the owner type
+     * Sets the owner type.
      */
     public function setOwnerTypeAttribute($type)
     {
@@ -121,7 +123,7 @@ class Gateway extends StorefrontModel
 
     public function getConfigAttribute($config)
     {
-        $config = Json::decode($config);
+        $config     = Json::decode($config);
         $sortedKeys = collect($config)->keys()->sort(function ($key) use ($config) {
             return Utils::isBooleanValue($config[$key]) ? 1 : 0;
         });
@@ -145,21 +147,19 @@ class Gateway extends StorefrontModel
     }
 
     /**
-     * Generates a new cash/cash on delivery gateway
-     *
-     * @return Gateway
+     * Generates a new cash/cash on delivery gateway.
      */
     public static function cash($attributes = ['sandbox' => 0]): Gateway
     {
         return new static([
-            'public_id' => 'gateway_cash',
-            'name' => 'Cash',
-            'code' => 'cash',
-            'type' => 'cash',
-            'sandbox' => $attributes['sandbox'],
-            'return_url' => null,
+            'public_id'    => 'gateway_cash',
+            'name'         => 'Cash',
+            'code'         => 'cash',
+            'type'         => 'cash',
+            'sandbox'      => $attributes['sandbox'],
+            'return_url'   => null,
             'callback_url' => null,
-            ...$attributes
+            ...$attributes,
         ]);
     }
 }

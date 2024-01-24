@@ -3,11 +3,11 @@
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Category as StorefrontCategory;
 use Fleetbase\Storefront\Http\Resources\Product as ProductResource;
-use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\Product;
-use Fleetbase\Models\Category;
+use Fleetbase\Storefront\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +16,6 @@ class CategoryController extends Controller
     /**
      * Query for Storefront Product resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function query(Request $request)
@@ -62,7 +61,7 @@ class CategoryController extends Controller
             if ($request->filled('store')) {
                 $store = Store::where([
                     'company_uuid' => session('company'),
-                    'public_id' => $request->input('store')
+                    'public_id'    => $request->input('store'),
                 ])->whereHas('networks', function ($q) {
                     $q->where('network_uuid', session('storefront_network'));
                 })->first();

@@ -2,19 +2,22 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\Models\User;
 use Fleetbase\FleetOps\Models\Place;
-use Fleetbase\Traits\HasUuid;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
+use Fleetbase\Traits\HasUuid;
 use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
 class StoreLocation extends StorefrontModel
 {
-    use HasUuid, HasPublicid, HasApiModelBehavior, SpatialTrait;
+    use HasUuid;
+    use HasPublicid;
+    use HasApiModelBehavior;
+    use SpatialTrait;
 
     /**
-     * The type of public Id to generate
+     * The type of public Id to generate.
      *
      * @var string
      */
@@ -28,7 +31,7 @@ class StoreLocation extends StorefrontModel
     protected $table = 'store_locations';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -51,7 +54,7 @@ class StoreLocation extends StorefrontModel
         'store_uuid',
         'created_by_uuid',
         'place_uuid',
-        'name'
+        'name',
     ];
 
     /**
@@ -62,7 +65,7 @@ class StoreLocation extends StorefrontModel
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */
@@ -108,7 +111,8 @@ class StoreLocation extends StorefrontModel
     }
 
     /**
-     * Get address for places
+     * Get address for places.
+     *
      * @return string
      */
     public function getAddressAttribute()

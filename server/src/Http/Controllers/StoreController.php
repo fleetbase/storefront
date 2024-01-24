@@ -8,12 +8,11 @@ use Illuminate\Http\Request;
 class StoreController extends StorefrontController
 {
     /**
-     * The resource to query
+     * The resource to query.
      *
      * @var string
      */
     public $resource = 'store';
-
 
     public function allStores(Request $request)
     {

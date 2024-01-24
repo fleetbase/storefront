@@ -3,8 +3,8 @@
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Http\Resources\Cart as StorefrontCart;
+use Fleetbase\Storefront\Models\Cart;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -13,11 +13,9 @@ class CartController extends Controller
      * Retrieve or create a cart using a unique identifier. If no unique identifier is provided
      * one will be created.
      *
-     * @param string|null $uniqueId
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function retrieve(?string $uniqueId = null, Request $request)
+    public function retrieve(string $uniqueId = null, Request $request)
     {
         $cart = Cart::retrieve($uniqueId, true);
 
@@ -30,19 +28,16 @@ class CartController extends Controller
     /**
      * Adds a product to cart and creates a line item for the product.
      *
-     * @param string $cartId
-     * @param string $productId
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function add(string $cartId, string $productId, Request $request)
     {
-        $quantity = $request->input('quantity', 1);
-        $variants = $request->input('variants', []);
-        $addons = $request->input('addons', []);
-        $scheduledAt = $request->input('scheduled_at');
+        $quantity        = $request->input('quantity', 1);
+        $variants        = $request->input('variants', []);
+        $addons          = $request->input('addons', []);
+        $scheduledAt     = $request->input('scheduled_at');
         $storeLocationId = $request->input('store_location');
-        $cart = Cart::retrieve($cartId);
+        $cart            = Cart::retrieve($cartId);
 
         if (!$cart) {
             return response()->error('Cart was not found or has already been checkout out.');
@@ -61,20 +56,19 @@ class CartController extends Controller
     }
 
     /**
-     * Update a line item in the cart
+     * Update a line item in the cart.
      *
-     * @param string $cartId
      * @param string $cartItemId - can be either product id or line item id
-     * @param  \Illuminate\Http\Request  $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function update(string $cartId, string $cartItemId, Request $request)
     {
-        $quantity = $request->input('quantity', null);
-        $variants = $request->input('variants', null);
-        $addons = $request->input('addons', null);
+        $quantity    = $request->input('quantity', null);
+        $variants    = $request->input('variants', null);
+        $addons      = $request->input('addons', null);
         $scheduledAt = $request->input('scheduled_at');
-        $cart = Cart::retrieve($cartId);
+        $cart        = Cart::retrieve($cartId);
 
         if (!$cart) {
             return response()->error('Cart was not found or has already been checkout out.');
@@ -93,11 +87,10 @@ class CartController extends Controller
     }
 
     /**
-     * Removes a line item in the cart
+     * Removes a line item in the cart.
      *
-     * @param string $cartId
      * @param string $cartItemId - can be either product id or line item id
-     * @param  \Illuminate\Http\Request  $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function remove(?string $cartId, ?string $cartItemId, Request $request)
@@ -121,9 +114,8 @@ class CartController extends Controller
     }
 
     /**
-     * Empties a cart
+     * Empties a cart.
      *
-     * @param string $cartId
      * @return \Illuminate\Http\Response
      */
     public function empty(string $cartId)
@@ -142,8 +134,6 @@ class CartController extends Controller
     /**
      * Deletes a cart.
      *
-     * @param string $cartId
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function delete(string $cartId)

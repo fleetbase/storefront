@@ -6,22 +6,22 @@ use GuzzleHttp\Client;
 
 class QPay
 {
-    private string $host = 'https://merchant.qpay.mn/';
+    private string $host      = 'https://merchant.qpay.mn/';
     private string $namespace = 'v2';
     private ?string $callbackUrl;
     private array $requestOptions = [];
     private Client $client;
 
-    public function __construct(?string $username = null, ?string $password = null, ?string $callbackUrl = null)
+    public function __construct(string $username = null, string $password = null, string $callbackUrl = null)
     {
-        $this->callbackUrl = $callbackUrl;
+        $this->callbackUrl    = $callbackUrl;
         $this->requestOptions = [
             'base_uri' => $this->buildRequestUrl(),
-            'auth' => [$username, $password],
-            'headers' => [
+            'auth'     => [$username, $password],
+            'headers'  => [
                 'Content-Type' => 'application/json',
-                'Accept' => 'application/json'
-            ]
+                'Accept'       => 'application/json',
+            ],
         ];
         $this->client = new Client($this->requestOptions);
     }
@@ -29,7 +29,7 @@ class QPay
     public function updateRequestOption($key, $value)
     {
         $this->requestOptions[$key] = $value;
-        $this->client = new Client($this->requestOptions);
+        $this->client               = new Client($this->requestOptions);
     }
 
     public function getClient()
@@ -48,6 +48,7 @@ class QPay
     private function buildRequestUrl(string $path = ''): string
     {
         $url = trim($this->host . $this->namespace . '/' . $path);
+
         return $url;
     }
 
@@ -59,7 +60,7 @@ class QPay
         return $this;
     }
 
-    public static function instance(?string $username = null, ?string $password = null, ?string $callbackUrl = null): QPay
+    public static function instance(string $username = null, string $password = null, string $callbackUrl = null): QPay
     {
         return new static($username, $password, $callbackUrl);
     }
@@ -74,9 +75,9 @@ class QPay
         $options['http_errors'] = false;
 
         $response = $this->client->request($method, $path, $options);
-        $body = $response->getBody();
+        $body     = $response->getBody();
         $contents = $body->getContents();
-        $json = json_decode($contents);
+        $json     = json_decode($contents);
 
         return $json;
     }
@@ -119,13 +120,13 @@ class QPay
         return $this;
     }
 
-    public function setAuthToken(?string $accessToken = null): QPay
+    public function setAuthToken(string $accessToken = null): QPay
     {
         if ($accessToken) {
             $this->useBearerToken($accessToken);
         } else {
             $response = $this->getAuthToken();
-            $token = $response->access_token;
+            $token    = $response->access_token;
 
             if (isset($token)) {
                 $this->useBearerToken($token);
@@ -135,19 +136,19 @@ class QPay
         return $this;
     }
 
-    public function createSimpleInvoice(int $amount, ?string $invoiceCode = '', ?string $invoiceDescription = '', ?string $invoiceReceiverCode = '', ?string $senderInvoiceNo = '', ?string $callbackUrl = null)
+    public function createSimpleInvoice(int $amount, ?string $invoiceCode = '', ?string $invoiceDescription = '', ?string $invoiceReceiverCode = '', ?string $senderInvoiceNo = '', string $callbackUrl = null)
     {
         if (!$callbackUrl && $this->hasCallbackUrl()) {
             $callbackUrl = $this->callbackUrl;
         }
 
         $params = array_filter([
-            'invoice_code' => $invoiceCode,
-            'amount' => $amount,
-            'callback_url' => $callbackUrl,
-            'invoice_description' => $invoiceDescription,
+            'invoice_code'          => $invoiceCode,
+            'amount'                => $amount,
+            'callback_url'          => $callbackUrl,
+            'invoice_description'   => $invoiceDescription,
             'invoice_receiver_code' => $invoiceReceiverCode,
-            'sender_invoice_no' => $senderInvoiceNo,
+            'sender_invoice_no'     => $senderInvoiceNo,
         ]);
 
         return $this->createQPayInvoice($params);
@@ -166,7 +167,7 @@ class QPay
     {
         $params = [
             'object_type' => 'INVOICE',
-            'object_id' => $invoiceId
+            'object_id'   => $invoiceId,
         ];
 
         return $this->post('payment/check', $params, $options);
@@ -203,6 +204,7 @@ class QPay
     public static function cleanCode(string $code)
     {
         $code = str_replace(' ', '-', $code);
+
         return preg_replace('/[^A-Za-z0-9\-]/', '', $code);
     }
 }

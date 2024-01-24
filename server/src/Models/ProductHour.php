@@ -2,12 +2,13 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasUuid;
 
 class ProductHour extends StorefrontModel
 {
-    use HasUuid, HasApiModelBehavior;
+    use HasUuid;
+    use HasApiModelBehavior;
 
     /**
      * The database table used by the model.
@@ -17,7 +18,7 @@ class ProductHour extends StorefrontModel
     protected $table = 'product_hours';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -32,7 +33,7 @@ class ProductHour extends StorefrontModel
         'product_uuid',
         'day_of_week',
         'start',
-        'end'
+        'end',
     ];
 
     /**
@@ -43,7 +44,7 @@ class ProductHour extends StorefrontModel
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */

@@ -2,14 +2,16 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasUuid;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
 class ProductStoreLocation extends StorefrontModel
 {
-    use HasUuid, HasApiModelBehavior, HasSlug;
+    use HasUuid;
+    use HasApiModelBehavior;
+    use HasSlug;
 
     /**
      * The database table used by the model.
@@ -19,7 +21,7 @@ class ProductStoreLocation extends StorefrontModel
     protected $table = 'product_store_locations';
 
     /**
-     * These attributes that can be queried
+     * These attributes that can be queried.
      *
      * @var array
      */
@@ -32,7 +34,7 @@ class ProductStoreLocation extends StorefrontModel
      */
     protected $fillable = [
         'product_uuid',
-        'store_location_uuid'
+        'store_location_uuid',
     ];
 
     /**
@@ -43,7 +45,7 @@ class ProductStoreLocation extends StorefrontModel
     protected $casts = [];
 
     /**
-     * Dynamic attributes that are appended to object
+     * Dynamic attributes that are appended to object.
      *
      * @var array
      */

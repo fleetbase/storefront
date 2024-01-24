@@ -27,12 +27,12 @@ class InitializeCheckoutRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'gateway' => ['required', new GatewayExists],
-            'customer' => ['required', new CustomerExists],
-            'cart' => ['required', 'exists:storefront.carts,public_id'],
+            'gateway'      => ['required', new GatewayExists()],
+            'customer'     => ['required', new CustomerExists()],
+            'cart'         => ['required', 'exists:storefront.carts,public_id'],
             'serviceQuote' => ['required', 'exists:service_quotes,public_id'],
-            'cash' => ['sometimes', 'boolean'],
-            'pickup' => ['sometimes', 'boolean'],
+            'cash'         => ['sometimes', 'boolean'],
+            'pickup'       => ['sometimes', 'boolean'],
         ];
     }
 }
