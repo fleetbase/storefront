@@ -3,17 +3,29 @@
         <div class="flex flex-col items-center justify-center mb-2">
             <FaIcon @icon="stars" @size="4x" class="text-sky-400" />
             <div class="my-2 text-center">
-                <h2 class="dark:text-gray-100 font-semibold">Welcome to Storefront!</h2>
+                <h2 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.create-first-store.title"}}</h2>
                 <p class="my-2 px-6 dark:text-gray-100">
-                    Storefront allows you to quickly setup a headless and dynamic on-demand shop powered by Fleetbase.
-                    Submit the form below to create your first store.
+                    {{t "storefront.component.modals.create-first-store.message"}}
+                    {{t "storefront.component.modals.create-first-store.submit-message"}}
                 </p>
             </div>
         </div>
         <div>
-            <InputGroup @name="Storefront name" @value={{@options.store.name}} @helpText="Enter the name of your store" />
-            <InputGroup @name="Storefront description" @value={{@options.store.description}} @helpText="Give your store a simple brief description on the types of things sold" />
-            <InputGroup @name="Storefront currency" @value={{@options.store.currency}} @helpText="Select the default currency for your storefront">
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.storefront-name"}}
+                @value={{@options.store.name}}
+                @helpText={{t "storefront.component.modals.create-first-store.enter-name"}}
+            />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.description"}}
+                @value={{@options.store.description}}
+                @helpText={{t "storefront.component.modals.create-first-store.brief-description"}}
+            />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-first-store.currency"}}
+                @value={{@options.store.currency}}
+                @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}
+            >
                 <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
         </div>

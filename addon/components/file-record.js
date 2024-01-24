@@ -7,6 +7,7 @@ import isImage from '@fleetbase/ember-core/utils/is-image-file';
 
 export default class FileRecordComponent extends Component {
     @service modalsManager;
+    @service intl;
     @alias('args.file') file;
 
     get isVideo() {
@@ -27,8 +28,8 @@ export default class FileRecordComponent extends Component {
 
     @action deleteFile(file) {
         return this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this file?',
-            body: 'Once you delete this file you will be unable to recover it.',
+            title: this.intl.t('storefront.component.file-record.delete-this-file'),
+            body: this.intl.t('storefront.component.file-record.delete-this-file-you-will-unable-recover'),
             confirm: (modal) => {
                 file.destroyRecord();
 

@@ -12,7 +12,7 @@
         </div>
         <div class="w-full my-2">
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
-                <h5 class="dark:text-gray-100 font-semibold">Store</h5>
+                <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.store"}}</h5>
             </div>
             <div class="flex items-start px-6 py-2">
                 <img src={{@options.store.logo_url}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.store.name}} />
@@ -24,7 +24,7 @@
         </div>
         <div class="w-full my-2">
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
-                <h5 class="dark:text-gray-100 font-semibold">Driver Assigned</h5>
+                <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
             </div>
             <div class="flex flex-col px-6 py-2">
                 {{#if @options.order.driver_assigned.id}}
@@ -32,15 +32,25 @@
                         <img src={{@options.order.driver_assigned.photoUrl}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.order.driver_assigned.name}} />
                         <div>
                             <h5 class="font-semibold dark:text-white text-base">{{n-a @options.order.driver_assigned.displayName}}</h5>
-                            <div class="font-semibold dark:text-gray-100 text-sm">{{n-a @options.order.driver_assigned.phone "No phone"}}</div>
+                            <div class="font-semibold dark:text-gray-100 text-sm">{{n-a @options.order.driver_assigned.phone (t "storefront.component.modals.incoming-order.no-phone")}}</div>
                         </div>
                     </div>
                 {{else}}
-                    <h5 class="text-red-500 text-sm">No driver assigned</h5>
+                    <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
                 {{/if}}
                 {{#if @options.assignDriver}}
                     <div class="mt-2.5">
-                        <Button @size="xs" @type="default" @icon="steering-wheel" @text={{if @options.order.has_driver_assigned "Change Driver" "Assign Driver"}} @onClick={{@options.assignDriver}} />
+                        <Button
+                            @size="xs"
+                            @type="default"
+                            @icon="steering-wheel"
+                            @text={{if
+                                @options.order.has_driver_assigned
+                                (t "storefront.component.modals.incoming-order.change-driver")
+                                (t "storefront.component.modals.incoming-order.assign-driver")
+                            }}
+                            @onClick={{@options.assignDriver}}
+                        />
                     </div>
                 {{/if}}
             </div>
@@ -49,9 +59,9 @@
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
                 <div class="flex-1">
                     {{#if @options.order.meta.is_pickup}}
-                        <h5 class="dark:text-gray-100 font-semibold">Pickup</h5>
+                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.pickup"}}</h5>
                     {{else}}
-                        <h5 class="dark:text-gray-100 font-semibold">Delivery</h5>
+                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.delivery"}}</h5>
                     {{/if}}
                 </div>
             </div>
@@ -61,7 +71,7 @@
                         <div class="flex-1">
                             <div class="rounded-md bg-blue-50 mr-4">
                                 <div class="rounded-t-md bg-blue-100 px-3 py-2 mb-3">
-                                    <span class="text-blue-500 font-semibold text-sm truncate">Customer must pickup order from</span>
+                                    <span class="text-blue-500 font-semibold text-sm truncate">{{t "storefront.component.modals.incoming-order.pickup-order"}}</span>
                                 </div>
                                 <div class="flex flex-row items-center mb-4 pb-4 px-3">
                                     <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
@@ -104,8 +114,8 @@
         </div>
         <div class="w-full my-2 flex flex-col">
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
-                <div class="flex-1 ">
-                    <h5 class="dark:text-gray-100 font-semibold">Customer</h5>
+                <div class="flex-1">
+                    <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
                 </div>
             </div>
             <div class="py-2 px-6">
@@ -124,7 +134,7 @@
                 {{#unless @options.order.meta.is_pickup}}
                     <div class="rounded-md bg-blue-50">
                         <div class="rounded-t-md bg-blue-100 px-3 py-2 mb-3">
-                            <span class="text-blue-500 font-semibold text-sm truncate">Customer address</span>
+                            <span class="text-blue-500 font-semibold text-sm truncate">{{t "storefront.component.modals.incoming-order.address"}}</span>
                         </div>
                         <div class="flex flex-row items-center mb-4 pb-4 px-3">
                             <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
@@ -141,7 +151,7 @@
         <div class="w-full my-2 flex flex-col">
             <div class="flex px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
                 <div class="flex-1 flex-row justify-between items-center">
-                    <h5 class="dark:text-gray-100 font-semibold">Tracking</h5>
+                    <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.tracking"}}</h5>
                     <h5 class="dark:text-gray-100 font-semibold">({{@options.order.tracking}})</h5>
                 </div>
             </div>
@@ -159,12 +169,12 @@
         <div class="w-full my-2">
             <div class="flex items-center justify-between px-6 py-4 border-t border-b border-gray-100 dark:border-gray-800">
                 <div>
-                    <h5 class="dark:text-gray-100 font-semibold">Order Summary</h5>
+                    <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.summary"}}</h5>
                 </div>
                 {{#if @options.order.payload.cod_amount}}
                     <div>
                         <FaIcon @icon="money-bill-wave" @size="sm" class="text-green-400 mr-1" />
-                        <span class="font-semibold text-green-400 text-sm">Cash</span>
+                        <span class="font-semibold text-green-400 text-sm">{{t "storefront.common.cash"}}</span>
                     </div>
                 {{/if}}
             </div>
@@ -209,31 +219,31 @@
             </div>
             <div class="px-6 py-2.5 space-y-2 border-t border-b border-gray-100 dark:border-gray-800">
                 <div class="flex items-center justify-between">
-                    <span class="dark:text-gray-50 text-sm">Subtotal</span>
+                    <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.subtotal"}}</span>
                     <span class="dark:text-gray-50 text-sm">{{format-currency @options.order.meta.subtotal @options.order.meta.currency}}</span>
                 </div>
                 {{#unless @options.order.meta.is_pickup}}
                     <div class="flex items-center justify-between">
-                        <span class="dark:text-gray-50 text-sm">Delivery fee</span>
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.fee"}}</span>
                         <span class="dark:text-gray-50 text-sm">{{format-currency @options.order.meta.delivery_fee @options.order.meta.currency}}</span>
                     </div>
                 {{/unless}}
                 {{#if @options.order.meta.tip}}
                     <div class="flex items-center justify-between">
-                        <span class="dark:text-gray-50 text-sm">Tip</span>
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.tip"}}</span>
                         <span class="dark:text-gray-50 text-sm">{{get-tip-amount @options.order.meta.tip @options.order.meta.subtotal @options.order.meta.currency}}</span>
                     </div>
                 {{/if}}
                 {{#if @options.order.meta.delivery_tip}}
                     <div class="flex items-center justify-between">
-                        <span class="dark:text-gray-50 text-sm">Delivery Tip</span>
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.delivery-tip"}}</span>
                         <span class="dark:text-gray-50 text-sm">{{get-tip-amount @options.order.meta.delivery_tip @options.order.meta.subtotal @options.order.meta.currency}}</span>
                     </div>
                 {{/if}}
             </div>
             <div class="px-6 py-2">
                 <div class="flex items-center justify-between">
-                    <span class="dark:text-gray-50 font-bold text-sm">Total</span>
+                    <span class="dark:text-gray-50 font-bold text-sm">{{t "storefront.common.total"}}</span>
                     <span class="dark:text-gray-50 font-bold text-sm">{{format-currency @options.order.meta.total @options.order.meta.currency}}</span>
                 </div>
             </div>

@@ -10,6 +10,7 @@ export default class SettingsIndexController extends Controller {
     @service notifications;
     @service fetch;
     @service storefront;
+    @service intl;
 
     @alias('storefront.activeStore') activeStore;
     @tracked podMethods = getPodMethods();

@@ -13,6 +13,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @service modalsManager;
     @service currentUser;
     @service store;
+    @service intl;
     @service storefront;
     @service fetch;
     @service loader;
@@ -62,7 +63,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             .then(() => {
                 this.loader.removeLoader(loader);
                 this.isSaving = false;
-                this.notifications.success('New product created successfully!');
+                this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
 
                 return this.transitionToRoute('products.index.category').then(() => {
                     return this.hostRouter.refresh();
@@ -134,10 +135,10 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
     @action makePrimaryFile(file) {
         if (file.isNotImage) {
-            return this.notifications.warning('You can only select an image file to be primary!');
+            return this.notifications.warning(this.intl.t('storefront.products.index.category.new.warning-only-select-an-image-file-to-be-primary'));
         }
 
-        this.notifications.success(`${file.original_filename} was made the primary image.`);
+        this.notifications.success(this.intl.t('storefront.products.index.category.new.made-the-primary-success-image', { fileName: file.original_filename }));
         this.product.primary_image_uuid = file.id;
         this.product.primary_image_url = file.url;
         this.product.primary_image = file;
@@ -147,8 +148,8 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         if (this.product.hasDirtyAttributes) {
             // details have been added warn user it will lost
             return this.modalsManager.confirm({
-                title: 'Product is not saved!',
-                body: 'Going back will cancel this product creation, if you continue all input fields will be cleared!',
+                title: this.intl.t('storefront.products.index.new.title'),
+                body: this.intl.t('storefront.products.index.new.body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);
@@ -175,7 +176,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
         return this.modalsManager.done().then(() => {
             this.modalsManager.show('modals/select-addon-category', {
-                title: 'Select addon categories',
+                title: this.intl.t('storefront.products.index.new.select-addon-categories'),
                 addonCategories,
                 product,
                 updateProductAddonCategories: (categories) => {
@@ -200,7 +201,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         const productVariant = this.store.createRecord('product-variant');
 
         return this.modalsManager.show('modals/create-new-variant', {
-            title: 'Add new product variant',
+            title: this.intl.t('storefront.products.index.new.add-new-product-variant'),
             productVariant,
             confirm: (modal) => {
                 modal.startLoading();
@@ -213,7 +214,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
     @action editProductVariant(productVariant) {
         return this.modalsManager.show('modals/create-new-variant', {
-            title: 'Edit product variant',
+            title: this.intl.t('storefront.products.index.new.edit-product-variant'),
             productVariant,
         });
     }
@@ -272,7 +273,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             meta_array = [];
         }
 
-        const label = `Untitled Field`;
+        const label = this.intl.t('storefront.products.index.new.untitled-field');
 
         meta_array.pushObject({
             key: underscore(label),

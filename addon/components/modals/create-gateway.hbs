@@ -1,20 +1,32 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         <div class="mb-4 w-full">
-            <InputGroup @name="Gateway type" @helpText="Select gateway type">
+            <InputGroup @name={{t "storefront.component.modals.create-getaway.getaway"}} @helpText={{t "storefront.component.modals.create-getaway.getaway-text"}}>
                 <Select class="w-full" @placeholder="Select gateway type" @options={{@options.schemaOptions}} @onSelect={{@options.selectSchema}} @humanize={{true}} />
             </InputGroup>
         </div>
 
         {{#if @options.schema}}
-            <InputGroup @name="Gateway name" @value={{@options.gateway.name}} @helpText="Give your payment gateway a name, this will only be relevent internally" />
-            <InputGroup @name="Gateway code" @helpText="Identifier code used to identify gateway to the SDK">
-                <KeyInput @name="Gateway code" @value={{@options.gateway.code}} @onChange={{fn (mut @options.gateway.code)}} />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-getaway.getaway-name"}}
+                @value={{@options.gateway.name}}
+                @helpText={{t "storefront.component.modals.create-getaway.name-text"}}
+            />
+            <InputGroup @name={{t "storefront.component.modals.create-getaway.getaway-code"}} @helpText={{t "storefront.component.modals.create-getaway.code-text"}}>
+                <KeyInput @name={{t "storefront.component.modals.create-getaway.getaway-code"}} @value={{@options.gateway.code}} @onChange={{fn (mut @options.gateway.code)}} />
             </InputGroup>
-            <InputGroup @name="Callback URL" @value={{@options.gateway.callback_url}} @helpText="Callback URL if applicable" />
-            <InputGroup @name="Return URL" @value={{@options.gateway.return_url}} @helpText="Return URL if applicable" />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-getaway.callback-url"}}
+                @value={{@options.gateway.callback_url}}
+                @helpText={{t "storefront.component.modals.create-getaway.callback-text"}}
+            />
+            <InputGroup
+                @name={{t "storefront.component.modals.create-getaway.return-url"}}
+                @value={{@options.gateway.return_url}}
+                @helpText={{t "storefront.component.modals.create-getaway.return-text"}}
+            />
             <div class="input-group">
-                <Checkbox @value={{@options.gateway.sandbox}} @label="This is a sandbox gateway" @onToggle={{fn (mut @options.gateway.sandbox)}} />
+                <Checkbox @value={{@options.gateway.sandbox}} @label={{t "storefront.component.modals.create-getaway.sandbox-getaway"}} @onToggle={{fn (mut @options.gateway.sandbox)}} />
             </div>
             <div class="p-2 rounded-md my-2 border border-gray-200 dark:border-gray-800">
                 <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>

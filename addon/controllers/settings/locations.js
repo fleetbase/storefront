@@ -13,6 +13,13 @@ export default class SettingsLocationsController extends Controller {
     @service notifications;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     */
+    @service intl;
+
+    /**
      * Inject the `modals-manager` service
      *
      * @var {Service}
@@ -64,8 +71,8 @@ export default class SettingsLocationsController extends Controller {
         });
 
         return this.editStoreLocation(storeLocation, {
-            title: 'New store location',
-            acceptButtonText: 'Add new Location',
+            title: this.intl.t('storefront.settings.locations.new-store-location'),
+            acceptButtonText: this.intl.t('storefront.settings.locations.add-new-location'),
             acceptButtonIcon: 'save',
         });
     }
@@ -82,8 +89,8 @@ export default class SettingsLocationsController extends Controller {
         }
 
         this.modalsManager.show('modals/store-location-form', {
-            title: 'Edit store location',
-            acceptButtonText: 'Save Changes',
+            title: this.intl.t('storefront.settings.locations.edit-store-location'),
+            acceptButtonText: this.intl.t('storefront.settings.locations.save-changes'),
             acceptButtonIcon: 'save',
             place,
             autocomplete: (selected) => {
@@ -134,8 +141,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeStoreLocation(storeLocation) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove this store location?',
-            body: 'All products that are solely assosciated with this location will no longer be accessible.',
+            title: this.intl.t('storefront.settings.locations.remove-this-store-location'),
+            body: this.intl.t('storefront.settings.locations.solely-accosciated-location'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -156,8 +163,8 @@ export default class SettingsLocationsController extends Controller {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: `Add new store hours for ${day}`,
-            acceptButtonText: 'Add hours',
+            title: this.intl.t('storefront.settings.locations.new-store-hour', { Day: day }),
+            acceptButtonText: this.intl.t('storefront.settings.locations.add-hours'),
             acceptButtonIcon: 'save',
             storeHours,
             confirm: (modal) => {
@@ -165,7 +172,7 @@ export default class SettingsLocationsController extends Controller {
 
                 return storeHours.save().then((storeHours) => {
                     storeLocation.hours.pushObject(storeHours);
-                    this.notifications.success(`New store hours added for ${day}`);
+                    this.notifications.success(this.intl.t('storefront.settings.locations.store-hour-added', { Day: day }));
                 });
             },
         });
@@ -173,8 +180,8 @@ export default class SettingsLocationsController extends Controller {
 
     @action removeHours(storeHours) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to remove these hours?',
-            body: 'By removing these operation hours, your store may become inactive according to the updated schedule for this location..',
+            title: this.intl.t('storefront.settings.locations.remove-these-hour'),
+            body: this.intl.t('storefront.settings.locations.update-schedule-location'),
             confirm: (modal) => {
                 modal.startLoading();
 

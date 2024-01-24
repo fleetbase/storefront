@@ -1,20 +1,39 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
-        <InputGroup @id="storefront_name_input" @name="Name" @value={{@options.store.name}} @placeholder="Storefront Name" @helpText="The name of your store." />
-        <InputGroup @name="Description" @value={{@options.store.description}} @placeholder="Storefront Description" @helpText="Give your store a brief description to let users know what you sell." />
+        <InputGroup
+            @id="storefront_name_input"
+            @name={{t "storefront.common.name"}}
+            @value={{@options.store.name}}
+            @placeholder={{t "storefront.component.modals.store-form.storefront-name"}}
+            @helpText={{t "storefront.component.modals.store-form.the-name-of-your-store"}}
+        />
+        <InputGroup
+            @name={{t "storefront.common.Description"}}
+            @value={{@options.store.description}}
+            @placeholder={{t "storefront.component.modals.store-form.storefront-description-placeholder"}}
+            @helpText={{t "storefront.component.modals.store-form.give-your-store-brief-description"}}
+        />
         <InputGroup @name="Tags">
-            <TagInput class="form-input" @placeholder="Add tags" @allowSpacesInTags={{true}} @tags={{@options.store.tags}} @addTag={{this.addTag}} @removeTagAtIndex={{this.removeTag}} as |tag|>
+            <TagInput
+                class="form-input"
+                @placeholder={{t "storefront.component.modals.store-form.add-tags-placeholder"}}
+                @allowSpacesInTags={{true}}
+                @tags={{@options.store.tags}}
+                @addTag={{this.addTag}}
+                @removeTagAtIndex={{this.removeTag}}
+                as |tag|
+            >
                 {{tag}}
             </TagInput>
         </InputGroup>
-        <InputGroup @name="Currency">
+        <InputGroup @name={{t "storefront.common.currency"}}>
             <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
 
         <div class="store-boolean-settings">
             <div class="input-group">
                 <Toggle @isToggled={{@options.store.online}} @onToggle={{fn (mut @options.store.online)}}>
-                    <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Online</span>
+                    <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.common.online"}}</span>
                 </Toggle>
             </div>
         </div>
