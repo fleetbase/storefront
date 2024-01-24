@@ -1,12 +1,28 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
-        <InputGroup @name="Variant name" @value={{@options.productVariant.name}} @helpText="Give your product variant a name" />
-        <InputGroup @name="Variant description" @value={{@options.productVariant.description}} @helpText="Short description of the variant" />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-new-variant.name"}}
+            @value={{@options.productVariant.name}}
+            @helpText={{t "storefront.component.modals.create-new-variant.name-text"}}
+        />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-new-variant.description"}}
+            @value={{@options.productVariant.description}}
+            @helpText={{t "storefront.component.modals.create-new-variant.description-text"}}
+        />
         <div class="input-group mb-2">
-            <Checkbox @value={{@options.productVariant.is_multiselect}} @label="Allow user to select multiple variant options at once" @onToggle={{fn (mut @options.productVariant.is_multiselect)}} />
+            <Checkbox
+                @value={{@options.productVariant.is_multiselect}}
+                @label={{t "storefront.component.modals.create-new-variant.checkbox-1"}}
+                @onToggle={{fn (mut @options.productVariant.is_multiselect)}}
+            />
         </div>
         <div class="input-group">
-            <Checkbox @value={{@options.productVariant.is_required}} @label="This product variant selection is required" @onToggle={{fn (mut @options.productVariant.is_required)}} />
+            <Checkbox
+                @value={{@options.productVariant.is_required}}
+                @label={{t "storefront.component.modals.create-new-variant.checkbox-2"}}
+                @onToggle={{fn (mut @options.productVariant.is_required)}}
+            />
         </div>
         <InputGroup>
             <TranslationsEditor @value={{@options.productVariant.translations}} @defaultKeys={{array "name" "description"}} @onChange={{fn (mut @options.productVariant.translations)}} />

@@ -1,24 +1,39 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
-        <InputGroup @name="Category name" @value={{@options.category.name}} @helpText="Enter a name for category" />
-        <InputGroup @name="Category description" @value={{@options.category.description}} @helpText="Give your product category a brief description" />
-        <InputGroup @name="Category icon">
+        <InputGroup
+            @name={{t "storefront.component.modals.create-product-category.name"}}
+            @value={{@options.category.name}}
+            @helpText={{t "storefront.component.modals.create-product-category.name-text"}}
+        />
+        <InputGroup
+            @name={{t "storefront.component.modals.create-product-category.description"}}
+            @value={{@options.category.description}}
+            @helpText={{t "storefront.component.modals.create-product-category.description-text"}}
+        />
+        <InputGroup @name={{t "storefront.component.modals.create-product-category.icon"}}>
             <div class="flex flex-row">
                 <div class="mr-4">
-                    <Image src={{@options.category.icon_url}} @fallbackSrc={{config "defaultValues.categoryImage"}} alt={{@options.category.name}} height="80" width="80" class="h-20 w-20 rounded-md" />
+                    <Image
+                        src={{@options.category.icon_url}}
+                        @fallbackSrc={{config "defaultValues.categoryImage"}}
+                        alt={{@options.category.name}}
+                        height="80"
+                        width="80"
+                        class="h-20 w-20 rounded-md"
+                    />
                 </div>
                 <div class="flex-1">
-                    <FileUpload @name="photos" @accept="image/*" @onFileAdded={{@options.uploadNewPhoto}} as |queue|>
+                    <FileUpload @name={{t "storefront.common.photos"}} @accept="image/*" @onFileAdded={{@options.uploadNewPhoto}} as |queue|>
                         <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
                             {{#if queue.files.length}}
                                 <Spinner class="mr-1" />
                                 <span>
-                                    Uploading...
+                                    {{t "storefront.common.uploading"}}
                                 </span>
                             {{else}}
                                 <FaIcon @icon="image" class="mr-1" />
                                 <span>
-                                    Upload new category icon
+                                    {{t "storefront.component.modals.create-product-category.uploading-new"}}
                                 </span>
                             {{/if}}
                         </a>

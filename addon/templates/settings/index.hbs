@@ -3,49 +3,88 @@
         <div class="space-y-4 h-screen">
             <div>
                 <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                    General Settings
+                    {{t "storefront.settings.index.general-settings-header"}}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    Provide the general settings for your storefront.
+                    {{t "storefront.settings.index.general-settings-message"}}
                 </p>
             </div>
 
-            <InputGroup @id="storefront_name_input" @name="Name" @value={{@model.name}} @placeholder="Storefront Name" @helpText="The name of your store." />
-            <InputGroup @name="Description" @value={{@model.description}} @placeholder="Storefront Description" @helpText="Give your store a brief description to let users know what you sell." />
-            <InputGroup @name="Tags">
-                <TagInput class="form-input" @placeholder="Add tags" @allowSpacesInTags={{true}} @tags={{@model.tags}} @addTag={{this.addTag}} @removeTagAtIndex={{this.removeTag}} as |tag|>
+            <InputGroup
+                @id="storefront_name_input"
+                @name={{t "storefront.common.name"}}
+                @value={{@model.name}}
+                @placeholder={{t "storefront.settings.index.name-placeholder"}}
+                @helpText={{t "storefront.settings.index.name-help-text"}}
+            />
+            <InputGroup
+                @name={{t "storefront.common.description"}}
+                @value={{@model.description}}
+                @placeholder={{t "storefront.settings.index.description-placeholder"}}
+                @helpText={{t "storefront.settings.index.description-help-text"}}
+            />
+            <InputGroup @name={{t "storefront.common.tag"}}>
+                <TagInput
+                    class="form-input"
+                    @placeholder={{t "storefront.settings.index.tags-placeholder"}}
+                    @allowSpacesInTags={{true}}
+                    @tags={{@model.tags}}
+                    @addTag={{this.addTag}}
+                    @removeTagAtIndex={{this.removeTag}}
+                    as |tag|
+                >
                     {{tag}}
                 </TagInput>
             </InputGroup>
-            <InputGroup @name="Currency">
+            <InputGroup @name={{t "storefront.common.currency"}}>
                 <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
 
-            <ContentPanel @title="Contact & Social" @open={{false}} @pad={{true}}>
-                <InputGroup @name="Phone">
+            <ContentPanel @title={{t "storefront.settings.index.contact-social"}} @open={{false}} @pad={{true}}>
+                <InputGroup @name={{t "storefront.common.phone"}}>
                     <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
                 </InputGroup>
-                <InputGroup @name="Website" @value={{@model.website}} @placeholder="Website" @helpText="Your business website URL." />
-                <InputGroup @name="Facebook" @value={{@model.facebook}} @placeholder="Facebook ID" @helpText="Your business Facebook page ID." />
-                <InputGroup @name="Instagram" @value={{@model.instagram}} @placeholder="Instagram Username" @helpText="Your business Instagram username." />
-                <InputGroup @name="Twitter" @value={{@model.twitter}} @placeholder="Twitter Username" @helpText="Your business Twitter username." />
+                <InputGroup
+                    @name={{t "storefront.common.website"}}
+                    @value={{@model.website}}
+                    @placeholder={{t "storefront.common.website"}}
+                    @helpText={{t "storefront.settings.index.website-help-text"}}
+                />
+                <InputGroup
+                    @name={{t "storefront.common.facebook"}}
+                    @value={{@model.facebook}}
+                    @placeholder={{t "storefront.settings.index.facebook-placeholder"}}
+                    @helpText={{t "storefront.settings.index.facebook-help-text"}}
+                />
+                <InputGroup
+                    @name={{t "storefront.common.instagram"}}
+                    @value={{@model.instagram}}
+                    @placeholder={{t "storefront.settings.index.instagram-placeholder"}}
+                    @helpText={{t "storefront.settings.index.instagram-help-text"}}
+                />
+                <InputGroup
+                    @name={{t "storefront.common.twitter"}}
+                    @value={{@model.twitter}}
+                    @placeholder={{t "storefront.settings.index.twitter-placeholder"}}
+                    @helpText={{t "storefront.settings.index.twitter-help-text"}}
+                />
             </ContentPanel>
 
-            <ContentPanel @title="Logo & Backdrop" @open={{false}} @pad={{true}}>
-                <InputGroup @name="Logo" @helpText="Logo for your store.">
+            <ContentPanel @title={{t "storefront.settings.index.logo-backdrop"}} @open={{false}} @pad={{true}}>
+                <InputGroup @name={{t "storefront.common.logo"}} @helpText={{t "storefront.settings.index.logo-help-text"}}>
                     <div class="flex flex-row items-center">
                         <img src={{@model.logo_url}} alt={{concat @model.name " logo"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
-                        <FileUpload @name="logo" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
+                        <FileUpload @name={{t "storefront.common.logo"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
                             <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
                                 {{#if queue.files.length}}
                                     <Spinner class="mr-1" />
                                     <span>
-                                        Uploading...
+                                        {{t "storefront.common.uploading"}}
                                     </span>
                                 {{else}}
                                     <FaIcon @icon="image" class="mr-1" />
                                     <span>
-                                        Upload new logo
+                                        {{t "storefront.settings.index.upload-new-logo"}}
                                     </span>
                                 {{/if}}
                             </a>
@@ -53,20 +92,20 @@
                     </div>
                 </InputGroup>
 
-                <InputGroup @name="Backdrop" @helpText="Optional banner or background image for your store.">
+                <InputGroup @name={{t "storefront.common.backdrop"}} @helpText={{t "storefront.settings.index.backdrop-help-text"}}>
                     <div class="flex flex-row items-center">
                         <img src={{@model.backdrop_url}} alt={{concat @model.name " backdrop"}} class="h-20 w-64 border dark:border-gray-900 rounded-md mr-4" />
-                        <FileUpload @name="backdrop" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
+                        <FileUpload @name={{t "storefront.common.backdrop"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
                             <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
                                 {{#if queue.files.length}}
                                     <Spinner class="mr-1" />
                                     <span>
-                                        Uploading...
+                                        {{t "storefront.common.uploading"}}
                                     </span>
                                 {{else}}
                                     <FaIcon @icon="image" class="mr-1" />
                                     <span>
-                                        Upload new backdrop
+                                        {{t "storefront.settings.index.upload-new-backdrop"}}
                                     </span>
                                 {{/if}}
                             </a>
@@ -75,39 +114,54 @@
                 </InputGroup>
             </ContentPanel>
 
-            <ContentPanel @title="Images & Videos" @open={{false}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
+            <ContentPanel @title={{t "storefront.settings.index.images-videos"}} @open={{false}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
                 <div class="p-6">
                     {{#if this.isUploading}}
-                        <div class="min-h-56 dropzone w-full rounded px-4 py-8 min-h bg-black bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500">
+                        <div
+                            class="min-h-56 dropzone w-full rounded px-4 py-8 min-h bg-black bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500"
+                        >
                             <div class="flex items-center justify-center py-5">
                                 <PageLoader class="text-sm dar:text-gray-100" @loadingMessage="Uploading..." />
                             </div>
                         </div>
                     {{else}}
-                        <FileDropzone @name="files" @multiple={{true}} @onFileAdded={{this.queueFile}} @accept={{join "," this.acceptedFileTypes}} class="dropzone file-dropzone" as |dropzone queue|>
+                        <FileDropzone
+                            @name={{t "storefront.common.file"}}
+                            @multiple={{true}}
+                            @onFileAdded={{this.queueFile}}
+                            @accept={{join "," this.acceptedFileTypes}}
+                            class="dropzone file-dropzone"
+                            as |dropzone queue|
+                        >
                             {{#if dropzone.active}}
                                 {{#if dropzone.valid}}
-                                    Drop to upload
+                                    {{t "storefront.settings.index.drop-to-upload"}}
                                 {{else}}
-                                    Invalid
+                                    {{t "storefront.common.invalid"}}
                                 {{/if}}
                             {{else if queue.files.length}}
                                 <div class="my-2">
                                     <FaIcon @icon="photo-video" class="text-indigo-500 mr-2" />
                                     {{pluralize queue.files.length "file"}}
-                                    ready for upload.
+                                    {{t "storefront.settings.index.ready-to-upload"}}
                                 </div>
                                 <div class="my-2">({{queue.progress}}%)</div>
                             {{else}}
                                 <h4 class="font-semibold mb-8">
                                     <FaIcon @icon="photo-video" @size="2x" class="text-indigo-500 mr-2" />
-                                    Upload Images & Videos
+                                    {{t "storefront.settings.index.upload-image-video"}}
                                 </h4>
                                 <div>
                                     {{#if dropzone.supported}}
-                                        <p class="text-base font-semibold my-5">Drag and drop image and video files onto this dropzone</p>
+                                        <p class="text-base font-semibold my-5">{{t "storefront.settings.index.drag-and-drop-image"}}</p>
                                     {{/if}}
-                                    <FileUpload @name="files" @for="files" @accept={{join "," this.acceptedFileTypes}} @multiple={{true}} @onFileAdded={{this.queueFile}}>
+                                    <FileUpload
+                                        @name={{t "storefront.common.file"}}
+                                        @for="files"
+                                        @accept={{join "," this.acceptedFileTypes}}
+                                        @multiple={{true}}
+                                        @onFileAdded={{this.queueFile}}
+                                    >
                                         <a tabindex={{0}} class="btn btn-magic cursor-pointer ml-1">or select files to upload.</a>
                                     </FileUpload>
                                 </div>
@@ -116,7 +170,7 @@
                         {{#if this.uploadQueue}}
                             <div class="mx-4 my-6">
                                 <div class="flex items-center justify-between mb-4">
-                                    <span class="leading-6 dark:text-gray-100">Upload Queue</span>
+                                    <span class="leading-6 dark:text-gray-100">{{t "storefront.settings.index.upload-queue"}}</span>
                                 </div>
                                 <div class="space-y-2 mb-5">
                                     {{#each this.uploadQueue as |file|}}
@@ -142,11 +196,20 @@
                 </div>
             </ContentPanel>
 
-            <ContentPanel @title="Alerts" @open={{false}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800">
+            <ContentPanel @title={{t "storefront.common.alerts"}} @open={{false}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800">
                 <div>
-                    <p class="dark:text-gray-100 mb-4">Configure who should be alerted for certain events.</p>
-                    <InputGroup @name="New order alert" @wrapperClass="mb-0">
-                        <ModelSelectMultiple @modelName="user" @selectedModel={{@model.alertable.for_new_order}} @placeholder="Select users to alert for new order" @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn this.makeAlertable "for_new_order"}} as |model|>
+                    <p class="dark:text-gray-100 mb-4">{{t "storefront.settings.index.alerted-for-certain-event"}}</p>
+                    <InputGroup @name={{t "storefront.settings.index.new-order-alert"}} @wrapperClass="mb-0">
+                        <ModelSelectMultiple
+                            @modelName="user"
+                            @selectedModel={{@model.alertable.for_new_order}}
+                            @placeholder={{t "storefront.settings.index.alert-placeholder"}}
+                            @triggerClass="form-select form-input multiple"
+                            @infiniteScroll={{false}}
+                            @renderInPlace={{true}}
+                            @onChange={{fn this.makeAlertable "for_new_order"}}
+                            as |model|
+                        >
                             {{model.name}}
                         </ModelSelectMultiple>
                     </InputGroup>
@@ -156,55 +219,79 @@
             <div class="store-boolean-settings">
                 <div class="input-group">
                     <Toggle @isToggled={{@model.online}} @onToggle={{fn (mut @model.online)}}>
-                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Online</span>
+                        <FaIcon @icon="plug" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.common.online"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.tax_enabled}} @onToggle={{fn (mut @model.options.tax_enabled)}}>
-                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tax</span>
+                        <FaIcon @icon="percent" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.settings.index.enable-tax"}}</span>
                     </Toggle>
                     {{#if @model.options.tax_enabled}}
-                        <InputGroup @wrapperClass="mb-0 mt-2" @type="number" @name="Tax Percentage" @value={{@model.options.tax_percentage}} @placeholder="Tax Percentage" @helpText="The sales tax percentage to apply to orders." />
+                        <InputGroup
+                            @wrapperClass="mb-0 mt-2"
+                            @type="number"
+                            @name={{t "storefront.settings.index.tax-percentage"}}
+                            @value={{@model.options.tax_percentage}}
+                            @placeholder={{t "storefront.settings.index.tax-percentage"}}
+                            @helpText={{t "storefront.settings.index.tax-percentage-help-text"}}
+                        />
                     {{/if}}
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
-                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto accept incoming orders</span>
+                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.settings.index.auto-accept-incoming-order"}}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_dispatch}} @onToggle={{fn (mut @model.options.auto_dispatch)}}>
-                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Auto dispatch orders</span>
+                        <FaIcon @icon="paper-plane" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.auto-dispatch-order"
+                            }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.require_pod}} @onToggle={{fn (mut @model.options.require_pod)}}>
-                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Require proof of delivery</span>
+                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.settings.index.require-proof-of-delivery"}}</span>
                     </Toggle>
                     {{#if @model.options.require_pod}}
-                        <InputGroup @wrapperClass="mb-0 mt-2" @name="Proof of Delivery Method">
-                            <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn (mut @model.pod_method)}} class="w-full" />
+                        <InputGroup @wrapperClass="mb-0 mt-2" @name={{t "storefront.settings.index.proof-of-delivery-method"}}>
+                            <Select
+                                @options={{this.podMethods}}
+                                @optionValue="value"
+                                @optionLabel="name"
+                                @value={{@model.pod_method}}
+                                @onSelect={{fn (mut @model.pod_method)}}
+                                class="w-full"
+                            />
                         </InputGroup>
                     {{/if}}
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.cod_enabled}} @onToggle={{fn (mut @model.options.cod_enabled)}}>
-                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable cash on delivery</span>
+                        <FaIcon @icon="money-bill-wave" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.enable-cash-on-delivery"
+                            }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.pickup_enabled}} @onToggle={{fn (mut @model.options.pickup_enabled)}}>
-                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable order pickup</span>
+                        <FaIcon @icon="person-booth" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.enable-order-pickup"
+                            }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.tips_enabled}} @onToggle={{fn (mut @model.options.tips_enabled)}}>
-                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable tips</span>
+                        <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.enable-tip"
+                            }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.delivery_tips_enabled}} @onToggle={{fn (mut @model.options.delivery_tips_enabled)}}>
-                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable delivery tips</span>
+                        <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.enable-integrated-vendors"
+                            }}</span>
                     </Toggle>
                 </div>
                 {{!-- <div class="input-group">
@@ -212,8 +299,8 @@
                                 <FaIcon @icon="truck" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">Enable integrated vendors</span>
                             </Toggle>
                             {{#if @model.options.integrated_vendors_enabled}}
-                                <InputGroup @name="Select integrated vendors to use" @wrapperClass="mt-2 mb-0">
-                                    <ModelSelectMultiple @modelName="integrated-vendor" @selectedModel={{@model.options.integrated_vendors}} @placeholder="Select integrated vendors to use" @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut @model.options.integrated_vendors)}} as |model|>
+                                <InputGroup @name={{t "storefront.settings.index.name-select"}} @wrapperClass="mt-2 mb-0">
+                                    <ModelSelectMultiple @modelName="integrated-vendor" @selectedModel={{@model.options.integrated_vendors}} @placeholder={{t "storefront.settings.index.placeholder-select"}} @triggerClass="form-select form-input multiple" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{fn (mut @model.options.integrated_vendors)}} as |model|>
                                         {{model.name}}
                                     </ModelSelectMultiple>
                                 </InputGroup>
@@ -222,7 +309,15 @@
             </div>
 
             <div class="flex justify-end pb-12">
-                <Button @buttonType="submit" @type="primary" @text="Save Changes" @icon="save" @size="lg" @isLoading={{this.isLoading}} @onClick={{this.saveSettings}} />
+                <Button
+                    @buttonType="submit"
+                    @type="primary"
+                    @text={{t "storefront.settings.index.save-changes"}}
+                    @icon="save"
+                    @size="lg"
+                    @isLoading={{this.isLoading}}
+                    @onClick={{this.saveSettings}}
+                />
             </div>
         </div>
     </form>

@@ -4,28 +4,28 @@
             <div class="flex justify-between">
                 <div>
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        Gateway Settings
+                        {{t "storefront.settings.gateways.geteway-settings"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        Add or manage your payment gateway settings here.
+                        {{t "storefront.settings.gateways.add-or-manage-your-paymeny-gateway-settings-here"}}
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="Create new gateway" @onClick={{this.createGateway}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.settings.gateways.create-new-gateway"}} @onClick={{this.createGateway}} />
                 </div>
             </div>
 
             {{#each this.gateways as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
-                    <InputGroup @name="Gateway name" @value={{gateway.name}} @helpText="Give your payment gateway a name, this will only be relevent internally" />
-                    <InputGroup @name="Gateway code" @value={{gateway.code}} @disabled={{true}} @helpText="Identifier code used to identify gateway to the SDK" />
-                    <InputGroup @name="Callback URL" @value={{gateway.callback_url}} @helpText="Callback URL if applicable" />
-                    <InputGroup @name="Return URL" @value={{gateway.return_url}} @helpText="Return URL if applicable" />
+                    <InputGroup @name={{t "storefront.settings.gateways.gateway-name"}} @value={{gateway.name}} @helpText={{t "storefront.settings.gateways.helpText"}} />
+                    <InputGroup @name={{t "storefront.settings.gateways.gateway-code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.settings.gateways.gateway-code-help-text"}} />
+                    <InputGroup @name={{t "storefront.settings.gateways.callback-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.settings.gateways.callback-url-help-text"}} />
+                    <InputGroup @name={{t "storefront.settings.gateways.return-url"}} @value={{gateway.return_url}} @helpText={{t "storefront.settings.gateways.return-url-help-text"}} />
                     <div class="input-group">
-                        <Checkbox @value={{gateway.sandbox}} @label="This is a sandbox gateway" @onToggle={{fn (mut gateway.sandbox)}} />
+                        <Checkbox @value={{gateway.sandbox}} @label={{t "storefront.settings.gateways.this-is-a-sandbox-gateway"}} @onToggle={{fn (mut gateway.sandbox)}} />
                     </div>
                     <div>
-                        <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
+                        <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.common.config"}}</h4>
                         {{#each-in gateway.config as |key value|}}
                             {{#if (is-bool-value value)}}
                                 <div class="input-group">
@@ -39,7 +39,7 @@
                         {{/each-in}}
                     </div>
                     <div>
-                        <Button @size="sm" @type="danger" @icon="trash" @text="Delete payment gateway" @onClick={{fn this.deleteGateway gateway}} />
+                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.settings.gateways.delete-payment-gateway"}} @onClick={{fn this.deleteGateway gateway}} />
                     </div>
                 </ContentPanel>
             {{/each}}

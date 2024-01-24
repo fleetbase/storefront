@@ -1,8 +1,18 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         <div>
-            <InputGroup @type="time" @name="Start time" @value={{@options.hours.start}} @helpText="When availability/operation start" />
-            <InputGroup @type="time" @name="End time" @value={{@options.hours.end}} @helpText="When availability/operation hours end" />
+            <InputGroup
+                @type="time"
+                @name={{t "storefront.component.modals.add-store-hours.start-time"}}
+                @value={{@options.hours.start}}
+                @helpText={{t "storefront.component.modals.add-store-hours.operation.start"}}
+            />
+            <InputGroup
+                @type="time"
+                @name={{t "storefront.component.modals.add-store-hours.end-time"}}
+                @value={{@options.hours.end}}
+                @helpText={{t "storefront.component.modals.add-store-hours.operation-end"}}
+            />
         </div>
     </div>
 </Modal::Default>

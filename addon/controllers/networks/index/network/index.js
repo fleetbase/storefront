@@ -43,6 +43,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     @service fetch;
 
     /**
+     * intl service to handle file uploads and other network requests.
+     *
+     * @property {Service} intl
+     */
+    @service intl;
+
+    /**
      * Proof of delivery methods.
      *
      * @property {Array} podMethods
@@ -82,7 +89,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         this.model
             .save()
             .then(() => {
-                this.notifications.success('Changes to network saved.');
+                this.notifications.success(this.intl.t('storefront.controllers.networks.index.change-network-saved'));
             })
             .catch((error) => {
                 this.notifications.serverError(error);
@@ -134,13 +141,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         });
 
         this.editGateway(gateway, {
-            title: `Create a new payment gateway`,
-            acceptButtonText: 'Save Gateway',
+            title: this.intl.t('storefront.networks.index.network.index.create-new-payment-gateway'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.index.save-gateway'),
             confirm: (modal) => {
                 modal.startLoading();
 
                 return gateway.save().then((gateway) => {
-                    this.notifications.success(`New gateway added to network`);
+                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.new-gateway-add-network'));
                     this.gateways.pushObject(gateway);
                 });
             },
@@ -169,7 +176,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
                 modal.startLoading();
 
                 return gateway.save().then(() => {
-                    this.notifications.success(`Payment gateway changes saved!`);
+                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.payment-gateway-changes-success'));
                 });
             };
         }
@@ -200,13 +207,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         });
 
         this.editChannel(channel, {
-            title: `Create a new notification channel`,
-            acceptButtonText: 'Create Notification Channel',
+            title: this.intl.t('storefront.networks.index.network.index.create-new-notification-channel'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.index.create-notification-channel'),
             confirm: (modal) => {
                 modal.startLoading();
 
                 return channel.save().then((channel) => {
-                    this.notifications.success(`New notification channel added to network!`);
+                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.notification-channel-add-network'));
                     this.channels.pushObject(channel);
                 });
             },
@@ -235,7 +242,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
                 modal.startLoading();
 
                 return channel.save().then(() => {
-                    this.notifications.success(`Notification channel changes saved!`);
+                    this.notifications.success(this.intl.t('storefront.controllers.networks.index.notification-channel-changes-save'));
                 });
             };
         }

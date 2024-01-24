@@ -4,16 +4,14 @@
             <div class="flex justify-between">
                 <div class="w-3/4">
                     <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        Notification Settings
+                        {{t "storefront.settings.notification.notification-settings"}}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        Configure notification channels for your storefront, each notification channel additionally can
-                        have
-                        it's own rules and options.
+                        {{t "storefront.settings.notification.notification-storefront"}}
                     </p>
                 </div>
                 <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text="New channel" @onClick={{this.createChannel}} />
+                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.settings.notification.new-channel"}} @onClick={{this.createChannel}} />
                 </div>
             </div>
 
@@ -24,8 +22,8 @@
                             <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
                         </div>
                         <div class="flex items-center">
-                            <Button @size="xs" @type="default" @text="Edit" @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
-                            <Button @size="xs" @type="danger" @text="Delete" @onClick={{fn this.deleteChannel notificationChannel}} />
+                            <Button @size="xs" @type="default" @text={{t "storefront.common.edit"}} @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
+                            <Button @size="xs" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} />
                         </div>
                     </div>
                 {{/each}}

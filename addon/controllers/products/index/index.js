@@ -15,6 +15,13 @@ export default class ProductsIndexIndexController extends BaseController {
     @service filters;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     */
+    @service intl;
+
+    /**
      * Inject the `currentUser` service
      *
      * @var {Service}
@@ -121,8 +128,8 @@ export default class ProductsIndexIndexController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this product?',
-            body: 'Warning! Once this product is deleted it will no longer be accessible.',
+            title: this.intl.t('storefront.products.index.delete-product'),
+            body: this.intl.t('storefront.products.index.body-warning'),
             confirm: (modal) => {
                 modal.startLoading();
 

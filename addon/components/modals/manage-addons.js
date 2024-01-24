@@ -5,6 +5,7 @@ import { action } from '@ember/object';
 
 export default class ModalsManageAddonsComponent extends Component {
     @service store;
+    @service intl;
     @service currentUser;
     @service modalsManager;
     @tracked categories = [];
@@ -39,7 +40,7 @@ export default class ModalsManageAddonsComponent extends Component {
 
     @action deleteCategory(index) {
         const category = this.categories.objectAt(index);
-        const result = confirm('Are you sure you wish to delete this addon category? All addons assosciated will be lost!');
+        const result = confirm(this.intl.t('storefront.component.modals.manage-addons.delete-this-addon-category-assosiated-will-lost'));
 
         if (result) {
             this.categories.removeAt(index);
@@ -54,7 +55,7 @@ export default class ModalsManageAddonsComponent extends Component {
 
     @action createCategory(store) {
         const category = this.store.createRecord('addon-category', {
-            name: 'Untitled Addon Category',
+            name: this.intl.t('storefront.component.modals.manage-addons.untitled-addon-category'),
             for: 'storefront_product_addon',
             owner_type: 'storefront:store',
             owner_uuid: store.id,

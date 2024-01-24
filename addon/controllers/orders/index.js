@@ -14,6 +14,13 @@ export default class OrdersIndexController extends Controller {
     @service notifications;
 
     /**
+     * Inject the `intl` service
+     *
+     * @var {Service}
+     */
+    @service intl;
+
+    /**
      * Inject the `modals-manager` service
      *
      * @var {Service}
@@ -84,7 +91,7 @@ export default class OrdersIndexController extends Controller {
 
     @tracked columns = [
         {
-            label: 'ID',
+            label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
             cellComponent: 'table/cell/link-to',
@@ -96,7 +103,7 @@ export default class OrdersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Internal ID',
+            label: this.intl.t('storefront.orders.index.internal-id'),
             valuePath: 'internal_id',
             width: '125px',
             resizable: true,
@@ -105,7 +112,7 @@ export default class OrdersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Customer',
+            label: this.intl.t('storefront.orders.index.customer'),
             valuePath: 'customer.name',
             cellComponent: 'table/cell/base',
             width: '125px',
@@ -114,12 +121,12 @@ export default class OrdersIndexController extends Controller {
             hidden: true,
             filterable: true,
             filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select order customer',
+            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-customer'),
             filterParam: 'customer',
             model: 'customer',
         },
         {
-            label: 'Pickup',
+            label: this.intl.t('storefront.common.pickup'),
             valuePath: 'pickupName',
             cellComponent: 'table/cell/base',
             width: '160px',
@@ -127,12 +134,12 @@ export default class OrdersIndexController extends Controller {
             sortable: true,
             filterable: true,
             filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select order pickup location',
+            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-pickup-location'),
             filterParam: 'pickup',
             model: 'place',
         },
         {
-            label: 'Dropoff',
+            label: this.intl.t('storefront.common.dropoff'),
             valuePath: 'dropoffName',
             cellComponent: 'table/cell/base',
             width: '160px',
@@ -140,12 +147,12 @@ export default class OrdersIndexController extends Controller {
             sortable: true,
             filterable: true,
             filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select order dropoff location',
+            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-dropoff-location'),
             filterParam: 'dropoff',
             model: 'place',
         },
         {
-            label: 'Scheduled At',
+            label: this.intl.t('storefront.orders.index.scheduled-at'),
             valuePath: 'scheduledAt',
             sortParam: 'scheduled_at',
             filterParam: 'scheduled_at',
@@ -164,7 +171,7 @@ export default class OrdersIndexController extends Controller {
             width: '50px',
         },
         {
-            label: 'Transaction Total',
+            label: this.intl.t('storefront.orders.index.transaction-total'),
             cellComponent: 'table/cell/base',
             valuePath: 'transaction_amount',
             width: '50px',
@@ -173,7 +180,7 @@ export default class OrdersIndexController extends Controller {
             sortable: true,
         },
         {
-            label: 'Tracking Number',
+            label: this.intl.t('storefront.orders.index.tracking-number'),
             cellComponent: 'table/cell/base',
             valuePath: 'tracking_number.tracking_number',
             width: '170px',
@@ -183,7 +190,7 @@ export default class OrdersIndexController extends Controller {
             filterComponent: 'filter/string',
         },
         {
-            label: 'Driver Assigned',
+            label: this.intl.t('storefront.orders.index.driver-assigned'),
             cellComponent: 'table/cell/driver-name',
             valuePath: 'driver_assigned',
             modelPath: 'driver_assigned',
@@ -192,7 +199,7 @@ export default class OrdersIndexController extends Controller {
             sortable: true,
             filterable: true,
             filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select driver for order',
+            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-driver-for-order'),
             filterParam: 'driver',
             model: 'driver',
             query: {
@@ -201,7 +208,7 @@ export default class OrdersIndexController extends Controller {
             },
         },
         {
-            label: 'Type',
+            label: this.intl.t('storefront.common.type'),
             cellComponent: 'cell/humanize',
             valuePath: 'type',
             width: '100px',
@@ -210,7 +217,7 @@ export default class OrdersIndexController extends Controller {
             sortable: true,
         },
         {
-            label: 'Status',
+            label: this.intl.t('storefront.common.status'),
             valuePath: 'status',
             cellComponent: 'table/cell/status',
             width: '120px',
@@ -221,7 +228,7 @@ export default class OrdersIndexController extends Controller {
             // filterOptions: this.statusOptions,
         },
         {
-            label: 'Created At',
+            label: this.intl.t('storefront.orders.index.created-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
             filterParam: 'created_at',
@@ -232,7 +239,7 @@ export default class OrdersIndexController extends Controller {
             filterComponent: 'filter/date',
         },
         {
-            label: 'Updated At',
+            label: this.intl.t('storefront.orders.index.updated-at'),
             valuePath: 'updatedAt',
             sortParam: 'updated_at',
             filterParam: 'updated_at',
@@ -244,7 +251,7 @@ export default class OrdersIndexController extends Controller {
             filterComponent: 'filter/date',
         },
         {
-            label: 'Created By',
+            label: this.intl.t('storefront.orders.index.created-by'),
             valuePath: 'created_by_name',
             width: '125px',
             resizable: true,
@@ -256,14 +263,14 @@ export default class OrdersIndexController extends Controller {
             model: 'user',
         },
         {
-            label: 'Updated By',
+            label: this.intl.t('storefront.orders.index.updated-by'),
             valuePath: 'updated_by_name',
             width: '125px',
             resizable: true,
             hidden: true,
             filterable: true,
             filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select user',
+            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-user'),
             filterParam: 'updated_by',
             model: 'user',
         },
@@ -279,12 +286,12 @@ export default class OrdersIndexController extends Controller {
             width: '12%',
             actions: [
                 {
-                    label: 'View Order',
+                    label: this.intl.t('storefront.orders.index.view-order'),
                     icon: 'eye',
                     fn: this.viewOrder,
                 },
                 {
-                    label: 'Cancel Order',
+                    label: this.intl.t('storefront.orders.index.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
                 },
@@ -292,7 +299,7 @@ export default class OrdersIndexController extends Controller {
                     separator: true,
                 },
                 {
-                    label: 'Delete Order',
+                    label: this.intl.t('storefront.orders.index.delete-order'),
                     icon: 'trash',
                     fn: this.deleteOrder,
                 },

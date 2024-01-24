@@ -14,6 +14,12 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service store;
 
     /**
+     * Ember service for intl.
+     * @type {Service}
+     */
+    @service intl;
+
+    /**
      * Ember service for fetch operations.
      * @type {Service}
      */
@@ -121,11 +127,11 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.trigger('order.incoming', order, store);
 
         this.modalsManager.show('modals/incoming-order', {
-            title: 'You have a new incoming order!',
-            acceptButtonText: 'Accept Order',
+            title: this.intl.t('storefront.service.storefront.new-incoming-order'),
+            acceptButtonText: this.intl.t('storefront.service.storefront.accept-order'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
-            declineButtonText: 'Decline Order',
+            declineButtonText: this.intl.t('storefront.service.storefront.decline-order'),
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
@@ -192,7 +198,7 @@ export default class StorefrontService extends Service.extend(Evented) {
         }
 
         this.modalsManager.show('modals/create-first-store', {
-            title: 'Create your first Storefront',
+            title: this.intl.t('storefront.service.storefront.create-first-storefront'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             closeButton: false,
@@ -209,7 +215,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 store
                     .save()
                     .then((store) => {
-                        this.notifications.success('Your new storefront has been created!');
+                        this.notifications.success(this.intl.t('storefront.service.storefront.storefront-has-been-create-success'));
                         this.setActiveStorefront(store);
                         return done();
                     })
@@ -238,7 +244,7 @@ export default class StorefrontService extends Service.extend(Evented) {
         }
 
         this.modalsManager.show('modals/create-store', {
-            title: 'Create a new Storefront',
+            title: this.intl.t('storefront.service.storefront.create-new-storefront'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
@@ -250,7 +256,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 store
                     .save()
                     .then((store) => {
-                        this.notifications.success('Your new storefront has been created!');
+                        this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
                         // this.currentUser.setOption('activeStorefront', store.id);
                         this.setActiveStorefront(store);
 

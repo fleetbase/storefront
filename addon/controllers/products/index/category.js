@@ -8,6 +8,7 @@ import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 
 export default class ProductsIndexCategoryController extends BaseController {
+    @service intl;
     @service modalsManager;
     @service fetch;
     @service hostRouter;
@@ -99,8 +100,8 @@ export default class ProductsIndexCategoryController extends BaseController {
         }
 
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this category?',
-            body: 'Warning! Deleting this category will also remove all products listed under this category.',
+            title: this.intl.t('storefront.products.index.category.category'),
+            body: this.intl.t('storefront.products.index.category.body'),
             confirm: (modal) => {
                 modal.startLoading();
 
@@ -113,8 +114,8 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action editCategory(category) {
         this.modalsManager.show('modals/create-product-category', {
-            title: `Edit category: ${category.name}`,
-            acceptButtonText: 'Save Changes',
+            title: this.intl.t('storefront.products.index.category.edit-category', { categoryName: category.name }),
+            acceptButtonText: this.intl.t('storefront.products.index.category.save-changes'),
             acceptButtonIcon: 'save',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
@@ -141,7 +142,7 @@ export default class ProductsIndexCategoryController extends BaseController {
                 modal.startLoading();
 
                 return category.save().then(() => {
-                    this.notifications.success('Category changes saved.');
+                    this.notifications.success(this.intl.t('storefront.products.index.category.category-changes-saved-success'));
                 });
             },
         });
@@ -149,8 +150,8 @@ export default class ProductsIndexCategoryController extends BaseController {
 
     @action deleteProduct(product) {
         this.modalsManager.confirm({
-            title: 'Are you sure you wish to delete this product?',
-            body: 'Warning! Once this product is deleted it will no longer be accessible.',
+            title: this.intl.t('storefront.products.index.category.delete-product'),
+            body: this.intl.t('storefront.products.index.category.body-warning'),
             confirm: (modal) => {
                 modal.startLoading();
 
