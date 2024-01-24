@@ -35,7 +35,7 @@ export default class ProductsIndexController extends BaseController {
 
     @action manageAddons() {
         this.modalsManager.show('modals/manage-addons', {
-            title: this.intl.t('storefront.products.index.aside-scroller.title'), 
+            title: this.intl.t('storefront.products.index.aside-scroller.title'),
             modalClass: 'modal-lg',
             acceptButtonText: this.intl.t('storefront.products.index.done'),
             store: this.activeStore,

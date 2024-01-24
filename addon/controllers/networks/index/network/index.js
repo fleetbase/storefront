@@ -42,7 +42,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
      */
     @service fetch;
 
-        /**
+    /**
      * intl service to handle file uploads and other network requests.
      *
      * @property {Service} intl
