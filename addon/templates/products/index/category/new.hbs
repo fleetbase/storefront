@@ -214,7 +214,7 @@
                         class="min-h-56 dropzone w-full rounded-lg px-4 py-8 min-h bg-gray-50 dark:bg-gray-900 bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500"
                     >
                         <div class="flex items-center justify-center py-5">
-                            <Spinner class="text-sm dar:text-gray-100" @loadingMessage="Uploading..." />
+                            <Spinner class="text-sm dar:text-gray-100" @loadingMessage={{t "component.dropzone.uploading"}} />
                         </div>
                     </div>
                 {{else}}
@@ -222,28 +222,27 @@
                         <FileDropzone @queue={{queue}} class="dropzone file-dropzone" as |dropzone|>
                             {{#if dropzone.active}}
                                 {{#if dropzone.valid}}
-                                    Drop to upload
+                                    {{t "component.dropzone.drop-to-upload"}}
                                 {{else}}
-                                    Invalid
+                                    {{t "component.dropzone.invalid"}}
                                 {{/if}}
                             {{else if queue.files.length}}
                                 <div class="my-2">
                                     <FaIcon @icon="photo-video" class="text-indigo-500 mr-2" />
-                                    {{pluralize queue.files.length "file"}}
-                                    ready for upload.
+                                    {{t "component.dropzone.files-ready-for-upload" numOfFiles=(pluralize queue.files.length (t "component.dropzone.file"))}}
                                 </div>
                                 <div class="my-2">({{queue.progress}}%)</div>
                             {{else}}
                                 <h4 class="font-semibold mb-8">
                                     <FaIcon @icon="photo-video" @size="2x" class="text-indigo-500 mr-2" />
-                                    Upload Images & Videos
+                                    {{t "component.dropzone.upload-images-videos"}}
                                 </h4>
                                 <div>
                                     {{#if dropzone.supported}}
-                                        <p class="text-base font-semibold my-5">Drag and drop image and video files onto this dropzone</p>
+                                        <p class="text-base font-semibold my-5">{{t "component.dropzone.dropzone-supported-images-videos"}}</p>
                                     {{/if}}
                                     <FileUpload @name="files" @for="files" @accept={{join "," this.acceptedFileTypes}} @multiple={{true}} @onFileAdded={{this.queueFile}}>
-                                        <a tabindex={{0}} class="btn btn-magic cursor-pointer ml-1">or select files to upload.</a>
+                                        <a tabindex={{0}} class="btn btn-magic cursor-pointer ml-1">{{t "component.dropzone.or-select-button-text"}}</a>
                                     </FileUpload>
                                 </div>
                             {{/if}}
@@ -252,15 +251,15 @@
                     {{#if this.uploadQueue}}
                         <div class="mx-4">
                             <div class="flex items-center justify-between mb-4">
-                                <span class="leading-6 dark:text-gray-100">Upload Queue</span>
+                                <span class="leading-6 dark:text-gray-100">{{t "component.dropzone.upload-queue"}}</span>
                             </div>
                             <div class="space-y-2 mb-4">
                                 {{#each this.uploadQueue as |file|}}
-                                    <div class="flex items-center justify-between bg-green-100 border border-green-800 dark:border-green-800 py-1.5 shadow-sm rounded-lg px-4">
-                                        <div class="text-sm text-green-900">{{file.name}}</div>
+                                    <div class="flex items-center justify-between bg-blue-100 border border-blue-800 dark:border-blue-800 py-1.5 shadow-sm rounded-lg px-4">
+                                        <div class="text-xs text-blue-900 truncate">{{truncate-filename file.name 50}}</div>
                                         <div class="flex items-center text-sm">
-                                            <Spinner class="text-green-900 mr-2" />
-                                            <span class="font-bold text-green-900">{{round file.progress}}%</span>
+                                            <Spinner class="text-blue-900 mr-2" />
+                                            <span class="font-bold text-blue-900">{{round file.progress}}%</span>
                                         </div>
                                     </div>
                                 {{/each}}
