@@ -95,14 +95,15 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             return;
         }
 
+        // Queue and upload immediatley
         this.uploadQueue.pushObject(file);
         this.fetch.uploadFile.perform(
             file,
             {
                 path: `uploads/storefront/${this.activeStore.id}/products`,
                 subject_uuid: this.product.id,
-                subject_type: `storefront:product`,
-                type: `storefront_product`,
+                subject_type: 'storefront:product',
+                type: 'storefront_product',
             },
             (uploadedFile) => {
                 this.product.files.pushObject(uploadedFile);
@@ -116,6 +117,10 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             },
             () => {
                 this.uploadQueue.removeObject(file);
+                // remove file from queue
+                if (file.queue && typeof file.queue.remove === 'function') {
+                    file.queue.remove(file);
+                }
             }
         );
     }
