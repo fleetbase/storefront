@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Support;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\User;
+use Fleetbase\Support\Utils;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
@@ -92,7 +93,7 @@ class Storefront
         if ($token) {
             $accessToken = PersonalAccessToken::findToken($token);
 
-            if ($accessToken && Utils::isUuid($accessToken->name)) {
+            if ($accessToken && Str::isUuid($accessToken->name)) {
                 $customer = Contact::where('uuid', $accessToken->name)->first();
 
                 if ($customer) {
