@@ -5,8 +5,8 @@ dependencies:
     specifier: ^7.23.2
     version: 7.23.2
   '@fleetbase/ember-core':
-    specifier: ^0.2.0
-    version: 0.2.0(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
+    specifier: ^0.2.2
+    version: 0.2.2(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
   '@fleetbase/ember-ui':
     specifier: ^0.2.10
     version: 0.2.10(@ember/test-helpers@3.2.0)(@glimmer/component@1.1.2)(@glimmer/tracking@1.1.2)(ember-source@5.4.0)(postcss@8.4.33)(rollup@4.9.6)(tracked-built-ins@3.3.0)(webpack@5.89.0)
@@ -2360,13 +2360,13 @@ packages:
       - supports-color
     dev: false
 
-  /@fleetbase/ember-core@0.2.0(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
-    resolution: {integrity: sha512-J7Heq2dfw++16+KmzvSHEP2kzACDEkO0mJk0YBay47ghF9R/jK1if1s90XPHCEAJZ2LwYYrqsyhWukdJF57omA==}
+  /@fleetbase/ember-core@0.2.2(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
+    resolution: {integrity: sha512-YViyqik8URG+X4uoRByLUlT2ZgIS5oNsbI5KRWpKRlyZ20fv58PmHOs5vfAzYBD/YHulbZAHOz61eAG6iGd3Ag==}
     engines: {node: '>= 18'}
     dependencies:
       '@babel/core': 7.23.2
       date-fns: 2.30.0
-      ember-auto-import: 2.6.3(webpack@5.89.0)
+      ember-auto-import: 2.7.2(webpack@5.89.0)
       ember-cli-babel: 8.2.0(@babel/core@7.23.2)
       ember-cli-htmlbars: 6.3.0
       ember-cli-notifications: 9.0.0
