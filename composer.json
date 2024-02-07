@@ -1,6 +1,6 @@
 {
     "name": "fleetbase/storefront-api",
-    "version": "0.2.10",
+    "version": "0.2.11",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "keywords": [
         "fleetbase-extension",
@@ -23,7 +23,7 @@
     "require": {
         "php": "^8.0",
         "fleetbase/core-api": "^1.4.0",
-        "fleetbase/fleetops-api": "^0.4.5",
+        "fleetbase/fleetops-api": "^0.4.6",
         "geocoder-php/google-maps-places-provider": "^1.4",
         "laravel-notification-channels/apn": "^5.0",
         "laravel-notification-channels/fcm": "^4.1",

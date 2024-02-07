@@ -1,6 +1,6 @@
 {
     "name": "Storefront",
-    "version": "0.2.10",
+    "version": "0.2.11",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "repository": "https://github.com/fleetbase/storefront",
     "license": "MIT",
