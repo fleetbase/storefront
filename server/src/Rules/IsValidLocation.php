@@ -4,7 +4,7 @@ namespace Fleetbase\Storefront\Rules;
 
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\Storefront\Models\StoreLocation;
-use Fleetbase\Support\Utils;
+use Fleetbase\FleetOps\Support\Utils;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Str;
 
