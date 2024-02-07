@@ -21,7 +21,7 @@ export default class StorefrontEngine extends Engine {
 
         // widgets for registry
         const KeyMetricsWidgetDefinition = {
-            did: 'storefront-metrics',
+            widgetId: 'storefront-key-metrics-widget',
             name: 'Storefront Metrics',
             description: 'Key metrics from Storefront.',
             icon: 'store',
