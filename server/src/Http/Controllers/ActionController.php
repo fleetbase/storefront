@@ -11,11 +11,6 @@ use Illuminate\Support\Carbon;
 
 class ActionController extends Controller
 {
-    public function welcome()
-    {
-        return response()->json(['message' => 'Hello Friend!']);
-    }
-
     /**
      * Get the number of storefronts created.
      *
@@ -53,14 +48,9 @@ class ActionController extends Controller
         }
 
         $store = Store::where('uuid', $store)->first();
-
         if (!$store) {
             return response()->json($metrics);
         }
-
-        /*
-         * Query metrics between given time period
-         */
 
         // send back currency
         $metrics['currency'] = $store->currency;
@@ -102,16 +92,6 @@ class ActionController extends Controller
                 return $order->transaction->amount;
             });
 
-        response()->json($metrics);
-    }
-
-    /**
-     * CORS OPTIONS.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function options()
-    {
-        return response()->json(['status' => 'ok']);
+        return response()->json($metrics);
     }
 }
