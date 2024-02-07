@@ -16,8 +16,8 @@ export default class WidgetStorefrontMetricsComponent extends Component {
     };
 
     @tracked isLoading = true;
-    @tracked start = format(startOfMonth(new Date()), 'P');
-    @tracked end = format(endOfMonth(new Date()), 'P');
+    @tracked start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    @tracked end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
 
     @computed('args.title') get title() {
         return this.args.title || 'This Month';
