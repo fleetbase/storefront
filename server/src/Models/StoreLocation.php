@@ -7,7 +7,7 @@ use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
-use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
+use Fleetbase\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
 class StoreLocation extends StorefrontModel
 {
@@ -121,7 +121,7 @@ class StoreLocation extends StorefrontModel
     }
 
     /**
-     * @return \Grimzy\LaravelMysqlSpatial\Types\Point
+     * @return \Fleetbase\LaravelMysqlSpatial\Types\Point
      */
     public function getLocationAttribute()
     {

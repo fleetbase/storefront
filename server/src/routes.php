@@ -112,7 +112,6 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(
                     ['prefix' => 'v1', 'middleware' => ['fleetbase.protected']],
                     function ($router) {
-                        $router->get('/', 'ActionController@welcome');
                         $router->group(
                             ['prefix' => 'actions'],
                             function ($router) {
@@ -161,13 +160,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->group(
                             [],
                             function ($router) {
-                                /* Dashboard Build */
-                                $router->get('dashboard', 'MetricsController@dashboard');
-
                                 $router->group(
                                     ['prefix' => 'metrics'],
                                     function ($router) {
-                                        $router->get('all', 'MetricsController@all');
+                                        $router->get('/', 'MetricsController@all');
                                     }
                                 );
                             }
