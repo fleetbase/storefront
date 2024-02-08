@@ -9,7 +9,7 @@ use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StorefrontStoreLocation;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
+use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Illuminate\Http\Request;
 
 class NetworkController extends Controller

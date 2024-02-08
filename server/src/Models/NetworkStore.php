@@ -6,11 +6,13 @@ use Fleetbase\Models\Category;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class NetworkStore extends Pivot
 {
     use HasUuid;
     use HasApiModelBehavior;
+    use SoftDeletes;
 
     /**
      * The database table used by the model.
