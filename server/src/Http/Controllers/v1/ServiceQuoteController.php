@@ -11,6 +11,7 @@ use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Support\Flow;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Support\Utils as CoreUtils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
 use Fleetbase\Storefront\Models\Cart;
@@ -30,7 +31,7 @@ class ServiceQuoteController extends Controller
      */
     public function fromCart(GetServiceQuoteFromCart $request)
     {
-        $requestId        = ServiceQuote::generatePublicId('request');
+        $requestId        = CoreUtils::generatePublicId('request');
         $origin           = $this->getPlaceFromId($request->input('origin'));
         $destination      = $this->getPlaceFromId($request->input('destination'));
         $facilitator      = $request->input('facilitator');
