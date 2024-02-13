@@ -212,6 +212,8 @@ storefront:
         security-access-code: Security Access Code
         postal-code: Postal Code
     widget:
+      key-metrics:
+        title: Storefront Metrics
       customers:
         widget-title: Recent Customers
         phone: Phone
