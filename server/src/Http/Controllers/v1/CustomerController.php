@@ -136,13 +136,19 @@ class CustomerController extends Controller
         $meta     = ['identity' => $identity];
 
         if ($isEmail) {
-            VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', function ($verification) use ($about) {
-                return "Your {$about->name} verification code is {$verification->code}";
-            }, $meta);
+            VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', [
+                'messageCallback' => function ($verification) use ($about) {
+                    return "Your {$about->name} verification code is {$verification->code}";
+                },
+                'meta' => $meta
+            ]);
         } else {
-            VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', function ($verification) use ($about) {
-                return "Your {$about->name} verification code is {$verification->code}";
-            }, $meta);
+            VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
+                'messageCallback' => function ($verification) use ($about) {
+                    return "Your {$about->name} verification code is {$verification->code}";
+                },
+                'meta' => $meta
+            ]);
         }
 
         return response()->json(['status' => 'ok']);
@@ -382,9 +388,11 @@ class CustomerController extends Controller
         $about = Storefront::about();
 
         // generate verification token
-        VerificationCode::generateSmsVerificationFor($user, 'storefront_login', function ($verification) use ($about) {
-            return "Your {$about->name} verification code is {$verification->code}";
-        });
+        VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
+            'messageCallback' => function ($verification) use ($about) {
+                return "Your {$about->name} verification code is {$verification->code}";
+            }
+        ]);
 
         return response()->json(['status' => 'OK']);
     }
