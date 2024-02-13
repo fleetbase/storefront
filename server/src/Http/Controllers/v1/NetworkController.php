@@ -4,12 +4,12 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StorefrontStoreLocation;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
-use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Illuminate\Http\Request;
 
 class NetworkController extends Controller

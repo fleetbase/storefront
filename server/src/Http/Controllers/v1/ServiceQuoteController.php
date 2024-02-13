@@ -11,13 +11,13 @@ use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Support\Flow;
 use Fleetbase\FleetOps\Support\Utils;
-use Fleetbase\Support\Utils as CoreUtils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
+use Fleetbase\Support\Utils as CoreUtils;
 use Illuminate\Support\Str;
 
 class ServiceQuoteController extends Controller
@@ -303,7 +303,7 @@ class ServiceQuoteController extends Controller
 
             if ($integratedVendor) {
                 try {
-                    /** @var \Fleetbase\FleetOps\Models\ServiceQuote $serviceQuote */
+                    /** @var ServiceQuote $serviceQuote */
                     $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([...$origins, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
                 } catch (\Exception $e) {
                     return response()->error($e->getMessage());

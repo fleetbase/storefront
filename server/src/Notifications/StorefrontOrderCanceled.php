@@ -28,7 +28,7 @@ class StorefrontOrderCanceled extends Notification
     /**
      * The order instance this notification is for.
      *
-     * @var \Fleetbase\FleetOps\Models\Order
+     * @var Order
      */
     public $order;
 
@@ -63,7 +63,7 @@ class StorefrontOrderCanceled extends Notification
     /**
      * Get the mail representation of the notification.
      *
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail($notifiable)
     {

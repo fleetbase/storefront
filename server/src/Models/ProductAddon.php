@@ -76,7 +76,7 @@ class ProductAddon extends StorefrontModel
     protected $appends = [];
 
     /**
-     * @var \Spatie\Sluggable\SlugOptions
+     * @var SlugOptions
      */
     public function getSlugOptions(): SlugOptions
     {

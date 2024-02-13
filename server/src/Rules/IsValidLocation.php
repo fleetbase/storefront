@@ -3,8 +3,8 @@
 namespace Fleetbase\Storefront\Rules;
 
 use Fleetbase\FleetOps\Models\Place;
-use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Storefront\Models\StoreLocation;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Str;
 

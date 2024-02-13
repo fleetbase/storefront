@@ -9,7 +9,6 @@ use Fleetbase\FleetOps\Http\Resources\v1\Place as PlaceResource;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Place;
-use Fleetbase\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\User;
 use Fleetbase\Models\UserDevice;
@@ -18,6 +17,7 @@ use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
 use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -140,14 +140,14 @@ class CustomerController extends Controller
                 'messageCallback' => function ($verification) use ($about) {
                     return "Your {$about->name} verification code is {$verification->code}";
                 },
-                'meta' => $meta
+                'meta' => $meta,
             ]);
         } else {
             VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
                 'messageCallback' => function ($verification) use ($about) {
                     return "Your {$about->name} verification code is {$verification->code}";
                 },
-                'meta' => $meta
+                'meta' => $meta,
             ]);
         }
 
@@ -391,7 +391,7 @@ class CustomerController extends Controller
         VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
             'messageCallback' => function ($verification) use ($about) {
                 return "Your {$about->name} verification code is {$verification->code}";
-            }
+            },
         ]);
 
         return response()->json(['status' => 'OK']);
@@ -462,7 +462,7 @@ class CustomerController extends Controller
     /**
      * Patches phone number with international code.
      */
-    public static function phone(string $phone = null): string
+    public static function phone(?string $phone = null): string
     {
         if ($phone === null) {
             $phone = request()->input('phone');

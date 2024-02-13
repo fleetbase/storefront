@@ -71,7 +71,7 @@ class ProductController extends Controller
     /**
      * Deletes a Storefront Product resources.
      *
-     * @return \Fleetbase\Http\Resources\v1\DeletedResource
+     * @return DeletedResource
      */
     public function delete($id)
     {

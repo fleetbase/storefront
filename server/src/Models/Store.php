@@ -95,7 +95,7 @@ class Store extends StorefrontModel
     protected $filterParams = ['network', 'without_category', 'category', 'category_uuid'];
 
     /**
-     * @var \Spatie\Sluggable\SlugOptions
+     * @var SlugOptions
      */
     public function getSlugOptions(): SlugOptions
     {
@@ -332,7 +332,7 @@ class Store extends StorefrontModel
     /**
      * Retrieves the category of the store belonging to the specified network.
      *
-     * @param \Fleetbase\Storefront\Models\Network $network the network for which the category is to be retrieved
+     * @param Network $network the network for which the category is to be retrieved
      *
      * @return \Fleetbase\Models\Category|null the category of the store in the given network, or null if the store does not belong to the network
      */
@@ -360,7 +360,7 @@ class Store extends StorefrontModel
      * @param File|string|null $icon
      * @param string           $iconColor
      */
-    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $iconFile = null;
         $iconName = null;
@@ -397,7 +397,7 @@ class Store extends StorefrontModel
      * @param File|string|null $icon
      * @param string           $iconColor
      */
-    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $existingCategory = Category::where(['company_uuid' => $this->company_uuid, 'owner_uuid' => $this->uuid, 'name' => $name])->first();
 
@@ -411,7 +411,7 @@ class Store extends StorefrontModel
     /**
      * Creates a new product in the store.
      */
-    public function createProduct(string $name, string $description, array $tags = [], Category $category = null, File $image = null, User $createdBy = null, string $sku = '', int $price = 0, string $status = 'available', array $options = []): Product
+    public function createProduct(string $name, string $description, array $tags = [], ?Category $category = null, ?File $image = null, ?User $createdBy = null, string $sku = '', int $price = 0, string $status = 'available', array $options = []): Product
     {
         return Product::create(
             [
@@ -438,7 +438,7 @@ class Store extends StorefrontModel
         );
     }
 
-    public function createLocation($location, string $name = null, ?User $createdBy): ?StoreLocation
+    public function createLocation($location, ?string $name = null, ?User $createdBy): ?StoreLocation
     {
         $place = Place::createFromMixed($location);
 

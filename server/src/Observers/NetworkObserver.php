@@ -10,7 +10,7 @@ class NetworkObserver
     /**
      * Handle the Network "updated" event.
      *
-     * @param \Fleetbase\Storefront\Models\Network $network the Network that is updating
+     * @param Network $network the Network that is updating
      */
     public function updating(Network $network): void
     {
