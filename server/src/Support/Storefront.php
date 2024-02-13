@@ -9,6 +9,7 @@ use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Support\Utils;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCreated;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redis;
@@ -92,7 +93,7 @@ class Storefront
         if ($token) {
             $accessToken = PersonalAccessToken::findToken($token);
 
-            if ($accessToken && Utils::isUuid($accessToken->name)) {
+            if ($accessToken && Str::isUuid($accessToken->name)) {
                 $customer = Contact::where('uuid', $accessToken->name)->first();
 
                 if ($customer) {

@@ -149,7 +149,7 @@ class Gateway extends StorefrontModel
     /**
      * Generates a new cash/cash on delivery gateway.
      */
-    public static function cash($attributes = ['sandbox' => 0]): Gateway
+    public static function cash($attributes = ['sandbox' => false]): Gateway
     {
         return new static([
             'public_id'    => 'gateway_cash',

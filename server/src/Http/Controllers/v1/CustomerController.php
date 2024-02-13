@@ -9,7 +9,7 @@ use Fleetbase\FleetOps\Http\Resources\v1\Place as PlaceResource;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Place;
-use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\User;
 use Fleetbase\Models\UserDevice;
