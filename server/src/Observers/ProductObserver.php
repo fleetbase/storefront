@@ -17,7 +17,7 @@ class ProductObserver
     /**
      * Handle the Product "created" event.
      *
-     * @param \Fleetbase\Storefront\Models\Product $product the Product that was created
+     * @param Product $product the Product that was created
      */
     public function created(Product $product): void
     {
@@ -41,7 +41,7 @@ class ProductObserver
     /**
      * Handle the Product "updated" event.
      *
-     * @param \Fleetbase\Storefront\Models\Product $product the Product that was created
+     * @param Product $product the Product that was created
      */
     public function updated(Product $product): void
     {

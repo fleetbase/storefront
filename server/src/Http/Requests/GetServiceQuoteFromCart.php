@@ -3,7 +3,7 @@
 namespace Fleetbase\Storefront\Http\Requests;
 
 use Fleetbase\Http\Requests\FleetbaseRequest;
-use Fleetbase\Rules\IsValidLocation;
+use Fleetbase\Storefront\Rules\IsValidLocation;
 use Illuminate\Support\Str;
 
 class GetServiceQuoteFromCart extends FleetbaseRequest

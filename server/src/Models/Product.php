@@ -134,7 +134,7 @@ class Product extends StorefrontModel
     }
 
     /**
-     * @var \Spatie\Sluggable\SlugOptions
+     * @var SlugOptions
      */
     public function getSlugOptions(): SlugOptions
     {

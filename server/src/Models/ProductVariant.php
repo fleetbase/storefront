@@ -86,7 +86,7 @@ class ProductVariant extends StorefrontModel
     protected $with = [];
 
     /**
-     * @var \Spatie\Sluggable\SlugOptions
+     * @var SlugOptions
      */
     public function getSlugOptions(): SlugOptions
     {

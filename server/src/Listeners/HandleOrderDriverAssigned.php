@@ -21,7 +21,7 @@ class HandleOrderDriverAssigned implements ShouldQueue
      */
     public function handle(OrderDriverAssigned $event)
     {
-        /** @var \Fleetbase\FleetOps\Models\Order $order */
+        /** @var Order $order */
         $order = $event->getModelRecord();
 
         // halt if unable to resolve order record from event

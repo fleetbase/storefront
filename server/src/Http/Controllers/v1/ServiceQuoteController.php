@@ -17,6 +17,7 @@ use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
+use Fleetbase\Support\Utils as CoreUtils;
 use Illuminate\Support\Str;
 
 class ServiceQuoteController extends Controller
@@ -30,7 +31,7 @@ class ServiceQuoteController extends Controller
      */
     public function fromCart(GetServiceQuoteFromCart $request)
     {
-        $requestId        = ServiceQuote::generatePublicId('request');
+        $requestId        = CoreUtils::generatePublicId('request');
         $origin           = $this->getPlaceFromId($request->input('origin'));
         $destination      = $this->getPlaceFromId($request->input('destination'));
         $facilitator      = $request->input('facilitator');
@@ -302,7 +303,7 @@ class ServiceQuoteController extends Controller
 
             if ($integratedVendor) {
                 try {
-                    /** @var \Fleetbase\FleetOps\Models\ServiceQuote $serviceQuote */
+                    /** @var ServiceQuote $serviceQuote */
                     $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([...$origins, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
                 } catch (\Exception $e) {
                     return response()->error($e->getMessage());

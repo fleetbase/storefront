@@ -9,9 +9,8 @@ use Illuminate\Http\Request;
 class MetricsController extends Controller
 {
     /**
-     * Get all key metrics for a companies storefront
+     * Get all key metrics for a companies storefront.
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function all(Request $request)
