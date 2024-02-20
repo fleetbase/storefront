@@ -109,7 +109,7 @@ class StoreController extends Controller
 
         // if cod is enabled add cash as a gateway
         if ($about->hasOption('cod_enabled')) {
-            $gateways->push(Gateway::cash($sandbox));
+            $gateways->push(Gateway::cash(['sandbox'=>$sandbox]));
         }
 
         return GatewayResource::collection($gateways);
