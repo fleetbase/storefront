@@ -220,7 +220,7 @@ class Network extends StorefrontModel
     /**
      * Adds a new store to the network.
      */
-    public function addStore(Store $store, ?Category $category = null): NetworkStore
+    public function addStore(Store $store, Category $category = null): NetworkStore
     {
         return NetworkStore::updateOrCreate(
             [
@@ -241,7 +241,7 @@ class Network extends StorefrontModel
      * @param File|string|null $icon
      * @param string           $iconColor
      */
-    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategory(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $iconFile = null;
         $iconName = null;
@@ -276,7 +276,7 @@ class Network extends StorefrontModel
      * @param File|string|null $icon
      * @param string           $iconColor
      */
-    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], ?Category $parent = null, $icon = null, $iconColor = '#000000'): Category
+    public function createCategoryStrict(string $name, string $description = '', ?array $meta = [], ?array $translations = [], Category $parent = null, $icon = null, $iconColor = '#000000'): Category
     {
         $existingCategory = Category::where(['company_uuid' => $this->company_uuid, 'owner_uuid' => $this->uuid, 'name' => $name])->first();
 
