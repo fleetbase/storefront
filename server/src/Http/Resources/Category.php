@@ -30,7 +30,7 @@ class Category extends FleetbaseResource
             ),
             'tags'          => $this->tags ?? [],
             'translations'  => $this->translations ?? [],
-            'products'      => $this->when($request->has('with_products') || $request->inArray('with', 'products'), Product::collection($this->products)),
+            'products'      => $this->when($request->has('with_products') || $request->inArray('with', 'products'), $this->products ? Product::collection($this->products) : []),
             'subcategories' => $this->when(
                 $request->has('with_subcategories') || $request->inArray('with', 'subcategories'),
                 array_map(

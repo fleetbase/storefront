@@ -89,7 +89,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         this.model
             .save()
             .then(() => {
-                this.notifications.success(this.intl.t('storefront.controllers.networks.index.change-network-saved'));
+                this.notifications.success(this.intl.t('storefront.networks.index.network.index.change-network-saved'));
             })
             .catch((error) => {
                 this.notifications.serverError(error);

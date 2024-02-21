@@ -183,7 +183,10 @@
                             }}</span>
                     </Toggle>
                     {{#if @model.options.require_pod}}
-                        <InputGroup @wrapperClass="mb-0 mt-2" @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.proof-of-delivery-method"}}>
+                        <InputGroup
+                            @wrapperClass="mb-0 mt-2"
+                            @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.proof-of-delivery-method-label"}}
+                        >
                             <Select
                                 @options={{this.podMethods}}
                                 @optionValue="value"
