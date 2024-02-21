@@ -96,6 +96,5 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/database.connections.php', 'database.connections');
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
-        $this->mergeConfigFrom(__DIR__ . '/../../config/twilio-notification-channel.php', 'twilio-notification-channel');
     }
 }

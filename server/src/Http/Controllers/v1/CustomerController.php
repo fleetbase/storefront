@@ -462,7 +462,7 @@ class CustomerController extends Controller
     /**
      * Patches phone number with international code.
      */
-    public static function phone(?string $phone = null): string
+    public static function phone(string $phone = null): string
     {
         if ($phone === null) {
             $phone = request()->input('phone');

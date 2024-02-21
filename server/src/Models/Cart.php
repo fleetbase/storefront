@@ -587,7 +587,7 @@ class Cart extends StorefrontModel
      *
      * @return \Fleetbase\Models\Storefront\Cart
      */
-    public function updateCurrency(?string $currencyCode = null, $save = false)
+    public function updateCurrency(string $currencyCode = null, $save = false)
     {
         $this->attributes['currency'] = $currencyCode ?? session('storefront_currency');
 
