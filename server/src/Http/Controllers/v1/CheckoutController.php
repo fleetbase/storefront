@@ -7,6 +7,7 @@ use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Payload;
+use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Support\Utils;
@@ -53,7 +54,7 @@ class CheckoutController extends Controller
         // find and validate cart session
         $cart         = Cart::retrieve($cartId);
         $gateway      = Storefront::findGateway($gatewayCode);
-        $customer     = Contact::findFromCustomerId($customerId);
+        $customer     = Customer::findFromCustomerId($customerId);
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
         // handle cash orders
