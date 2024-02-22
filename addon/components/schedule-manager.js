@@ -44,8 +44,8 @@ export default class ScheduleManagerComponent extends Component {
         });
 
         this.modalsManager.show('modals/add-store-hours', {
-            title: this.intl.t('storefront.component.schedule-manager.add-new-hours-for-day', { Day: day }),
-            acceptButtonText: this.intl.t('storefront.component.schedule-manager-add-hours'),
+            title: this.intl.t('storefront.component.schedule-manager.add-new-hours-for-day', { day: day }),
+            acceptButtonText: this.intl.t('storefront.component.schedule-manager.add-hours'),
             acceptButtonIcon: 'save',
             hours,
             confirm: (modal) => {
