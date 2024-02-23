@@ -50,6 +50,13 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     @service intl;
 
     /**
+     * Store service to handle file uploads and other network requests.
+     *
+     * @property {Service} store
+     */
+    @service store;
+
+    /**
      * Proof of delivery methods.
      *
      * @property {Array} podMethods

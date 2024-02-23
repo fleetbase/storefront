@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\FleetOps\Models\Place;
+use Fleetbase\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
@@ -13,6 +14,7 @@ class StoreLocation extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use SpatialTrait;
 
     /**
      * The type of public Id to generate.

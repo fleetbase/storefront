@@ -39,7 +39,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/checkouts
                 $router->group(['prefix' => 'checkouts'], function () use ($router) {
                     $router->get('before', 'CheckoutController@beforeCheckout');
-                    $router->get('capture', 'CheckoutController@captureOrder');
+                    $router->post('capture', 'CheckoutController@captureOrder');
                 });
 
                 // storefront/v1/service-quotes
@@ -105,7 +105,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
         */
         $router->prefix(config('storefront.api.routing.internal_prefix', 'int'))->group(
             function ($router) {
-                $router->group(['prefix' => 'int/v1', 'middleware' => ['internal.cors']], function () use ($router) {
+                $router->group(['prefix' => 'v1'], function () use ($router) {
                     $router->get('networks/find/{id}', 'NetworkController@findNetwork');
                 });
 

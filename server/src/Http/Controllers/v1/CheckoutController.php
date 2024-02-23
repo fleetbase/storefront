@@ -17,6 +17,7 @@ use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
@@ -53,7 +54,7 @@ class CheckoutController extends Controller
         // find and validate cart session
         $cart         = Cart::retrieve($cartId);
         $gateway      = Storefront::findGateway($gatewayCode);
-        $customer     = Contact::findFromCustomerId($customerId);
+        $customer     = Customer::findFromCustomerId($customerId);
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
         // handle cash orders
@@ -113,7 +114,7 @@ class CheckoutController extends Controller
             'gateway_uuid'       => $gateway->uuid ?? null,
             'service_quote_uuid' => $serviceQuote->uuid,
             'owner_uuid'         => $customer->uuid,
-            'owner_type'         => 'contact',
+            'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
             'currency'           => $currency,
             'is_cod'             => true,
@@ -187,7 +188,7 @@ class CheckoutController extends Controller
             'gateway_uuid'       => $gateway->uuid,
             'service_quote_uuid' => $serviceQuote->uuid,
             'owner_uuid'         => $customer->uuid,
-            'owner_type'         => 'contact',
+            'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
             'currency'           => $currency,
             'is_pickup'          => $isPickup,
@@ -249,7 +250,7 @@ class CheckoutController extends Controller
             'gateway_uuid'       => $gateway->uuid,
             'service_quote_uuid' => $serviceQuote->uuid,
             'owner_uuid'         => $customer->uuid,
-            'owner_type'         => 'contact',
+            'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
             'currency'           => $currency,
             'is_pickup'          => $isPickup,
@@ -345,7 +346,7 @@ class CheckoutController extends Controller
         $transaction = Transaction::create([
             'company_uuid'           => session('company'),
             'customer_uuid'          => $customer->uuid,
-            'customer_type'          => 'contact',
+            'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
             'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
             'gateway'                => $gateway->code,
             'gateway_uuid'           => $gateway->uuid,
@@ -458,18 +459,7 @@ class CheckoutController extends Controller
         // create entities
         foreach ($cart->items as $cartItem) {
             $product = Product::where('public_id', $cartItem->product_id)->first();
-            $entity  = Entity::fromStorefrontProduct($product)->fill([
-                'company_uuid'  => session('company'),
-                'payload_uuid'  => $payload->uuid,
-                'customer_uuid' => $customer->uuid,
-                'customer_type' => 'contact',
-            ])->setMetas([
-                'variants'     => $cartItem->variants,
-                'addons'       => $cartItem->addons,
-                'subtotal'     => $cartItem->subtotal,
-                'quantity'     => $cartItem->quantity,
-                'scheduled_at' => $cartItem->scheduled_at ?? null,
-            ]);
+            $entity  = Entity::fromStorefrontProduct($product);
 
             $entity->save();
         }
@@ -505,7 +495,7 @@ class CheckoutController extends Controller
             'company_uuid'     => $store->company_uuid ?? session('company'),
             'payload_uuid'     => $payload->uuid,
             'customer_uuid'    => $customer->uuid,
-            'customer_type'    => 'contact',
+            'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
             'transaction_uuid' => $transaction->uuid,
             'adhoc'            => $about->isOption('auto_dispatch'),
             'type'             => 'storefront',
@@ -524,6 +514,8 @@ class CheckoutController extends Controller
 
         // create order
         $order = Order::create($orderInput);
+
+        info('Order created', $order->toArray());
 
         // notify order creation
         Storefront::alertNewOrder($order);
@@ -610,7 +602,7 @@ class CheckoutController extends Controller
         $transaction = Transaction::create([
             'company_uuid'           => session('company'),
             'customer_uuid'          => $customer->uuid,
-            'customer_type'          => 'contact',
+            'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
             'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
             'gateway'                => $gateway->code,
             'gateway_uuid'           => $gateway->uuid,
@@ -706,7 +698,7 @@ class CheckoutController extends Controller
                     'company_uuid'  => $store->company_uuid,
                     'payload_uuid'  => $payload->uuid,
                     'customer_uuid' => $customer->uuid,
-                    'customer_type' => 'contact',
+                    'customer_type' => Utils::getMutationType('fleet-ops:contact'),
                 ])->setMetas([
                     'variants'     => $cartItem->variants,
                     'addons'       => $cartItem->addons,
@@ -746,7 +738,7 @@ class CheckoutController extends Controller
                 'company_uuid'     => $store->company_uuid,
                 'payload_uuid'     => $payload->uuid,
                 'customer_uuid'    => $customer->uuid,
-                'customer_type'    => 'contact',
+                'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
                 'transaction_uuid' => $transaction->uuid,
                 'adhoc'            => $about->isOption('auto_dispatch'),
                 'type'             => 'storefront',
@@ -811,7 +803,7 @@ class CheckoutController extends Controller
                 'company_uuid'  => session('company'),
                 'payload_uuid'  => $payload->uuid,
                 'customer_uuid' => $customer->uuid,
-                'customer_type' => 'contact',
+                'customer_type' => Utils::getMutationType('fleet-ops:contact'),
             ])->setMetas([
                 'variants'     => $cartItem->variants,
                 'addons'       => $cartItem->addons,
@@ -849,7 +841,7 @@ class CheckoutController extends Controller
             'company_uuid'     => session('company'),
             'payload_uuid'     => $payload->uuid,
             'customer_uuid'    => $customer->uuid,
-            'customer_type'    => 'contact',
+            'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
             'transaction_uuid' => $transaction->uuid,
             'adhoc'            => $about->isOption('auto_dispatch'),
             'type'             => 'storefront',

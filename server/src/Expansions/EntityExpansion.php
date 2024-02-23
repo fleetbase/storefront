@@ -3,6 +3,8 @@
 namespace Fleetbase\Storefront\Expansions;
 
 use Fleetbase\Build\Expansion;
+use Fleetbase\FleetOps\Models\Entity;
+use Fleetbase\Storefront\Models\Product;
 
 class EntityExpansion implements Expansion
 {
@@ -13,18 +15,18 @@ class EntityExpansion implements Expansion
      */
     public static function target()
     {
-        return \Fleetbase\FleetOps\Models\Entity::class;
+        return Entity::class;
     }
 
     /**
      * Create a new Entity from a Storefront Product.
      *
-     * @return \Fleetbase\FleetOps\Models\Entity
+     * @return Entity
      */
     public function fromStorefrontProduct()
     {
-        return static function (\Fleetbase\Storefront\Models\Product $product) {
-            return new static([
+        return static function (Product $product) {
+            return new Entity([
                 'company_uuid' => session('company'),
                 'photo_uuid'   => $product->primary_image_uuid,
                 'internal_id'  => $product->public_id,
