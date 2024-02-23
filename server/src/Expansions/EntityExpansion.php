@@ -2,9 +2,9 @@
 
 namespace Fleetbase\Storefront\Expansions;
 
+use Fleetbase\Build\Expansion;
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\Storefront\Models\Product;
-use Fleetbase\Build\Expansion;
 
 class EntityExpansion implements Expansion
 {

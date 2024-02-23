@@ -3,11 +3,11 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\FleetOps\Models\Place;
+use Fleetbase\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
-use Fleetbase\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
 class StoreLocation extends StorefrontModel
 {

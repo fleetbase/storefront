@@ -7,7 +7,6 @@ use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Payload;
-use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Support\Utils;
@@ -18,6 +17,7 @@ use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
@@ -346,7 +346,7 @@ class CheckoutController extends Controller
         $transaction = Transaction::create([
             'company_uuid'           => session('company'),
             'customer_uuid'          => $customer->uuid,
-            'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
+            'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
             'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
             'gateway'                => $gateway->code,
             'gateway_uuid'           => $gateway->uuid,

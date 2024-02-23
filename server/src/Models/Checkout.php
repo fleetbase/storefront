@@ -3,9 +3,9 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
-use Fleetbase\Support\Utils;
-use Fleetbase\Models\Company;
 use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\Models\Company;
+use Fleetbase\Support\Utils;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
