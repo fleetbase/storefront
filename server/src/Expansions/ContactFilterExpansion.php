@@ -21,7 +21,7 @@ class ContactFilterExpansion implements Expansion
      *
      * @return \Closure
      */
-    public function storefront()
+    public static function storefront()
     {
         return function (?string $storefront) {
             /* @var \Fleetbase\FleetOps\Http\Filter\ContactFilter $this */

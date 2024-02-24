@@ -23,7 +23,7 @@ class EntityExpansion implements Expansion
      *
      * @return Entity
      */
-    public function fromStorefrontProduct()
+    public static function fromStorefrontProduct()
     {
         return static function (Product $product) {
             return new Entity([
