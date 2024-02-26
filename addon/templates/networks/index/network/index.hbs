@@ -23,7 +23,7 @@
                 @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.description-help-text"}}
             />
             <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.currency"}}>
-                <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+                <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
 
             <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.panel-title"}} @open={{false}} @pad={{true}}>

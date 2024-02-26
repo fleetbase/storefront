@@ -37,7 +37,7 @@
                 </TagInput>
             </InputGroup>
             <InputGroup @name={{t "storefront.common.currency"}}>
-                <CurrencySelect @value={{@model.currency}} @onSelect={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+                <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
 
             <ContentPanel @title={{t "storefront.settings.index.contact-social"}} @open={{false}} @pad={{true}}>
@@ -114,7 +114,13 @@
                 </InputGroup>
             </ContentPanel>
 
-            <ContentPanel @title={{t "storefront.settings.index.images-videos"}} @open={{false}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
+            <ContentPanel
+                @title={{t "storefront.settings.index.images-videos"}}
+                @open={{false}}
+                @pad={{false}}
+                @panelBodyWrapperClass="px-0 py-4"
+                @panelBodyClass="bg-white dark:bg-gray-800"
+            >
                 <div class="p-6">
                     {{#if this.isUploading}}
                         <div
@@ -239,7 +245,9 @@
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
-                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.settings.index.auto-accept-incoming-order"}}</span>
+                        <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.auto-accept-incoming-order"
+                            }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
@@ -251,7 +259,9 @@
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.require_pod}} @onToggle={{fn (mut @model.options.require_pod)}}>
-                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t "storefront.settings.index.require-proof-of-delivery"}}</span>
+                        <FaIcon @icon="signature" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.settings.index.require-proof-of-delivery"
+                            }}</span>
                     </Toggle>
                     {{#if @model.options.require_pod}}
                         <InputGroup @wrapperClass="mb-0 mt-2" @name={{t "storefront.settings.index.proof-of-delivery-method"}}>
