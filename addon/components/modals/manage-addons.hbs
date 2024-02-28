@@ -69,7 +69,7 @@ s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpen
                                 <div class="col-span-2">
                                     <MoneyInput
                                         class="w-full"
-                                        @currency={{this.activeStore.currency}}
+                                        @currency={{@options.store.currency}}
                                         @canSelectCurrency={{false}}
                                         @value={{addon.price}}
                                         @onFormatCompleted={{fn this.saveAddon addon}}
