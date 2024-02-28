@@ -357,8 +357,8 @@ class Product extends StorefrontModel
                     'meta'           => data_get($variant, 'meta', []),
                     'is_multiselect' => data_get($variant, 'is_multiselect'),
                     'is_required'    => data_get($variant, 'is_required'),
-                    'min'            => data_get($variant, 'min'),
-                    'max'            => data_get($variant, 'max'),
+                    'min'            => data_get($variant, 'min') ?? 0,
+                    'max'            => data_get($variant, 'max') ?? 100,
                 ]);
 
                 // Update product variant options if applicable
