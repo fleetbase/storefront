@@ -27,7 +27,7 @@
             </TagInput>
         </InputGroup>
         <InputGroup @name={{t "storefront.common.currency"}}>
-            <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
+            <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
 
         <div class="store-boolean-settings">

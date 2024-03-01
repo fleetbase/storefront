@@ -26,7 +26,7 @@
                 @value={{@options.store.currency}}
                 @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}
             >
-                <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
+                <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
             </InputGroup>
         </div>
     </div>
