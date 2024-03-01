@@ -27,7 +27,7 @@ class NetworkObserver
                 return [
                     $key => collect($alertables)->map(
                         function ($user) {
-                            return data_get($user, 'public_id');
+                            return $user;
                         }
                     )
                         ->values()
