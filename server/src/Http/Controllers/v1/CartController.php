@@ -19,9 +19,6 @@ class CartController extends Controller
     {
         $cart = Cart::retrieve($uniqueId, true);
 
-        // reset currency
-        $cart->resetCurrency();
-
         return new StorefrontCart($cart);
     }
 
@@ -39,6 +36,8 @@ class CartController extends Controller
         $storeLocationId = $request->input('store_location');
         $cart            = Cart::retrieve($cartId);
 
+        info('cart', [$request]);
+
         if (!$cart) {
             return response()->error('Cart was not found or has already been checkout out.');
         }
@@ -48,9 +47,6 @@ class CartController extends Controller
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
         }
-
-        // reset currency
-        $cart->resetCurrency();
 
         return new StorefrontCart($cart);
     }
@@ -80,9 +76,6 @@ class CartController extends Controller
             return response()->error($e->getMessage());
         }
 
-        // reset currency
-        $cart->resetCurrency();
-
         return new StorefrontCart($cart);
     }
 
@@ -106,9 +99,6 @@ class CartController extends Controller
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
         }
-
-        // reset currency
-        $cart->resetCurrency();
 
         return new StorefrontCart($cart);
     }
