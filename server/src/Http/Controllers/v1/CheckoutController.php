@@ -198,7 +198,7 @@ class CheckoutController extends Controller
         ]);
 
         return response()->json([
-            'paymentIntent' => $paymentIntent->id,
+            'paymentIntent' => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
             'token'         => $checkout->token,
