@@ -40,7 +40,6 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'checkouts'], function () use ($router) {
                     $router->get('before', 'CheckoutController@beforeCheckout');
                     $router->post('capture', 'CheckoutController@captureOrder');
-                    $router->post('confirm', 'CheckoutController@confirmOrder');
                 });
 
                 // storefront/v1/service-quotes
