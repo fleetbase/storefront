@@ -185,7 +185,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                 addonCategories,
                 product,
                 updateProductAddonCategories: (categories) => {
-                    const productAddonCategories = categories.map((category) => {
+                    this.product.addon_categories = categories.map((category) => {
                         return this.store.createRecord('product-addon-category', {
                             product_uuid: product.id,
                             category_uuid: category.id,

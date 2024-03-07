@@ -23,7 +23,7 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
             .save()
             .then(() => {
                 this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.products.index.changes-saved'));
+                this.notifications.success(this.intl.t('storefront.products.index.edit.changes-saved'));
             })
             .catch((error) => {
                 this.isSaving = false;

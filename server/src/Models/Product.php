@@ -323,8 +323,6 @@ class Product extends StorefrontModel
                 'is_required'     => data_get($addonCategory, 'is_required'),
             ]);
 
-            // insert to hasmany relation
-            $this->addonCategories->push($productAddonCategory);
         }
 
         return $this;
