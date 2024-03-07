@@ -14,6 +14,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
 use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
+use Fleetbase\Storefront\Http\Requests\ConfirmOrderRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
@@ -179,6 +180,7 @@ class CheckoutController extends Controller
             'customer' => $customer->getMeta('stripe_id'),
         ]);
 
+        info("Payment Intent", $paymentIntent->toArray());
         // create checkout token
         $checkout = Checkout::create([
             'company_uuid'       => session('company'),
@@ -197,7 +199,7 @@ class CheckoutController extends Controller
         ]);
 
         return response()->json([
-            'paymentIntent' => $paymentIntent->client_secret,
+            'paymentIntent' => $paymentIntent->id,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
             'token'         => $checkout->token,
@@ -294,6 +296,42 @@ class CheckoutController extends Controller
     
         // Save entity
         $entity->save();
+    }
+
+    public function confirmOrder(ConfirmOrderRequest $request){
+        $gatewayCode      = $request->input('gateway');
+        $paymentIntentId  = $request->input('paymentIntent');
+        $gateway          = Storefront::findGateway($gatewayCode);
+        $card = $request->input('card');
+        
+        info("Gateway: ", $gateway->toArray());
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        try {
+            $paymentIntent    = \Stripe\PaymentIntent::retrieve($paymentIntentId);
+        
+            // Create a card token
+            $cardToken = \Stripe\Token::create([
+                "card" => [
+                    "number"    => str_replace(' ', '', $card['number']),
+                    "exp_month" => substr($card['expiry'], 0, 2),
+                    "exp_year"  => substr($card['expiry'], -2), 
+                    "cvc"       => $card['cvc'], 
+                    "name"      => $card['name'] 
+                ]
+            ]);
+
+            info('Card Token', $cardToken->toArray());
+
+            // Complete the PaymentIntent by confirming it with the card token
+            $paymentIntent->confirm([
+                'payment_method' => $cardToken->id
+            ]);
+            
+            return response()->json(['Order completed']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
     
 
