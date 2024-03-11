@@ -322,9 +322,6 @@ class Product extends StorefrontModel
                 'max_selectable'  => data_get($addonCategory, 'max_selectable'),
                 'is_required'     => data_get($addonCategory, 'is_required'),
             ]);
-
-            // insert to hasmany relation
-            $this->addonCategories->push($productAddonCategory);
         }
 
         return $this;
@@ -357,8 +354,8 @@ class Product extends StorefrontModel
                     'meta'           => data_get($variant, 'meta', []),
                     'is_multiselect' => data_get($variant, 'is_multiselect'),
                     'is_required'    => data_get($variant, 'is_required'),
-                    'min'            => data_get($variant, 'min'),
-                    'max'            => data_get($variant, 'max'),
+                    'min'            => data_get($variant, 'min') ?? 0,
+                    'max'            => data_get($variant, 'max') ?? 100,
                 ]);
 
                 // Update product variant options if applicable

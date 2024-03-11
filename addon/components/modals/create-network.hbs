@@ -22,7 +22,7 @@
             @value={{@options.network.currency}}
             @helpText={{t "storefront.component.modals.create-network.currency-text"}}
         >
-            <CurrencySelect @value={{@options.network.currency}} @onSelect={{fn (mut @options.network.currency)}} @triggerClass="w-full form-select" />
+            <CurrencySelect @currency={{@options.network.currency}} @onCurrencyChange={{fn (mut @options.network.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
     </div>
 </Modal::Default>

@@ -4,6 +4,7 @@ import Resolver from 'ember-resolver';
 import config from './config/environment';
 import services from '@fleetbase/ember-core/exports/services';
 import StorefrontKeyMetricsWidget from './components/widget/storefront-key-metrics';
+import StorefrontOrderSummaryComponent from './components/storefront-order-summary';
 
 const { modulePrefix } = config;
 const externalRoutes = ['console', 'extensions'];
@@ -31,6 +32,9 @@ export default class StorefrontEngine extends Engine {
                 title: 'Storefront Metrics',
             },
         };
+
+        // register component to views
+        universe.registerRenderableComponent('@fleetbase/fleetops-engine', 'fleet-ops:template:operations:orders:view', StorefrontOrderSummaryComponent);
 
         // register widgets
         universe.registerDefaultDashboardWidgets([KeyMetricsWidgetDefinition]);

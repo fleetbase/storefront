@@ -250,7 +250,7 @@ export default class WidgetOrdersComponent extends Component {
 
         this.modalsManager.show('modals/assign-driver', {
             title: this.intl.t('storefront.component.widget.orders.assign-driver-modal-title'),
-            acceptButtonText: this.intl.t('storefront.component.widget.orders.assign-driver-accept-button-text'),
+            acceptButtonText: this.intl.t('storefront.component.widget.orders.assign-driver-modal-accept-button-text'),
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
             driver: order.driver_assigned,

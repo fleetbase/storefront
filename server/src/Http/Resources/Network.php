@@ -37,6 +37,7 @@ class Network extends FleetbaseResource
             'tags'            => $this->tags ?? [],
             'currency'        => $this->currency ?? 'USD',
             'options'         => $this->options ?? [],
+            'alertable'       => $this->alertable,
             'logo_url'        => $this->logo_url,
             'backdrop_url'    => $this->backdrop_url,
             'rating'          => $this->rating,

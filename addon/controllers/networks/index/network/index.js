@@ -280,6 +280,10 @@ export default class NetworksIndexNetworkIndexController extends Controller {
             this.model.set('alertable', {});
         }
 
-        this.model.set(`alertable.${reason}`, models);
+        const serializedModels = models.map((model) => {
+            return model.serialize();
+        });
+
+        this.model.set(`alertable.${reason}`, serializedModels);
     }
 }

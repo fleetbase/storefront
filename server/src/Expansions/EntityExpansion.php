@@ -25,7 +25,7 @@ class EntityExpansion implements Expansion
      */
     public static function fromStorefrontProduct()
     {
-        return static function (Product $product) {
+        return static function (Product $product, $meta = []) {
             return new Entity([
                 'company_uuid' => session('company'),
                 'photo_uuid'   => $product->primary_image_uuid,
@@ -39,6 +39,7 @@ class EntityExpansion implements Expansion
                 'meta'         => [
                     'product_id' => $product->public_id,
                     'image_url'  => $product->primary_image_url,
+                    ...$meta,
                 ],
             ]);
         };

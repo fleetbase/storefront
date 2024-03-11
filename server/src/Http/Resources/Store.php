@@ -41,6 +41,7 @@ class Store extends FleetbaseResource
             'backdrop_url'    => $this->backdrop_url,
             'rating'          => $this->rating,
             'online'          => $this->online,
+            'alertable'       => $this->alertable,
             'is_network'      => false,
             'is_store'        => true,
             'category'        => $this->when($request->filled('network') && ($request->has('with_category') || $request->inArray('with', 'category')), new Category($this->getNetworkCategoryUsingId($request->input('network')))),

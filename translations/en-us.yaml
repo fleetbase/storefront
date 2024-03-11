@@ -77,6 +77,8 @@ storefront:
     settings: Settings
     launch-app: Launch App
   component:
+    storefront-order-summary: 
+      order-summary-title: Storefront Order Summary
     modals:
       add-store-hours: 
         start-time: Start time

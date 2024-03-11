@@ -40,18 +40,18 @@
             <InputGroup @name="Price" @helpText="Enter a price users will pay to purchase this product">
                 <MoneyInput
                     class="w-full"
-                    @currency={{this.product.currency}}
+                    @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
                     @value={{this.product.price}}
-                    @canSelectCurrency={{true}}
+                    @canSelectCurrency={{false}}
                     @onCurrencyChange={{fn (mut this.product.currency)}}
                 />
             </InputGroup>
             <InputGroup @name="Sale Price" @helpText="Optionally add a sale price for the product if the product is put on sale">
                 <MoneyInput
                     class="w-full"
-                    @currency={{this.product.currency}}
+                    @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
                     @value={{this.product.sale_price}}
-                    @canSelectCurrency={{true}}
+                    @canSelectCurrency={{false}}
                     @onCurrencyChange={{fn (mut this.product.currency)}}
                 />
             </InputGroup>
@@ -144,7 +144,12 @@
                                             <Input @type="text" @value={{variantOption.description}} class="form-input w-full" placeholder="Option Description" />
                                         </div>
                                         <div class="col-span-2">
-                                            <MoneyInput class="w-full" @currency={{this.product.currency}} @canSelectCurrency={{false}} @value={{variantOption.additional_cost}} />
+                                            <MoneyInput
+                                                class="w-full"
+                                                @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
+                                                @canSelectCurrency={{false}}
+                                                @value={{variantOption.additional_cost}}
+                                            />
                                         </div>
                                         <div class="flex items-center justify-center text-center text-sm">
                                             <a href="javascript:;" {{on "click" (fn this.removeVariantOption variant index)}}>Remove</a>

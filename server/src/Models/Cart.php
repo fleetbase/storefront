@@ -334,6 +334,8 @@ class Cart extends StorefrontModel
             'addons'            => $addons,
         ];
 
+        $this->updateCurrency($product->currency, false);
+
         foreach ($properties as $prop => $value) {
             $cartItem->{$prop} = $value;
         }
@@ -599,16 +601,6 @@ class Cart extends StorefrontModel
     }
 
     /**
-     * Reset the cart currency code to the current session.
-     *
-     * @return \Fleetbase\Models\Storefront\Cart
-     */
-    public function resetCurrency()
-    {
-        return $this->updateCurrency(null, true);
-    }
-
-    /**
      * Creates a new cart.
      *
      * @param string|null $uniqueId
@@ -679,6 +671,6 @@ class Cart extends StorefrontModel
      */
     public static function findProduct(string $id): ?Product
     {
-        return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'sale_price', 'is_on_sale'])->where(['public_id' => $id])->with([])->first();
+        return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale'])->where(['public_id' => $id])->with([])->first();
     }
 }

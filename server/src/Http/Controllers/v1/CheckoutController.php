@@ -264,6 +264,40 @@ class CheckoutController extends Controller
         ]);
     }
 
+    /**
+     * Process a cart item and create/save an entity.
+     *
+     * @param mixed $cartItem the cart item to process
+     * @param mixed $payload  the payload
+     * @param mixed $customer the customer
+     *
+     * @return void
+     */
+    private function processCartItem($cartItem, $payload, $customer)
+    {
+        $product = Product::where('public_id', $cartItem->product_id)->first();
+
+        // Generate metas array
+        $metas = [
+            'variants'     => $cartItem->variants ?? [],
+            'addons'       => $cartItem->addons ?? [],
+            'subtotal'     => $cartItem->subtotal,
+            'quantity'     => $cartItem->quantity,
+            'scheduled_at' => $cartItem->scheduled_at ?? null,
+        ];
+
+        // Create and fill entity
+        $entity = Entity::fromStorefrontProduct($product, $metas)->fill([
+            'company_uuid'  => session('company'),
+            'payload_uuid'  => $payload->uuid,
+            'customer_uuid' => $customer->uuid,
+            'customer_type' => Utils::getMutationType('fleet-ops:contact'),
+        ]);
+
+        // Save entity
+        $entity->save();
+    }
+
     public function captureOrder(CaptureOrderRequest $request)
     {
         $token              = $request->input('token');
@@ -458,10 +492,7 @@ class CheckoutController extends Controller
 
         // create entities
         foreach ($cart->items as $cartItem) {
-            $product = Product::where('public_id', $cartItem->product_id)->first();
-            $entity  = Entity::fromStorefrontProduct($product);
-
-            $entity->save();
+            $this->processCartItem($cartItem, $payload, $customer);
         }
 
         // create order meta
@@ -514,8 +545,6 @@ class CheckoutController extends Controller
 
         // create order
         $order = Order::create($orderInput);
-
-        info('Order created', $order->toArray());
 
         // notify order creation
         Storefront::alertNewOrder($order);
@@ -692,22 +721,7 @@ class CheckoutController extends Controller
 
             // create entities
             foreach ($cartItems as $cartItem) {
-                $product = Product::where('public_id', $cartItem->product_id)->first();
-
-                $entity = Entity::fromStorefrontProduct($product)->fill([
-                    'company_uuid'  => $store->company_uuid,
-                    'payload_uuid'  => $payload->uuid,
-                    'customer_uuid' => $customer->uuid,
-                    'customer_type' => Utils::getMutationType('fleet-ops:contact'),
-                ])->setMetas([
-                    'variants'     => $cartItem->variants,
-                    'addons'       => $cartItem->addons,
-                    'subtotal'     => $cartItem->subtotal,
-                    'quantity'     => $cartItem->quantity,
-                    'scheduled_at' => $cartItem->scheduled_at ?? null,
-                ]);
-
-                $entity->save();
+                $this->processCartItem($cartItem, $payload, $customer);
             }
 
             // get order subtotal
@@ -797,22 +811,7 @@ class CheckoutController extends Controller
 
         // create entities
         foreach ($cart->items as $cartItem) {
-            $product = Product::where('public_id', $cartItem->product_id)->first();
-
-            $entity = Entity::fromStorefrontProduct($product)->fill([
-                'company_uuid'  => session('company'),
-                'payload_uuid'  => $payload->uuid,
-                'customer_uuid' => $customer->uuid,
-                'customer_type' => Utils::getMutationType('fleet-ops:contact'),
-            ])->setMetas([
-                'variants'     => $cartItem->variants,
-                'addons'       => $cartItem->addons,
-                'subtotal'     => $cartItem->subtotal,
-                'quantity'     => $cartItem->quantity,
-                'scheduled_at' => $cartItem->scheduled_at ?? null,
-            ]);
-
-            $entity->save();
+            $this->processCartItem($cartItem, $payload, $customer);
         }
 
         // prepare master order meta

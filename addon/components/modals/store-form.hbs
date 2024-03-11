@@ -8,7 +8,7 @@
             @helpText={{t "storefront.component.modals.store-form.the-name-of-your-store"}}
         />
         <InputGroup
-            @name={{t "storefront.common.Description"}}
+            @name={{t "storefront.common.description"}}
             @value={{@options.store.description}}
             @placeholder={{t "storefront.component.modals.store-form.storefront-description-placeholder"}}
             @helpText={{t "storefront.component.modals.store-form.give-your-store-brief-description"}}
@@ -27,7 +27,7 @@
             </TagInput>
         </InputGroup>
         <InputGroup @name={{t "storefront.common.currency"}}>
-            <CurrencySelect @value={{@options.store.currency}} @onSelect={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
+            <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
         </InputGroup>
 
         <div class="store-boolean-settings">
