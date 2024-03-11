@@ -51,7 +51,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'categories'], function () use ($router) {
                     $router->get('/', 'CategoryController@query');
                 });
-                
+
                 // storefront/v1/products
                 $router->group(['prefix' => 'products'], function () use ($router) {
                     $router->get('/', 'ProductController@query');

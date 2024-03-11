@@ -267,14 +267,16 @@ class CheckoutController extends Controller
     /**
      * Process a cart item and create/save an entity.
      *
-     * @param mixed $cartItem The cart item to process.
-     * @param mixed $payload  The payload.
-     * @param mixed $customer The customer.
+     * @param mixed $cartItem the cart item to process
+     * @param mixed $payload  the payload
+     * @param mixed $customer the customer
+     *
      * @return void
      */
-    private function processCartItem($cartItem, $payload, $customer) {
+    private function processCartItem($cartItem, $payload, $customer)
+    {
         $product = Product::where('public_id', $cartItem->product_id)->first();
-    
+
         // Generate metas array
         $metas = [
             'variants'     => $cartItem->variants ?? [],
@@ -283,7 +285,7 @@ class CheckoutController extends Controller
             'quantity'     => $cartItem->quantity,
             'scheduled_at' => $cartItem->scheduled_at ?? null,
         ];
-    
+
         // Create and fill entity
         $entity = Entity::fromStorefrontProduct($product, $metas)->fill([
             'company_uuid'  => session('company'),
@@ -291,7 +293,7 @@ class CheckoutController extends Controller
             'customer_uuid' => $customer->uuid,
             'customer_type' => Utils::getMutationType('fleet-ops:contact'),
         ]);
-    
+
         // Save entity
         $entity->save();
     }

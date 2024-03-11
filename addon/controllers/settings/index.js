@@ -105,7 +105,7 @@ export default class SettingsIndexController extends Controller {
             this.model.set('alertable', {});
         }
 
-        const serializedModels = models.map(model => {
+        const serializedModels = models.map((model) => {
             return model.serialize();
         });
 

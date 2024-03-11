@@ -599,7 +599,7 @@ class Cart extends StorefrontModel
 
         return $this;
     }
-    
+
     /**
      * Creates a new cart.
      *

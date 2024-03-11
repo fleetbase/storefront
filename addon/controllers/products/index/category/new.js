@@ -195,8 +195,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                             category,
                         });
                     });
-
-                    product.addon_categories.pushObjects(productAddonCategories);
                 },
             });
         });

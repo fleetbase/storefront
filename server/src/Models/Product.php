@@ -322,7 +322,6 @@ class Product extends StorefrontModel
                 'max_selectable'  => data_get($addonCategory, 'max_selectable'),
                 'is_required'     => data_get($addonCategory, 'is_required'),
             ]);
-
         }
 
         return $this;
