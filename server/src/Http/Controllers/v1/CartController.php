@@ -36,8 +36,6 @@ class CartController extends Controller
         $storeLocationId = $request->input('store_location');
         $cart            = Cart::retrieve($cartId);
 
-        info('cart', [$request]);
-
         if (!$cart) {
             return response()->error('Cart was not found or has already been checkout out.');
         }

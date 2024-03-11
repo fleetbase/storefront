@@ -179,7 +179,6 @@ class CheckoutController extends Controller
             'customer' => $customer->getMeta('stripe_id'),
         ]);
 
-        info("Payment Intent", $paymentIntent->toArray());
         // create checkout token
         $checkout = Checkout::create([
             'company_uuid'       => session('company'),
@@ -544,8 +543,6 @@ class CheckoutController extends Controller
 
         // create order
         $order = Order::create($orderInput);
-
-        info('Order created', $order->toArray());
 
         // notify order creation
         Storefront::alertNewOrder($order);
