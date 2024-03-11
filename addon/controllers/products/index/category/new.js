@@ -65,8 +65,8 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                 this.isSaving = false;
                 this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
 
-                return this.transitionToRoute('products.index.category').then(() => {
-                    return this.hostRouter.refresh();
+                this.transitionToRoute('products.index.category', category.slug).finally(() => {
+                    this.reset();
                 });
             })
             .catch((error) => {
@@ -166,6 +166,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     }
 
     @action exit(closeOverlay) {
+        console.log(closeOverlay, 'closeOverlay');
         return closeOverlay(() => {
             return this.transitionToRoute('products.index.category').then(() => {
                 this.reset();
