@@ -22,8 +22,8 @@
     ],
     "require": {
         "php": "^8.0",
-        "fleetbase/core-api": "^1.4.10",
-        "fleetbase/fleetops-api": "^0.4.16",
+        "fleetbase/core-api": "^1.4.11",
+        "fleetbase/fleetops-api": "^0.4.17",
         "geocoder-php/google-maps-places-provider": "^1.4",
         "laravel-notification-channels/apn": "^5.0",
         "laravel-notification-channels/fcm": "^4.1",
@@ -43,7 +43,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Fleetbase\\Storefront\\": "server/src/"
+            "Fleetbase\\Storefront\\": "server/src/",
+            "Fleetbase\\Storefront\\Seeders\\": "seeders/"
         }
     },
     "autoload-dev": {
