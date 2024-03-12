@@ -1,9 +1,9 @@
 <?php
 
-namespace Fleetbase\FleetOps\Observers;
+namespace Fleetbase\Storefront\Observers;
 
 use Fleetbase\Models\Company;
-use Fleetbase\Storefront\Seeders\OrderConfigSeeder;
+use Fleetbase\Storefront\Support\Storefront;
 
 class CompanyObserver
 {
@@ -15,6 +15,6 @@ class CompanyObserver
     public function created(Company $company)
     {
         // Add the default storefront order config
-        OrderConfigSeeder::createStorefrontConfig($company);
+        Storefront::createStorefrontConfig($company);
     }
 }
