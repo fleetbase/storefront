@@ -26,6 +26,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
     public $observers = [
         \Fleetbase\Storefront\Models\Product::class => \Fleetbase\Storefront\Observers\ProductObserver::class,
         \Fleetbase\Storefront\Models\Network::class => \Fleetbase\Storefront\Observers\NetworkObserver::class,
+        \Fleetbase\Models\Company::class            => \Fleetbase\Storefront\Observers\CompanyObserver::class,
     ];
 
     /**

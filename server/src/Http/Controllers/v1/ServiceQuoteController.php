@@ -5,11 +5,11 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 use Fleetbase\FleetOps\Http\Resources\v1\ServiceQuote as ServiceQuoteResource;
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Models\IntegratedVendor;
+use Fleetbase\FleetOps\Models\OrderConfig;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
-use Fleetbase\FleetOps\Support\Flow;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
@@ -100,12 +100,11 @@ class ServiceQuoteController extends Controller
         $serviceQuotes = collect();
 
         // get order configurations for ecommerce / task
-        $orderConfigs = Flow::queryOrderConfigurations(function (&$query) use ($config) {
-            $query->where('key', $config);
-        });
+        $orderConfig    = OrderConfig::resolveFromIdentifier($config);
+        $orderConfigKey = data_get($orderConfig, 'key', 'storefront');
 
         // get service rates for config type
-        $serviceRates = ServiceRate::whereIn('service_type', $orderConfigs->pluck('key'))->get();
+        $serviceRates = ServiceRate::where('service_type', $orderConfigKey)->get();
 
         // if no service rates send an empty quote
         if ($serviceRates->isEmpty()) {
@@ -289,12 +288,11 @@ class ServiceQuoteController extends Controller
         $serviceQuotes = collect();
 
         // get order configurations for ecommerce / task
-        $orderConfigs = Flow::queryOrderConfigurations(function (&$query) use ($config) {
-            $query->where('key', $config);
-        });
+        $orderConfig    = OrderConfig::resolveFromIdentifier($config);
+        $orderConfigKey = data_get($orderConfig, 'key', 'storefront');
 
         // get service rates for config type
-        $serviceRates = ServiceRate::whereIn('service_type', $orderConfigs->pluck('key'))->get();
+        $serviceRates = ServiceRate::where('service_type', $orderConfigKey)->get();
 
         // if no service rates send an empty quote
         if ($serviceRates->isEmpty()) {
