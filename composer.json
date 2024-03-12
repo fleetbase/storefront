@@ -44,7 +44,7 @@
     "autoload": {
         "psr-4": {
             "Fleetbase\\Storefront\\": "server/src/",
-            "Fleetbase\\Storefront\\Seeders\\": "seeders/"
+            "Fleetbase\\Storefront\\Seeders\\": "server/seeders/"
         }
     },
     "autoload-dev": {
