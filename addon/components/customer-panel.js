@@ -5,9 +5,8 @@ import { inject as service } from '@ember/service';
 import { isArray } from '@ember/array';
 import CustomerPanelDetailsComponent from './customer-panel/details';
 import CustomerPanelOrdersComponent from './customer-panel/orders';
-import contextComponentCallback from '../utils/context-component-callback';
-import applyContextComponentArguments from '../utils/apply-context-component-arguments';
-
+import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
+import applyContextComponentArguments from '@fleetbase/ember-core/utils/apply-context-component-arguments';
 export default class CustomerPanelComponent extends Component {
     /**
      * Service for fetching data.

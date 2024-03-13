@@ -21,6 +21,7 @@ storefront:
     category: Category
     delivery-tip: Delivery Tip
     delivery: Delivery
+    details: Details
     description: Description
     driver: Driver
     dropoff: Dropoff
@@ -28,11 +29,12 @@ storefront:
     email: Email
     export: Export
     id: ID
+    internal-id: Internal ID
     import: Import
     invalid: Invalid
     loading: Loading...
     logo: logo
-    name: Name 
+    name: Name
     neighborhood: Neighborhood
     online: Online
     orders: Orders
@@ -48,8 +50,9 @@ storefront:
     storefront: Storefront
     tag: Tags
     tip: Tip
+    title: Title
     total: Total
-    type: Type 
+    type: Type
     upload-new: Upload new
     uploading: Uploading...
     view: View
@@ -66,7 +69,7 @@ storefront:
     new: New
     facebook: Facebook
     instagram: Instagram
-    twitter: Twitter 
+    twitter: Twitter
   sidebar:
     storefront: Storefront
     dashboard: Dashboard
@@ -77,10 +80,10 @@ storefront:
     settings: Settings
     launch-app: Launch App
   component:
-    storefront-order-summary: 
+    storefront-order-summary:
       order-summary-title: Storefront Order Summary
     modals:
-      add-store-hours: 
+      add-store-hours:
         start-time: Start time
         operation-start: When availability/operation start
         end-time: End time
@@ -190,12 +193,12 @@ storefront:
         description: Addon Description
         delete-this-addon-category-assosiated-will-lost: Are you sure you wish to delete this addon category? All addons assosciated will be lost!
         untitled-addon-category: Untitled Addon Category
-      order-ready-assign-driver:  
+      order-ready-assign-driver:
         driver-dispatch: You are about to set this order as ready and dispatch, use the dropdown below to select a driver to dispatch to. <br><br>Or optionally you can opt to dispatch order as adhoc which will ping the order to all nearby drivers to be accepted.
         adhoc-dispatch-nearby-drivers: Adhoc dispatch to nearby drivers
         select-driver: Select Driver
         select-driver-to-assign: Select Driver to Assign
-      share-network:  
+      share-network:
         invite-member: Invite members to your network
         email-below: Grab a shareable invitiation link or send individual invites via email below.
         invite-network: Enter the emails of people or organizations you want to send an invite to your network.
@@ -243,12 +246,12 @@ storefront:
         mark-as-ready-modal-title: Are you want to mark order as ready?
         mark-as-ready-modal-body: Marking the order as ready will dispatch the order to nearby drivers, only mark the order as ready when it can be picked up.
         mark-as-ready-modal-accept-button-text: Dispatch!
-        mark-as-completed-modal-title : Are you sure you want to mark order as completed?
+        mark-as-completed-modal-title: Are you sure you want to mark order as completed?
         mark-as-completed-modal-body: Marking the order as completed is a confirmation that the customer has picked up the order and the order is completed.
         mark-as-completed-accept-button-text: Order Completed!
         assign-driver-modal-title: Assign Driver
         assign-driver-modal-accept-button-text: Assign Driver
-      storefront-metrics: 
+      storefront-metrics:
         last-day: Last 30 days
     file-record:
       delete-this-file: Are you sure you wish to delete this file?
@@ -265,7 +268,7 @@ storefront:
       by-removing-these-operation: By removing these operation/availability hours, your store or product may become inactive or unavailable according to the updated schedule...
     store-selector:
       no-stores: No stores to select
-      create-storefront: Create a new 
+      create-storefront: Create a new
   home:
     title: Storefront Dashboard
   customers:
@@ -277,7 +280,13 @@ storefront:
       view-customer-details: View Customer Details
       edit-customer: Edit Customer
       success-message: Your new storefront network has been created!
-      delete-customer: Delete Customer 
+      delete-customer: Delete Customer
+    customer-panel:
+      details:
+        web-url: Website URL
+      edit-button: Edit customer
+      cancel-edit-button: Cancel edit customer
+      cancel-new-button: Cancel new customer
   networks:
     index:
       network-option: Network Options
@@ -294,7 +303,7 @@ storefront:
         orders: Orders
         Network-changes-not-save: Network changes not saved!
         going-back-will-rollback-all-unsaved-changes: Going back will rollback all unsaved changes, are you sure you wish to continue?
-        index: 
+        index:
           change-network-saved: Changes to network saved.
           create-new-payment-gateway: Create a new payment gateway
           save-gateway: Save Gateway
@@ -404,7 +413,7 @@ storefront:
           add-stores-to-network: Add stores to network
           network-stores-update: Network stores updated.
           remove-this-store: Remove this store ({storeName}) from this network ({networkName})?
-          done: Done 
+          done: Done
           longer-findable-by-this-network: Are you sure you wish to remove this store from this network? It will no longer be findable by this network.
           viewing-storefront: Viewing {storeName} storefront
           editing-storefront: Editing {storeName} storefront
@@ -413,25 +422,25 @@ storefront:
           invalid-emails-provided-error: Invalid emails provided!
   orders:
     index:
-     internal-id: Internal ID
-     customer: Customer
-     select-order-customer: Select order customer
-     select-order-pickup-location: Select order pickup location
-     select-order-dropoff-location: Select order dropoff location
-     scheduled-at: Scheduled At
-     transaction-total: Transaction Total
-     tracking-number: Tracking Number
-     driver-assigned: Driver Assigned
-     select-driver-for-order: Select driver for order
-     created-at: Created At
-     updated-at: Updated At
-     created-by: Created By
-     updated-by: Updated By
-     select-user: Select user
-     view-order: View Order
-     cancel-order: Cancel Order 
-     delete-order: Delete Order 
-  products:  
+      internal-id: Internal ID
+      customer: Customer
+      select-order-customer: Select order customer
+      select-order-pickup-location: Select order pickup location
+      select-order-dropoff-location: Select order dropoff location
+      scheduled-at: Scheduled At
+      transaction-total: Transaction Total
+      tracking-number: Tracking Number
+      driver-assigned: Driver Assigned
+      select-driver-for-order: Select driver for order
+      created-at: Created At
+      updated-at: Updated At
+      created-by: Created By
+      updated-by: Updated By
+      select-user: Select user
+      view-order: View Order
+      cancel-order: Cancel Order
+      delete-order: Delete Order
+  products:
     index:
       manage-addons: Manage Addons
       done: Done
@@ -443,7 +452,7 @@ storefront:
       products-success-message: Successfully imported {resultsLength} products...
       delete-product: Are you sure you wish to delete this product?
       body-warning: Warning! Once this product is deleted it will no longer be accessible.
-      aside-scroller: 
+      aside-scroller:
         title: Product Categories
         custom-top-item-text: All Products
       import-products-success-message: Successfully imported {resultsLength} products...
@@ -456,13 +465,13 @@ storefront:
         warning-only-select-an-image-file-to-be-primary: You can only select an image file to be primary!
         made-the-primary-success-image: >-
           {fileName} was made the primary image.
-        title: Product is not saved! 
+        title: Product is not saved!
         body: Going back will cancel this product creation, if you continue all input fields will be cleared!
         select-addon-categories: Select addon categories
         add-new-product-variant: Add new product variant
         edit-product-variant: Edit product variant
         untitled-field: Untitled Field
-      category: 
+      category:
         category: category
         title: Product is not saved!
         body: Warning! Deleting this category will also remove all products listed under this category.
@@ -471,7 +480,7 @@ storefront:
         category-changes-saved-success: Category changes saved.
         delete-product: Are you sure you wish to delete this product?
         body-warning: Warning! Once this product is deleted it will no longer be accessible.
-  settings: 
+  settings:
     api:
       api-settings: API Settings
       access-key-for-storefront-api-integrations: Access key for Storefront API & Integrations.
@@ -539,7 +548,7 @@ storefront:
       enable-tip: Enable tips
       enable-integrated-vendors: Enable integrated vendors
       save-changes: Save Changes
-    locations: 
+    locations:
       new-store-location: New store location
       add-new-location: Add new Location
       edit-store-location: Edit store location
@@ -567,7 +576,7 @@ storefront:
       notification-storefront: Configure notification channels for your storefront, each notification channel additionally can have it's own rules and options.
       new-channel: New channel
   service:
-    storefront: 
+    storefront:
       new-incoming-order: You have a new incoming order!
       accept-order: Accept Order
       decline-order: Decline Order
@@ -575,5 +584,5 @@ storefront:
       storefront-has-been-create-success: Your new storefront has been created!
       create-new-storefront: Create a new Storefront
       storefront-create-success: Your new storefront has been created!
-  application:    
+  application:
     launch-app: Launch App
