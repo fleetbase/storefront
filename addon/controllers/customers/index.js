@@ -122,7 +122,7 @@ export default class CustomersIndexController extends BaseController {
             valuePath: 'name',
             width: '15%',
             cellComponent: 'table/cell/media-name',
-            // action: this.viewVendor,
+            action: this.viewCustomer,
             resizable: true,
             sortable: true,
             filterable: true,
