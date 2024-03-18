@@ -3,7 +3,6 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { inject as controller } from '@ember/controller';
 import { action, computed, get } from '@ember/object';
-import { later } from '@ember/runloop';
 import { task } from 'ember-concurrency-decorators';
 export default class CustomerPanelOrdersComponent extends Component {
     @service store;
@@ -24,12 +23,10 @@ export default class CustomerPanelOrdersComponent extends Component {
     constructor() {
         super(...arguments);
         this.customer = this.args.customer;
-        console.log('Customer:', this.customer);
         this.reloadOrders.perform();
     }
 
     @task *reloadOrders(params = {}) {
-        console.log('Reloading orders...');
         this.orders = yield this.fetchOrders(params);
     }
 
@@ -39,14 +36,14 @@ export default class CustomerPanelOrdersComponent extends Component {
         return new Promise((resolve) => {
             const storefront = get(this.storefront, 'activeStore.public_id');
 
-            if (!storefront) {
+            if (!storefront || !this.customer?.id) {
                 this.isLoading = false;
                 return resolve([]);
             }
 
             const queryParams = {
                 storefront,
-                limit: 14,
+                limit: 25,
                 sort: '-created_at',
                 customer_uuid: this.customer?.id,
                 ...params,
@@ -68,6 +65,10 @@ export default class CustomerPanelOrdersComponent extends Component {
                     resolve(this.orders);
                 });
         });
+    }
+
+    @action search(event) {
+        this.reloadOrders.perform({ query: event.target.value ?? '' });
     }
 
     @action async viewOrder(order) {

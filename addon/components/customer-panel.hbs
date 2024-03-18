@@ -4,7 +4,7 @@
     @onClose={{this.onClose}}
     @onToggle={{this.onToggle}}
     @position="right"
-    @noBackdrop={{true}}
+    @noBackdrop={{false}}
     @fullHeight={{true}}
     @isResizable={{or this.isResizable @isResizable}}
     @width={{or this.width @width "570px"}}
@@ -50,6 +50,7 @@
             <div class="flex justify-end w-1/4">
                 <Badge @status={{this.customer.public_id}} @type="info" @hideStatusDot={{true}} />
             </div>
+
         </div>
     </Overlay::Header>
     <Overlay::Body class="no-padding">

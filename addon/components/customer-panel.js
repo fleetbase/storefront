@@ -145,6 +145,7 @@ export default class CustomerPanelComponent extends Component {
      * @returns {Boolean} Indicates whether the cancel action was overridden.
      */
     @action onPressCancel() {
+        console.log(contextComponentCallback(this, 'onPressCancel', this.customer));
         return contextComponentCallback(this, 'onPressCancel', this.customer);
     }
 
