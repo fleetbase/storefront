@@ -14,6 +14,7 @@ export default class CustomerPanelOrdersComponent extends Component {
     @service modalsManager;
     @tracked isLoading = true;
     @tracked orders = [];
+    @tracked customer;
     @controller('orders.index.view') orderDetailsController;
 
     @computed('args.title') get title() {
@@ -22,6 +23,8 @@ export default class CustomerPanelOrdersComponent extends Component {
 
     constructor() {
         super(...arguments);
+        this.customer = this.args.customer;
+        console.log('Customer:', this.customer);
         this.reloadOrders.perform();
     }
 
@@ -34,19 +37,34 @@ export default class CustomerPanelOrdersComponent extends Component {
         this.isLoading = true;
 
         return new Promise((resolve) => {
+            const storefront = get(this.storefront, 'activeStore.public_id');
+
+            if (!storefront) {
+                this.isLoading = false;
+                return resolve([]);
+            }
+
+            const queryParams = {
+                storefront,
+                limit: 14,
+                sort: '-created_at',
+                customer_uuid: this.customer?.id,
+                ...params,
+            };
+
             this.fetch
-                .get('customers/orders', null, {
+                .get('orders', queryParams, {
                     namespace: 'storefront/int/v1',
                     normalizeToEmberData: true,
                 })
                 .then((orders) => {
                     this.isLoading = false;
-                    console.log('Orders: ', orders);
+
                     resolve(orders);
                 })
-                .catch((err) => {
+                .catch(() => {
                     this.isLoading = false;
-                    console.error('Error fetching orders: ', err);
+
                     resolve(this.orders);
                 });
         });

@@ -1,36 +1,34 @@
 <div class="p-4">
-    <ContentPanel @title={{t "storefront.common.details"}} @open={{true}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-900">
-        <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4 text-xs dark:text-gray-100">
+    <div class="grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-4 text-xs dark:text-gray-100">
 
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.customers.customer-panel.details.web-url"}}</div>
-                <div class="field-value">{{n-a @customer.name}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.common.title"}}</div>
-                <div class="field-value">{{n-a @customer.title}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.common.internal-id"}}</div>
-                <div class="field-value">{{n-a @customer.internal_id}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.common.email"}}</div>
-                <div class="field-value">{{n-a @customer.email}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.common.phone"}}</div>
-                <div class="field-value">{{n-a @customer.phone}}</div>
-            </div>
-
-            <div class="field-info-container">
-                <div class="field-name">{{t "storefront.common.type"}}</div>
-                <div class="field-value"><Badge @status={{@customer.type}} /></div>
-            </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.customer-panel.details.web-url"}}</div>
+            <div class="field-value">{{n-a @customer.name}}</div>
         </div>
-    </ContentPanel>
+
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.title"}}</div>
+            <div class="field-value">{{n-a @customer.title}}</div>
+        </div>
+
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.internal-id"}}</div>
+            <div class="field-value">{{n-a @customer.internal_id}}</div>
+        </div>
+
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.email"}}</div>
+            <div class="field-value">{{n-a @customer.email}}</div>
+        </div>
+
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.phone"}}</div>
+            <div class="field-value">{{n-a @customer.phone}}</div>
+        </div>
+
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.type"}}</div>
+            <div class="field-value"><Badge @status={{@customer.type}} /></div>
+        </div>
+    </div>
 </div>
