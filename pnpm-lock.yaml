@@ -5,14 +5,14 @@ dependencies:
     specifier: ^7.23.2
     version: 7.23.2
   '@fleetbase/ember-core':
-    specifier: ^0.2.5
-    version: 0.2.5(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
+    specifier: ^0.2.6
+    version: 0.2.6(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
   '@fleetbase/ember-ui':
     specifier: ^0.2.11
     version: 0.2.11(@ember/test-helpers@3.2.0)(@glimmer/component@1.1.2)(@glimmer/tracking@1.1.2)(ember-source@5.4.0)(postcss@8.4.35)(rollup@4.12.0)(tracked-built-ins@3.3.0)(webpack@5.89.0)
   '@fleetbase/fleetops-data':
-    specifier: ^0.1.12
-    version: 0.1.12
+    specifier: ^0.1.13
+    version: 0.1.13
   '@fortawesome/ember-fontawesome':
     specifier: ^0.4.1
     version: 0.4.1(rollup@4.12.0)
@@ -1861,7 +1861,7 @@ packages:
       '@ember/edition-utils': 1.2.0
       '@ember/string': 3.1.1
       '@embroider/macros': 1.13.5
-      ember-auto-import: 2.6.3(webpack@5.89.0)
+      ember-auto-import: 2.7.2(webpack@5.89.0)
       ember-cli-babel: 7.26.11
     transitivePeerDependencies:
       - '@glint/template'
@@ -2360,8 +2360,8 @@ packages:
       - supports-color
     dev: false
 
-  /@fleetbase/ember-core@0.2.5(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
-    resolution: {integrity: sha512-nLfNW5iiRdPcFzeLstKeEaPFkXuAPJbI04i19xz5a/D+zqstfD4bYQpv+vxbQpzRKwNFtFLYaJt+qg8xMWdB2A==}
+  /@fleetbase/ember-core@0.2.6(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
+    resolution: {integrity: sha512-EHO47NM6XH/1bC6TL7cEbJQ//RCrdFb1+TsCIHvhPtP7KSGyam2gexiiNlwTm4fgVizxyvDCbCpGDMEs8ltZnA==}
     engines: {node: '>= 18'}
     dependencies:
       '@babel/core': 7.23.2
@@ -2476,8 +2476,8 @@ packages:
       - webpack-command
     dev: false
 
-  /@fleetbase/fleetops-data@0.1.12:
-    resolution: {integrity: sha512-t3tuflZkZCeYPGuW81l9cYsI4ezg5JKBVplwaelhyIb5a9ZzIFwm0grRNN1jMJRbwCZkIVKyMMDnqIHw4mrWAg==}
+  /@fleetbase/fleetops-data@0.1.13:
+    resolution: {integrity: sha512-+JgP0p15TxMOxfJCSPJt/2nTA8ZugukGuaFYQTLzD0TFFKXjZE9bmYKPf+Z5w9L4oJ4b1oLsvRv6BL5dFt11lw==}
     engines: {node: '>= 18'}
     dependencies:
       '@babel/core': 7.23.2
@@ -6803,7 +6803,6 @@ packages:
       - '@glint/template'
       - supports-color
       - webpack
-    dev: false
 
   /ember-basic-dropdown@7.3.0(@babel/core@7.23.2)(@ember/string@3.1.1)(ember-source@5.4.0)(webpack@5.89.0):
     resolution: {integrity: sha512-XzLd1noCrHjG7O35HpZ+ljj7VwPPqon7svbvNJ2U7421e00eXBUVcCioGJFo1NnnPkjc14FTDc5UwktbGSbJdQ==}
