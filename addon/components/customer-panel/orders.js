@@ -3,8 +3,8 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { inject as controller } from '@ember/controller';
 import { action, computed, get } from '@ember/object';
-import { later } from '@ember/runloop';
-export default class WidgetOrdersComponent extends Component {
+import { task } from 'ember-concurrency-decorators';
+export default class CustomerPanelOrdersComponent extends Component {
     @service store;
     @service storefront;
     @service fetch;
@@ -13,6 +13,7 @@ export default class WidgetOrdersComponent extends Component {
     @service modalsManager;
     @tracked isLoading = true;
     @tracked orders = [];
+    @tracked customer;
     @controller('orders.index.view') orderDetailsController;
 
     @computed('args.title') get title() {
@@ -21,61 +22,30 @@ export default class WidgetOrdersComponent extends Component {
 
     constructor() {
         super(...arguments);
+        this.customer = this.args.customer;
+        this.reloadOrders.perform();
     }
 
-    @action async setupWidget() {
-        later(
-            this,
-            () => {
-                this.reloadOrders();
-            },
-            100
-        );
-
-        // reload orders when new order income
-        this.storefront.on('order.broadcasted', () => {
-            this.reloadOrders();
-        });
-
-        // reload orders when store changes
-        this.storefront.on('storefront.changed', () => {
-            this.reloadOrders();
-        });
-    }
-
-    @action async reloadOrders(params = {}) {
-        this.orders = await this.fetchOrders(params);
+    @task *reloadOrders(params = {}) {
+        this.orders = yield this.fetchOrders(params);
     }
 
     @action fetchOrders(params = {}) {
-        let cachedOrders;
-
-        try {
-            if (this.appCache.has('storefront_recent_orders')) {
-                cachedOrders = this.appCache.getEmberData('storefront_recent_orders', 'order');
-            }
-        } catch (exception) {
-            // silent exception just load orders from
-        }
-
-        if (cachedOrders) {
-            this.orders = cachedOrders;
-        }
-
         this.isLoading = true;
 
         return new Promise((resolve) => {
             const storefront = get(this.storefront, 'activeStore.public_id');
 
-            if (!storefront) {
+            if (!storefront || !this.customer?.id) {
                 this.isLoading = false;
                 return resolve([]);
             }
 
             const queryParams = {
                 storefront,
-                limit: 14,
+                limit: 25,
                 sort: '-created_at',
+                customer_uuid: this.customer?.id,
                 ...params,
             };
 
@@ -87,13 +57,6 @@ export default class WidgetOrdersComponent extends Component {
                 .then((orders) => {
                     this.isLoading = false;
 
-                    try {
-                        this.appCache.setEmberData('storefront_recent_orders', orders, ['tracking_statuses', 'tracking_number']);
-                    } catch (exception) {
-                        // silent exception just clear from cache if not able to set
-                        this.appCache.set('storefront_recent_orders', undefined);
-                    }
-
                     resolve(orders);
                 })
                 .catch(() => {
@@ -102,6 +65,10 @@ export default class WidgetOrdersComponent extends Component {
                     resolve(this.orders);
                 });
         });
+    }
+
+    @action search(event) {
+        this.reloadOrders.perform({ query: event.target.value ?? '' });
     }
 
     @action async viewOrder(order) {

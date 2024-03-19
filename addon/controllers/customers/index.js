@@ -1,11 +1,11 @@
-import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
-import { tracked } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked } from '@glimmer/tracking';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
-
-export default class CustomersIndexController extends Controller {
+import { action } from '@ember/object';
+export default class CustomersIndexController extends BaseController {
     /**
      * Inject the `notifications` service
      *
@@ -122,7 +122,7 @@ export default class CustomersIndexController extends Controller {
             valuePath: 'name',
             width: '15%',
             cellComponent: 'table/cell/media-name',
-            // action: this.viewVendor,
+            action: this.viewCustomer,
             resizable: true,
             sortable: true,
             filterable: true,
@@ -226,7 +226,7 @@ export default class CustomersIndexController extends Controller {
             actions: [
                 {
                     label: this.intl.t('storefront.customers.index.view-customer-details'),
-                    // fn: this.viewVendor,
+                    fn: this.viewCustomer,
                 },
                 {
                     label: this.intl.t('storefront.customers.index.edit-customer'),
@@ -247,6 +247,10 @@ export default class CustomersIndexController extends Controller {
             searchable: false,
         },
     ];
+
+    @action viewCustomer(customer) {
+        return this.transitionToRoute('customers.index.view', customer);
+    }
 
     /**
      * The search task.

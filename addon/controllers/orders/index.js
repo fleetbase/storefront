@@ -1,9 +1,11 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
+import { inject as controller } from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
+import { action } from '@ember/object';
 
 export default class OrdersIndexController extends Controller {
     /**
@@ -47,6 +49,8 @@ export default class OrdersIndexController extends Controller {
      * @var {Service}
      */
     @service filters;
+
+    @controller('orders.index.view') orderDetailsController;
 
     /**
      * Queryable parameters for this controller's model
@@ -94,13 +98,11 @@ export default class OrdersIndexController extends Controller {
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
-            cellComponent: 'table/cell/link-to',
-            route: 'orders.index.view',
-            // onLinkClick: this.viewOrder,
+            cellComponent: 'table/cell/anchor',
+            onClick: this.viewOrder,
             resizable: true,
             sortable: true,
             filterable: true,
-            filterComponent: 'filter/string',
         },
         {
             label: this.intl.t('storefront.orders.index.internal-id'),
@@ -333,5 +335,9 @@ export default class OrdersIndexController extends Controller {
 
         // update the query param
         this.query = value;
+    }
+
+    @action async viewOrder(order) {
+        this.orderDetailsController.viewOrder(order);
     }
 }
