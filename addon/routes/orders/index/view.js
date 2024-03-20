@@ -8,18 +8,6 @@ export default class OrdersIndexViewRoute extends Route {
     @service store;
     @service socket;
 
-    @action willTransition(transition) {
-        const shouldReset = typeof transition.to.name === 'string' && !transition.to.name.includes('operations.orders');
-
-        if (this.controller) {
-            this.controller.removeRoutingControlPreview();
-
-            if (shouldReset) {
-                this.controller.resetView();
-            }
-        }
-    }
-
     @action error(error) {
         this.notifications.serverError(error);
     }

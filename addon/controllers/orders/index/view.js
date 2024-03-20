@@ -13,6 +13,7 @@ export default class OrdersIndexViewController extends BaseController {
     @tracked isLoading = true;
     @tracked orders = [];
     @tracked store = null;
+
     constructor() {
         super(...arguments);
     }
@@ -34,19 +35,7 @@ export default class OrdersIndexViewController extends BaseController {
             return this.markAsCompleted(order);
         }
 
-        this.modalsManager.show('modals/incoming-order', {
-            title: `${order.public_id}`,
-            hideAcceptButton: true,
-            declineButtonText: 'Done',
-            declineButtonScheme: 'primary',
-            declineButtonIcon: 'check',
-            assignDriver: async () => {
-                await this.modalsManager.done();
-                this.assignDriver(order);
-            },
-            order,
-            store,
-        });
+        return this.transitionToRoute('orders.index.view', order);
     }
 
     @action async acceptOrder(order) {
@@ -179,7 +168,20 @@ export default class OrdersIndexViewController extends BaseController {
         });
     }
 
-    @action async focusOrderAssignedDriver(order) {}
+    /**
+     * Uses router service to transition back to `orders.index`
+     *
+     * @void
+     */
+    @action transitionBack() {
+        return this.transitionToRoute(this.previousRoute);
+    }
 
-    @action async removeCustomFieldFile(value) {}
+    get previousRoute() {
+        const currentUrl = window.location.href;
+
+        const url = new URL(currentUrl);
+
+        return url.pathname.includes('/storefront/orders/') ? 'orders.index' : '';
+    }
 }

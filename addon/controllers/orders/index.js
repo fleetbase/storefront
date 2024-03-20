@@ -1,4 +1,4 @@
-import Controller from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { inject as service } from '@ember/service';
 import { inject as controller } from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
@@ -7,7 +7,7 @@ import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 import { action } from '@ember/object';
 
-export default class OrdersIndexController extends Controller {
+export default class OrdersIndexController extends BaseController {
     /**
      * Inject the `notifications` service
      *
@@ -49,8 +49,6 @@ export default class OrdersIndexController extends Controller {
      * @var {Service}
      */
     @service filters;
-
-    @controller('orders.index.view') orderDetailsController;
 
     /**
      * Queryable parameters for this controller's model
@@ -337,7 +335,7 @@ export default class OrdersIndexController extends Controller {
         this.query = value;
     }
 
-    @action async viewOrder(order) {
-        this.orderDetailsController.viewOrder(order);
+    @action viewOrder(order) {
+        return this.transitionToRoute('orders.index.view', order);
     }
 }

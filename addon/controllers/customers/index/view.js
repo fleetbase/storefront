@@ -1,5 +1,5 @@
 import Controller from '@ember/controller';
-import BaseController from '@fleetbase/fleetops-engine/controllers/base-controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 
@@ -21,14 +21,14 @@ export default class CustomersIndexViewController extends BaseController {
     @tracked queryParams = ['view'];
 
     /**
-     * Transitions back to the "management.contacts.index" route.
+     * Transitions back to the "customers.index" route.
      *
      * @method
      * @action
      * @returns {Transition} The transition object representing the route change.
      */
     @action transitionBack() {
-        return this.transitionToRoute('management.contacts.index');
+        return this.transitionToRoute('customers.index');
     }
 
     /**

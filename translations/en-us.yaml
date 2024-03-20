@@ -440,6 +440,56 @@ storefront:
       view-order: View Order
       cancel-order: Cancel Order
       delete-order: Delete Order
+      view:
+        route-panel-title: Route
+        comments-title: Comments
+        notes-title: Notes
+        dispatch: Dispatch
+        unassign-driver: Unassign Driver
+        assign-driver: Assign Driver
+        cancel-order: Cancel Order
+        delete-order: Delete Order
+        activity: Activity
+        unable-load-order-activity: Unable to load order activity
+        ad-hoc: Ad-Hoc
+        customer: Customer
+        facilitator: Facilitator
+        driver-assigned: Driver Assigned
+        change-driver: Change Driver
+        tracking-number: Tracking Number
+        date-scheduled: Date Scheduled
+        date-dispatched: Date Dispatched
+        date-started: Date Started
+        order-details-title: Order Details
+        route: Route
+        pickup: Pickup
+        dropoff: Dropoff
+        return: Return
+        order-summary: Order Summary
+        subtotal: Subtotal
+        delivery-fee: Delivery fee
+        tip: Tip
+        delivery-tip: Delivery Tip
+        total: Total
+        payload: Payload
+        items-drop: Items drop at
+        tracking: Tracking
+        view-activity: View Activity
+        order-metadata: Order Metadata
+        unassign-title: Are you sure you wish to unassing the driver ({driverName}) from this order?
+        unassign-body: Once the driver is unassigned, the driver will no longer have access to this orders details.
+        unassign-success: Driver has been unassigned from this order.
+        route-error: Route optimization failed, check route entry and try again.
+        invalid-warning: Invalid custom status entry.
+        change-order: Change order driver
+        assign-order: Assign driver to order
+        assign-success: '{orderId} assigned driver updated.'
+        order-title: Order Label
+        waypoint-title: Waypoint Label
+        proof-of-delivery: Proof of Delivery
+        notes-placeholder: Enter order notes here....
+        save-order-note: Save Order Note
+        order-notes-updated: Order notes updated.
   products:
     index:
       manage-addons: Manage Addons
