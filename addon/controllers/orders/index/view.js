@@ -12,9 +12,11 @@ export default class OrdersIndexViewController extends BaseController {
     @service modalsManager;
     @tracked isLoading = true;
     @tracked orders = [];
-
+    @tracked store = null;
     constructor() {
         super(...arguments);
+        this.store = this.storefront.activeStore;
+        debugger;
     }
 
     @action async viewOrder(order) {
@@ -178,4 +180,8 @@ export default class OrdersIndexViewController extends BaseController {
             },
         });
     }
+
+    @action async focusOrderAssignedDriver(order) {}
+
+    @action async removeCustomFieldFile(value) {}
 }

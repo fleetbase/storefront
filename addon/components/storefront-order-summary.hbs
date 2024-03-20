@@ -1,5 +1,12 @@
-{{#if (eq @model.type "storefront")}}
-    <ContentPanel @title={{t "storefront.component.storefront-order-summary.order-summary-title"}} @prefixTitleRight={{if @order.payload.cod_amount "Cash" ""}} @prefixTitleRightClass="text-green-400" @open={{true}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800">
+{{#if (eq @order.type "storefront")}}
+    <ContentPanel
+        @title={{t "storefront.component.storefront-order-summary.order-summary-title"}}
+        @prefixTitleRight={{if @order.payload.cod_amount "Cash" ""}}
+        @prefixTitleRightClass="text-green-400"
+        @open={{true}}
+        @pad={{true}}
+        @panelBodyClass="bg-white dark:bg-gray-800"
+    >
         <div class="flex flex-col space-y-4 p-2 overflow-hidden">
             {{#each @order.payload.entities as |entity|}}
                 <div class="flex flex-1">
