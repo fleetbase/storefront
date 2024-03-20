@@ -15,8 +15,6 @@ export default class OrdersIndexViewController extends BaseController {
     @tracked store = null;
     constructor() {
         super(...arguments);
-        this.store = this.storefront.activeStore;
-        debugger;
     }
 
     @action async viewOrder(order) {

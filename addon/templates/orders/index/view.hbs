@@ -15,43 +15,6 @@
                     </div>
                 </div>
                 <div class="next-dd-menu-seperator"></div>
-                <div class="px-1">
-                    {{!-- <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.editOrder @model)}}>
-                        <div class="w-6">
-                            <FaIcon @icon="edit" />
-                        </div>
-                        <span>{{t "fleet-ops.operations.orders.index.view.edit-details"}}</span>
-                    </a> --}}
-
-                    {{!-- <div class="next-dd-menu-seperator"></div>
-                    <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.listenToSocket @model)}}>
-                        <div class="w-6">
-                            <FaIcon @icon="headphones" />
-                        </div>
-                        <span>{{t "fleet-ops.operations.orders.index.view.listen-socket-channel"}}</span>
-                    </a>
-                    <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.viewOrderMeta @model)}}>
-                        <div class="w-6">
-                            <FaIcon @icon="table" />
-                        </div>
-                        <span>{{t "fleet-ops.operations.orders.index.view.view-metadata"}}</span>
-                    </a>
-                    {{#unless @model.isCanceled}}
-                        <div class="next-dd-menu-seperator"></div>
-                        <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd this.cancelOrder @model)}}>
-                            <div class="w-6">
-                                <FaIcon @icon="ban" class="text-danger" />
-                            </div>
-                            <span>{{t "fleet-ops.operations.orders.index.view.cancel-order"}}</span>
-                        </a>
-                    {{/unless}}
-                    <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd this.deleteOrder @model)}}>
-                        <div class="w-6">
-                            <FaIcon @icon="trash" class="text-danger" />
-                        </div>
-                        <span>{{t "fleet-ops.operations.orders.index.view.delete-order"}}</span>
-                    </a> --}}
-                </div>
             </div>
         </DropdownButton>
     </Overlay::Header>
@@ -281,14 +244,10 @@
             <ContentPanel
                 @title={{t "fleet-ops.operations.orders.index.view.tracking"}}
                 @prefixTitleRight={{@model.tracking}}
-                {{!-- @isLoading={{not this.loadOrderRelations.isIdle}} --}}
                 @open={{true}}
                 @pad={{true}}
                 @panelBodyClass="bg-white dark:bg-gray-800"
             >
-                {{!-- <div class="mb-4 flex justify-end">
-                    <Button @size="xs" @type="default" @icon="barcode" @text="Get Order Label" @onClick={{fn this.viewOrderLabel @model}} />
-                </div> --}}
                 <div class="flex flex-row items-center justify-center space-x-4">
                     <div class="p-2 rounded-md bg-white">
                         <img src={{concat "data:image/png;base64," @model.tracking_number.qr_code}} class="w-18 h-18" alt={{@model.public_id}} />
@@ -300,33 +259,53 @@
             </ContentPanel>
         {{/if}}
 
-        <ContentPanel
-            @title={{t "fleet-ops.operations.orders.index.view.route-panel-title"}}
-            @open={{true}}
-            @pad={{true}}
-            @panelBodyClass="bg-white dark:bg-gray-800"
-            @actionButtons={{this.routePanelButtons}}
-        >
-            {{#if @model.payload.isMultiDrop}}
-                <div>
-                    <RouteList @order={{@model}} />
+        <ContentPanel @title={{t "fleet-ops.operations.orders.index.view.route-panel-title"}} @open={{true}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800">
+            <div class="py-2 px-6">
+                <div class="flex">
+                    {{#if @model.meta.is_pickup}}
+                        <div class="flex-1">
+                            <div class="rounded-md bg-blue-50 mr-4">
+                                <div class="rounded-t-md bg-blue-100 px-3 py-2 mb-3">
+                                    <span class="text-blue-500 font-semibold text-sm truncate">{{t "storefront.component.modals.incoming-order.pickup-order"}}</span>
+                                </div>
+                                <div class="flex flex-row items-center mb-4 pb-4 px-3">
+                                    <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
+                                        <FaIcon @icon="store-alt" class="text-white" />
+                                    </div>
+                                    <div class="text-xs text-blue-900 truncate">
+                                        <DisplayPlace @place={{@options.order.payload.pickup}} @type="pickup" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {{else if @model.payload.hasWaypoints}}
+                        <RouteList @order={{@model}} />
+                    {{else}}
+                        <div class="order-route-list storefront flex-1">
+                            <div class="order-route-stop">
+                                <div class="order-route-stop-index">
+                                    <div class="index-count">
+                                        <FaIcon @prefix="fas" @icon="store-alt" />
+                                    </div>
+                                </div>
+                                <div class="order-route-location dark:text-gray-100">
+                                    <DisplayPlace @place={{@model.payload.pickup}} @type="pickup" @addressClass="text-sm dark:text-gray-100" @noAddressClass="text-sm" />
+                                </div>
+                            </div>
+                            <div class="order-route-stop">
+                                <div class="order-route-stop-index">
+                                    <div class="index-count">
+                                        <FaIcon @prefix="fas" @icon="map-marker-alt" />
+                                    </div>
+                                </div>
+                                <div class="order-route-location dark:text-gray-100">
+                                    <DisplayPlace @place={{@model.payload.dropoff}} @type="dropoff" @addressClass="text-sm dark:text-gray-100" @noAddressClass="text-sm" />
+                                </div>
+                            </div>
+                        </div>
+                    {{/if}}
                 </div>
-            {{else}}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-2">
-                    <div class="field-info-container">
-                        <label class="field-name">{{t "fleet-ops.operations.orders.index.view.pickup"}}</label>
-                        <DisplayPlace @place={{@model.payload.pickup}} />
-                    </div>
-                    <div class="field-info-container">
-                        <label class="field-name">{{t "fleet-ops.operations.orders.index.view.dropoff"}}</label>
-                        <DisplayPlace @place={{@model.payload.dropoff}} />
-                    </div>
-                    <div class="field-info-container">
-                        <label class="field-name">{{t "fleet-ops.operations.orders.index.view.return"}}</label>
-                        <DisplayPlace @place={{@model.payload.return}} />
-                    </div>
-                </div>
-            {{/if}}
+            </div>
         </ContentPanel>
 
         <StorefrontOrderSummary @order={{@model}} />
