@@ -310,6 +310,10 @@
 
         <StorefrontOrderSummary @order={{@model}} />
 
+        <ContentPanel @title={{t "fleet-ops.operations.orders.index.view.comments-title"}} @open={{true}} @pad={{true}} @panelBodyClass="bg-white dark:bg-gray-800" @wrapperClass="mb-20">
+            <CommentThread @subject={{@model}} @subjectType="storefront:order" />
+        </ContentPanel>
+
         <Spacer @height="300px" />
     </Overlay::Body>
 </Overlay>
