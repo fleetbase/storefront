@@ -19,7 +19,7 @@ export default class ContextPanelService extends Service {
      * @type {Object}
      */
     registry = {
-        contact: {
+        customer: {
             viewing: {
                 component: 'customer-panel',
                 componentArguments: [{ isResizable: true }, { width: '500px' }],
@@ -95,11 +95,13 @@ export default class ContextPanelService extends Service {
         const registry = this.getRegistryFromModelName(modelName);
         const dynamicArgs = getWithDefault(options, 'args', {});
         if (registry && registry[intent]) {
+            console.log('Registry: ', registry, intent, model, dynamicArgs);
             this.currentContext = model;
             this.currentContextRegistry = registry[intent];
             this.currentContextComponentArguments = this.createDynamicArgsFromRegistry(registry[intent], model, dynamicArgs);
             this.contextOptions = options;
 
+            console.log('Focused on intent: ', this);
             return this;
         }
     }
@@ -189,6 +191,9 @@ export default class ContextPanelService extends Service {
         const dynamicArgs = {
             [camelize(getModelName(model))]: model,
         };
+
+        console.log('Dynamic Args: ', dynamicArgs);
+
         const componentArguments = registry.componentArguments || [];
 
         componentArguments.forEach((arg, index) => {

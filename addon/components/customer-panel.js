@@ -67,6 +67,13 @@ export default class CustomerPanelComponent extends Component {
     @tracked customer;
 
     /**
+     * Overlay context.
+     * @type {any}
+     */
+    @tracked context;
+
+    /**
+    /**
      * Returns the array of tabs available for the panel.
      *
      * @type {Array}
@@ -92,6 +99,7 @@ export default class CustomerPanelComponent extends Component {
     constructor() {
         super(...arguments);
         this.customer = this.args.customer;
+        console.log('customer panel args', this.args);
         this.tab = this.getTabUsingSlug(this.args.tab);
         applyContextComponentArguments(this);
     }

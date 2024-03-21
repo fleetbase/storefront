@@ -27,7 +27,7 @@
             <tbody>
                 {{#each this.customers as |customer|}}
                     <tr class="h-12">
-                        <td>{{customer.customerId}}</td>
+                        <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.customerId}}</a></td>
                         <td>{{n-a customer.phone}}</td>
                         <td>{{n-a customer.email}}</td>
                         <td></td>
