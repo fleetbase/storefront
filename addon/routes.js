@@ -30,7 +30,7 @@ export default buildRoutes(function () {
         this.route('index', { path: '/' }, function () {
             this.route('network', { path: '/:public_id' }, function () {
                 this.route('stores');
-                this.route('customers');
+                this.route('customers', { queryParams: { page: { as: 'networkCustomersPage' } } });
                 this.route('orders');
             });
         });
