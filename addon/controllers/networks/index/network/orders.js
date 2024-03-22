@@ -4,6 +4,7 @@ import { tracked } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
+import { action } from '@ember/object';
 
 export default class NetworksIndexNetworkOrdersController extends Controller {
     /**
@@ -48,6 +49,8 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
      */
     @service filters;
 
+    @service contextPanel;
+
     /**
      * Queryable parameters for this controller's model
      *
@@ -77,9 +80,8 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
-            cellComponent: 'table/cell/link-to',
-            route: 'orders.index.view',
-            // onLinkClick: this.viewOrder,
+            cellComponent: 'table/cell/anchor',
+            action: this.viewOrder,
             resizable: true,
             sortable: true,
             filterable: true,
@@ -316,5 +318,10 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
 
         // update the query param
         this.query = value;
+    }
+
+    @action viewOrder(order) {
+        console.log('viewOrder', order);
+        this.contextPanel.focus(order, 'viewing');
     }
 }

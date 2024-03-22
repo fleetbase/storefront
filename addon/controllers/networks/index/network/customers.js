@@ -5,8 +5,10 @@ import { isBlank } from '@ember/utils';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 import CustomersIndexController from '../../../customers';
-
+import { action } from '@ember/object';
 export default class NetworksIndexNetworkCustomersController extends CustomersIndexController {
+    @service contextPanel;
+
     @tracked columns = [
         {
             label: this.intl.t('storefront.common.name'),
@@ -60,4 +62,8 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
             filterComponent: 'filter/date',
         },
     ];
+
+    @action viewCustomer(customer) {
+        this.contextPanel.focus(customer, 'viewing');
+    }
 }
