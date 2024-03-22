@@ -18,6 +18,7 @@
             <thead>
                 <tr class="h-12 text-left py-1">
                     <th>{{t "storefront.common.id"}}</th>
+                    <th>{{t "storefront.common.name"}}</th>
                     <th>{{t "storefront.common.phone"}}</th>
                     <th>{{t "storefront.common.email"}}</th>
                     <th>{{t "storefront.common.orders"}}</th>
@@ -28,6 +29,7 @@
                 {{#each this.customers as |customer|}}
                     <tr class="h-12">
                         <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.customerId}}</a></td>
+                        <td>{{n-a customer.name}}</td>
                         <td>{{n-a customer.phone}}</td>
                         <td>{{n-a customer.email}}</td>
                         <td></td>

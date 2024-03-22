@@ -11,6 +11,7 @@ export default class CustomerPanelOrdersComponent extends Component {
     @service intl;
     @service appCache;
     @service modalsManager;
+    @service contextPanel;
     @tracked isLoading = true;
     @tracked orders = [];
     @tracked customer;
@@ -72,22 +73,6 @@ export default class CustomerPanelOrdersComponent extends Component {
     }
 
     @action async viewOrder(order) {
-        await this.orderDetailsController.viewOrder(order);
-    }
-
-    @action async acceptOrder(order) {
-        await this.orderDetailsController.acceptOrder(order);
-    }
-
-    @action markAsReady(order) {
-        this.orderDetailsController.markAsReady(order);
-    }
-
-    @action markAsCompleted(order) {
-        this.orderDetailsController.markAsCompleted(order);
-    }
-
-    @action async assignDriver(order) {
-        await this.orderDetailsController.assignDriver(order);
+        this.contextPanel.focus(order, 'viewing');
     }
 }
