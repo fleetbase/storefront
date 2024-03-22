@@ -27,43 +27,23 @@ class ReviewController extends Controller
         $limit  = $request->input('limit', false);
         $offset = $request->input('offset', false);
         $sort   = $request->input('sort');
+        
+        if ($sort) {
+            $this->applySort($request, $sort);
+        }
 
         if (session('storefront_store')) {
-            $results = Review::queryWithRequest($request, function (&$query) use ($limit, $offset, $sort) {
-                $query->where('subject_uuid', session('storefront_store'));
-
+            $results = Review::queryWithRequest($request, function (&$query) use ($store, $limit, $offset) {
+                $query->where('subject_uuid', $store->uuid);
+            
                 if ($limit) {
                     $query->limit($limit);
                 }
-
+            
                 if ($offset) {
-                    $query->limit($offset);
+                    $query->offset($offset);
                 }
-
-                if ($sort) {
-                    switch ($sort) {
-                        case 'highest':
-                        case 'highest rated':
-                            $query->orderByDesc('rating');
-                            break;
-
-                        case 'lowest':
-                        case 'lowest rated':
-                            $query->orderBy('rating');
-                            break;
-
-                        case 'newest':
-                        case 'newest first':
-                            $query->orderByDesc('created_at');
-                            break;
-
-                        case 'oldest':
-                        case 'oldest first':
-                            $query->orderBy('created_at');
-                            break;
-                    }
-                }
-            });
+            });            
         }
 
         if (session('storefront_network')) {
@@ -79,7 +59,7 @@ class ReviewController extends Controller
                     return response()->json(['error' => 'Cannot find reviews for store'], 400);
                 }
 
-                $results = Review::queryWithRequest($request, function (&$query) use ($store, $sort, $limit, $offset) {
+                $results = Review::queryWithRequest($request, function (&$query) use ($store, $limit, $offset) {
                     $query->where('subject_uuid', $store->uuid);
 
                     if ($limit) {
@@ -88,36 +68,48 @@ class ReviewController extends Controller
 
                     if ($offset) {
                         $query->limit($offset);
-                    }
-
-                    if ($sort) {
-                        switch ($sort) {
-                            case 'highest':
-                            case 'highest rated':
-                                $query->orderByDesc('rating');
-                                break;
-
-                            case 'lowest':
-                            case 'lowest rated':
-                                $query->orderBy('rating');
-                                break;
-
-                            case 'newest':
-                            case 'newest first':
-                                $query->orderByDesc('created_at');
-                                break;
-
-                            case 'oldest':
-                            case 'oldest first':
-                                $query->orderBy('created_at');
-                                break;
-                        }
-                    }
+                    }                    
                 });
             }
         }
 
         return StorefrontReview::collection($results);
+    }
+
+    public function applySort($request, $sort)
+    {
+        if ($sort) {
+            switch ($sort) {
+                case 'highest':
+                case 'highest rated':
+
+                    $request->merge(['sort' => 'rating', 'sort_direction' => 'desc']);
+                    
+                    break;
+    
+                case 'lowest':
+                case 'lowest rated':
+                    $request->merge(['sort' => 'rating', 'sort_direction' => 'asc']);
+                    
+                    break;
+    
+                case 'newest':
+                case 'newest first':
+                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'desc']);
+                    
+                    break;
+    
+                case 'oldest':
+                case 'oldest first':
+                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'asc']);
+                    
+                    break;
+    
+                default:
+                    // Handle unknown sorting criteria
+                    break;
+            }
+        } 
     }
 
     /**
