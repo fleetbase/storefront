@@ -166,7 +166,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     }
 
     @action exit(closeOverlay) {
-        console.log(closeOverlay, 'closeOverlay');
         return closeOverlay(() => {
             return this.transitionToRoute('products.index.category').then(() => {
                 this.reset();

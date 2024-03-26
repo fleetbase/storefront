@@ -57,7 +57,6 @@ export default class WidgetCustomersComponent extends Component {
     }
 
     @action viewCustomer(customer) {
-        console.log('viewing customer', customer);
         this.contextPanel.focus(customer, 'viewing');
     }
 }

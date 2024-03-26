@@ -13,7 +13,6 @@ export default class OrderPanelComponent extends Component {
         super(...arguments);
 
         applyContextComponentArguments(this);
-        console.log('OrderPanelComponent', this, ...arguments);
     }
 
     /**
@@ -25,8 +24,6 @@ export default class OrderPanelComponent extends Component {
     @action setOverlayContext(overlayContext) {
         this.context = overlayContext;
         contextComponentCallback(this, 'onLoad', ...arguments);
-
-        console.log('OrderPanelComponent setOverlayContext', overlayContext);
     }
 
     /**

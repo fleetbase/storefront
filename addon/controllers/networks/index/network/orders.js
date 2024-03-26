@@ -321,7 +321,6 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
     }
 
     @action viewOrder(order) {
-        console.log('viewOrder', order);
         this.contextPanel.focus(order, 'viewing');
     }
 }

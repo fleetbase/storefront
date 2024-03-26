@@ -44,10 +44,6 @@ export default class OrderPanelDetailsComponent extends Component {
     }
 
     @action async viewOrder(order) {
-        const store = this.storefront.activeStore;
-
-        console.log('Modals: ', this.modalsManager);
-
         if (order.isFresh) {
             return this.acceptOrder(order);
         }
