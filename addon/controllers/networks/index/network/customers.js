@@ -1,11 +1,11 @@
-import Controller from '@ember/controller';
+import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
-import { isBlank } from '@ember/utils';
-import { timeout } from 'ember-concurrency';
-import { task } from 'ember-concurrency-decorators';
 import CustomersIndexController from '../../../customers';
-import { action } from '@ember/object';
+
+/**
+ * This controller handles the logic for managing network customers.
+ */
 export default class NetworksIndexNetworkCustomersController extends CustomersIndexController {
     @service contextPanel;
 

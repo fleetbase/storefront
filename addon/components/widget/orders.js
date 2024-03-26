@@ -108,4 +108,20 @@ export default class WidgetOrdersComponent extends Component {
     @action async viewOrder(order) {
         this.contextPanel.focus(order, 'viewing');
     }
+
+    @action async acceptOrder(order) {
+        await this.orderDetailsController.acceptOrder(order);
+    }
+
+    @action markAsReady(order) {
+        this.orderDetailsController.markAsReady(order);
+    }
+
+    @action markAsCompleted(order) {
+        this.orderDetailsController.markAsCompleted(order);
+    }
+
+    @action async assignDriver(order) {
+        await this.orderDetailsController.assignDriver(order);
+    }
 }
