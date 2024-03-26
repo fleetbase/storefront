@@ -18,6 +18,13 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
     @action saveProduct() {
         this.isSaving = true;
 
+        console.log(
+            'Product addon categories',
+            this.product.addon_categories.map((category) => category.toJSON())
+        );
+
+        console.log('Product variant', this.product.variants);
+
         this.product
             .serializeMeta()
             .save()

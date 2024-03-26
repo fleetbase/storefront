@@ -40,6 +40,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             onClick: this.addMetaField,
         },
     ];
+
     @tracked acceptedFileTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-flv', 'video/x-ms-wmv'];
 
     @action reset() {
@@ -56,6 +57,11 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         if (category) {
             this.product.set('category_uuid', category.id);
         }
+
+        console.log(
+            'Product addon categories',
+            this.product.addon_categories.map((category) => category.toJSON())
+        );
 
         this.product
             .serializeMeta()
@@ -184,9 +190,20 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             this.modalsManager.show('modals/select-addon-category', {
                 title: this.intl.t('storefront.products.index.new.select-addon-categories'),
                 addonCategories,
-                product,
+                selectedAddonCategories: product.addon_categories,
                 updateProductAddonCategories: (categories) => {
-                    this.product.addon_categories = categories.map((category) => {
+                    console.log(categories, 'categories');
+                    console.log(product.addon_categories, 'product addon categories');
+                    // Filter out categories that are already present in addon_categories
+                    const newCategories = categories.filter((category) => {
+                        return !product.addon_categories.some((existingCategory) => {
+                            console.log('Ids : ', existingCategory.get('category_uuid'), category.get('id'));
+                            return existingCategory.get('category_uuid') === category.get('id');
+                        });
+                    });
+
+                    // Create new product-addon-category records for new categories
+                    const newAddonCategories = newCategories.map((category) => {
                         return this.store.createRecord('product-addon-category', {
                             product_uuid: product.id,
                             category_uuid: category.id,
@@ -195,6 +212,14 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                             category,
                         });
                     });
+
+                    console.log(
+                        'New addon categories',
+                        newAddonCategories.map((category) => category.toJSON())
+                    );
+
+                    // Add new addon categories to the product
+                    if (newAddonCategories.length > 0) this.product.addon_categories = [...this.product.addon_categories, ...newAddonCategories];
                 },
             });
         });
@@ -209,6 +234,8 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             productVariant,
             confirm: (modal) => {
                 modal.startLoading();
+
+                console.log(productVariant, 'productVariant');
                 // add variant to product
                 product.variants.pushObject(productVariant);
                 modal.done();

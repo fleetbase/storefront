@@ -6,7 +6,7 @@ export default class ProductVariantModel extends Model {
     @attr('string') product_uuid;
 
     /** @relationships */
-    @hasMany('product-variant-option') options;
+    @hasMany('product-variant-option', { async: false }) options;
 
     /** @attributes */
     @attr('string', { defaultValue: '' }) name;
