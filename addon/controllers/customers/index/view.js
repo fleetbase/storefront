@@ -1,7 +1,6 @@
-import Controller from '@ember/controller';
+import { action } from '@ember/object';
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
-import { action } from '@ember/object';
 
 export default class CustomersIndexViewController extends BaseController {
     /**

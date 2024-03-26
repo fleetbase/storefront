@@ -1,10 +1,9 @@
 import Component from '@glimmer/component';
 
-import { tracked } from '@glimmer/tracking';
-import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { inject as service } from '@ember/service';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
-import applyContextComponentArguments from '@fleetbase/ember-core/utils/apply-context-component-arguments';
+import { tracked } from '@glimmer/tracking';
 
 export default class OrderPanelDetailsComponent extends Component {
     @service store;
@@ -15,7 +14,6 @@ export default class OrderPanelDetailsComponent extends Component {
     @service modalsManager;
     @tracked isLoading = true;
     @tracked orders = [];
-    @tracked store = null;
 
     constructor() {
         super(...arguments);
@@ -60,7 +58,7 @@ export default class OrderPanelDetailsComponent extends Component {
     }
 
     @action async acceptOrder(order) {
-        const store = this.storefront.activeStore;
+        const activeStore = this.storefront.activeStore;
 
         await order.loadPayload();
         await order.loadCustomer();
@@ -71,7 +69,7 @@ export default class OrderPanelDetailsComponent extends Component {
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
             order,
-            store,
+            activeStore,
             confirm: (modal) => {
                 modal.startLoading();
 

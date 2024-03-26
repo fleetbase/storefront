@@ -1,11 +1,10 @@
-import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
-import { inject as controller } from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked } from '@glimmer/tracking';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
-import { action } from '@ember/object';
 
 export default class OrdersIndexController extends BaseController {
     /**
