@@ -27,7 +27,7 @@ class ReviewController extends Controller
         $limit  = $request->input('limit', false);
         $offset = $request->input('offset', false);
         $sort   = $request->input('sort');
-        
+
         if ($sort) {
             $this->applySort($request, $sort);
         }
@@ -35,15 +35,15 @@ class ReviewController extends Controller
         if (session('storefront_store')) {
             $results = Review::queryWithRequest($request, function (&$query) use ($store, $limit, $offset) {
                 $query->where('subject_uuid', $store->uuid);
-            
+
                 if ($limit) {
                     $query->limit($limit);
                 }
-            
+
                 if ($offset) {
                     $query->offset($offset);
                 }
-            });            
+            });
         }
 
         if (session('storefront_network')) {
@@ -68,7 +68,7 @@ class ReviewController extends Controller
 
                     if ($offset) {
                         $query->limit($offset);
-                    }                    
+                    }
                 });
             }
         }
@@ -82,34 +82,33 @@ class ReviewController extends Controller
             switch ($sort) {
                 case 'highest':
                 case 'highest rated':
-
                     $request->merge(['sort' => 'rating', 'sort_direction' => 'desc']);
-                    
+
                     break;
-    
+
                 case 'lowest':
                 case 'lowest rated':
                     $request->merge(['sort' => 'rating', 'sort_direction' => 'asc']);
-                    
+
                     break;
-    
+
                 case 'newest':
                 case 'newest first':
                     $request->merge(['sort' => 'created_at', 'sort_direction' => 'desc']);
-                    
+
                     break;
-    
+
                 case 'oldest':
                 case 'oldest first':
                     $request->merge(['sort' => 'created_at', 'sort_direction' => 'asc']);
-                    
+
                     break;
-    
+
                 default:
                     // Handle unknown sorting criteria
                     break;
             }
-        } 
+        }
     }
 
     /**
