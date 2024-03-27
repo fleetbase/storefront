@@ -8,6 +8,7 @@ export default class WidgetCustomersComponent extends Component {
     @service store;
     @service storefront;
     @service intl;
+    @service contextPanel;
     @tracked isLoading = true;
     @tracked customers = [];
     @tracked title = this.intl.t('storefront.component.widget.customers.widget-title');
@@ -53,5 +54,9 @@ export default class WidgetCustomersComponent extends Component {
                     resolve(this.customers);
                 });
         });
+    }
+
+    @action viewCustomer(customer) {
+        this.contextPanel.focus(customer, 'viewing');
     }
 }

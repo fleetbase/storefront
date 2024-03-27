@@ -23,6 +23,6 @@ export default class NetworksIndexRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('network', params);
+        return this.store.query('network', { with_gateways: 1, with_notification_channels: 1, ...params });
     }
 }

@@ -1,11 +1,12 @@
-import Controller from '@ember/controller';
+import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
-import { tracked } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked } from '@glimmer/tracking';
 import { timeout } from 'ember-concurrency';
 import { task } from 'ember-concurrency-decorators';
 
-export default class OrdersIndexController extends Controller {
+export default class OrdersIndexController extends BaseController {
     /**
      * Inject the `notifications` service
      *
@@ -94,13 +95,11 @@ export default class OrdersIndexController extends Controller {
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
-            cellComponent: 'table/cell/link-to',
-            route: 'orders.index.view',
-            // onLinkClick: this.viewOrder,
+            cellComponent: 'table/cell/anchor',
+            onClick: this.viewOrder,
             resizable: true,
             sortable: true,
             filterable: true,
-            filterComponent: 'filter/string',
         },
         {
             label: this.intl.t('storefront.orders.index.internal-id'),
@@ -333,5 +332,9 @@ export default class OrdersIndexController extends Controller {
 
         // update the query param
         this.query = value;
+    }
+
+    @action viewOrder(order) {
+        return this.transitionToRoute('orders.index.view', order);
     }
 }

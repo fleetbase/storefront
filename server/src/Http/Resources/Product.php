@@ -97,14 +97,16 @@ class Product extends FleetbaseResource
 
             if (Http::isInternalRequest()) {
                 return [
-                    'uuid'               => $addonCategory->uuid,
-                    'public_id'          => data_get($addonCategory, 'category.public_id'),
-                    'id'                 => $addonCategory->id,
-                    'name'               => $addonCategory->name,
-                    'excluded_addons'    => $addonCategory->excluded_addons,
-                    'category'           => $addonCategory->category,
-                    'created_at'         => $addonCategory->created_at,
-                    'updated_at'         => $addonCategory->updated_at,
+                    'uuid'                    => $addonCategory->uuid,
+                    'product_uuid'            => $addonCategory->product_uuid,
+                    'category_uuid'           => $addonCategory->category_uuid,
+                    'public_id'               => data_get($addonCategory, 'category.public_id'),
+                    'id'                      => $addonCategory->id,
+                    'name'                    => $addonCategory->name,
+                    'excluded_addons'         => $addonCategory->excluded_addons,
+                    'category'                => $addonCategory->category,
+                    'created_at'              => $addonCategory->created_at,
+                    'updated_at'              => $addonCategory->updated_at,
                 ];
             } else {
                 return [

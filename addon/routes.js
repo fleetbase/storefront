@@ -16,6 +16,7 @@ export default buildRoutes(function () {
     this.route('customers', function () {
         this.route('index', { path: '/' }, function () {
             this.route('edit', { path: '/:public_id' });
+            this.route('view', { path: '/:public_id' });
         });
     });
     this.route('orders', function () {

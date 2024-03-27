@@ -1,4 +1,6 @@
 import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
+import ProductAddonCategoryModel from './product-addon-category';
+import AddonCategoryModel from './addon-category';
 import { tracked } from '@glimmer/tracking';
 import { getOwner } from '@ember/application';
 import { setProperties } from '@ember/object';
@@ -236,5 +238,65 @@ export default class ProductModel extends Model {
                     throw error;
                 });
         });
+    }
+
+    createAddonCategory(category) {
+        const owner = getOwner(this);
+        const store = owner.lookup('service:store');
+        if (store) {
+            const productAddonCategory = store.createRecord('product-addon-category', {
+                product_uuid: this.id,
+                category_uuid: category.id,
+                name: category.name,
+                excluded_addons: [],
+                category,
+            });
+
+            this.addon_categories.pushObject(productAddonCategory);
+        }
+    }
+
+    doesProductAddonCategoryExist(category) {
+        const productAddonCategories = this.addon_categories;
+        return productAddonCategories.find((_) => _.category_uuid === category.id) !== undefined;
+    }
+
+    isProductAddonCategory(_) {
+        return _ instanceof ProductAddonCategoryModel;
+    }
+
+    isAddonCategory(_) {
+        return _ instanceof AddonCategoryModel;
+    }
+
+    incomingCategoriesIsMissingExistingAddonCategory(incomingAddonCategories = [], existingProductAddonCategory) {
+        const existingProductCategoryFromIncoming = incomingAddonCategories.find((addonCategory) => {
+            if (this.isAddonCategory(addonCategory)) {
+                return addonCategory.id === existingProductAddonCategory.category_uuid;
+            }
+            return addonCategory.category_uuid === existingProductAddonCategory.category_uuid;
+        });
+        return existingProductCategoryFromIncoming === undefined;
+    }
+
+    syncProductAddonCategories(incomingAddonCategories = []) {
+        // remove old categories first
+        const productAddonCategories = this.addon_categories;
+        for (let i = 0; i < productAddonCategories.length; i++) {
+            const productAddonCategory = productAddonCategories[i];
+            if (this.incomingCategoriesIsMissingExistingAddonCategory(incomingAddonCategories, productAddonCategory)) {
+                this.addon_categories = productAddonCategories.filter((_) => _.id !== productAddonCategory.id);
+                productAddonCategory.destroyRecord();
+            }
+        }
+
+        // add incoming non existing addon categories
+        for (let i = 0; i < incomingAddonCategories.length; i++) {
+            const incomingAddonCategory = incomingAddonCategories[i];
+            if (this.isProductAddonCategory(incomingAddonCategory) || this.doesProductAddonCategoryExist(incomingAddonCategory)) {
+                continue;
+            }
+            this.createAddonCategory(incomingAddonCategory);
+        }
     }
 }

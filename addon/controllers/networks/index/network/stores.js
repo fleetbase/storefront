@@ -568,8 +568,6 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             confirm: (modal) => {
                 modal.startLoading();
 
-                console.log('saving store', store);
-
                 return store
                     .save()
                     .then(() => {
