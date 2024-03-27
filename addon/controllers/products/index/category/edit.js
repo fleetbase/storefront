@@ -18,6 +18,8 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
     @action saveProduct() {
         this.isSaving = true;
 
+        const { category } = this.productsIndexCategoryController;
+
         console.log(
             'Product addon categories',
             this.product.addon_categories.map((category) => category.toJSON())
@@ -29,8 +31,26 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
             .serializeMeta()
             .save()
             .then(() => {
+                this.product.addon_categories.forEach((category) => {
+                    if (!category.id) {
+                        this.product.addon_categories.removeObject(category);
+                    }
+                });
+
+                this.product.variants.forEach((variant) => {
+                    if (!variant.id) {
+                        variant.options.forEach((option) => {
+                            variant.options.removeObject(option);
+                        });
+                        this.product.variants.removeObject(variant);
+                    }
+                });
                 this.isSaving = false;
                 this.notifications.success(this.intl.t('storefront.products.index.edit.changes-saved'));
+
+                this.transitionToRoute('products.index.category', category.slug).finally(() => {
+                    this.reszet();
+                });
             })
             .catch((error) => {
                 this.isSaving = false;
