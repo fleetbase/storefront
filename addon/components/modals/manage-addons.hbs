@@ -1,20 +1,13 @@
-s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+s<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{perform this.saveChanges}} @decline={{@onDecline}}>
     <div class="modal-body-container">
         <div class="flex items-center justify-between mb-4">
             <div>
-                {{#if this.isLoading}}
+                {{#unless (or this.getAddonCategories.isIdle this.saveAddonCategory.isIdle)}}
                     <Spinner class="text-sky-400" />
-                {{/if}}
+                {{/unless}}
             </div>
             <div>
-                <Button
-                    @type="magic"
-                    @text={{t "storefront.component.modals.manage-addons.title"}}
-                    @icon="plus"
-                    @iconPrefix="fas"
-                    @onClick={{fn this.createCategory @options.store}}
-                    @disabled={{this.isLoading}}
-                />
+                <Button @type="magic" @text={{t "storefront.component.modals.manage-addons.title"}} @icon="plus" @iconPrefix="fas" @onClick={{perform this.createAddonCategory}} @disabled={{not this.createAddonCategory.isIdle}} />
             </div>
         </div>
 
@@ -24,24 +17,13 @@ s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpen
                     <div class="flex items-center rounded-md shadow-sm px-3 py-2 font-semibold bg-gray-200 dark:bg-gray-800 dark:text-gray-100 mb-2">
                         <div class="flex-1 flex items-center">
                             <FaIcon @icon="pencil" class="mr-1 dark:text-gray-100" />
-                            <Input
-                                @type="text"
-                                @value={{category.name}}
-                                {{on "blur" (fn this.saveCategory category)}}
-                                class="w-full px-2 m-0 border-none bg-transparent dark:text-gray-100"
-                            />
+                            <Input @type="text" @value={{category.name}} {{on "blur" (perform this.saveAddonCategory category)}} class="w-full px-2 m-0 border-none bg-transparent dark:text-gray-100" />
                         </div>
                         <div class="flex items-center">
-                            <Button
-                                @text={{t "storefront.component.modals.manage-addons.new-addon"}}
-                                @icon="plus"
-                                @iconPrefix="fas"
-                                @onClick={{fn this.insertNewAddon category}}
-                                class="mr-3"
-                            />
-                            <a href="javascript:;" {{on "click" (fn this.deleteCategory index)}} class="destroy-action opacity-50 hover:opacity-100 text-sm">{{t
-                                    "storefront.component.modals.manage-addons.delete"
-                                }}</a>
+                            <Button @text={{t "storefront.component.modals.manage-addons.new-addon"}} @icon="plus" @iconPrefix="fas" @onClick={{fn this.createNewAddon category}} class="mr-3" />
+                            <a href="javascript:;" {{on "click" (perform this.deleteAddonCategory index)}} class="destroy-action opacity-50 hover:opacity-100 text-sm">
+                                {{t "storefront.component.modals.manage-addons.delete"}}
+                            </a>
                         </div>
                     </div>
                     <div class="space-y-2 mb-2">
@@ -49,37 +31,18 @@ s<Modal::Default @onOpen={{fn this.fetchCategories @options.store}} @modalIsOpen
                             <div class="grid grid-cols-10 gap-1 px-3 py-2 rounded-md dark:bg-gray-900 bg-gray-200">
                                 <div class="col-span-3 flex items-center">
                                     <FaIcon @icon="tag" class="text-sky-400 mr-2" />
-                                    <Input
-                                        @type="text"
-                                        @value={{addon.name}}
-                                        {{on "blur" (fn this.saveAddon addon)}}
-                                        class="form-input flex-1 w-full"
-                                        placeholder={{t "storefront.component.modals.manage-addons.addon-name"}}
-                                    />
+                                    <Input @type="text" @value={{addon.name}} class="form-input flex-1 w-full" placeholder={{t "storefront.component.modals.manage-addons.addon-name"}} />
                                 </div>
                                 <div class="col-span-4">
-                                    <Input
-                                        @type="text"
-                                        @value={{addon.description}}
-                                        {{on "blur" (fn this.saveAddon addon)}}
-                                        class="form-input w-full"
-                                        placeholder={{t "storefront.component.modals.manage-addons.description"}}
-                                    />
+                                    <Input @type="text" @value={{addon.description}} class="form-input w-full" placeholder={{t "storefront.component.modals.manage-addons.description"}} />
                                 </div>
                                 <div class="col-span-2">
-                                    <MoneyInput
-                                        class="w-full"
-                                        @currency={{@options.store.currency}}
-                                        @canSelectCurrency={{false}}
-                                        @value={{addon.price}}
-                                        @onFormatCompleted={{fn this.saveAddon addon}}
-                                        @disabled={{this.isLoading}}
-                                    />
+                                    <MoneyInput class="w-full" @currency={{this.activeStore.currency}} @canSelectCurrency={{false}} @value={{addon.price}} />
                                 </div>
                                 <div class="flex items-center justify-center text-center text-sm">
-                                    <a href="javascript:;" class="destroy-action opacity-50 hover:opacity-100" {{on "click" (fn this.removeAddon category i)}}>{{t
-                                            "storefront.common.remove"
-                                        }}</a>
+                                    <a href="javascript:;" class="destroy-action opacity-50 hover:opacity-100" {{on "click" (perform this.removeAddon category i)}}>
+                                        {{t "storefront.common.remove"}}
+                                    </a>
                                 </div>
                             </div>
                         {{/each}}

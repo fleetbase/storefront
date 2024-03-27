@@ -1,0 +1,6 @@
+.ui-combo-box .options-list a.combo-box-option.selected,
+.ui-combo-box .selected-list a.combo-box-option.selected,
+.ui-combo-box .options-list a.combo-box-option.selected:hover,
+.ui-combo-box .selected-list a.combo-box-option.selected:hover {
+    background-color: #76a9fa !important;
+}

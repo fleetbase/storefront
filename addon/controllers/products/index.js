@@ -33,11 +33,17 @@ export default class ProductsIndexController extends BaseController {
         return this.transitionToRoute('products.index.category.new');
     }
 
+    /**
+     * Toggles a dialog which allows user to manage addon categories and options.
+     *
+     * @memberof ProductsIndexController
+     */
     @action manageAddons() {
         this.modalsManager.show('modals/manage-addons', {
-            title: this.intl.t('storefront.products.index.aside-scroller.title'),
+            title: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-title'),
+            acceptButtonText: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-accept-button'),
+            acceptButtonIcon: 'save',
             modalClass: 'modal-lg',
-            acceptButtonText: this.intl.t('storefront.products.index.done'),
             store: this.activeStore,
         });
     }

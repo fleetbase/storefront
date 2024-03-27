@@ -6,6 +6,7 @@ import { action } from '@ember/object';
 import { alias } from '@ember/object/computed';
 import { underscore } from '@ember/string';
 import { inject as service } from '@ember/service';
+import { task } from 'ember-concurrency';
 
 export default class ProductsIndexCategoryNewController extends BaseController {
     @controller('products.index.category') productsIndexCategoryController;
@@ -40,6 +41,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             onClick: this.addMetaField,
         },
     ];
+
     @tracked acceptedFileTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-flv', 'video/x-ms-wmv'];
 
     @action reset() {
@@ -48,32 +50,24 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         this.uploadedFiles = [];
     }
 
-    @action saveProduct() {
-        const { category } = this.productsIndexCategoryController;
+    @task *saveProduct() {
         const loader = this.loader.showLoader('body', { loadingMessage: 'Creating new product...' });
-        this.isSaving = true;
-
+        const { category } = this.productsIndexCategoryController;
         if (category) {
             this.product.set('category_uuid', category.id);
         }
 
-        this.product
-            .serializeMeta()
-            .save()
-            .then(() => {
-                this.loader.removeLoader(loader);
-                this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
+        try {
+            yield this.product.serializeMeta().save();
+        } catch (error) {
+            this.loader.removeLoader(loader);
+            return this.notifications.serverError(error);
+        }
 
-                this.transitionToRoute('products.index.category', category.slug).finally(() => {
-                    this.reset();
-                });
-            })
-            .catch((error) => {
-                this.loader.removeLoader(loader);
-                this.isSaving = false;
-                this.notifications.serverError(error);
-            });
+        this.loader.removeLoader(loader);
+        this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
+        yield this.transitionToRoute('products.index.category', category.slug);
+        this.reset();
     }
 
     @action addTag(tag) {
@@ -173,31 +167,33 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         });
     }
 
-    @action async selectAddonCategory() {
-        this.modalsManager.displayLoader();
-
-        const { product } = this;
-        const addonCategories = await this.store.findAll('addon-category');
-
-        return this.modalsManager.done().then(() => {
-            this.modalsManager.show('modals/select-addon-category', {
-                title: this.intl.t('storefront.products.index.new.select-addon-categories'),
-                addonCategories,
-                product,
-                updateProductAddonCategories: (categories) => {
-                    this.product.addon_categories = categories.map((category) => {
-                        return this.store.createRecord('product-addon-category', {
-                            product_uuid: product.id,
-                            category_uuid: category.id,
-                            name: category.name,
-                            excluded_addons: [],
-                            category,
-                        });
-                    });
-                },
-            });
+    @task *promptSelectAddonCategories() {
+        const addonCategories = yield this.store.findAll('addon-category');
+        const selectedAddonCategories = this.product.addon_categories;
+        this.modalsManager.show('modals/select-addon-category', {
+            title: this.intl.t('storefront.products.index.new.select-addon-categories'),
+            selectedAddonCategories,
+            addonCategories,
+            updateProductAddonCategories: (addonCategories) => {
+                this.product.syncProductAddonCategories(addonCategories);
+            },
         });
     }
+
+    // @action selectAddonCategory() {
+    //     this.store.findAll('addon-category')
+    //     const addonCategories = await this.store.findAll('addon-category');
+
+    //     await this.modalsManager.done();
+    //     this.modalsManager.show('modals/select-addon-category', {
+    //         title: this.intl.t('storefront.products.index.new.select-addon-categories'),
+    //         addonCategories,
+    //         selectedAddonCategories: this.product.addon_categories,
+    //         updateProductAddonCategories: (addonCategories) => {
+    //             this.product.syncProductAddonCategories(addonCategories);
+    //         },
+    //     });
+    // }
 
     @action createProductVariant() {
         const { product } = this;

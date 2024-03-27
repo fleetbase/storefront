@@ -17,7 +17,14 @@ export default class ProductVariantOptionModel extends Model {
 
     /** @methods */
     toJSON() {
-        return this.serialize();
+        return {
+            uuid: this.id,
+            product_variant_uuid: this.product_variant_uuid,
+            name: this.name,
+            description: this.description,
+            additional_cost: this.additional_cost,
+            translations: this.additional_cost,
+        };
     }
 
     /** @computed */
