@@ -87,7 +87,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
     {
         $this->registerCommands();
         $this->scheduleCommands(function ($schedule) {
-            $schedule->command('storefront:notify-order-nearby')->everyMinute();
+            $schedule->command('storefront:notify-order-nearby')->everyMinute()->storeOutputInDb();
         });
         $this->registerObservers();
         $this->registerMiddleware();

@@ -84,8 +84,19 @@ class ProductAddonCategory extends StorefrontModel
         return static::attributeFromCache($this, 'category.name');
     }
 
-    public function getExcludedAddonsAttribute($excluded)
+    /**
+     * Decode excluded addons
+     *
+     * @param string $excluded
+     * @return array
+     */
+    public function getExcludedAddonsAttribute($excluded): array
     {
-        return Json::decode($excluded);
+        $excludedAddons = is_array($excluded) ? $excluded : Json::decode($excluded);
+        if (is_array($excludedAddons)) {
+            return $excludedAddons;
+        }
+
+        return [];
     }
 }

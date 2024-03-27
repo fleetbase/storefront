@@ -434,6 +434,9 @@ storefront:
   products:  
     index:
       manage-addons: Manage Addons
+      manage-addons-dialog:
+        manage-addons-title: Manage Product Addon Categories & Options
+        manage-addons-accept-button: Save Changes
       done: Done
       create-new-product-category: Create a new product category
       product-category-created-success: New product category created.

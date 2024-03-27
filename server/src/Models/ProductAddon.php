@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Casts\Money;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\User;
@@ -66,6 +67,8 @@ class ProductAddon extends StorefrontModel
     protected $casts = [
         'is_on_sale'   => 'boolean',
         'translations' => Json::class,
+        'price' => Money::class,
+        'sale_price' => Money::class
     ];
 
     /**
