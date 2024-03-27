@@ -1,5 +1,6 @@
 import Model, { attr, hasMany } from '@ember-data/model';
 import { format, formatDistanceToNow } from 'date-fns';
+import { isArray } from '@ember/array';
 
 export default class ProductVariantModel extends Model {
     /** @ids */
@@ -21,7 +22,16 @@ export default class ProductVariantModel extends Model {
 
     /** @methods */
     toJSON() {
-        return this.serialize();
+        return {
+            uuid: this.id,
+            product_uuid: this.product_uuid,
+            name: this.name,
+            description: this.description,
+            is_multiselect: this.is_multiselect,
+            is_required: this.is_required,
+            translations: this.translations,
+            options: isArray(this.options) ? Array.from(this.options) : [],
+        };
     }
 
     /** @computed */

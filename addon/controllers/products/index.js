@@ -44,7 +44,7 @@ export default class ProductsIndexController extends BaseController {
             acceptButtonText: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-accept-button'),
             acceptButtonIcon: 'save',
             modalClass: 'modal-lg',
-            store: this.activeStore
+            store: this.activeStore,
         });
     }
 

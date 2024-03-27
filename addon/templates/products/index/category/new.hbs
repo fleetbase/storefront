@@ -1,20 +1,6 @@
 <Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="570px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
-    <Overlay::Header
-        @title={{this.overlayTitle}}
-        @titleClass="truncate"
-        @titleWrapperClass="w-3/4"
-        @headerLeftClass="w-70pc"
-        @headerLeftInnerClass="w-full flex-1"
-        @onPressCancel={{this.transitionBack}}
-    >
-        <Button
-            @icon={{this.overlayActionButtonIcon}}
-            @type="primary"
-            @text={{this.overlayActionButtonTitle}}
-            @onClick={{this.saveProduct}}
-            @isLoading={{this.isSaving}}
-            @isSubscriptionRequired={{true}}
-        />
+    <Overlay::Header @title={{this.overlayTitle}} @titleClass="truncate" @titleWrapperClass="w-3/4" @headerLeftClass="w-70pc" @headerLeftInnerClass="w-full flex-1" @onPressCancel={{this.transitionBack}}>
+        <Button @icon={{this.overlayActionButtonIcon}} @type="primary" @text={{this.overlayActionButtonTitle}} @onClick={{perform this.saveProduct}} @isLoading={{not this.saveProduct.isIdle}} />
     </Overlay::Header>
 
     <Overlay::Body @increaseInnerBodyHeightBy="0" @wrapperClass="new-order-overlay-body px-4 space-y-4 pt-4">
@@ -23,48 +9,21 @@
             <Textarea @value={{this.product.description}} class="form-input w-full" placeholder="Enter a description of your product...." rows={{4}} />
         </InputGroup>
         <InputGroup @name="Product Tags">
-            <TagInput
-                class="form-input"
-                @placeholder="Add tags"
-                @allowSpacesInTags={{true}}
-                @tags={{this.product.tags}}
-                @addTag={{this.addTag}}
-                @removeTagAtIndex={{this.removeTag}}
-                as |tag|
-            >
+            <TagInput class="form-input" @placeholder="Add tags" @allowSpacesInTags={{true}} @tags={{this.product.tags}} @addTag={{this.addTag}} @removeTagAtIndex={{this.removeTag}} as |tag|>
                 {{tag}}
             </TagInput>
         </InputGroup>
         <InputGroup @name="Product SKU" @value={{this.product.sku}} @helpText="Enter product SKU if applicable" />
         <div class="grid grid-cols-2 gap-2">
             <InputGroup @name="Price" @helpText="Enter a price users will pay to purchase this product">
-                <MoneyInput
-                    class="w-full"
-                    @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
-                    @value={{this.product.price}}
-                    @canSelectCurrency={{false}}
-                    @onCurrencyChange={{fn (mut this.product.currency)}}
-                />
+                <MoneyInput class="w-full" @currency={{if this.product.currency this.product.currency this.activeStore.currency}} @value={{this.product.price}} @canSelectCurrency={{false}} @onCurrencyChange={{fn (mut this.product.currency)}} />
             </InputGroup>
             <InputGroup @name="Sale Price" @helpText="Optionally add a sale price for the product if the product is put on sale">
-                <MoneyInput
-                    class="w-full"
-                    @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
-                    @value={{this.product.sale_price}}
-                    @canSelectCurrency={{false}}
-                    @onCurrencyChange={{fn (mut this.product.currency)}}
-                />
+                <MoneyInput class="w-full" @currency={{if this.product.currency this.product.currency this.activeStore.currency}} @value={{this.product.sale_price}} @canSelectCurrency={{false}} @onCurrencyChange={{fn (mut this.product.currency)}} />
             </InputGroup>
         </div>
 
-        <ContentPanel
-            @title="Metadata"
-            @open={{this.product.meta_array.length}}
-            @actionButtons={{this.metadataButtons}}
-            @pad={{true}}
-            @panelBodyWrapperClass="px-0 py-4"
-            @panelBodyClass="bg-white dark:bg-gray-800"
-        >
+        <ContentPanel @title="Metadata" @open={{this.product.meta_array.length}} @actionButtons={{this.metadataButtons}} @pad={{true}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
             {{#each this.product.meta_array as |metaField index|}}
                 <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div class="input-group">
@@ -119,7 +78,7 @@
             </div>
         </div>
 
-        <ContentPanel @title="Variants" @open={{this.product.variants.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
+        <ContentPanel @title="Variants" @open={{true}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
             <div class="content-panel-body p-4">
                 <div class="flex items-center justify-end">
                     <Button @text="New Variant" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} />
@@ -144,12 +103,7 @@
                                             <Input @type="text" @value={{variantOption.description}} class="form-input w-full" placeholder="Option Description" />
                                         </div>
                                         <div class="col-span-2">
-                                            <MoneyInput
-                                                class="w-full"
-                                                @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
-                                                @canSelectCurrency={{false}}
-                                                @value={{variantOption.additional_cost}}
-                                            />
+                                            <MoneyInput class="w-full" @currency={{if this.product.currency this.product.currency this.activeStore.currency}} @canSelectCurrency={{false}} @value={{variantOption.additional_cost}} />
                                         </div>
                                         <div class="flex items-center justify-center text-center text-sm">
                                             <a href="javascript:;" {{on "click" (fn this.removeVariantOption variant index)}}>Remove</a>
@@ -163,7 +117,7 @@
             </Tabs>
         </ContentPanel>
 
-        <ContentPanel @title="Add-Ons" @open={{this.product.addon_categories.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
+        <ContentPanel @title="Add-Ons" @open={{true}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
             <div class="px-4">
                 <div class="flex items-center justify-end mb-3">
                     <Button @text="Select Addon Categories" @icon="plus" @iconPrefix="fas" @onClick={{this.selectAddonCategory}} />
@@ -215,9 +169,7 @@
         <ContentPanel @title="Images & Videos" @open={{this.product.files.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
             <div class="px-6 space-y-4">
                 {{#if this.isUploading}}
-                    <div
-                        class="min-h-56 dropzone w-full rounded-lg px-4 py-8 min-h bg-gray-50 dark:bg-gray-900 bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500"
-                    >
+                    <div class="min-h-56 dropzone w-full rounded-lg px-4 py-8 min-h bg-gray-50 dark:bg-gray-900 bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500">
                         <div class="flex items-center justify-center py-5">
                             <Spinner class="text-sm dar:text-gray-100" @loadingMessage={{t "component.dropzone.uploading"}} />
                         </div>
@@ -276,14 +228,7 @@
                             {{#each this.product.files as |file|}}
                                 <FileRecord @file={{file}} @fileIconClass={{if (eq this.product.primary_image_uuid file.id) "border-blue-400"}} @onDelete={{this.removeFile}}>
                                     <div class="flex items-center justify-evenly">
-                                        <Button
-                                            @icon="magic"
-                                            @text="Make Primary"
-                                            @size="xs"
-                                            @textClass="text-xs truncate"
-                                            @onClick={{fn this.makePrimaryFile file}}
-                                            @disabled={{eq this.product.primary_image_uuid file.id}}
-                                        />
+                                        <Button @icon="magic" @text="Make Primary" @size="xs" @textClass="text-xs truncate" @onClick={{fn this.makePrimaryFile file}} @disabled={{eq this.product.primary_image_uuid file.id}} />
                                     </div>
                                 </FileRecord>
                             {{/each}}

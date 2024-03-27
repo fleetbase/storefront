@@ -6,6 +6,7 @@ import { action } from '@ember/object';
 import { alias } from '@ember/object/computed';
 import { underscore } from '@ember/string';
 import { inject as service } from '@ember/service';
+import { task } from 'ember-concurrency';
 
 export default class ProductsIndexCategoryNewController extends BaseController {
     @controller('products.index.category') productsIndexCategoryController;
@@ -49,37 +50,24 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         this.uploadedFiles = [];
     }
 
-    @action saveProduct() {
-        const { category } = this.productsIndexCategoryController;
+    @task *saveProduct() {
         const loader = this.loader.showLoader('body', { loadingMessage: 'Creating new product...' });
-        this.isSaving = true;
-
+        const { category } = this.productsIndexCategoryController;
         if (category) {
             this.product.set('category_uuid', category.id);
         }
 
-        console.log(
-            'Product addon categories',
-            this.product.addon_categories.map((category) => category.toJSON())
-        );
+        try {
+            yield this.product.serializeMeta().save();
+        } catch (error) {
+            this.loader.removeLoader(loader);
+            return this.notifications.serverError(error);
+        }
 
-        this.product
-            .serializeMeta()
-            .save()
-            .then(() => {
-                this.loader.removeLoader(loader);
-                this.isSaving = false;
-                this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
-
-                this.transitionToRoute('products.index.category', category.slug).finally(() => {
-                    this.reset();
-                });
-            })
-            .catch((error) => {
-                this.loader.removeLoader(loader);
-                this.isSaving = false;
-                this.notifications.serverError(error);
-            });
+        this.loader.removeLoader(loader);
+        this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
+        yield this.transitionToRoute('products.index.category', category.slug);
+        this.reset();
     }
 
     @action addTag(tag) {
@@ -172,7 +160,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     }
 
     @action exit(closeOverlay) {
-        console.log(closeOverlay, 'closeOverlay');
         return closeOverlay(() => {
             return this.transitionToRoute('products.index.category').then(() => {
                 this.reset();
@@ -192,12 +179,9 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                 addonCategories,
                 selectedAddonCategories: product.addon_categories,
                 updateProductAddonCategories: (categories) => {
-                    console.log(categories, 'categories');
-                    console.log(product.addon_categories, 'product addon categories');
                     // Filter out categories that are already present in addon_categories
                     const newCategories = categories.filter((category) => {
                         return !product.addon_categories.some((existingCategory) => {
-                            console.log('Ids : ', existingCategory.get('category_uuid'), category.get('id'));
                             return existingCategory.get('category_uuid') === category.get('id');
                         });
                     });
@@ -212,11 +196,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                             category,
                         });
                     });
-
-                    console.log(
-                        'New addon categories',
-                        newAddonCategories.map((category) => category.toJSON())
-                    );
 
                     // Add new addon categories to the product
                     if (newAddonCategories.length > 0) this.product.addon_categories = [...this.product.addon_categories, ...newAddonCategories];
@@ -234,8 +213,6 @@ export default class ProductsIndexCategoryNewController extends BaseController {
             productVariant,
             confirm: (modal) => {
                 modal.startLoading();
-
-                console.log(productVariant, 'productVariant');
                 // add variant to product
                 product.variants.pushObject(productVariant);
                 modal.done();
