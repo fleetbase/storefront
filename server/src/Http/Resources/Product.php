@@ -100,6 +100,8 @@ class Product extends FleetbaseResource
                     'uuid'               => $addonCategory->uuid,
                     'public_id'          => data_get($addonCategory, 'category.public_id'),
                     'id'                 => $addonCategory->id,
+                    'product_uuid'       => $addonCategory->product_uuid,
+                    'category_uuid'      => $addonCategory->category_uuid,
                     'name'               => $addonCategory->name,
                     'excluded_addons'    => $addonCategory->excluded_addons,
                     'category'           => $addonCategory->category,
