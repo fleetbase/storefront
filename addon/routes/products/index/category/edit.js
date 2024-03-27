@@ -1,6 +1,5 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
-import { isArray } from '@ember/array';
 import { filterHasManyForNewRecords } from '../../../../serializers/product';
 
 export default class ProductsIndexCategoryEditRoute extends Route {

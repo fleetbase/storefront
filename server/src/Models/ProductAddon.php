@@ -67,8 +67,8 @@ class ProductAddon extends StorefrontModel
     protected $casts = [
         'is_on_sale'   => 'boolean',
         'translations' => Json::class,
-        'price' => Money::class,
-        'sale_price' => Money::class
+        'price'        => Money::class,
+        'sale_price'   => Money::class,
     ];
 
     /**

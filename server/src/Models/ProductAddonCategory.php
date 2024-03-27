@@ -85,10 +85,9 @@ class ProductAddonCategory extends StorefrontModel
     }
 
     /**
-     * Decode excluded addons
+     * Decode excluded addons.
      *
      * @param string $excluded
-     * @return array
      */
     public function getExcludedAddonsAttribute($excluded): array
     {

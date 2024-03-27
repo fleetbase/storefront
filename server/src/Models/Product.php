@@ -308,7 +308,7 @@ class Product extends StorefrontModel
             data_set($addonCategory, 'product_uuid', $this->uuid);
 
             // update product addon category
-            if (Str::isUuid($id)) {                
+            if (Str::isUuid($id)) {
                 ProductAddonCategory::where('uuid', $id)->update(Arr::except($addonCategory, ['uuid', 'created_at', 'updated_at', 'name', 'category']));
                 continue;
             }

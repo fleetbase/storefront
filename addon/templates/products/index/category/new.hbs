@@ -120,7 +120,7 @@
         <ContentPanel @title="Add-Ons" @open={{true}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
             <div class="px-4">
                 <div class="flex items-center justify-end mb-3">
-                    <Button @text="Select Addon Categories" @icon="plus" @iconPrefix="fas" @onClick={{this.selectAddonCategory}} />
+                    <Button @text="Select Addon Categories" @icon="plus" @iconPrefix="fas" @onClick={{perform this.promptSelectAddonCategories}} />
                 </div>
                 <div class="space-y-2">
                     {{#each this.product.addon_categories as |addonCategory index|}}

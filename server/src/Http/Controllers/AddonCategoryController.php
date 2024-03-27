@@ -27,6 +27,7 @@ class AddonCategoryController extends StorefrontController
 
             if (Http::isInternalRequest($request)) {
                 $this->resource::wrap($this->resourceSingularlName);
+
                 return new $this->resource($record);
             }
 

@@ -43,7 +43,7 @@ class AddonCategory extends Category
             }
 
             // update product addon category
-            if (Str::isUuid($id)) {                
+            if (Str::isUuid($id)) {
                 ProductAddon::where('uuid', $id)->update(Arr::except($addon, ['uuid', 'created_at', 'updated_at']));
                 continue;
             }
@@ -51,12 +51,12 @@ class AddonCategory extends Category
             // create new product addon category
             ProductAddon::create([
                 'category_uuid'    => $this->uuid,
-                'name'   => data_get($addon, 'name'),
-                'description'   => data_get($addon, 'description'),
-                'translations'   => data_get($addon, 'translations', []),
-                'price'   => data_get($addon, 'price'),
-                'sale_price'   => data_get($addon, 'sale_price'),
-                'is_on_sale'   => data_get($addon, 'is_on_sale'),
+                'name'             => data_get($addon, 'name'),
+                'description'      => data_get($addon, 'description'),
+                'translations'     => data_get($addon, 'translations', []),
+                'price'            => data_get($addon, 'price'),
+                'sale_price'       => data_get($addon, 'sale_price'),
+                'is_on_sale'       => data_get($addon, 'is_on_sale'),
             ]);
         }
 

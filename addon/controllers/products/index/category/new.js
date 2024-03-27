@@ -167,42 +167,33 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         });
     }
 
-    @action async selectAddonCategory() {
-        this.modalsManager.displayLoader();
-
-        const { product } = this;
-        const addonCategories = await this.store.findAll('addon-category');
-
-        return this.modalsManager.done().then(() => {
-            this.modalsManager.show('modals/select-addon-category', {
-                title: this.intl.t('storefront.products.index.new.select-addon-categories'),
-                addonCategories,
-                selectedAddonCategories: product.addon_categories,
-                updateProductAddonCategories: (categories) => {
-                    // Filter out categories that are already present in addon_categories
-                    const newCategories = categories.filter((category) => {
-                        return !product.addon_categories.some((existingCategory) => {
-                            return existingCategory.get('category_uuid') === category.get('id');
-                        });
-                    });
-
-                    // Create new product-addon-category records for new categories
-                    const newAddonCategories = newCategories.map((category) => {
-                        return this.store.createRecord('product-addon-category', {
-                            product_uuid: product.id,
-                            category_uuid: category.id,
-                            name: category.name,
-                            excluded_addons: [],
-                            category,
-                        });
-                    });
-
-                    // Add new addon categories to the product
-                    if (newAddonCategories.length > 0) this.product.addon_categories = [...this.product.addon_categories, ...newAddonCategories];
-                },
-            });
+    @task *promptSelectAddonCategories() {
+        const addonCategories = yield this.store.findAll('addon-category');
+        const selectedAddonCategories = this.product.addon_categories;
+        this.modalsManager.show('modals/select-addon-category', {
+            title: this.intl.t('storefront.products.index.new.select-addon-categories'),
+            selectedAddonCategories,
+            addonCategories,
+            updateProductAddonCategories: (addonCategories) => {
+                this.product.syncProductAddonCategories(addonCategories);
+            },
         });
     }
+
+    // @action selectAddonCategory() {
+    //     this.store.findAll('addon-category')
+    //     const addonCategories = await this.store.findAll('addon-category');
+
+    //     await this.modalsManager.done();
+    //     this.modalsManager.show('modals/select-addon-category', {
+    //         title: this.intl.t('storefront.products.index.new.select-addon-categories'),
+    //         addonCategories,
+    //         selectedAddonCategories: this.product.addon_categories,
+    //         updateProductAddonCategories: (addonCategories) => {
+    //             this.product.syncProductAddonCategories(addonCategories);
+    //         },
+    //     });
+    // }
 
     @action createProductVariant() {
         const { product } = this;
