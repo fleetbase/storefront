@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/storefront-engine",
-    "version": "0.3.6",
+    "version": "0.3.7",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
@@ -44,7 +44,7 @@
     },
     "dependencies": {
         "@fleetbase/ember-core": "^0.2.8",
-        "@fleetbase/ember-ui": "^0.2.11",
+        "@fleetbase/ember-ui": "^0.2.12",
         "@fleetbase/fleetops-data": "^0.1.14",
         "@babel/core": "^7.23.2",
         "@fortawesome/ember-fontawesome": "^0.4.1",
