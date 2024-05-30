@@ -18,8 +18,17 @@
             {{#each this.model as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
                     <InputGroup @name={{t "storefront.settings.gateways.gateway-name"}} @value={{gateway.name}} @helpText={{t "storefront.settings.gateways.helpText"}} />
-                    <InputGroup @name={{t "storefront.settings.gateways.gateway-code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.settings.gateways.gateway-code-help-text"}} />
-                    <InputGroup @name={{t "storefront.settings.gateways.callback-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.settings.gateways.callback-url-help-text"}} />
+                    <InputGroup
+                        @name={{t "storefront.settings.gateways.gateway-code"}}
+                        @value={{gateway.code}}
+                        @disabled={{true}}
+                        @helpText={{t "storefront.settings.gateways.gateway-code-help-text"}}
+                    />
+                    <InputGroup
+                        @name={{t "storefront.settings.gateways.callback-url"}}
+                        @value={{gateway.callback_url}}
+                        @helpText={{t "storefront.settings.gateways.callback-url-help-text"}}
+                    />
                     <InputGroup @name={{t "storefront.settings.gateways.return-url"}} @value={{gateway.return_url}} @helpText={{t "storefront.settings.gateways.return-url-help-text"}} />
                     <div class="input-group">
                         <Checkbox @value={{gateway.sandbox}} @label={{t "storefront.settings.gateways.this-is-a-sandbox-gateway"}} @onToggle={{fn (mut gateway.sandbox)}} />
