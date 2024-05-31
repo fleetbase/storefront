@@ -1,0 +1,87 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="grid grid-cols-3 gap-2">
+            <InputGroup @name="Select Store">
+                <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                    <PowerSelect
+                        @options={{this.stores}}
+                        @selected={{this.selectedStorefront}}
+                        @onChange={{this.onStorefrontSelect}}
+                        @registerAPI={{this.setStorefrontSelectApi}}
+                        @optionValue="name"
+                        @placeholder="Select Storefront"
+                        @triggerClass="form-select form-input"
+                        @disabled={{not this.stores}}
+                        as |storefront|
+                    >
+                        {{storefront.name}}
+                    </PowerSelect>
+                </div>
+            </InputGroup>
+
+            {{#if (and this.selectedStorefront this.productCategories)}}
+                <InputGroup @name="Select Product Category">
+                    <div class="fleetbase-model-select fleetbase-power-select ember-model-select">
+                        <PowerSelect
+                            @options={{this.productCategories}}
+                            @selected={{this.selectedCategory}}
+                            @onChange={{this.onSelectProductCategory}}
+                            @disabled={{not this.productCategories}}
+                            @placeholder="Filter by Product Category"
+                            @triggerClass="form-select form-input"
+                            as |category|
+                        >
+                            {{category.name}}
+                        </PowerSelect>
+                    </div>
+                </InputGroup>
+            {{/if}}
+
+            {{#if this.selectedProducts}}
+                <div class="py-2 flex items-center dark:text-white text-gray-900">
+                    Selected
+                    {{pluralize this.selectedProducts.length "Product"}}
+                </div>
+            {{/if}}
+        </div>
+        <div class="min-h-4r">
+            {{#if this.selectedStorefront}}
+                {{#if this.fetchProductsForStorefront.isRunning}}
+                    <Spinner @loadingMessage="Loading products..." />
+                {{else}}
+                    <div class="grid grid-cols-3 lg:grid-cols-4 gap-2">
+                        {{#each this.products as |product|}}
+                            {{#let (in-array product this.selectedProducts) as |isSelected|}}
+                                <div
+                                    class="border bg-white dark:bg-gray-900 dark:text-gray-100 text-center rounded-md px-2 py-3
+                                        {{if isSelected 'border-blue-500 dark:border-blue-500 outline-offset-2 outline-blue-400 outline-dashed' 'border-gray-200 dark:border-gray-700'}}"
+                                >
+                                    <div class="flex flex-col items-center justify-center overflow-hidden">
+                                        <div class="mb-3 flex items-center justify-center">
+                                            <img src={{product.primary_image_url}} alt={{product.name}} class="w-24 h-24" />
+                                        </div>
+                                        <h4 class="font-semibold mb-1">{{product.name}}</h4>
+                                        <p class="text-sm truncate">{{product.description}}</p>
+                                        <p class="mb-2 text-sm text-green-400">{{format-currency product.price product.currency}}</p>
+                                        <div class="flex items-center justify-evenly space-x-4">
+                                            <Button
+                                                @type={{if isSelected "danger" "default"}}
+                                                @icon="circle-plus"
+                                                @text={{if isSelected "Remove Product" "Add Product"}}
+                                                @onClick={{fn this.toggleProductSelection product}}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/let}}
+                        {{else}}
+                            <div>
+                                <h3 class="dark:text-gray-100 text-opacity-75 text-sm">No products</h3>
+                            </div>
+                        {{/each}}
+                    </div>
+                {{/if}}
+            {{/if}}
+        </div>
+    </div>
+</Modal::Default>

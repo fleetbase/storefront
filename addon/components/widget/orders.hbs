@@ -31,8 +31,8 @@
                     <tr class="h-12">
                         <td><a href="javascript:;" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
                         <td>{{format-currency order.meta.total order.meta.currency}}</td>
-                        <td>{{n-a order.customer_name}}</td>
-                        <td>{{n-a order.driver_name}}</td>
+                        <td>{{n-a order.customer.name}}</td>
+                        <td>{{n-a order.driver_assigned.name}}</td>
                         <td>{{order.createdAgo}}</td>
                         <td>
                             <Badge @status={{order.status}} />

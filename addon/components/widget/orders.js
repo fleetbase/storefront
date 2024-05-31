@@ -4,6 +4,7 @@ import { inject as service } from '@ember/service';
 import { inject as controller } from '@ember/controller';
 import { action, computed, get } from '@ember/object';
 import { later } from '@ember/runloop';
+
 export default class WidgetOrdersComponent extends Component {
     @service store;
     @service storefront;
