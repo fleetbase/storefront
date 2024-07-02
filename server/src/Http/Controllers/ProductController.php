@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Http\Controllers;
 
+use Fleetbase\FleetOps\Http\Resources\v1\Entity as EntityResource;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
@@ -164,5 +165,35 @@ class ProductController extends StorefrontController
         }
 
         return response()->json($products);
+    }
+
+    /**
+     * Retrieves a list of product IDs from the request, finds the corresponding Product models, converts each to an Entity, and returns them as a JSON response.
+     *
+     * This function handles a request that includes an array of product UUIDs. It fetches the corresponding Product models from the database,
+     * converts each Product to an Entity using the Product model's toEntity method, and collects these entities. The function finally returns
+     * these entities as a JSON response, which can be useful for front-end applications or other services that need structured product data.
+     *
+     * @param Request $request the request object, expected to contain an array of product UUIDs under the 'products' key
+     *
+     * @return \Illuminate\Http\JsonResponse Returns a JSON response that contains an array of Entity objects, each representing a product.
+     *                                       Each Entity object includes all relevant product details formatted and structured as specified in the Product model's toEntity method.
+     *
+     * @example
+     * // Example usage:
+     * POST /storefront/int/v1/products/create-entities
+     * Body: { "products": ["uuid1", "uuid2"] }
+     */
+    public function createEntities(Request $request)
+    {
+        $productIds = $request->array('products');
+        $products   = Product::whereIn('uuid', $productIds)->get();
+        $entities   = [];
+
+        foreach ($products as $product) {
+            $entities[] = $product->createAsEntity();
+        }
+
+        return EntityResource::collection($entities);
     }
 }

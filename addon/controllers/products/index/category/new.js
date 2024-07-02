@@ -66,7 +66,10 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
         this.loader.removeLoader(loader);
         this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
-        yield this.transitionToRoute('products.index.category', category.slug);
+        
+        try {
+            yield this.transitionToRoute('products.index.category', category.slug);
+        } catch (error) {}
         this.reset();
     }
 

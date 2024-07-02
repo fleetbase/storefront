@@ -1,16 +1,14 @@
 import Component from '@glimmer/component';
-
+import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import applyContextComponentArguments from '@fleetbase/ember-core/utils/apply-context-component-arguments';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
-import { tracked } from '@glimmer/tracking';
 
 export default class OrderPanelComponent extends Component {
     @tracked context = null;
 
     constructor() {
         super(...arguments);
-
         applyContextComponentArguments(this);
     }
 

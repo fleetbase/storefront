@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
@@ -429,5 +430,74 @@ class Product extends StorefrontModel
             ->get();
 
         return $results;
+    }
+
+    /**
+     * Converts a Product model instance to an Entity object, which represents a more detailed and structured form of the product data.
+     *
+     * This function utilizes the properties of the Product model along with any additional attributes provided to construct a new Entity object.
+     * The Entity object contains detailed information about the product, including identifiers, names, pricing information, and meta attributes.
+     * Meta attributes can be dynamically added to extend the data structure with additional custom information.
+     *
+     * @param array $additionalAttributes Optional. Additional attributes that can be merged into the product's meta information.
+     *                                    This array can include any custom data under the 'meta' key, which is merged with the default meta attributes.
+     *                                    Default is an empty array.
+     *
+     * @return Entity Returns a new Entity object populated with product information and any additional meta attributes.
+     *                The Entity object is structured with a set of predefined keys (e.g., company_uuid, photo_uuid) and can be customized with additional meta attributes.
+     *
+     * @example
+     * // Example usage:
+     * $product = new Product();
+     * $entity = $product->toEntity(['meta' => ['custom_attribute' => 'value']]);
+     */
+    public function toEntity(array $additionalAttributes = []): Entity
+    {
+        $meta = data_get($additionalAttributes, 'meta', []);
+
+        return new Entity([
+            'company_uuid' => session('company'),
+            'photo_uuid'   => $this->primary_image_uuid,
+            'internal_id'  => $this->public_id,
+            'name'         => $this->name,
+            'description'  => $this->description,
+            'currency'     => $this->currency,
+            'sku'          => $this->sku,
+            'price'        => $this->price,
+            'sale_price'   => $this->sale_price,
+            'type'         => 'storefront-product',
+            ...$additionalAttributes,
+            'meta'         => [
+                'product_id' => $this->public_id,
+                'image_url'  => $this->primary_image_url,
+                ...$meta,
+            ],
+        ]);
+    }
+
+    /**
+     * Creates a new Entity from the Product model instance and saves it to the database.
+     *
+     * This function first converts the Product model to an Entity object using the toEntity method. It then saves this Entity object to the
+     * database, ensuring that all product details are persisted. This is particularly useful when the Product model needs to be
+     * represented and stored as an Entity for operations that require a more complex data structure or additional business logic.
+     *
+     * @param array $additionalAttributes Optional. Additional attributes that can be passed to the toEntity method to include custom
+     *                                    meta information in the Entity creation process. Default is an empty array.
+     *
+     * @return Entity Returns the Entity object after saving it to the database. This object contains all the product information along
+     *                with any additional attributes that were passed.
+     *
+     * @example
+     * // Example usage:
+     * $product = new Product();
+     * $entity = $product->createAsEntity(['meta' => ['custom_attribute' => 'value']]);
+     */
+    public function createAsEntity(array $additionalAttributes = []): Entity
+    {
+        $entity = $this->toEntity();
+        $entity->save();
+
+        return $entity;
     }
 }
