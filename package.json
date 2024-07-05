@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/storefront-engine",
-    "version": "0.3.10",
+    "version": "0.3.11",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
@@ -17,7 +17,7 @@
         "ember-addon"
     ],
     "repository": "https://github.com/fleetbase/storefront",
-    "license": "MIT",
+    "license": "AGPL-3.0-or-later",
     "author": "Fleetbase Pte Ltd <hello@fleetbase.io>",
     "directories": {
         "app": "app",
