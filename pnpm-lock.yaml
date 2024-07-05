@@ -11,8 +11,8 @@ dependencies:
     specifier: ^0.2.18
     version: 0.2.18(@ember/test-helpers@3.2.0)(@glimmer/component@1.1.2)(@glimmer/tracking@1.1.2)(ember-source@5.4.0)(postcss@8.4.35)(rollup@4.12.0)(tracked-built-ins@3.3.0)(webpack@5.89.0)
   '@fleetbase/fleetops-data':
-    specifier: ^0.1.16
-    version: 0.1.16(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
+    specifier: ^0.1.17
+    version: 0.1.17(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0)
   '@fortawesome/ember-fontawesome':
     specifier: ^0.4.1
     version: 0.4.1(rollup@4.12.0)
@@ -2585,8 +2585,8 @@ packages:
       - webpack-command
     dev: false
 
-  /@fleetbase/fleetops-data@0.1.16(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
-    resolution: {integrity: sha512-oUslPUZ9pffUn6WLGm33SvV40D7tH6xXPSFXlse6zJYxvjJLKmogeeEsHPr+Iqz9S83dzvFheLv9TfvqvYOUow==}
+  /@fleetbase/fleetops-data@0.1.17(@ember/test-helpers@3.2.0)(ember-source@5.4.0)(webpack@5.89.0):
+    resolution: {integrity: sha512-cT3MgW0klMByRtUZMJO5d5CfaWCg4Ss9vVr/YA1iUL5DtHP5RgpCmndFLqa0nyYpncIwhkCykfWAUts4PUl+sg==}
     engines: {node: '>= 18'}
     dependencies:
       '@babel/core': 7.23.2
