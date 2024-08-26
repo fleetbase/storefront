@@ -25,11 +25,15 @@ class Storefront
     public array $resources = [
         [
             'name'    => 'order',
-            'actions' => ['accept', 'mark-as-ready', 'mark-as-completed', 'reject'],
+            'actions' => ['accept', 'mark-as-ready', 'mark-as-completed', 'reject', 'export', 'import'],
+        ],
+        [
+            'name'    => 'customer',
+            'actions' => ['export'],
         ],
         [
             'name'    => 'product',
-            'actions' => ['import'],
+            'actions' => ['import', 'export'],
         ],
         [
             'name'    => 'product-addon',
@@ -56,6 +60,10 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'product-category',
+            'actions' => [],
+        ],
+        [
             'name'    => 'gateway',
             'actions' => [],
         ],
@@ -72,6 +80,10 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'network-category',
+            'actions' => [],
+        ],
+        [
             'name'    => 'store',
             'actions' => [],
         ],
@@ -82,6 +94,11 @@ class Storefront
         [
             'name'    => 'store-hour',
             'actions' => [],
+        ],
+        [
+            'name'           => 'settings',
+            'action'         => ['import'],
+            'remove_actions' => ['delete', 'export', 'list', 'create'],
         ],
     ];
 }

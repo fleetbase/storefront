@@ -7,9 +7,19 @@ export default class OrdersIndexViewRoute extends Route {
     @service notifications;
     @service store;
     @service socket;
+    @service intl;
+    @service abilities;
+    @service hostRouter;
 
     @action error(error) {
         this.notifications.serverError(error);
+    }
+
+    beforeModel() {
+        if (this.abilities.cannot('storefront view order')) {
+            this.notifications.warning(this.intl.t('common.unauthorized-access'));
+            return this.hostRouter.transitionTo('console.storefront');
+        }
     }
 
     model({ public_id }) {

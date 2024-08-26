@@ -6,6 +6,10 @@ import isNestedRouteTransition from '@fleetbase/ember-core/utils/is-nested-route
 export default class CustomersIndexRoute extends Route {
     @service store;
     @service storefront;
+    @service intl;
+    @service abilities;
+    @service hostRouter;
+    @service notifications;
 
     queryParams = {
         page: { refreshModel: true },
@@ -26,6 +30,13 @@ export default class CustomersIndexRoute extends Route {
         if (isNestedRouteTransition(transition)) {
             set(this.queryParams, 'page.refreshModel', false);
             set(this.queryParams, 'sort.refreshModel', false);
+        }
+    }
+
+    beforeModel() {
+        if (this.abilities.cannot('storefront list customer')) {
+            this.notifications.warning(this.intl.t('common.unauthorized-access'));
+            return this.hostRouter.transitionTo('console.storefront');
         }
     }
 

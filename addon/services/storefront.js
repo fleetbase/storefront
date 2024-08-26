@@ -7,47 +7,14 @@ import { get } from '@ember/object';
  * Service to manage storefront operations.
  */
 export default class StorefrontService extends Service.extend(Evented) {
-    /**
-     * Ember service for data store.
-     * @type {Service}
-     */
     @service store;
-
-    /**
-     * Ember service for intl.
-     * @type {Service}
-     */
     @service intl;
-
-    /**
-     * Ember service for fetch operations.
-     * @type {Service}
-     */
     @service fetch;
-
-    /**
-     * Ember service for notifications.
-     * @type {Service}
-     */
     @service notifications;
-
-    /**
-     * Ember service for current user information.
-     * @type {Service}
-     */
     @service currentUser;
-
-    /**
-     * Ember service for managing modals.
-     * @type {Service}
-     */
     @service modalsManager;
-
-    /**
-     * Ember service for router operations.
-     * @type {Service}
-     */
     @service hostRouter;
+    @service abilities;
 
     /**
      * Gets the active store.
@@ -137,18 +104,17 @@ export default class StorefrontService extends Service.extend(Evented) {
             backdropClose: false,
             order,
             store,
-            confirm: (modal) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                return this.fetch
-                    .post('orders/accept', { order: order.id }, { namespace: 'storefront/int/v1' })
-                    .then(() => {
-                        this.trigger('order.accepted', order);
-                        modal.stopLoading();
-                    })
-                    .catch((error) => {
-                        this.notifications.serverError(error);
-                    });
+                try {
+                    await this.fetch.post('orders/accept', { order: order.id }, { namespace: 'storefront/int/v1' });
+                    this.trigger('order.accepted', order);
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
         });
     }
@@ -201,6 +167,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             title: this.intl.t('storefront.service.storefront.create-first-storefront'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
+            acceptButtonDisabled: this.abilities.cannot('storefront create store'),
             closeButton: false,
             backdropClose: false,
             keyboard: true,
@@ -209,20 +176,18 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
             store,
-            confirm: (modal, done) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                store
-                    .save()
-                    .then((store) => {
-                        this.notifications.success(this.intl.t('storefront.service.storefront.storefront-has-been-create-success'));
-                        this.setActiveStorefront(store);
-                        return done();
-                    })
-                    .catch((error) => {
-                        modal.stopLoading();
-                        this.notifications.serverError(error);
-                    });
+                try {
+                    await store.save();
+                    this.notifications.success(this.intl.t('storefront.service.storefront.storefront-has-been-create-success'));
+                    this.setActiveStorefront(store);
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
             decline: () => {
                 this.hostRouter.transitionTo('console');
@@ -250,26 +215,22 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
             store,
-            confirm: (modal, done) => {
+            confirm: async (modal, done) => {
                 modal.startLoading();
 
-                store
-                    .save()
-                    .then((store) => {
-                        this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
-                        // this.currentUser.setOption('activeStorefront', store.id);
-                        this.setActiveStorefront(store);
-
-                        if (typeof options?.onSuccess === 'function') {
-                            options.onSuccess(store);
-                        }
-
-                        return done();
-                    })
-                    .catch((error) => {
-                        modal.stopLoading();
-                        this.notifications.serverError(error);
-                    });
+                try {
+                    const store = await store.save();
+                    this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
+                    // this.currentUser.setOption('activeStorefront', store.id);
+                    this.setActiveStorefront(store);
+                    if (typeof options?.onSuccess === 'function') {
+                        options.onSuccess(store);
+                    }
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
             ...options,
         });

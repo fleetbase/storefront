@@ -12,7 +12,7 @@ class QPay
     private array $requestOptions = [];
     private Client $client;
 
-    public function __construct(string $username = null, string $password = null, string $callbackUrl = null)
+    public function __construct(?string $username = null, ?string $password = null, ?string $callbackUrl = null)
     {
         $this->callbackUrl    = $callbackUrl;
         $this->requestOptions = [
@@ -60,7 +60,7 @@ class QPay
         return $this;
     }
 
-    public static function instance(string $username = null, string $password = null, string $callbackUrl = null): QPay
+    public static function instance(?string $username = null, ?string $password = null, ?string $callbackUrl = null): QPay
     {
         return new static($username, $password, $callbackUrl);
     }
@@ -120,7 +120,7 @@ class QPay
         return $this;
     }
 
-    public function setAuthToken(string $accessToken = null): QPay
+    public function setAuthToken(?string $accessToken = null): QPay
     {
         if ($accessToken) {
             $this->useBearerToken($accessToken);
@@ -136,7 +136,7 @@ class QPay
         return $this;
     }
 
-    public function createSimpleInvoice(int $amount, ?string $invoiceCode = '', ?string $invoiceDescription = '', ?string $invoiceReceiverCode = '', ?string $senderInvoiceNo = '', string $callbackUrl = null)
+    public function createSimpleInvoice(int $amount, ?string $invoiceCode = '', ?string $invoiceDescription = '', ?string $invoiceReceiverCode = '', ?string $senderInvoiceNo = '', ?string $callbackUrl = null)
     {
         if (!$callbackUrl && $this->hasCallbackUrl()) {
             $callbackUrl = $this->callbackUrl;

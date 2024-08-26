@@ -26,6 +26,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @tracked uploadedFiles = [];
     @tracked primaryFile = null;
     @tracked isSaving = false;
+    abilityPermission = 'storefront create product';
 
     /** overlay options */
     @tracked overlayTitle = 'New Product';
@@ -66,7 +67,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
         this.loader.removeLoader(loader);
         this.notifications.success(this.intl.t('storefront.products.index.new.new-product-created-success'));
-        
+
         try {
             yield this.transitionToRoute('products.index.category', category.slug);
         } catch (error) {}
