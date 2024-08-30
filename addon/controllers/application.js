@@ -12,7 +12,7 @@ export default class ApplicationController extends Controller {
     @action createNewStorefront() {
         return this.storefront.createNewStorefront({
             onSuccess: () => {
-                const loader = this.loader.show({ loadingMessage: `Switching to newly created store...` });
+                const loader = this.loader.show({ loadingMessage: 'Switching to newly created store...' });
 
                 this.hostRouter.refresh().then(() => {
                     this.notifyPropertyChange('activeStore');

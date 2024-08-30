@@ -40,12 +40,12 @@ export default class AddProductAsEntityButtonComponent extends Component {
                             this.order.meta.pushObjects([
                                 {
                                     key: 'storefront',
-                                    value: selectedStorefront.name
+                                    value: selectedStorefront.name,
                                 },
                                 {
                                     key: 'storefront_id',
-                                    value: selectedStorefront.public_id
-                                }
+                                    value: selectedStorefront.public_id,
+                                },
                             ]);
                         }
                     })

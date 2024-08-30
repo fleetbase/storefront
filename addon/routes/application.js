@@ -8,11 +8,18 @@ export default class ApplicationRoute extends Route {
     @service loader;
     @service currentUser;
     @service modalsManager;
-    // @service theme;
+    @service notifications;
+    @service hostRouter;
+    @service abilities;
+    @service intl;
     @service storefront;
 
     @action loading(transition) {
         this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading storefront...' });
+    }
+
+    @action error(error) {
+        this.notifications.serverError(error);
     }
 
     @action willTransition() {
@@ -20,8 +27,12 @@ export default class ApplicationRoute extends Route {
     }
 
     beforeModel() {
-        this.disableSandbox();
+        if (this.abilities.cannot('storefront see extension')) {
+            this.notifications.warning(this.intl.t('common.unauthorized-access'));
+            return this.hostRouter.transitionTo('console');
+        }
 
+        this.disableSandbox();
         return this.fetch.get('actions/store-count', {}, { namespace: 'storefront/int/v1' }).then(({ storeCount }) => {
             // if no store count prompt to create a store
             if (!storeCount) {
@@ -40,7 +51,7 @@ export default class ApplicationRoute extends Route {
         }
     }
 
-    @action disableSandbox() {
+    disableSandbox() {
         this.currentUser.setOption('sandbox', false);
         // this.theme.setEnvironment();
     }

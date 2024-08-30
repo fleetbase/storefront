@@ -1,5 +1,5 @@
 <Layout::Section::Header @title={{t "storefront.common.network"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} />
+    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} @permission="storefront create network" />
 </Layout::Section::Header>
 
 <Layout::Section::Body>
@@ -26,13 +26,13 @@
                                             </div>
                                             <div class="next-dd-menu-seperator"></div>
                                             <div role="group" class="px-1">
-                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.manageNetwork network)}}>
+                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.manageNetwork network)}} disabled={{cannot "storefront view network"}}>
                                                     <div class="w-7">
                                                         <FaIcon @icon="network-wired" class="mr-2" />
                                                     </div>
                                                     <span>{{t "storefront.networks.index.manage-network"}}</span>
                                                 </a>
-                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.sendInvites network)}}>
+                                                <a href="javascript:;" class="next-dd-item" role="menuitem" {{on "click" (dropdown-fn dd this.sendInvites network)}} disabled={{cannot "storefront update network"}}>
                                                     <div class="w-7">
                                                         <FaIcon @icon="envelope-open-text" class="mr-2" />
                                                     </div>
@@ -42,6 +42,7 @@
                                                     href="javascript:;"
                                                     class="next-dd-item text-red-500 hover:bg-opacity-75"
                                                     role="menuitem"
+                                                    disabled={{cannot "storefront delete network"}}
                                                     {{on "click" (dropdown-fn dd this.deleteNetwork network)}}
                                                 >
                                                     <div class="w-7">

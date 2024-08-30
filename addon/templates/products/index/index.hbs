@@ -13,11 +13,11 @@
                         <p class="text-sm truncate">{{product.description}}</p>
                         <p class="mb-2 text-sm text-green-400">{{format-currency product.price product.currency}}</p>
                         <div class="flex items-center justify-evenly space-x-4">
-                            <LinkTo @route="products.index.index.edit" @model={{product}} class="text-sm">
+                            <LinkTo @route="products.index.index.edit" @model={{product}} disabled={{cannot "storefront update product"}} class="text-sm">
                                 <FaIcon @icon="pencil" class="mr-1" />
                                 <span class="destroy-action">Edit</span>
                             </LinkTo>
-                            <a href="javascript:;" class="destroy-action text-sm" {{on "click" (fn this.deleteProduct product)}}>
+                            <a href="javascript:;" class="destroy-action text-sm" disabled={{cannot "storefront delete product"}} {{on "click" (fn this.deleteProduct product)}}>
                                 <FaIcon @icon="trash" class="text-red-500 mr-1" />
                                 <span class="destroy-action">Delete</span>
                             </a>

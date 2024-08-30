@@ -7,6 +7,10 @@ export default class ProductsIndexCategoryRoute extends Route {
     @service store;
     @service currentUser;
     @service loader;
+    @service intl;
+    @service abilities;
+    @service hostRouter;
+    @service notifications;
     @tracked categorySlug;
 
     queryParams = {
@@ -26,8 +30,15 @@ export default class ProductsIndexCategoryRoute extends Route {
         }
     }
 
-    loading(transition) {
+    @action loading(transition) {
         this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading products...' });
+    }
+
+    beforeModel() {
+        if (this.abilities.cannot('storefront list product')) {
+            this.notifications.warning(this.intl.t('common.unauthorized-access'));
+            return this.hostRouter.transitionTo('console.storefront');
+        }
     }
 
     model({ slug, ...params }) {

@@ -1,17 +1,14 @@
 <Layout::Section::Header @title={{concat this.category.name " Products"}} @titleClass="truncate" @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    {{!-- <Button @type="default" @text="Edit this category" @textClass="truncate" @icon="edit" @onClick={{fn this.editCategory this.category}} @disabled={{not this.category}} @wrapperClass="mr-2" />
-    <Button @type="danger" @text="Delete this category" @textClass="truncate" @icon="trash" @onClick={{this.deleteCategory}} @disabled={{not this.category}} /> --}}
-
     {{#if this.category}}
-        <DropdownButton @icon="gear" @text="Category" @type="default" @size="sm" @contentClass="dropdown-menu" as |dd|>
-            <div class="next-dd-menu">
+        <DropdownButton @icon="gear" @text="Category" @type="default" @size="sm" @contentClass="dropdown-menu" @renderInPlace={{true}} as |dd|>
+            <div class="next-dd-menu mt-1 mx-0" aria-labelledby="user-menu">
                 <div class="px-1">
-                    <a href="#" class="next-dd-item" {{on "click" (dropdown-fn dd this.editCategory this.category)}}>
+                    <a href="#" class="next-dd-item" disabled={{cannot "storefront update product-category"}} {{on "click" (dropdown-fn dd this.editCategory this.category)}}>
                         Edit this category...
                     </a>
                 </div>
                 <div class="px-1">
-                    <a href="#" class="text-red-500 next-dd-item" {{on "click" (dropdown-fn dd this.deleteCategory)}}>
+                    <a href="#" class="text-red-500 next-dd-item" disabled={{cannot "storefront delete product-category"}} {{on "click" (dropdown-fn dd this.deleteCategory)}}>
                         Delete this category...
                     </a>
                 </div>
@@ -32,11 +29,11 @@
                     <p class="text-sm truncate">{{product.description}}</p>
                     <p class="mb-2 text-sm text-green-400">{{format-currency product.price product.currency}}</p>
                     <div class="flex items-center justify-evenly space-x-4">
-                        <LinkTo @route="products.index.category.edit" @model={{product}} class="text-sm">
+                        <LinkTo @route="products.index.category.edit" @model={{product}} disabled={{cannot "storefront update product"}} class="text-sm">
                             <FaIcon @icon="pencil" class="mr-1" />
                             <span class="destroy-action">Edit</span>
                         </LinkTo>
-                        <a href="javascript:;" class="destroy-action text-sm" {{on "click" (fn this.deleteProduct product)}}>
+                        <a href="javascript:;" class="destroy-action text-sm" disabled={{cannot "storefront delete product"}} {{on "click" (fn this.deleteProduct product)}}>
                             <FaIcon @icon="trash" class="text-red-500 mr-1" />
                             <span class="destroy-action">Delete</span>
                         </a>

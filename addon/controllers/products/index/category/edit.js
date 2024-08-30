@@ -11,6 +11,7 @@ export default class ProductsIndexCategoryEditController extends ProductsIndexCa
     @tracked overlayActionButtonTitle = 'Save Changes';
     @tracked overlayActionButtonIcon = 'save';
     @tracked overlayExitButtonTitle = 'Done';
+    abilityPermission = 'storefront update product';
 
     get overlayTitle() {
         return `Edit ${this.product.name}`;

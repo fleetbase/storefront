@@ -17,7 +17,7 @@ class Storefront
     /**
      * Guards these permissions should apply to.
      */
-    public array $guards = ['web', 'api'];
+    public array $guards = ['sanctum'];
 
     /**
      * The permission schema resources.
@@ -25,11 +25,15 @@ class Storefront
     public array $resources = [
         [
             'name'    => 'order',
-            'actions' => ['accept', 'mark-as-ready', 'mark-as-completed', 'reject'],
+            'actions' => ['accept', 'mark-as-ready', 'mark-as-completed', 'reject', 'export', 'import'],
+        ],
+        [
+            'name'    => 'customer',
+            'actions' => ['export'],
         ],
         [
             'name'    => 'product',
-            'actions' => ['import'],
+            'actions' => ['import', 'export'],
         ],
         [
             'name'    => 'product-addon',
@@ -56,6 +60,10 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'product-category',
+            'actions' => [],
+        ],
+        [
             'name'    => 'gateway',
             'actions' => [],
         ],
@@ -72,6 +80,10 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'network-category',
+            'actions' => [],
+        ],
+        [
             'name'    => 'store',
             'actions' => [],
         ],
@@ -82,6 +94,88 @@ class Storefront
         [
             'name'    => 'store-hour',
             'actions' => [],
+        ],
+        [
+            'name'           => 'settings',
+            'action'         => ['import'],
+            'remove_actions' => ['delete', 'export', 'list', 'create'],
+        ],
+    ];
+
+    /**
+     * Policies provided by this schema.
+     */
+    public array $policies = [
+        [
+            'name'        => 'InventoryManager',
+            'description' => 'Policy for managing products and categories.',
+            'permissions' => [
+                'see extension',
+                '* product',
+                '* product-addon',
+                '* product-addon-category',
+                '* product-variant',
+                '* product-variant-option',
+                '* product-hour',
+                '* product-store-location',
+                '* product-category',
+            ],
+        ],
+        [
+            'name'        => 'OrderManager',
+            'description' => 'Policy for managing order.',
+            'permissions' => [
+                'see extension',
+                '* order',
+            ],
+        ],
+        [
+            'name'        => 'CustomerService',
+            'description' => 'Policy for providing support to customers.',
+            'permissions' => [
+                'see extension',
+                '* customer',
+                '* order',
+            ],
+        ],
+        [
+            'name'        => 'MarketplaceManager',
+            'description' => 'Policy for managing networks.',
+            'permissions' => [
+                'see extension',
+                '* product',
+                '* order',
+                '* network',
+                '* network-store',
+                '* network-category',
+            ],
+        ],
+    ];
+
+    /**
+     * Roles provided by this schema.
+     */
+    public array $roles = [
+        [
+            'name'        => 'Storefront Administrator',
+            'description' => 'Role for managing all of storefront resources.',
+            'policies'    => [
+                'StorefrontFullAccess',
+            ],
+        ],
+        [
+            'name'        => 'Customer Service',
+            'description' => 'Role for providing support to customers.',
+            'policies'    => [
+                'CustomerService',
+            ],
+        ],
+        [
+            'name'        => 'Inventory Manager',
+            'description' => 'Role for managing all products.',
+            'policies'    => [
+                'InventoryManager',
+            ],
         ],
     ];
 }

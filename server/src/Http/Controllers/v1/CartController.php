@@ -15,7 +15,7 @@ class CartController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function retrieve(string $uniqueId = null, Request $request)
+    public function retrieve(?string $uniqueId = null, Request $request)
     {
         $cart = Cart::retrieve($uniqueId, true);
 

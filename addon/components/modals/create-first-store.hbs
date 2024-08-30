@@ -15,18 +15,20 @@
                 @name={{t "storefront.component.modals.create-first-store.storefront-name"}}
                 @value={{@options.store.name}}
                 @helpText={{t "storefront.component.modals.create-first-store.enter-name"}}
+                @disabled={{cannot "storefront create store"}}
             />
             <InputGroup
                 @name={{t "storefront.component.modals.create-first-store.description"}}
                 @value={{@options.store.description}}
                 @helpText={{t "storefront.component.modals.create-first-store.brief-description"}}
+                @disabled={{cannot "storefront create store"}}
             />
             <InputGroup
                 @name={{t "storefront.component.modals.create-first-store.currency"}}
                 @value={{@options.store.currency}}
                 @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}
             >
-                <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" />
+                <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" @disabled={{cannot "storefront create store"}} />
             </InputGroup>
         </div>
     </div>

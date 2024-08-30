@@ -8,7 +8,7 @@
         @buttonWrapperClass="mr-2"
     />
     <VisibleColumnPicker @columns={{this.columns}} @onChange={{fn (mut this.columns)}} class="mr-2" />
-    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} />
+    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export customer" />
 </Layout::Section::Header>
 
 <Layout::Section::Body>
