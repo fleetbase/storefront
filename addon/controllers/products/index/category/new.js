@@ -70,7 +70,10 @@ export default class ProductsIndexCategoryNewController extends BaseController {
 
         try {
             yield this.transitionToRoute('products.index.category', category.slug);
-        } catch (error) {}
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+
         this.reset();
     }
 

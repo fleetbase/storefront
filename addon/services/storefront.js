@@ -215,7 +215,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
             store,
-            confirm: async (modal, done) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
                 try {

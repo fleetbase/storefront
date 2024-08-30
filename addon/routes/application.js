@@ -27,7 +27,7 @@ export default class ApplicationRoute extends Route {
     }
 
     beforeModel() {
-        if (this.abilities.cannot('storefront view extension')) {
+        if (this.abilities.cannot('storefront see extension')) {
             this.notifications.warning(this.intl.t('common.unauthorized-access'));
             return this.hostRouter.transitionTo('console');
         }
