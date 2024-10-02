@@ -1,0 +1,642 @@
+storefront:
+  extension-name: الواجهة
+  common:
+    address: العنوان
+    alerts: التنبيهات
+    amount: المبلغ
+    api: واجهة برمجة التطبيقات
+    back: العودة
+    backdrop: الخلفية
+    building: المبنى
+    bulk-action: إجراء جماعي
+    cash: نقد
+    city: المدينة
+    config: التكوين
+    coordinates: الإحداثيات
+    country: البلد
+    created: تم الإنشاء
+    currency: العملة
+    customer: العميل
+    customers: العملاء
+    category: الفئة
+    delivery-tip: نصيحة التوصيل
+    delivery: التوصيل
+    details: التفاصيل
+    description: الوصف
+    driver: السائق
+    dropoff: التسليم
+    earning: الأرباح
+    email: البريد الإلكتروني
+    export: التصدير
+    id: المعرف
+    internal-id: المعرف الداخلي
+    import: الاستيراد
+    invalid: غير صالح
+    loading: جارٍ التحميل...
+    logo: الشعار
+    name: الاسم
+    neighborhood: الحي
+    online: عبر الإنترنت
+    orders: الطلبات
+    phone: الهاتف
+    photos: الصور
+    pickup: الاستلام
+    product: المنتجات
+    remove: إزالة
+    state: الولاية
+    status: الحالة
+    store: المتجر
+    street-1: الشارع 1
+    storefront: الواجهة
+    tag: العلامات
+    tip: النصيحة
+    title: العنوان
+    total: الإجمالي
+    type: النوع
+    upload-new: تحميل جديد
+    uploading: جارٍ التحميل...
+    view: عرض
+    website: الموقع الإلكتروني
+    edit: تحرير
+    delete: حذف
+    network: الشبكات
+    file: الملفات
+    general: عام
+    location: الموقع
+    notification: الإشعار
+    gateways: البوابات
+    settings: الإعدادات
+    new: جديد
+    facebook: فيسبوك
+    instagram: إنستغرام
+    twitter: تويتر
+  sidebar:
+    storefront: الواجهة
+    dashboard: لوحة القيادة
+    products: المنتجات
+    customers: العملاء
+    orders: الطلبات
+    networks: الشبكات
+    settings: الإعدادات
+    launch-app: إطلاق التطبيق
+  component:
+    storefront-order-summary:
+      order-summary-title: ملخص طلب الواجهة
+    modals:
+      add-store-hours:
+        start-time: وقت البدء
+        operation-start: وقت بدء التشغيل
+        end-time: وقت الانتهاء
+        operation-end: وقت انتهاء التشغيل
+      assign-driver:
+        message-driver: اختر سائقًا لتعيينه لهذا الطلب.
+        name-driver: اختر السائق
+        placeholder-driver: اختر السائق لتعيينه
+      create-first-store:
+        title: مرحبًا بك في الواجهة!
+        message: تتيح لك الواجهة إعداد متجر ديناميكي بدون رأس مدعوم من Fleetbase بسرعة.
+        submit-message: أرسل النموذج أدناه لإنشاء متجرك الأول.
+        storefront-name: اسم الواجهة
+        enter-name: أدخل اسم متجرك
+        description: وصف الواجهة
+        brief-description: قدم وصفًا بسيطًا لمتجرك حول أنواع الأشياء المباعة
+        currency: عملة الواجهة
+        select-currency: اختر العملة الافتراضية لواجهتك
+      create-getaway:
+        getaway: نوع البوابة
+        getaway-text: اختر نوع البوابة
+        getaway-name: اسم البوابة
+        name-text: أعط بوابة الدفع الخاصة بك اسمًا، سيكون هذا ذا صلة داخليًا فقط
+        getaway-code: رمز البوابة
+        code-text: رمز التعريف المستخدم لتحديد البوابة إلى SDK
+        callback-url: عنوان URL للرد
+        callback-text: عنوان URL للرد إذا كان ذلك ممكنًا
+        return-url: عنوان URL للعودة
+        return-text: عنوان URL للعودة إذا كان ذلك ممكنًا
+        sandbox-getaway: هذه بوابة تجريبية
+      create-network-category:
+        parent-category: الفئة الرئيسية
+        select-parent: اختر فئة رئيسية إذا وجدت
+        category-name: اسم الفئة
+        name-text: أدخل اسمًا للفئة
+        description: وصف الفئة
+        description-text: قدم وصفًا موجزًا لفئة الشبكة الخاصة بك
+        category-icon: نوع أيقونة الفئة
+      create-network:
+        title: ابدأ شبكة
+        message-line1: تتيح لك الواجهة إنشاء الأسواق بسرعة، مما يمكّن العديد من الواجهات من البيع تحت مظلة واحدة.
+        message-line2: عند إنشاء الشبكة، تحدد قواعدك وتتمكن من توسيع شبكتك من خلال الدعوات.
+        message-line3: ابدأ بإنشاء شبكة أدناه.
+        name: اسم الشبكة
+        name-text: أدخل اسم متجرك
+        description: وصف الشبكة
+        description-text: قدم وصفًا موجزًا لمتجرك حول أنواع الأشياء المباعة
+        currency: عملة الشبكة
+        currency-text: اختر العملة الافتراضية لواجهتك
+      create-new-variant:
+        name: اسم المتغير
+        name-text: أعط متغير المنتج الخاص بك اسمًا
+        description: وصف المتغير
+        description-text: وصف قصير للمتغير
+        checkbox-1: السماح للمستخدم بتحديد خيارات متعددة للمتغير في وقت واحد
+        checkbox-2: هذا الاختيار المتغير للمنتج مطلوب
+      create-notification-channel:
+        title: القناة
+        title-text: اختر قناة الإشعار
+        name: اسم القناة
+        name-text: أعط قناة الإشعار الخاصة بك اسمًا، سيكون هذا ذا صلة داخليًا فقط
+        key: مفتاح القناة
+        key-text: هذا هو مفتاح قناة الإشعار الخاصة بك، استخدمه لتحديد التطبيقات التي يجب أن تستخدم هذه القناة عبر تكوينات SDK.
+      create-product-category:
+        name: اسم الفئة
+        name-text: أدخل اسمًا للفئة
+        description: وصف الفئة
+        description-text: قدم وصفًا موجزًا لفئة المنتج الخاصة بك
+        icon: أيقونة الفئة
+        uploading-new: تحميل أيقونة فئة جديدة
+      create-store:
+        name: اسم الواجهة
+        name-text: أدخل اسم متجرك
+        description: وصف الواجهة
+        description-text: قدم وصفًا موجزًا لمتجرك حول أنواع الأشياء المباعة
+        currency: عملة الواجهة
+        currency-text: اختر العملة الافتراضية لواجهتك
+      import-products:
+        uploading-message: جارٍ معالجة الاستيراد...
+        drop-upload: إسقاط للتحميل
+        ready-upload: جاهز للتحميل.
+        upload-spreadsheets: تحميل جداول البيانات
+        drag-drop: اسحب وأفلت ملفات جداول البيانات في منطقة الإسقاط هذه
+        select-spreadsheets: أو اختر جداول البيانات للتحميل.
+        upload-queue: قائمة الانتظار للتحميل
+        optionally-select-category: اختر فئة لاستيراد المنتجات إليها اختياريًا
+        select-category: اختر الفئة
+      incoming-order:
+        assigned: تم تعيين السائق
+        not-assigned: لم يتم تعيين سائق
+        no-phone: لا يوجد هاتف
+        change-driver: تغيير السائق
+        assign-driver: تعيين السائق
+        pickup-order: يجب على العميل استلام الطلب من
+        address: عنوان العميل
+        tracking: التتبع
+        summary: ملخص الطلب
+        subtotal: المجموع الفرعي
+        fee: رسوم التوصيل
+        tip: النصيحة
+        delivery-tip: نصيحة التوصيل
+      manage-addons:
+        title: فئة جديدة
+        delete: حذف الفئة
+        new-addon: إضافة جديدة
+        addon-name: اسم الإضافة
+        description: وصف الإضافة
+        delete-this-addon-category-assosiated-will-lost: هل أنت متأكد أنك تريد حذف هذه الفئة الإضافية؟ ستفقد جميع الإضافات المرتبطة!
+        untitled-addon-category: فئة إضافة غير معنونة
+      order-ready-assign-driver:
+        driver-dispatch: أنت على وشك تعيين هذا الطلب كجاهز وإرساله، استخدم القائمة المنسدلة أدناه لاختيار سائق لإرساله. <br><br>أو يمكنك اختيار إرسال الطلب بشكل عشوائي إلى جميع السائقين القريبين ليتم قبوله.
+        adhoc-dispatch-nearby-drivers: إرسال عشوائي إلى السائقين القريبين
+        select-driver: اختر السائق
+        select-driver-to-assign: اختر السائق لتعيينه
+      share-network:
+        invite-member: دعوة الأعضاء إلى شبكتك
+        email-below: احصل على رابط دعوة قابل للمشاركة أو أرسل دعوات فردية عبر البريد الإلكتروني أدناه.
+        invite-network: أدخل عناوين البريد الإلكتروني للأشخاص أو المنظمات التي تريد إرسال دعوة إلى شبكتك.
+        add-email: أضف عناوين البريد الإلكتروني
+        get-link: احصل على الرابط
+        enable-shareable-link: تمكين الرابط القابل للمشاركة
+        anyone-with-this-link-able-to-join-your-network: يمكن لأي شخص لديه هذا الرابط الانضمام إلى شبكتك
+      store-form:
+        storefront-name: اسم الواجهة
+        the-name-of-your-store: اسم متجرك.
+        storefront-description-placeholder: وصف الواجهة
+        give-your-store-brief-description: قدم وصفًا موجزًا لمتجرك لإعلام المستخدمين بما تبيعه.
+        add-tags-placeholder: أضف العلامات
+      store-location-form:
+        street-2: الشارع 2
+        security-access-code: رمز الوصول الأمني
+        postal-code: الرمز البريدي
+    widget:
+      key-metrics:
+        title: مقاييس الواجهة
+      customers:
+        widget-title: العملاء الجدد
+        phone: الهاتف
+        email: البريد الإلكتروني
+      orders:
+        widget-title: الطلبات الجديدة
+        id-column: معرف الطلب
+        accept-order: قبول الطلب
+        mark-as-ready: تحديد كجاهز!
+        mark-as-completed: تحديد كمكتمل
+        more-details: مزيد من التفاصيل
+        customer: العميل
+        driver: السائق
+        subtotal: المجموع الفرعي
+        delivery-fee: رسوم التوصيل
+        delivery-tip: نصيحة التوصيل
+        tip: النصيحة
+        change-driver: تغيير السائق
+        assign-driver: تعيين السائق
+        mark-as-ready-modal-pickup-title: تحديد الطلب كجاهز للاستلام؟
+        mark-as-ready-modal-pickup-body: تحديد الطلب كجاهز سيُعلم العميل بأن طلبه جاهز للاستلام!
+        mark-as-ready-modal-pickup-accept-button-text: جاهز للاستلام!
+        mark-as-ready-modal-not-adhoc-title: تعيين السائق وإرسال الطلبات
+        mark-as-ready-modal-not-adhoc-accept-button-text: تعيين 
+        mark-as-ready-modal-title: هل تريد تحديد الطلب كجاهز؟
+        mark-as-ready-modal-body: تحديد الطلب كجاهز سيؤدي إلى إرسال الطلب إلى السائقين القريبين، حدد الطلب كجاهز فقط عندما يمكن استلامه.
+        mark-as-ready-modal-accept-button-text: إرسال!
+        mark-as-completed-modal-title: هل أنت متأكد أنك تريد تحديد الطلب كمكتمل؟
+        mark-as-completed-modal-body: تحديد الطلب كمكتمل هو تأكيد على أن العميل قد استلم الطلب وأن الطلب مكتمل.
+        mark-as-completed-accept-button-text: الطلب مكتمل!
+        assign-driver-modal-title: تعيين السائق
+        assign-driver-modal-accept-button-text: تعيين السائق
+      storefront-metrics:
+        last-day: آخر 30 يومًا
+    file-record:
+      delete-this-file: هل أنت متأكد أنك تريد حذف هذا الملف؟
+      delete-this-file-you-will-unable-recover: بمجرد حذف هذا الملف، لن تتمكن من استعادته.
+    network-category-picker:
+      no-subcategory: لا توجد فئات فرعية لـ
+      no-categories: لا توجد فئات لهذه الشبكة
+      create-category: إنشاء فئة جديدة
+    schedule-manager:
+      add-hours: إضافة ساعات
+      add-new-hours-for-day: إضافة ساعات جديدة لـ {day}
+      new-hours-added-for-day: تمت إضافة ساعات جديدة لـ {day}
+      you-wish-to-remove-these-hour: هل أنت متأكد أنك تريد إزالة هذه الساعات؟
+      by-removing-these-operation: بإزالة ساعات التشغيل/التوفر هذه، قد يصبح متجرك أو منتجك غير نشط أو غير متاح وفقًا للجدول الزمني المحدث...
+    store-selector:
+      no-stores: لا توجد متاجر للاختيار
+      create-storefront: إنشاء واجهة جديدة
+  home:
+    title: لوحة تحكم الواجهة
+  customers:
+    index:
+      internal-id: المعرف الداخلي
+      create-at: تم الإنشاء في
+      update-at: تم التحديث في
+      vendor-action: إجراءات المورد
+      view-customer-details: عرض تفاصيل العميل
+      edit-customer: تحرير العميل
+      success-message: تم إنشاء شبكة الواجهة الجديدة الخاصة بك!
+      delete-customer: حذف العميل
+    customer-panel:
+      details:
+        web-url: عنوان الموقع الإلكتروني
+      edit-button: تحرير العميل
+      cancel-edit-button: إلغاء تحرير العميل
+      cancel-new-button: إلغاء العميل الجديد
+  networks:
+    index:
+      network-option: خيارات الشبكة
+      manage-network: إدارة الشبكة
+      send-invite: إرسال الدعوات
+      delete-network: حذف الشبكة
+      create-new-network: إنشاء شبكة جديدة
+      success-message: تم إنشاء شبكة الواجهة الجديدة الخاصة بك!
+      delete-this-network-all-assigned-stores-customer-order: هل أنت متأكد أنك تريد حذف هذه الشبكة ({networkName})؟ لن تكون جميع المتاجر والعملاء والطلبات المعينة قابلة للوصول.
+      network:
+        manage-network: إدارة الشبكة
+        settings: الإعدادات
+        customers: العملاء
+        orders: الطلبات
+        Network-changes-not-save: لم يتم حفظ تغييرات الشبكة!
+        going-back-will-rollback-all-unsaved-changes: العودة ستتراجع عن جميع التغييرات غير المحفوظة، هل أنت متأكد أنك تريد المتابعة؟
+        index:
+          change-network-saved: تم حفظ تغييرات الشبكة.
+          create-new-payment-gateway: إنشاء بوابة دفع جديدة
+          save-gateway: حفظ البوابة
+          new-gateway-add-network: تمت إضافة بوابة جديدة إلى الشبكة
+          payment-gateway-changes-success: تم حفظ تغييرات بوابة الدفع!
+          create-new-notification-channel: إنشاء قناة إشعار جديدة
+          create-notification-channel: إنشاء قناة إشعار
+          notification-channel-add-network: تمت إضافة قناة إشعار جديدة إلى الشبكة!
+          notification-channel-changes-save: تم حفظ تغييرات قناة الإشعار!
+          general-network-settings-title: إعدادات الشبكة العامة
+          general-network-settings-subtitle: قدم الإعدادات العامة لشبكتك أو سوقك.
+          general-network-settings-form:
+            save-changes-button-text: حفظ التغييرات
+            name: الاسم
+            name-placeholder: اسم الواجهة
+            name-help-text: اسم شبكتك أو سوقك.
+            description: الوصف
+            description-placeholder: وصف الواجهة
+            description-help-text: قدم وصفًا موجزًا لمتجرك لإعلام المستخدمين بما تدور حوله شبكتك.
+            currency: العملة
+            contact-social-panel:
+              panel-title: الاتصال والشبكات الاجتماعية
+              phone: الهاتف
+              email: البريد الإلكتروني
+              email-help-text: بريدك الإلكتروني التجاري.
+              website: الموقع الإلكتروني
+              website-help-text: عنوان موقعك الإلكتروني التجاري.
+              facebook: فيسبوك
+              facebook-help-text: معرف صفحة فيسبوك التجارية الخاصة بك.
+              instagram: إنستغرام
+              instagram-help-text: اسم مستخدم إنستغرام التجاري الخاص بك.
+              twitter: تويتر
+              twitter-help-text: اسم مستخدم تويتر التجاري الخاص بك.
+            logo-backdrop-panel:
+              panel-title: الشعار والخلفية
+              logo-label: الشعار
+              logo-help-text: شعار متجرك.
+              upload-logo-button-text: تحميل شعار جديد
+              backdrop-label: الخلفية
+              backdrop-help-text: لافتة اختيارية أو صورة خلفية لمتجرك.
+              upload-backdrop-button-text: تحميل خلفية جديدة
+            alert-panel:
+              panel-title: التنبيهات
+              panel-description: تكوين من يجب تنبيهه لأحداث معينة
+              new-order-alert-label: تنبيه طلب جديد
+              new-order-alert-placeholder: اختر المستخدمين لتنبيههم عند وجود طلب جديد
+            config-switches:
+            online: متصل
+            enable-tax: تمكين الضريبة
+            tax-percentage-input-label: نسبة الضريبة
+            tax-percentage-input-help-text: نسبة ضريبة المبيعات التي سيتم تطبيقها على الطلبات.
+            auto-accept-incoming-orders: قبول الطلبات الواردة تلقائيًا
+            auto-dispatch-orders: إرسال الطلبات تلقائيًا
+            require-proof-of-delivery: طلب إثبات التسليم
+            proof-of-delivery-method-label: طريقة إثبات التسليم
+            enable-cash-on-delivery: تمكين الدفع عند التسليم
+            enable-order-pickup: تمكين استلام الطلب
+            enable-tips: تمكين الإكراميات
+            enable-delivery-tips: تمكين إكراميات التوصيل
+            enable-multi-cart-checkout: تمكين الدفع المتعدد
+            enable-user-reviews: تمكين مراجعات المستخدمين
+          api-panel:
+            panel-title: API
+            panel-header: إعدادات API
+            panel-description: مفتاح الوصول إلى واجهة برمجة التطبيقات والتكاملات
+            network-key-label: مفتاح الشبكة
+            network-key-help-text: هذا هو مفتاح شبكتك، استخدمه لتمكين التطبيقات والتكاملات لشبكتك.
+          payment-gateways-panel:
+            panel-title: إعدادات البوابة
+            panel-description: أضف أو إدارة إعدادات بوابة الدفع الخاصة بك هنا.
+            new-gateway-button-text: إنشاء بوابة جديدة
+            gateway-form:
+              name: اسم البوابة
+              name-help-text: أعط بوابة الدفع الخاصة بك اسمًا، سيكون هذا ذا صلة داخليًا فقط
+              code: رمز البوابة
+              code-help-text: رمز التعريف المستخدم لتحديد البوابة إلى SDK
+              callback-url: عنوان URL للرد
+              callback-url-help-text: عنوان URL للرد إذا كان ذلك ممكنًا
+              return-url: عنوان URL للعودة
+              return-url-help-text: عنوان URL للعودة إذا كان ذلك ممكنًا
+              sandbox-toggle-label: هذه بوابة تجريبية
+              config-header-label: التكوين
+              delete-gateway-button-text: حذف بوابة الدفع
+          notification-channels-panel:
+            panel-title: قنوات الإشعار
+            panel-header: إعدادات الإشعار
+            panel-description: تكوين قنوات الإشعار لواجهتك، يمكن لكل قناة إشعار أن تحتوي على قواعد وخيارات خاصة بها.
+            new-channel-button-text: إنشاء قناة جديدة
+        stores:
+          store: المتاجر
+          add-stores-button-text: إضافة متاجر
+          invite-stores-button-text: دعوة المتاجر
+          created-at: تم الإنشاء في
+          view-store-details: عرض تفاصيل المتجر
+          edit-store: تحرير المتجر
+          assign-category: تعيين الفئة
+          remove-store-from-network: إزالة المتجر من الشبكة
+          delete-network-category: حذف فئة الشبكة؟
+          deleting-category-move-all-stores-inside-on-top-level: حذف هذه الفئة سينقل جميع المتاجر بداخلها إلى المستوى الأعلى، هل أنت متأكد أنك تريد حذف هذه الفئة؟
+          add-store-to-category: إضافة متجر إلى الفئة
+          save-change: حفظ التغييرات
+          add-new-network-category: إضافة فئة شبكة جديدة
+          create-new-category: إنشاء فئة جديدة
+          new-category-created: تم إنشاء فئة جديدة.
+          network-category-create: تم إنشاء فئة شبكة جديدة.
+          edit-category: تحرير الفئة ({categoryName})
+          add-stores-to-network: إضافة متاجر إلى الشبكة
+          network-stores-update: تم تحديث متاجر الشبكة.
+          remove-this-store: إزالة هذا المتجر ({storeName}) من هذه الشبكة ({networkName})؟
+          done: تم
+          longer-findable-by-this-network: هل أنت متأكد أنك تريد إزالة هذا المتجر من هذه الشبكة؟ لن يكون قابلاً للوصول من قبل هذه الشبكة.
+          viewing-storefront: عرض واجهة {storeName}
+          editing-storefront: تحرير واجهة {storeName}
+          send-invitations: إرسال الدعوات
+          invitation-sent-recipients: تم إرسال الدعوات إلى المستلمين!
+          invalid-emails-provided-error: تم تقديم عناوين بريد إلكتروني غير صالحة!
+  orders:
+    index:
+      internal-id: المعرف الداخلي
+      customer: العميل
+      select-order-customer: اختر عميل الطلب
+      select-order-pickup-location: اختر موقع استلام الطلب
+      select-order-dropoff-location: اختر موقع تسليم الطلب
+      scheduled-at: مجدول في
+      transaction-total: إجمالي المعاملة
+      tracking-number: رقم التتبع
+      driver-assigned: تم تعيين السائق
+      select-driver-for-order: اختر سائقًا للطلب
+      created-at: تم الإنشاء في
+      updated-at: تم التحديث في
+      created-by: تم الإنشاء بواسطة
+      updated-by: تم التحديث بواسطة
+      select-user: اختر المستخدم
+      view-order: عرض الطلب
+      cancel-order: إلغاء الطلب
+      delete-order: حذف الطلب
+      view:
+        route-panel-title: المسار
+        comments-title: التعليقات
+        notes-title: الملاحظات
+        dispatch: إرسال
+        unassign-driver: إلغاء تعيين السائق
+        assign-driver: تعيين السائق
+        cancel-order: إلغاء الطلب
+        delete-order: حذف الطلب
+        activity: النشاط
+        unable-load-order-activity: غير قادر على تحميل نشاط الطلب
+        ad-hoc: مخصص
+        customer: العميل
+        facilitator: الميسر
+        driver-assigned: تم تعيين السائق
+        change-driver: تغيير السائق
+        tracking-number: رقم التتبع
+        date-scheduled: التاريخ المجدول
+        date-dispatched: تاريخ الإرسال
+        date-started: تاريخ البدء
+        order-details-title: تفاصيل الطلب
+        route: المسار
+        pickup: الاستلام
+        dropoff: التسليم
+        return: العودة
+        order-summary: ملخص الطلب
+        subtotal: المجموع الفرعي
+        delivery-fee: رسوم التوصيل
+        tip: النصيحة
+        delivery-tip: نصيحة التوصيل
+        total: الإجمالي
+        payload: الحمولة
+        items-drop: إسقاط العناصر في
+        tracking: التتبع
+        view-activity: عرض النشاط
+        order-metadata: بيانات الطلب
+        unassign-title: هل أنت متأكد أنك تريد إلغاء تعيين السائق ({driverName}) من هذا الطلب؟
+        unassign-body: بمجرد إلغاء تعيين السائق، لن يكون للسائق حق الوصول إلى تفاصيل هذا الطلب.
+        unassign-success: تم إلغاء تعيين السائق من هذا الطلب.
+        route-error: فشل تحسين المسار، تحقق من إدخال المسار وحاول مرة أخرى.
+        invalid-warning: إدخال حالة مخصصة غير صالح.
+        change-order: تغيير سائق الطلب
+        assign-order: تعيين سائق للطلب
+        assign-success: تم تحديث تعيين السائق للطلب '{orderId}'.
+        order-title: تسمية الطلب
+        waypoint-title: تسمية نقطة الطريق
+        proof-of-delivery: إثبات التسليم
+        notes-placeholder: أدخل ملاحظات الطلب هنا....
+        save-order-note: حفظ ملاحظة الطلب
+        order-notes-updated: تم تحديث ملاحظات الطلب.
+  products:
+    index:
+      manage-addons: إدارة الإضافات
+      manage-addons-dialog:
+        manage-addons-title: إدارة فئات وخيارات الإضافات للمنتج
+        manage-addons-accept-button: حفظ التغييرات
+      done: تم
+      create-new-product-category: إنشاء فئة منتج جديدة
+      product-category-created-success: تم إنشاء فئة منتج جديدة.
+      import-products-via-spreadsheets: استيراد المنتجات عبر جداول البيانات
+      start-upload: بدء التحميل
+      warning-no-file-upload: لا توجد ملفات في قائمة الانتظار للتحميل!
+      products-success-message: تم استيراد {resultsLength} منتج بنجاح...
+      delete-product: هل أنت متأكد أنك تريد حذف هذا المنتج؟
+      body-warning: تحذير! بمجرد حذف هذا المنتج، لن يكون قابلاً للوصول.
+      aside-scroller:
+        title: فئات المنتجات
+        custom-top-item-text: جميع المنتجات
+      import-products-success-message: تم استيراد {resultsLength} منتج بنجاح...
+      edit:
+        title: المنتج غير محفوظ!
+        body: ستفقد جميع التغييرات غير المحفوظة، هل أنت متأكد أنك تريد الإلغاء؟
+        changes-saved: تم حفظ التغييرات!
+      new:
+        new-product-created-success: تم إنشاء منتج جديد بنجاح!
+        warning-only-select-an-image-file-to-be-primary: يمكنك فقط اختيار ملف صورة ليكون الأساسي!
+        made-the-primary-success-image: >-
+          تم تعيين {fileName} كالصورة الأساسية.
+        title: المنتج غير محفوظ!
+        body: العودة ستلغي إنشاء هذا المنتج، إذا تابعت سيتم مسح جميع الحقول المدخلة!
+        select-addon-categories: اختر فئات الإضافات
+        add-new-product-variant: إضافة نوع منتج جديد
+        edit-product-variant: تحرير نوع المنتج
+        untitled-field: حقل غير معنونة
+      category:
+        category: الفئة
+        title: المنتج غير محفوظ!
+        body: تحذير! حذف هذه الفئة سيؤدي أيضًا إلى إزالة جميع المنتجات المدرجة تحت هذه الفئة.
+        edit-category: تحرير الفئة
+        save-changes: حفظ التغييرات
+        category-changes-saved-success: تم حفظ تغييرات الفئة.
+        delete-product: هل أنت متأكد أنك تريد حذف هذا المنتج؟
+        body-warning: تحذير! بمجرد حذف هذا المنتج، لن يكون قابلاً للوصول.
+  settings:
+    api:
+      api-settings: إعدادات API
+      access-key-for-storefront-api-integrations: مفتاح الوصول إلى واجهة برمجة التطبيقات والتكاملات.
+      store-key: مفتاح المتجر
+      store-key-help-text: هذا هو مفتاح متجرك، استخدمه لتمكين التطبيقات والتكاملات لواجهتك.
+    gateways:
+      geteway-settings: إعدادات البوابة
+      add-or-manage-your-paymeny-gateway-settings-here: أضف أو إدارة إعدادات بوابة الدفع الخاصة بك هنا.
+      create-new-gateway: إنشاء بوابة جديدة
+      gateway-name: اسم البوابة
+      gateway-help-text: أعط بوابة الدفع الخاصة بك اسمًا، سيكون هذا ذا صلة داخليًا فقط
+      gateway-code: رمز البوابة
+      gateway-code-help-text: رمز التعريف المستخدم لتحديد البوابة إلى SDK
+      callback-url: عنوان URL للرد
+      callback-url-help-text: عنوان URL للرد إذا كان ذلك ممكنًا
+      return-url: عنوان URL للعودة
+      return-url-help-text: عنوان URL للعودة إذا كان ذلك ممكنًا
+      this-is-a-sandbox-gateway: هذه بوابة تجريبية
+      delete-payment-gateway: حذف بوابة الدفع
+      create-new-payment-gateway: إنشاء بوابة دفع جديدة
+      save-gateway: حفظ البوابة
+      edit-payment-gateway: تحرير بوابة الدفع
+      save-changes: حفظ التغييرات
+      title-remove: هل أنت متأكد أنك تريد إزالة هذه البوابة؟
+      application-website-utilizing-gateway: جميع التطبيقات والمواقع التي تستخدم هذه البوابة في التكوين قد تتعطل إذا لم يتم استبدال البوابة مسبقًا
+    index:
+      general-settings-header: الإعدادات العامة
+      general-settings-message: قدم الإعدادات العامة لواجهتك.
+      name-placeholder: اسم الواجهة
+      name-help-text: اسم متجرك.
+      description-placeholder: وصف الواجهة
+      description-help-text: قدم وصفًا موجزًا لمتجرك لإعلام المستخدمين بما تبيعه.
+      tags-placeholder: أضف العلامات
+      contact-social: الاتصال والشبكات الاجتماعية
+      website-help-text: عنوان موقعك الإلكتروني التجاري.
+      facebook-placeholder: معرف فيسبوك
+      facebook-help-text: معرف صفحة فيسبوك التجارية الخاصة بك.
+      instagram-placeholder: اسم مستخدم إنستغرام
+      instagram-help-text: اسم مستخدم إنستغرام التجاري الخاص بك.
+      twitter-placeholder: اسم مستخدم تويتر
+      twitter-help-text: اسم مستخدم تويتر التجاري الخاص بك.
+      logo-backdrop: الشعار والخلفية
+      logo-help-text: شعار متجرك.
+      upload-new-logo: تحميل شعار جديد
+      backdrop-help-text: لافتة اختيارية أو صورة خلفية لمتجرك.
+      upload-new-backdrop: تحميل خلفية جديدة
+      images-videos: الصور ومقاطع الفيديو
+      drop-to-upload: إسقاط للتحميل
+      ready-to-upload: جاهز للتحميل.
+      upload-image-video: تحميل الصور ومقاطع الفيديو
+      drag-and-drop-image: اسحب وأفلت ملفات الصور والفيديو في هذه المنطقة
+      upload-queue: قائمة انتظار التحميل
+      alerted-for-certain-event: تكوين من يجب تنبيهه لأحداث معينة.
+      new-order-alert: تنبيه طلب جديد
+      alert-placeholder: اختر المستخدمين لتنبيههم عند وجود طلب جديد
+      enable-tax: تمكين الضريبة
+      tax-percentage: نسبة الضريبة
+      tax-percentage-help-text: نسبة ضريبة المبيعات التي سيتم تطبيقها على الطلبات.
+      auto-accept-incoming-order: قبول الطلبات الواردة تلقائيًا
+      auto-dispatch-order: إرسال الطلبات تلقائيًا
+      require-proof-of-delivery: طلب إثبات التسليم
+      proof-of-delivery-method: طريقة إثبات التسليم
+      enable-cash-on-delivery: تمكين الدفع عند التسليم
+      enable-order-pickup: تمكين استلام الطلب
+      enable-tip: تمكين الإكراميات
+      enable-integrated-vendors: تمكين الموردين المتكاملين
+      save-changes: حفظ التغييرات
+    locations:
+      new-store-location: موقع متجر جديد
+      add-new-location: إضافة موقع جديد
+      edit-store-location: تحرير موقع المتجر
+      save-changes: حفظ التغييرات
+      remove-this-store-location: هل أنت متأكد أنك تريد إزالة هذا الموقع؟
+      solely-accosciated-location: جميع المنتجات المرتبطة فقط بهذا الموقع لن تكون قابلة للوصول.
+      new-store-hour: إضافة ساعات جديدة للمتجر لـ {day}
+      add-hours: إضافة ساعات
+      store-hour-added: تمت إضافة ساعات جديدة للمتجر لـ {day}
+      remove-these-hour: هل أنت متأكد أنك تريد إزالة هذه الساعات؟
+      update-schedule-location: بإزالة ساعات التشغيل هذه، قد يصبح متجرك غير نشط وفقًا للجدول الزمني المحدث لهذا الموقع.
+      location-setting: إعدادات الموقع
+      manage-store: إدارة مواقع تشغيل متاجرك وساعات العمل
+      text-location: إنشاء موقع جديد
+      store-hour: إدارة ساعات المتجر
+    notification:
+      create-new-notification-channel: إنشاء قناة إشعار جديدة
+      create-notification-channel: إنشاء قناة إشعار
+      edit-notification-channel: تحرير قناة الإشعار
+      save-changes: حفظ التغييرات
+      new-notification-channel-added: تمت إضافة قناة إشعار جديدة
+      remove-this-notification-channel: هل أنت متأكد أنك تريد إزالة هذه القناة؟
+      application-websites-utillizing-channel: جميع التطبيقات والمواقع التي تستخدم هذه القناة في التكوين قد تتعطل إذا لم يتم استبدال القناة مسبقًا
+      notification-settings: إعدادات الإشعار
+      notification-storefront: تكوين قنوات الإشعار لواجهتك، يمكن لكل قناة إشعار أن تحتوي على قواعد وخيارات خاصة بها.
+      new-channel: قناة جديدة
+  service:
+    storefront:
+      new-incoming-order: لديك طلب وارد جديد!
+      accept-order: قبول الطلب
+      decline-order: رفض الطلب
+      create-first-storefront: إنشاء واجهتك الأولى
+      storefront-has-been-create-success: تم إنشاء واجهتك الجديدة!
+      create-new-storefront: إنشاء واجهة جديدة
+      storefront-create-success: تم إنشاء واجهتك الجديدة!
+  application:
+    launch-app: تشغيل التطبيق
+
