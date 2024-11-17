@@ -94,7 +94,7 @@ storefront:
         placeholder-driver: Chọn tài xế để gán
       create-first-store:
         title: Chào mừng đến với Cửa hàng!
-        message: Cửa hàng cho phép bạn thiết lập một cửa hàng không có giao diện và linh hoạt, được hỗ trợ bởi Fleetbase.
+        message: Cửa hàng cho phép bạn thiết lập một cửa hàng không có giao diện và linh hoạt, được hỗ trợ bởi Rapide.
         submit-message: Gửi biểu mẫu bên dưới để tạo cửa hàng đầu tiên của bạn.
         storefront-name: Tên cửa hàng
         enter-name: Nhập tên cửa hàng của bạn
@@ -315,7 +315,7 @@ storefront:
           notification-channel-changes-save: Thay đổi kênh thông báo đã được lưu!
           general-network-settings-title: Cài đặt chung của mạng
           general-network-settings-subtitle: Cung cấp các cài đặt chung cho mạng hoặc chợ của bạn.
-          general-network-settings-form: 
+          general-network-settings-form:
             save-changes-button-text: Lưu thay đổi
             name: Tên
             name-placeholder: Tên cửa hàng
@@ -639,10 +639,3 @@ storefront:
       storefront-create-success: Storefront mới của bạn đã được tạo thành công!
   application:
     launch-app: Khởi động Ứng dụng
-
-
-
-
-
-
-

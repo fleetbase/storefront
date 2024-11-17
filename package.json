@@ -1,7 +1,7 @@
 {
     "name": "@fleetbase/storefront-engine",
     "version": "0.3.17",
-    "description": "Headless Commerce & Marketplace Extension for Fleetbase",
+    "description": "Headless Commerce & Marketplace Extension for Rapide",
     "fleetbase": {
         "route": "storefront",
         "dashboard": "storefront/int/v1/dashboard"

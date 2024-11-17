@@ -94,7 +94,7 @@ storefront:
         placeholder-driver: اختر السائق لتعيينه
       create-first-store:
         title: مرحبًا بك في الواجهة!
-        message: تتيح لك الواجهة إعداد متجر ديناميكي بدون رأس مدعوم من Fleetbase بسرعة.
+        message: تتيح لك الواجهة إعداد متجر ديناميكي بدون رأس مدعوم من Rapide بسرعة.
         submit-message: أرسل النموذج أدناه لإنشاء متجرك الأول.
         storefront-name: اسم الواجهة
         enter-name: أدخل اسم متجرك
@@ -242,7 +242,7 @@ storefront:
         mark-as-ready-modal-pickup-body: تحديد الطلب كجاهز سيُعلم العميل بأن طلبه جاهز للاستلام!
         mark-as-ready-modal-pickup-accept-button-text: جاهز للاستلام!
         mark-as-ready-modal-not-adhoc-title: تعيين السائق وإرسال الطلبات
-        mark-as-ready-modal-not-adhoc-accept-button-text: تعيين 
+        mark-as-ready-modal-not-adhoc-accept-button-text: تعيين
         mark-as-ready-modal-title: هل تريد تحديد الطلب كجاهز؟
         mark-as-ready-modal-body: تحديد الطلب كجاهز سيؤدي إلى إرسال الطلب إلى السائقين القريبين، حدد الطلب كجاهز فقط عندما يمكن استلامه.
         mark-as-ready-modal-accept-button-text: إرسال!
@@ -639,4 +639,3 @@ storefront:
       storefront-create-success: تم إنشاء واجهتك الجديدة!
   application:
     launch-app: تشغيل التطبيق
-
