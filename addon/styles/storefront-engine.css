@@ -4,3 +4,10 @@
 .ui-combo-box .selected-list a.combo-box-option.selected:hover {
     background-color: #76a9fa !important;
 }
+
+/** hotfix tag input */
+.emberTagInput.form-input {
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    height: auto !important;
+}

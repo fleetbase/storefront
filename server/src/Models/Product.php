@@ -305,23 +305,22 @@ class Product extends StorefrontModel
             // get uuid if set
             $id = data_get($addonCategory, 'uuid');
 
-            // Make sure product is set
-            data_set($addonCategory, 'product_uuid', $this->uuid);
-
-            // update product addon category
-            if (Str::isUuid($id)) {
-                ProductAddonCategory::where('uuid', $id)->update(Arr::except($addonCategory, ['uuid', 'created_at', 'updated_at', 'name', 'category']));
-                continue;
-            }
-
-            // create new product addon category
-            ProductAddonCategory::create([
+            $upsertableAddonCategory = [
                 'product_uuid'    => $this->uuid,
                 'category_uuid'   => data_get($addonCategory, 'category_uuid'),
                 'excluded_addons' => data_get($addonCategory, 'excluded_addons'),
                 'max_selectable'  => data_get($addonCategory, 'max_selectable'),
                 'is_required'     => data_get($addonCategory, 'is_required'),
-            ]);
+            ];
+
+            // update product addon category
+            if (Str::isUuid($id)) {
+                ProductAddonCategory::where('uuid', $id)->update($upsertableAddonCategory);
+                continue;
+            }
+
+            // create new product addon category
+            ProductAddonCategory::create($upsertableAddonCategory);
         }
 
         return $this;
