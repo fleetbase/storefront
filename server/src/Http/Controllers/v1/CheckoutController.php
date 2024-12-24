@@ -14,6 +14,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
 use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
+use Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
@@ -25,8 +26,11 @@ use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Support\StripeUtils;
+use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Stripe\Exception\InvalidRequestException;
 
@@ -41,7 +45,7 @@ class CheckoutController extends Controller
         $isCashOnDelivery = $request->input('cash') || $gatewayCode === 'cash';
         $isPickup         = $request->input('pickup', false);
         $tip              = $request->input('tip', false);
-        $deliveryTip      = $request->or(['delivery_tip', 'deliveryTip'], false);
+        $deliveryTip      = $request->or(['deliveryTip', 'delivery_tip'], false);
 
         // create checkout options
         $checkoutOptions = Utils::createObject([
@@ -63,7 +67,7 @@ class CheckoutController extends Controller
         }
 
         if (!$gateway) {
-            return response()->error('No gateway configured!');
+            return response()->apiError('No gateway configured!');
         }
 
         // handle checkout initialization based on gateway
@@ -72,11 +76,11 @@ class CheckoutController extends Controller
         }
 
         // handle checkout initialization based on gateway
-        if ($gateway->isQpayGateway) {
-            return static::initializeQpayCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions);
+        if ($gateway->isQPayGateway) {
+            return static::initializeQPayCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions);
         }
 
-        return response()->error('Unable to initialize checkout!');
+        return response()->apiError('Unable to initialize checkout!');
     }
 
     public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
@@ -86,7 +90,7 @@ class CheckoutController extends Controller
 
         // get amount/subtotal
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
-        $currency = $cart->currency ?? session('storefront_currency');
+        $currency = $cart->getCurrency();
 
         // get store id if applicable
         $storeId = session('storefront_store');
@@ -135,11 +139,11 @@ class CheckoutController extends Controller
 
         // get amount/subtotal
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
-        $currency = $cart->currency ?? session('storefront_currency');
+        $currency = $cart->getCurrency();
 
         // check for secret key first
         if (!isset($gateway->config->secret_key)) {
-            return response()->error('Gateway not configured correctly!');
+            return response()->apiError('Gateway not configured correctly!');
         }
 
         // Set the stipre secret key from gateway
@@ -169,15 +173,27 @@ class CheckoutController extends Controller
                     ['stripe_version' => '2020-08-27']
                 );
             } else {
-                return response()->error('Error from Stripe: ' . $errorMessage);
+                return response()->apiError('Error from Stripe: ' . $errorMessage);
             }
         }
 
-        $paymentIntent = \Stripe\PaymentIntent::create([
-            'amount'   => $amount,
+        // Prepare payment intent data
+        $paymentIntentData = [
+            'amount'   => Utils::formatAmountForStripe($amount, $currency),
             'currency' => $currency,
             'customer' => $customer->getMeta('stripe_id'),
-        ]);
+        ];
+
+        // Check if customer has a saved default payment method
+        if (StripeUtils::isCustomerPaymentMethodValid($customer)) {
+            $paymentIntentData['payment_method'] = $$customer->getMeta('stripe_payment_method_id');
+        }
+
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::create($paymentIntentData);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
 
         // create checkout token
         $checkout = Checkout::create([
@@ -197,14 +213,212 @@ class CheckoutController extends Controller
         ]);
 
         return response()->json([
-            'paymentIntent' => $paymentIntent->client_secret,
+            'paymentIntent' => $paymentIntent->id,
+            'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
             'token'         => $checkout->token,
         ]);
     }
 
-    public static function initializeQpayCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public function createStripeSetupIntentForCustomer(CreateStripeSetupIntentRequest $request)
+    {
+        $customerId = $request->input('customer');
+        $gateway    = Storefront::findGateway('stripe');
+
+        if (!$gateway) {
+            return response()->apiError('Stripe not setup.');
+        }
+
+        $customer = Customer::findFromCustomerId($customerId);
+
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        // Ensure customer has a stripe_id
+        if ($customer->missingMeta('stripe_id')) {
+            Storefront::createStripeCustomerForContact($customer);
+        }
+
+        // Prepare payment intent data
+        $paymentIntentData = [
+            'customer' => $customer->getMeta('stripe_id'),
+        ];
+
+        // Check if customer has a saved default payment method
+        if (StripeUtils::isCustomerPaymentMethodValid($customer)) {
+            $paymentIntentData['payment_method'] = $$customer->getMeta('stripe_payment_method_id');
+        }
+
+        try {
+            // Create SetupIntent
+            $setupIntent = \Stripe\SetupIntent::create($paymentIntentData);
+
+            $defaultPaymentMethod = null;
+            $savedPaymentMethodId = $customer->getMeta('stripe_payment_method_id');
+
+            if ($savedPaymentMethodId) {
+                // Attempt to retrieve the stored payment method from Stripe
+                try {
+                    $pm = \Stripe\PaymentMethod::retrieve($savedPaymentMethodId);
+                    if ($pm && $pm->customer === $customer->getMeta('stripe_id')) {
+                        $defaultPaymentMethod = [
+                            'paymentMethodId'        => $pm->id,
+                            'id'                     => $pm->id,
+                            'brand'                  => Str::title($pm->card->brand),
+                            'last4'                  => $pm->card->last4,
+                            'label'                  => $pm->card->last4,
+                            'exp_month'              => $pm->card->exp_month,
+                            'exp_year'               => $pm->card->exp_year,
+                            'country'                => $pm->card->country,
+                            'funding'                => $pm->card->funding,
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    // If retrieval fails, we just won't have a defaultPaymentMethod
+                    Log::warning('Failed to retrieve saved payment method from Stripe: ' . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                'setupIntent'          => $setupIntent->id,
+                'clientSecret'         => $setupIntent->client_secret,
+                'defaultPaymentMethod' => $defaultPaymentMethod,
+            ]);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
+    }
+
+    public function updateStripePaymentIntent(Request $request)
+    {
+        // Extract necessary parameters from request
+        $customerId        = $request->input('customer');
+        $cartId            = $request->input('cart');
+        $serviceQuoteId    = $request->or(['serviceQuote', 'service_quote']);
+        $paymentIntentId   = $request->or(['paymentIntent', 'paymentIntentId', 'payment_intent_id']);
+        $isPickup          = $request->input('pickup', false);
+        $tip               = $request->input('tip', false);
+        $deliveryTip       = $request->or(['deliveryTip', 'delivery_tip'], false);
+
+        // Create checkout options from request
+        $checkoutOptions = Utils::createObject([
+            'is_pickup'    => $isPickup,
+            'tip'          => $tip,
+            'delivery_tip' => $deliveryTip,
+        ]);
+
+        // Retrieve the gateway (stripe)
+        $gateway = Storefront::findGateway('stripe');
+        if (!$gateway) {
+            return response()->apiError('No stripe gateway configured!');
+        }
+
+        // Retrieve and validate necessary models
+        $cart = Cart::retrieve($cartId);
+        if (!$cart) {
+            return response()->apiError('Invalid cart ID provided');
+        }
+
+        $customer = Customer::findFromCustomerId($customerId);
+        if (!$customer) {
+            return response()->apiError('Invalid customer ID provided');
+        }
+
+        $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])
+            ->where('public_id', $serviceQuoteId)
+            ->first();
+        if (!$serviceQuote) {
+            return response()->apiError('Invalid service quote ID provided');
+        }
+
+        // Recalculate amount based on cart, serviceQuote, and checkoutOptions
+        $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
+        $currency = $cart->getCurrency();
+
+        // Check for Stripe secret key
+        if (!isset($gateway->config->secret_key)) {
+            return response()->apiError('Gateway not configured correctly!');
+        }
+
+        // Set Stripe API key
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        // Ensure customer has a stripe_id
+        if ($customer->missingMeta('stripe_id')) {
+            Storefront::createStripeCustomerForContact($customer);
+        }
+
+        // Retrieve the existing PaymentIntent
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
+        } catch (\Exception $e) {
+            return response()->apiError('Failed to retrieve PaymentIntent: ' . $e->getMessage());
+        }
+
+        // Check if PaymentIntent is in a modifiable state
+        $modifiableStatuses = ['requires_payment_method', 'requires_confirmation', 'requires_action', 'processing'];
+        if (!in_array($paymentIntent->status, $modifiableStatuses)) {
+            return response()->apiError('PaymentIntent cannot be updated at this stage.');
+        }
+
+        // Prepare the updated data
+        $updateData = [
+            'amount'   => Utils::formatAmountForStripe($amount, $currency),
+            'currency' => $currency,
+        ];
+
+        // Update the PaymentIntent
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::update($paymentIntentId, $updateData);
+        } catch (\Exception $e) {
+            return response()->apiError('Failed to update PaymentIntent: ' . $e->getMessage());
+        }
+
+        // If payment intent has a payment method set already update for the customer
+        $paymentIntentPaymentMethodId = $paymentIntent->payment_method;
+        $customerPaymentMethodId      = $customer->getMeta('stripe_payment_method_id');
+        if ($paymentIntentPaymentMethodId !== $customerPaymentMethodId) {
+            $customer->updateMeta('stripe_payment_method_id', $paymentIntentPaymentMethodId);
+        }
+
+        // Create a new EphemeralKey if needed for the frontend
+        try {
+            $ephemeralKey = \Stripe\EphemeralKey::create(
+                ['customer' => $customer->getMeta('stripe_id')],
+                ['stripe_version' => '2020-08-27']
+            );
+        } catch (\Exception $e) {
+            return response()->apiError('Failed to create ephemeral key: ' . $e->getMessage());
+        }
+
+        // Create a new checkout token
+        $checkout = Checkout::create([
+            'company_uuid'       => session('company'),
+            'store_uuid'         => session('storefront_store'),
+            'network_uuid'       => session('storefront_network'),
+            'cart_uuid'          => $cart->uuid,
+            'gateway_uuid'       => $gateway->uuid,
+            'service_quote_uuid' => $serviceQuote->uuid,
+            'owner_uuid'         => $customer->uuid,
+            'owner_type'         => 'fleet-ops:contact',
+            'amount'             => $amount,
+            'currency'           => $currency,
+            'is_pickup'          => $isPickup,
+            'options'            => $checkoutOptions,
+            'cart_state'         => $cart->toArray(),
+        ]);
+
+        // Return JSON response with updated PaymentIntent and ephemeral key
+        return response()->json([
+            'paymentIntent' => $paymentIntent->id,
+            'clientSecret'  => $paymentIntent->client_secret,
+            'ephemeralKey'  => $ephemeralKey->secret,
+            'customerId'    => $customer->getMeta('stripe_id'),
+            'token'         => $checkout->token,
+        ]);
+    }
+
+    public static function initializeQPayCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
     {
         // Get store info
         $about = Storefront::about();
@@ -214,11 +428,11 @@ class CheckoutController extends Controller
 
         // get amount/subtotal
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
-        $currency = $cart->currency ?? session('storefront_currency');
+        $currency = $cart->getCurrency();
 
         // check for secret key first
         if (!isset($gateway->config->username)) {
-            return response()->error('Gateway not configured correctly!');
+            return response()->apiError('Gateway not configured correctly!');
         }
 
         // Create qpay instance
@@ -231,15 +445,8 @@ class CheckoutController extends Controller
         // Set auth token
         $qpay = $qpay->setAuthToken();
 
-        // Create invoice description
-        $invoiceAmount       = round($amount / 100);
-        $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
-        $invoiceDescription  = $about->name . ' cart checkout';
-        $invoiceReceiverCode = $gateway->public_id;
-        $senderInvoiceNo     = $cart->id;
-
-        // Create qpay invoice
-        $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
+        // Test payment
+        $testPayment = is_string(data_get($checkoutOptions, 'testPayment')) && $gateway->sandbox;
 
         // Create checkout token
         $checkout = Checkout::create([
@@ -258,10 +465,101 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
+        // Set QPay Callback
+        $callbackParams = ['checkout' => $checkout->public_id];
+        if ($testPayment) {
+            $callbackParams['test'] = data_get($checkoutOptions, 'testPayment');
+        }
+        $callbackUrl = Utils::apiUrl('storefront/v1/checkouts/capture-qpay', $callbackParams);
+
+        // Create invoice description
+        // $invoiceAmount       = round($amount / 100);
+        $invoiceAmount       = $amount;
+        $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
+        $invoiceDescription  = $about->name . ' cart checkout';
+        $invoiceReceiverCode = $gateway->public_id;
+        $senderInvoiceNo     = $cart->id;
+
+        // Create qpay invoice
+        $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
+
+        // Update checkout with invoice id
+        $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
+
         return response()->json([
-            'invoice' => $invoice,
-            'token'   => $checkout->token,
+            'invoice'  => $invoice,
+            'checkout' => $checkout->public_id,
+            'token'    => $checkout->token,
         ]);
+    }
+
+    public function captureQPayCallback(Request $request)
+    {
+        $checkoutId = $request->input('checkout');
+        $respond    = $request->boolean('respond');
+        $test       = $request->input('test'); // success, error
+
+        if ($checkoutId) {
+            // Get the checkout instance
+            $checkout = Checkout::where('public_id', $checkoutId)->first();
+            if ($checkout) {
+                // Restore the payment gateway instance
+                $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
+                if ($gateway) {
+                    try {
+                        // If testing send back test data
+                        // Handle test below
+                        if ($gateway->sandbox && is_string($test) && in_array($test, ['success', 'error'])) {
+                            $data = ['error' => null, 'checkout' => $checkout->public_id, 'payment' => null];
+                            if ($test === 'success') {
+                                $data['payment'] = QPay::createTestPaymentDataFromCheckout($checkout);
+                            } else {
+                                $data['error'] = ['error' => 'PAYMENT_NOT_PAID', 'message' => 'Payment has not paid!'];
+                            }
+
+                            SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+                            if ($respond) {
+                                return response()->json($data);
+                            }
+
+                            return;
+                        }
+
+                        // Create qpay instance
+                        $qpay = QPay::instance($gateway->config->username, $gateway->config->password, $gateway->callback_url);
+                        if ($gateway->sandbox) {
+                            $qpay = $qpay->useSandbox();
+                        }
+
+                        // Set auth token
+                        $qpay = $qpay->setAuthToken();
+
+                        // Check payment status from qpay
+                        $payment = $qpay->paymentGet($checkoutId);
+                        if ($payment) {
+                            $data = [];
+                            if ($payment->error) {
+                                $data = ['error' => (array) $payment, 'checkout' => $checkout->public_id, 'payment' => null];
+                            } else {
+                                $data = ['payment' =>(array) $payment, 'checkout' => $checkout->public_id, 'error' => null];
+                            }
+
+                            SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+                            if ($respond) {
+                                return response()->json($data);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('[QPAY CHECKOUT ERROR: ' . $e->getMessage() . ']', $checkout->toArray());
+                        if ($respond) {
+                            return response()->apiError($e->getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return response()->json();
     }
 
     /**
@@ -327,7 +625,7 @@ class CheckoutController extends Controller
 
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
-        $currency = $checkout->currency ?? ($cart->currency ?? session('storefront_currency'));
+        $currency = $checkout->currency ?? $cart->getCurrency();
         $store    = $about;
 
         // check if order is via network for a single store
@@ -348,7 +646,7 @@ class CheckoutController extends Controller
 
         // super rare condition
         if (!$store) {
-            return response()->error('No storefront in request to capture order!');
+            return response()->apiError('No storefront in request to capture order!');
         }
 
         // prepare for integrated vendor order if applicable
@@ -360,7 +658,7 @@ class CheckoutController extends Controller
             try {
                 $integratedVendorOrder = $serviceQuote->integratedVendor->api()->createOrderFromServiceQuote($serviceQuote, $request);
             } catch (\Exception $e) {
-                return response()->error($e->getMessage());
+                return response()->apiError($e->getMessage());
             }
         }
 
@@ -601,10 +899,10 @@ class CheckoutController extends Controller
         $cart        = $checkout->cart;
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
-        $currency = $checkout->currency ?? ($cart->currency ?? session('storefront_currency'));
+        $currency = $checkout->currency ?? $cart->getCurrency();
 
         if (!$about) {
-            return response()->error('No network in request to capture order!');
+            return response()->apiError('No network in request to capture order!');
         }
 
         // prepare for integrated vendor order if applicable
@@ -616,7 +914,7 @@ class CheckoutController extends Controller
             try {
                 $integratedVendorOrder = $serviceQuote->integratedVendor->api()->createOrderFromServiceQuote($serviceQuote, $request);
             } catch (\Exception $e) {
-                return response()->error($e->getMessage());
+                return response()->apiError($e->getMessage());
             }
         }
 

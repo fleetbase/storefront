@@ -293,14 +293,14 @@
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.tips_enabled}} @onToggle={{fn (mut @model.options.tips_enabled)}}>
                         <FaIcon @icon="cash-register" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
-                                "storefront.settings.index.enable-tip"
+                                "storefront.settings.index.enable-tips"
                             }}</span>
                     </Toggle>
                 </div>
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.delivery_tips_enabled}} @onToggle={{fn (mut @model.options.delivery_tips_enabled)}}>
                         <FaIcon @icon="face-smile" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
-                                "storefront.settings.index.enable-integrated-vendors"
+                                "storefront.settings.index.enable-delivery-tips"
                             }}</span>
                     </Toggle>
                 </div>
