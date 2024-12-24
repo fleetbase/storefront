@@ -4,11 +4,12 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Resources\Gateway as GatewayResource;
-use Fleetbase\Storefront\Http\Resources\Network;
+use Fleetbase\Storefront\Http\Resources\Network as NetworkResource;
 use Fleetbase\Storefront\Http\Resources\Product as ProductResource;
-use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
+use Fleetbase\Storefront\Http\Resources\Store as StorefrontResource;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StoreLocationResource;
 use Fleetbase\Storefront\Models\Gateway;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
@@ -32,10 +33,34 @@ class StoreController extends Controller
         }
 
         if ($about->is_store) {
-            return new StorefrontStore($about);
+            return new StorefrontResource($about);
         }
 
-        return new Network($about);
+        return new NetworkResource($about);
+    }
+
+    /**
+     * Lookup a store or network provided the ID.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function lookup(?string $id)
+    {
+        if (!$id) {
+            return response()->apiError('No ID provided for lookup.');
+        }
+
+        $store = Store::where(['public_id' => $id, 'company_uuid' => session('company')])->first();
+        if ($store) {
+            return new StorefrontResource($store);
+        }
+
+        $network = Network::where(['public_id' => $id, 'company_uuid' => session('company')])->first();
+        if ($network) {
+            return new NetworkResource($network);
+        }
+
+        return response()->apiError('Unable to find store or network for ID provided.');
     }
 
     /**
@@ -125,7 +150,12 @@ class StoreController extends Controller
         $ownerId = session('storefront_store') ?? session('storefront_network');
 
         $sandbox = $request->input('sandbox', false);
-        $query   = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])->where(['public_id' => $id, 'owner_uuid' => $ownerId]);
+        $query   = Gateway::select(['public_id', 'name', 'code', 'type', 'sandbox', 'return_url', 'callback_url'])
+            ->where(['owner_uuid' => $ownerId])
+            ->where(function ($q) use ($id) {
+                $q->where('public_id', $id);
+                $q->orWhere('code', $id);
+            });
 
         if ($sandbox) {
             $query->where('sandbox', 1);

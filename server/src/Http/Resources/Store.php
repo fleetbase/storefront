@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
+use Fleetbase\Support\Utils;
 
 class Store extends FleetbaseResource
 {
@@ -16,6 +17,8 @@ class Store extends FleetbaseResource
      */
     public function toArray($request)
     {
+        $currency = $this->currency ?? 'USD';
+
         return [
             'id'              => $this->when(Http::isInternalRequest(), $this->id, $this->public_id),
             'uuid'            => $this->when(Http::isInternalRequest(), $this->uuid),
@@ -35,7 +38,8 @@ class Store extends FleetbaseResource
             'email'           => $this->email,
             'phone'           => $this->phone,
             'tags'            => $this->tags ?? [],
-            'currency'        => $this->currency ?? 'USD',
+            'currency'        => $currency,
+            'country'         => Utils::getCountryCodeByCurrency($currency, 'US'),
             'options'         => $this->formatOptions($this->options),
             'logo_url'        => $this->logo_url,
             'backdrop_url'    => $this->backdrop_url,

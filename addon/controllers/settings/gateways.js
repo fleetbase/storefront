@@ -8,6 +8,7 @@ import getGatewaySchemas from '../../utils/get-gateway-schemas';
 export default class SettingsGatewaysController extends Controller {
     @service notifications;
     @service intl;
+    @service hostRouter;
     @service modalsManager;
     @service store;
     @service crud;
@@ -33,7 +34,7 @@ export default class SettingsGatewaysController extends Controller {
                     return;
                 }
 
-                this.gateways.pushObject(gateway);
+                this.hostRouter.refresh();
             },
         });
     }
@@ -70,25 +71,20 @@ export default class SettingsGatewaysController extends Controller {
 
                 set(gateway.config, key, value);
             },
-            confirm: (modal, done) => {
+            confirm: async (modal, done) => {
                 modal.startLoading();
 
-                gateway
-                    .save()
-                    .then((gateway) => {
-                        if (typeof options.successNotification === 'function') {
-                            this.notifications.success(options.successNotification(gateway));
-                        } else {
-                            this.notifications.success(options.successNotification || `${gateway.name} details updated.`);
-                        }
-
-                        done();
-                    })
-                    .catch((error) => {
-                        // gateway.rollbackAttributes();
-                        modal.stopLoading();
-                        this.notifications.serverError(error);
-                    });
+                try {
+                    await gateway.save();
+                    if (typeof options.successNotification === 'function') {
+                        this.notifications.success(options.successNotification(gateway));
+                    } else {
+                        this.notifications.success(options.successNotification || `${gateway.name} details updated.`);
+                    }
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
             ...options,
         });

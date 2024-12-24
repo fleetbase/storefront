@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Company;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\Expirable;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicId;
@@ -294,11 +295,10 @@ class Cart extends StorefrontModel
     /**
      * Adds an item to cart.
      *
-     * @param \Fleetbase\Models\Storefront\Product $product
-     * @param int                                  $quantity
-     * @param array                                $variants
-     * @param array                                $addons
-     * @param string                               $createdAt
+     * @param int    $quantity
+     * @param array  $variants
+     * @param array  $addons
+     * @param string $createdAt
      */
     public function addItem(Product $product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
     {
@@ -672,5 +672,10 @@ class Cart extends StorefrontModel
     public static function findProduct(string $id): ?Product
     {
         return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale'])->where(['public_id' => $id])->with([])->first();
+    }
+
+    public function getCurrency(?string $fallbackCurrency = null): ?string
+    {
+        return $this->currency ?? session('storefront_currency', $fallbackCurrency);
     }
 }

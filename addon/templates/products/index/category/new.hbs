@@ -23,6 +23,9 @@
             <InputGroup @name="Product Description" @helpText="Enter a description of your product">
                 <Textarea @value={{this.product.description}} class="form-input w-full" placeholder="Enter a description of your product...." disabled={{unauthorized}} rows={{4}} />
             </InputGroup>
+            <InputGroup @name="Product Status">
+                <Select class="w-full" @value={{this.product.status}} @placeholder="Select product status" @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} />
+            </InputGroup>
             <InputGroup @name="Product Tags">
                 <TagInput
                     class="form-input"
@@ -261,7 +264,7 @@
                                                 {{addon.description}}
                                             </div>
                                             <div class="col-span-2">
-                                                {{format-currency addon.price}}
+                                                {{format-currency addon.price this.product.currency}}
                                             </div>
                                         </div>
                                     {{/each}}

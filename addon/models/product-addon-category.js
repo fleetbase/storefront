@@ -12,6 +12,8 @@ export default class ProductAddonCategoryModel extends Model {
 
     /** @attributes */
     @attr('string') name;
+    @attr('number') max_selectable;
+    @attr('boolean') is_required;
     @attr('raw') excluded_addons;
 
     /** @dates */
@@ -25,6 +27,7 @@ export default class ProductAddonCategoryModel extends Model {
             category_uuid: this.category_uuid,
             product_uuid: this.product_uuid,
             name: this.name,
+            max_selectable: this.max_selectable,
             excluded_addons: getWithDefault(this, 'excluded_addons', []),
             updated_at: this.updated_at,
             created_at: this.created_at,

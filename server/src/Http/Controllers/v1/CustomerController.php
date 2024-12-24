@@ -251,6 +251,14 @@ class CustomerController extends Controller
         // always customer type
         $input['type'] = 'customer';
 
+        // If setting a default location for the contact
+        if ($request->has('place')) {
+            $input['place_uuid'] = Utils::getUuid('places', [
+                'public_id'    => $request->input('place'),
+                'company_uuid' => session('company'),
+            ]);
+        }
+
         // update the contact
         $contact->update($input);
 
@@ -473,5 +481,74 @@ class CustomerController extends Controller
         }
 
         return $phone;
+    }
+
+    public function getStripeEphemeralKey(Request $request)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->error('Not authorized to view customers places');
+        }
+
+        $gateway    = Storefront::findGateway('stripe');
+        if (!$gateway) {
+            return response()->apiError('Stripe not setup.');
+        }
+
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        // Ensure customer has a stripe_id
+        if ($customer->missingMeta('stripe_id')) {
+            Storefront::createStripeCustomerForContact($customer);
+        }
+
+        try {
+            // Create Ephemeral Key
+            $ephemeralKey = \Stripe\EphemeralKey::create(
+                ['customer' => $customer->getMeta('stripe_id')],
+                ['stripe_version' => '2020-08-27']
+            );
+
+            return response()->json([
+                'ephemeralKey'          => $ephemeralKey->secret,
+                'customer'              => $customer->getMeta('stripe_id'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
+    }
+
+    public function getStripeSetupIntent(Request $request)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->error('Not authorized to view customers places');
+        }
+
+        $gateway    = Storefront::findGateway('stripe');
+        if (!$gateway) {
+            return response()->apiError('Stripe not setup.');
+        }
+
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        // Ensure customer has a stripe_id
+        if ($customer->missingMeta('stripe_id')) {
+            Storefront::createStripeCustomerForContact($customer);
+        }
+
+        try {
+            // Create SetupIntent
+            $setupIntent = \Stripe\SetupIntent::create([
+                'customer' => $customer->getMeta('stripe_id'),
+            ]);
+
+            return response()->json([
+                'setupIntentId'          => $setupIntent->id,
+                'setupIntent'            => $setupIntent->client_secret,
+            ]);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
     }
 }

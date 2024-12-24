@@ -35,6 +35,7 @@ class ProductAddonCategory extends StorefrontModel
         'category_uuid',
         'excluded_addons',
         'max_selectable',
+        'is_required',
     ];
 
     /**
@@ -44,6 +45,7 @@ class ProductAddonCategory extends StorefrontModel
      */
     protected $casts = [
         'excluded_addons' => Json::class,
+        'is_required'     => 'boolean',
     ];
 
     /**

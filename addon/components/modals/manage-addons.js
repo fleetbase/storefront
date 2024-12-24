@@ -117,8 +117,12 @@ export default class ModalsManageAddonsComponent extends Component {
             owner_uuid: this.activeStore.id,
         });
 
-        yield category.save();
-        this.categories.pushObject(category);
+        try {
+            yield category.save();
+            this.categories.pushObject(category);
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
     }
 
     /**

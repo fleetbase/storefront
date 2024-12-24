@@ -21,11 +21,12 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @service crud;
     @service hostRouter;
     @alias('storefront.activeStore') activeStore;
-    @tracked product = this.store.createRecord('product', { store_uuid: this.activeStore.id, currency: this.activeStore.currency, tags: [], meta_array: [] });
+    @tracked product = this.store.createRecord('product', { store_uuid: this.activeStore.id, currency: this.activeStore.currency, tags: [], meta_array: [], status: 'published' });
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
     @tracked primaryFile = null;
     @tracked isSaving = false;
+    @tracked statusOptions = ['published', 'draft'];
     abilityPermission = 'storefront create product';
 
     /** overlay options */

@@ -41,6 +41,8 @@ class ProductController extends StorefrontController
                 $variants        = $request->array('product.variants');
                 $files           = $request->array('product.files');
 
+                // dd($addonCategories);
+
                 // save addon categories
                 $product->setAddonCategories($addonCategories);
 

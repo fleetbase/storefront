@@ -598,7 +598,8 @@ storefront:
       proof-of-delivery-method: Proof of Delivery Method
       enable-cash-on-delivery: Enable cash on delivery
       enable-order-pickup: Enable order pickup
-      enable-tip: Enable tips
+      enable-tips: Enable tips
+      enable-delivery-tips: Enable delivery tips
       enable-integrated-vendors: Enable integrated vendors
       save-changes: Save Changes
     locations:
