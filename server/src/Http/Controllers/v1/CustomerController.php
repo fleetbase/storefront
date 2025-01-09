@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\FleetOps\Exceptions\UserAlreadyExistsException;
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
 use Fleetbase\FleetOps\Http\Resources\v1\Order as OrderResource;
@@ -174,7 +175,6 @@ class CustomerController extends Controller
 
         // verify code
         $isVerified = VerificationCode::where(['code' => $code, 'for' => 'storefront_create_customer', 'meta->identity' => $identity])->exists();
-
         if (!$isVerified) {
             return response()->error('Invalid verification code provided!');
         }
@@ -209,13 +209,21 @@ class CustomerController extends Controller
         ];
 
         // create the customer/contact
-        $customer = Contact::create($input);
+        try {
+            $customer = Contact::create($input);
+        } catch (UserAlreadyExistsException $e) {
+            // If the exception is thrown because user already exists and
+            // that user is the same user already assigned continue
+            $customer = Contact::where(['company_uuid' => session('company'), 'phone' => $input['phone']])->first();
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
 
         // generate auth token
         try {
             $token = $user->createToken($customer->uuid);
         } catch (\Exception $e) {
-            return response()->error($e->getMessage());
+            return response()->apiError($e->getMessage());
         }
 
         $customer->token = $token->plainTextToken;

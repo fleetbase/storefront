@@ -310,7 +310,7 @@ class Store extends StorefrontModel
      *
      * @param string $id the ID of the network for which the category is to be retrieved
      *
-     * @return \Fleetbase\Models\Category|null the category of the store in the given network, or null if the store does not belong to the network
+     * @return Category|null the category of the store in the given network, or null if the store does not belong to the network
      */
     public function getNetworkCategoryUsingId(?string $id)
     {
@@ -334,7 +334,7 @@ class Store extends StorefrontModel
      *
      * @param Network $network the network for which the category is to be retrieved
      *
-     * @return \Fleetbase\Models\Category|null the category of the store in the given network, or null if the store does not belong to the network
+     * @return Category|null the category of the store in the given network, or null if the store does not belong to the network
      */
     public function getNetworkCategory(Network $network)
     {

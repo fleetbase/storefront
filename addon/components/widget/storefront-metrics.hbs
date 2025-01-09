@@ -1,17 +1,14 @@
-<div class="storefront-metrics-widget" {{did-insert this.setupWidget}} ...attributes>
+<div class="storefront-metrics-widget" ...attributes>
     <div class="flex items-center justify-between">
         <div class="flex items-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mr-2">
                 {{t "storefront.component.widget.storefront-metrics.last-day"}}
             </h3>
-            {{#if this.isLoading}}
+            {{#if this.loadMetrics.isRunning}}
                 <div>
                     <Spinner class="text-sky-400" />
                 </div>
             {{/if}}
-        </div>
-        <div>
-
         </div>
     </div>
     <dl class="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-4">
@@ -35,7 +32,7 @@
 
         <div class="px-4 py-5 border border-gray-200 dark:border-gray-900 bg-gray-50 dark:bg-gray-700 shadow-sm dark:shadow rounded-lg overflow-hidden sm:p-6">
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-100 truncate">
-                {{t "storefront.common.orders"}}
+                {{pluralize this.metrics.stores_count (t "storefront.common.store") without-count=true}}
             </dt>
             <dd class="mt-1 text-3xl font-semibold text-gray-800 dark:text-white">
                 {{this.metrics.stores_count}}

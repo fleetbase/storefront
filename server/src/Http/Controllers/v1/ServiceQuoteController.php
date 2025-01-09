@@ -371,13 +371,13 @@ class ServiceQuoteController extends Controller
 
     /**
      * Returns a place from either a place id or store location id.
-     *
-     * @param string $id
-     *
-     * @return Place
      */
-    public function getPlaceFromId($id)
+    public function getPlaceFromId(string|array $id): ?Place
     {
+        if (is_array($id)) {
+            $id = implode(',', $id);
+        }
+
         if (Str::startsWith($id, 'store_location')) {
             $storeLocation = StoreLocation::select(['place_uuid'])->where(['public_id' => $id, 'store_uuid' => session('storefront_store')])->with(['place'])->first();
 

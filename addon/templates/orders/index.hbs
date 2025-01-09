@@ -9,11 +9,34 @@
     />
     <VisibleColumnPicker @columns={{this.columns}} @onChange={{fn (mut this.columns)}} class="mr-2" />
     {{#if (safe-has this.table "selectedRows")}}
-        <DropdownButton @icon="layer-group" @text={{t "storefront.common.bulk-action"}} @type="magic" @size="sm" @buttonWrapperClass="mr-2" @contentClass="dropdown-menu" @permission="storefront delete order" as |dd|>
+        <DropdownButton
+            @icon="layer-group"
+            @text={{t "storefront.common.bulk-action"}}
+            @type="magic"
+            @size="sm"
+            @buttonWrapperClass="mr-2"
+            @contentClass="dropdown-menu"
+            @permission="storefront delete order"
+            as |dd|
+        >
             <div class="next-dd-menu mt-2 mx-0">
                 <div class="px-1">
-                    <a href="#" class="text-red-500 next-dd-item" {{on "click" (dropdown-fn dd this.bulkDeleteOrders)}}>
-                        {{t "storefront.orders.index.delete-order"}}
+                    <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.bulkCancelOrders)}} disabled={{cannot "fleet-ops cancel order"}}>
+                        <div class="w-6"><FaIcon @icon="ban" @size="sm" /></div>
+                        <div>{{t "fleet-ops.operations.orders.index.cancel-orders"}}</div>
+                    </a>
+                </div>
+                <div class="px-1">
+                    <a href="javascript:;" class="text-red-500 next-dd-item" {{on "click" (dropdown-fn dd this.bulkDeleteOrders)}} disabled={{cannot "fleet-ops delete order"}}>
+                        <div class="w-6"><FaIcon @icon="trash" @size="sm" /></div>
+                        <div>{{t "fleet-ops.operations.orders.index.delete-orders"}}</div>
+                    </a>
+                </div>
+                <div class="next-dd-menu-seperator"></div>
+                <div class="px-1">
+                    <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.bulkDispatchOrders)}} disabled={{cannot "fleet-ops dispatch order"}}>
+                        <div class="w-6"><FaIcon @icon="rocket" @size="sm" /></div>
+                        <div>{{t "fleet-ops.operations.orders.index.dispatch-orders"}}</div>
                     </a>
                 </div>
             </div>

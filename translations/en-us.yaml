@@ -429,6 +429,7 @@ storefront:
       select-order-dropoff-location: Select order dropoff location
       scheduled-at: Scheduled At
       transaction-total: Transaction Total
+      total: Total
       tracking-number: Tracking Number
       driver-assigned: Driver Assigned
       select-driver-for-order: Select driver for order

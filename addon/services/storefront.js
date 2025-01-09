@@ -15,6 +15,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service hostRouter;
     @service abilities;
+    @service socket;
 
     /**
      * Gets the active store.

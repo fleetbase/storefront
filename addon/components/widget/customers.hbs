@@ -1,55 +1,73 @@
-<ContentPanel
-    @title={{this.title}}
-    @titleStatusRight={{this.customers.length}}
-    @titleStatusRightClass="info-status-badge"
-    @hideStatusDot={{true}}
-    @open={{this.customers.length}}
-    @pad={{false}}
-    @wrapperClass={{@wrapperClass}}
-    @onInsert={{this.getCustomers}}
->
-    {{#if this.isLoading}}
-        <div class="px-3 py-2">
-            <Spinner class="text-sky-400" />
-        </div>
-    {{/if}}
-    <div class="hidden md:flex table-wrapper table-fluid">
-        <table>
-            <thead>
-                <tr class="h-12 text-left py-1">
-                    <th>{{t "storefront.common.id"}}</th>
-                    <th>{{t "storefront.common.name"}}</th>
-                    <th>{{t "storefront.common.phone"}}</th>
-                    <th>{{t "storefront.common.email"}}</th>
-                    <th>{{t "storefront.common.orders"}}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each this.customers as |customer|}}
-                    <tr class="h-12">
-                        <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.customerId}}</a></td>
-                        <td>{{n-a customer.name}}</td>
-                        <td>{{n-a customer.phone}}</td>
-                        <td>{{n-a customer.email}}</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                {{/each}}
-            </tbody>
-        </table>
-    </div>
-    <div class="flex flex-col md:hidden p-3 space-y-3">
-        {{#each this.customers as |customer|}}
-            <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
-                <div class="flex flex-row">
-                    <div class="flex-1 font-semibold">{{customer.name}}</div>
-                </div>
-                <div class="flex flex-col">
-                    <div class="text-xs">{{t "storefront.component.widget.customers.phone"}}{{n-a customer.phone}}</div>
-                    <div class="text-xs">{{t "storefront.component.widget.customers.email"}} {{n-a customer.email}}</div>
+{{#if (and this.loadCustomers.isRunning (not this.loaded))}}
+    <div class="next-content-panel-wrapper">
+        <div class="next-content-panel-container">
+            <div class="next-content-panel next-content-panel-is-closed">
+                <div class="next-content-panel-header next-content-panel-toggle next-content-panel-is-closed">
+                    <a href="javascript:;" class="next-content-panel-header-left">
+                        <span class="icon-container">
+                            <Spinner class="text-sky-400" @height="13" @width="13" />
+                        </span>
+                        <div class="next-content-panel-title-container">
+                            <div class="panel-title flex-shrink-0">
+                                <div class="flex flex-col">
+                                    <span>{{this.title}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </div>
-        {{/each}}
+        </div>
     </div>
-</ContentPanel>
+{{else}}
+    <ContentPanel
+        @title={{this.title}}
+        @titleStatusRight={{this.customers.length}}
+        @titleStatusRightClass="info-status-badge"
+        @hideStatusDot={{true}}
+        @open={{gt this.customers.length 0}}
+        @isLoading={{this.loadCustomers.isRunning}}
+        @pad={{false}}
+        @wrapperClass={{@wrapperClass}}
+    >
+        <div class="hidden md:flex table-wrapper table-fluid">
+            <table>
+                <thead>
+                    <tr class="h-12 text-left py-1">
+                        <th>{{t "storefront.common.id"}}</th>
+                        <th>{{t "storefront.common.name"}}</th>
+                        <th>{{t "storefront.common.phone"}}</th>
+                        <th>{{t "storefront.common.email"}}</th>
+                        <th>{{t "storefront.common.orders"}}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each this.customers as |customer|}}
+                        <tr class="h-12">
+                            <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.customerId}}</a></td>
+                            <td>{{n-a customer.name}}</td>
+                            <td>{{n-a customer.phone}}</td>
+                            <td>{{n-a customer.email}}</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        <div class="flex flex-col md:hidden p-3 space-y-3">
+            {{#each this.customers as |customer|}}
+                <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
+                    <div class="flex flex-row">
+                        <div class="flex-1 font-semibold">{{customer.name}}</div>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="text-xs">{{t "storefront.component.widget.customers.phone"}}{{n-a customer.phone}}</div>
+                        <div class="text-xs">{{t "storefront.component.widget.customers.email"}} {{n-a customer.email}}</div>
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    </ContentPanel>
+{{/if}}

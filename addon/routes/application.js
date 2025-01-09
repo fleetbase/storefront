@@ -46,9 +46,7 @@ export default class ApplicationRoute extends Route {
     }
 
     afterModel(model) {
-        if (model.length) {
-            // this.storefront.listenForIncomingOrders();
-        }
+        this.storefront.listenForIncomingOrders();
     }
 
     disableSandbox() {

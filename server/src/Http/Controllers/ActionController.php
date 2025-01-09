@@ -87,9 +87,10 @@ class ActionController extends Controller
             ->where('meta->storefront_id', $store->public_id)
             ->with(['transaction'])
             ->whereNotIn('status', ['canceled'])
+            ->whereNull('deleted_at')
             ->get()
             ->sum(function ($order) {
-                return $order->transaction->amount;
+                return data_get($order, 'meta.total');
             });
 
         return response()->json($metrics);

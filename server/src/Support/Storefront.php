@@ -12,6 +12,7 @@ use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCreated;
+use Fleetbase\Support\Auth;
 use Fleetbase\Support\Utils;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redis;
@@ -201,6 +202,39 @@ class Storefront
         $customer->updateMeta('stripe_id', $stripeCustomer->id);
 
         return $stripeCustomer;
+    }
+
+    public static function patchOrderConfig(Order $order)
+    {
+        $orderConfig = $order->config();
+        if (!$orderConfig) {
+            $orderConfig = Storefront::getDefaultOrderConfig();
+            if ($orderConfig) {
+                $order->update(['order_config_uuid' => $orderConfig->uuid]);
+            }
+        }
+
+        return $orderConfig;
+    }
+
+    public static function getDefaultOrderConfig()
+    {
+        $company = Auth::getCompany();
+        if ($company) {
+            return static::getOrderConfig($company);
+        }
+
+        return null;
+    }
+
+    public static function getOrderConfig(Company $company)
+    {
+        $orderConfig = OrderConfig::where(['company_uuid' => $company->uuid, 'key' => 'storefront', 'namespace' => 'system:order-config:storefront'])->first();
+        if (!$orderConfig) {
+            $orderConfig = static::createStorefrontConfig($company);
+        }
+
+        return $orderConfig;
     }
 
     /**

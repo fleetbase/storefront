@@ -1,5 +1,4 @@
 import Component from '@glimmer/component';
-
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
@@ -12,7 +11,6 @@ export default class OrderPanelDetailsComponent extends Component {
     @service intl;
     @service appCache;
     @service modalsManager;
-    @tracked isLoading = true;
     @tracked orders = [];
 
     constructor() {
