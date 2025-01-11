@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Controllers;
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
+use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
 
 class OrderController extends FleetbaseOrderController
@@ -38,6 +39,9 @@ class OrderController extends FleetbaseOrderController
             ], 400);
         }
 
+        // Patch order config
+        Storefront::patchOrderConfig($order);
+
         // update activity to prepating
         $order->updateStatus('preparing');
         $order->customer->notify(new StorefrontOrderPreparing($order));
@@ -58,7 +62,7 @@ class OrderController extends FleetbaseOrderController
     {
         $adhoc  = $request->boolean('adhoc');
         $driver = $request->input('driver');
-        /** @var \Fleetbase\Models\Order $order */
+        /** @var Order $order */
         $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
 
         if (!$order) {
@@ -67,8 +71,11 @@ class OrderController extends FleetbaseOrderController
             ], 400);
         }
 
+        // Patch order config
+        Storefront::patchOrderConfig($order);
+
         if ($order->isMeta('is_pickup')) {
-            $order->updateStatus('ready');
+            $order->updateStatus('pickup_ready');
 
             return response()->json([
                 'status' => 'ok',
@@ -113,6 +120,9 @@ class OrderController extends FleetbaseOrderController
             ], 400);
         }
 
+        // Patch order config
+        Storefront::patchOrderConfig($order);
+
         // update activity to completed
         $order->updateStatus('completed');
 
@@ -137,6 +147,9 @@ class OrderController extends FleetbaseOrderController
                 'error' => 'No order to cancel!',
             ], 400);
         }
+
+        // Patch order config
+        Storefront::patchOrderConfig($order);
 
         // update activity to dispatched
         $order->updateStatus('cancel');

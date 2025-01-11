@@ -1,60 +1,39 @@
-import { action } from '@ember/object';
-import { inject as service } from '@ember/service';
-import { isBlank } from '@ember/utils';
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
-import { timeout } from 'ember-concurrency';
-import { task } from 'ember-concurrency-decorators';
+import { action, get } from '@ember/object';
+import { inject as service } from '@ember/service';
+import { isBlank } from '@ember/utils';
+import { isArray } from '@ember/array';
+import { timeout, task } from 'ember-concurrency';
 
 export default class OrdersIndexController extends BaseController {
-    /**
-     * Inject the `notifications` service
-     *
-     * @var {Service}
-     */
     @service notifications;
-
-    /**
-     * Inject the `intl` service
-     *
-     * @var {Service}
-     */
     @service intl;
-
-    /**
-     * Inject the `modals-manager` service
-     *
-     * @var {Service}
-     */
     @service modalsManager;
-
-    /**
-     * Inject the `crud` service
-     *
-     * @var {Service}
-     */
     @service crud;
-
-    /**
-     * Inject the `fetch` service
-     *
-     * @var {Service}
-     */
     @service fetch;
-
-    /**
-     * Inject the `filters` service
-     *
-     * @var {Service}
-     */
     @service filters;
+    @service hostRouter;
+    @service storefront;
+    @tracked page = 1;
+    @tracked limit;
+    @tracked query;
+    @tracked sort = '-created_at';
+    @tracked public_id;
+    @tracked internal_id;
+    @tracked tracking;
+    @tracked facilitator;
+    @tracked customer;
+    @tracked driver;
+    @tracked payload;
+    @tracked pickup;
+    @tracked dropoff;
+    @tracked updated_by;
+    @tracked created_by;
+    @tracked status;
+    @tracked currency = 'USD';
 
-    /**
-     * Queryable parameters for this controller's model
-     *
-     * @var {Array}
-     */
-    queryParams = [
+    @tracked queryParams = [
         'page',
         'limit',
         'sort',
@@ -73,33 +52,17 @@ export default class OrdersIndexController extends BaseController {
         'status',
     ];
 
-    @tracked page = 1;
-    @tracked limit;
-    @tracked query;
-    @tracked sort = '-created_at';
-    @tracked public_id;
-    @tracked internal_id;
-    @tracked tracking;
-    @tracked facilitator;
-    @tracked customer;
-    @tracked driver;
-    @tracked payload;
-    @tracked pickup;
-    @tracked dropoff;
-    @tracked updated_by;
-    @tracked created_by;
-    @tracked status;
-
     @tracked columns = [
         {
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
-            width: '150px',
+            width: '130px',
             cellComponent: 'table/cell/anchor',
             onClick: this.viewOrder,
             resizable: true,
             sortable: true,
             filterable: true,
+            filterComponent: 'filter/string',
         },
         {
             label: this.intl.t('storefront.orders.index.internal-id'),
@@ -108,16 +71,17 @@ export default class OrdersIndexController extends BaseController {
             resizable: true,
             sortable: true,
             filterable: true,
+            hidden: true,
             filterComponent: 'filter/string',
         },
         {
             label: this.intl.t('storefront.orders.index.customer'),
             valuePath: 'customer.name',
             cellComponent: 'table/cell/base',
-            width: '125px',
+            width: '100px',
             resizable: true,
             sortable: true,
-            hidden: true,
+            hidden: false,
             filterable: true,
             filterComponent: 'filter/model',
             filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-customer'),
@@ -125,10 +89,20 @@ export default class OrdersIndexController extends BaseController {
             model: 'customer',
         },
         {
+            label: this.intl.t('storefront.orders.index.total'),
+            cellComponent: 'table/cell/currency',
+            currency: this.currency,
+            valuePath: 'meta.total',
+            width: '100px',
+            resizable: true,
+            hidden: false,
+            sortable: true,
+        },
+        {
             label: this.intl.t('storefront.common.pickup'),
             valuePath: 'pickupName',
             cellComponent: 'table/cell/base',
-            width: '160px',
+            width: '150px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -141,7 +115,7 @@ export default class OrdersIndexController extends BaseController {
             label: this.intl.t('storefront.common.dropoff'),
             valuePath: 'dropoffName',
             cellComponent: 'table/cell/base',
-            width: '160px',
+            width: '150px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -151,49 +125,11 @@ export default class OrdersIndexController extends BaseController {
             model: 'place',
         },
         {
-            label: this.intl.t('storefront.orders.index.scheduled-at'),
-            valuePath: 'scheduledAt',
-            sortParam: 'scheduled_at',
-            filterParam: 'scheduled_at',
-            width: '150px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            label: '# Items',
-            cellComponent: 'table/cell/base',
-            valuePath: 'item_count',
-            resizable: true,
-            hidden: true,
-            width: '50px',
-        },
-        {
-            label: this.intl.t('storefront.orders.index.transaction-total'),
-            cellComponent: 'table/cell/base',
-            valuePath: 'transaction_amount',
-            width: '50px',
-            resizable: true,
-            hidden: true,
-            sortable: true,
-        },
-        {
-            label: this.intl.t('storefront.orders.index.tracking-number'),
-            cellComponent: 'table/cell/base',
-            valuePath: 'tracking_number.tracking_number',
-            width: '170px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
             label: this.intl.t('storefront.orders.index.driver-assigned'),
             cellComponent: 'table/cell/driver-name',
             valuePath: 'driver_assigned',
             modelPath: 'driver_assigned',
-            width: '170px',
+            width: '150px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -205,6 +141,36 @@ export default class OrdersIndexController extends BaseController {
                 // no model, serializer, adapter for relations
                 without: ['fleets', 'vendor', 'vehicle', 'currentJob'],
             },
+        },
+        {
+            label: this.intl.t('storefront.orders.index.scheduled-at'),
+            valuePath: 'scheduledAt',
+            sortParam: 'scheduled_at',
+            filterParam: 'scheduled_at',
+            width: '125px',
+            resizable: true,
+            sortable: true,
+            filterable: true,
+            hidden: true,
+            filterComponent: 'filter/date',
+        },
+        {
+            label: '# Items',
+            cellComponent: 'table/cell/base',
+            valuePath: 'item_count',
+            resizable: true,
+            hidden: true,
+            width: '50px',
+        },
+        {
+            label: this.intl.t('storefront.orders.index.tracking-number'),
+            cellComponent: 'table/cell/base',
+            valuePath: 'tracking_number.tracking_number',
+            width: '160px',
+            resizable: true,
+            sortable: true,
+            filterable: true,
+            filterComponent: 'filter/string',
         },
         {
             label: this.intl.t('storefront.common.type'),
@@ -219,7 +185,7 @@ export default class OrdersIndexController extends BaseController {
             label: this.intl.t('storefront.common.status'),
             valuePath: 'status',
             cellComponent: 'table/cell/status',
-            width: '120px',
+            width: '140px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -228,10 +194,10 @@ export default class OrdersIndexController extends BaseController {
         },
         {
             label: this.intl.t('storefront.orders.index.created-at'),
-            valuePath: 'createdAt',
+            valuePath: 'createdAtShort',
             sortParam: 'created_at',
             filterParam: 'created_at',
-            width: '140px',
+            width: '100px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -239,7 +205,7 @@ export default class OrdersIndexController extends BaseController {
         },
         {
             label: this.intl.t('storefront.orders.index.updated-at'),
-            valuePath: 'updatedAt',
+            valuePath: 'updatedAtShort',
             sortParam: 'updated_at',
             filterParam: 'updated_at',
             width: '125px',
@@ -282,25 +248,35 @@ export default class OrdersIndexController extends BaseController {
             ddMenuLabel: 'Order Actions',
             cellClassNames: 'overflow-visible',
             wrapperClass: 'flex items-center justify-end mx-2',
-            width: '12%',
+            width: '90px',
             actions: [
                 {
-                    label: this.intl.t('storefront.orders.index.view-order'),
+                    label: this.intl.t('fleet-ops.operations.orders.index.view-order'),
                     icon: 'eye',
                     fn: this.viewOrder,
+                    permission: 'fleet-ops view order',
                 },
                 {
-                    label: this.intl.t('storefront.orders.index.cancel-order'),
+                    label: this.intl.t('fleet-ops.operations.orders.index.dispatch-order'),
+                    icon: 'paper-plane',
+                    fn: this.dispatchOrder,
+                    permission: 'fleet-ops dispatch order',
+                    isVisible: (order) => order.canBeDispatched,
+                },
+                {
+                    label: this.intl.t('fleet-ops.operations.orders.index.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
+                    permission: 'fleet-ops cancel order',
                 },
                 {
                     separator: true,
                 },
                 {
-                    label: this.intl.t('storefront.orders.index.delete-order'),
+                    label: this.intl.t('fleet-ops.operations.orders.index.delete-order'),
                     icon: 'trash',
                     fn: this.deleteOrder,
+                    permission: 'fleet-ops delete order',
                 },
             ],
             sortable: false,
@@ -309,6 +285,11 @@ export default class OrdersIndexController extends BaseController {
             searchable: false,
         },
     ];
+
+    constructor() {
+        super(...arguments);
+        this.currency = get(this.storefront, 'activeStore.currency');
+    }
 
     /**
      * The search task.
@@ -336,5 +317,133 @@ export default class OrdersIndexController extends BaseController {
 
     @action viewOrder(order) {
         return this.transitionToRoute('orders.index.view', order);
+    }
+
+    /**
+     * Cancels a specific order after confirmation.
+     * @param {Object} order - The order to cancel.
+     * @param {Object} [options={}] - Additional options for the modal.
+     * @action
+     * @memberof OperationsOrdersIndexController
+     */
+    @action cancelOrder(order, options = {}) {
+        this.modalsManager.confirm({
+            title: this.intl.t('fleet-ops.operations.orders.index.cancel-title'),
+            body: this.intl.t('fleet-ops.operations.orders.index.cancel-body'),
+            order,
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch('orders/cancel', { order: order.id });
+                    order.set('status', 'canceled');
+                    this.notifications.success(this.intl.t('fleet-ops.operations.orders.index.cancel-success', { orderId: order.public_id }));
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+            ...options,
+        });
+    }
+
+    @action dispatchOrder(order, options = {}) {
+        this.modalsManager.confirm({
+            title: this.intl.t('fleet-ops.operations.orders.index.dispatch-title'),
+            body: this.intl.t('fleet-ops.operations.orders.index.dispatch-body'),
+            acceptButtonScheme: 'primary',
+            acceptButtonText: 'Dispatch',
+            acceptButtonIcon: 'paper-plane',
+            order,
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch('orders/dispatch', { order: order.id });
+                    order.set('status', 'dispatched');
+                    this.notifications.success(this.intl.t('fleet-ops.operations.orders.index.dispatch-success', { orderId: order.public_id }));
+                    modal.done();
+                } catch (error) {
+                    this.notifications.serverError(error);
+                    modal.stopLoading();
+                }
+            },
+            ...options,
+        });
+    }
+
+    @action deleteOrder(order, options = {}) {
+        this.crud.delete(order, {
+            onSuccess: () => {
+                return this.hostRouter.refresh();
+            },
+            ...options,
+        });
+    }
+
+    @action bulkDeleteOrders(selected = []) {
+        selected = selected.length > 0 ? selected : this.table.selectedRows;
+
+        this.crud.bulkDelete(selected, {
+            modelNamePath: `public_id`,
+            acceptButtonText: 'Delete Orders',
+            onSuccess: async () => {
+                await this.hostRouter.refresh();
+                this.table.untoggleSelectAll();
+            },
+        });
+    }
+
+    @action bulkCancelOrders(selected = []) {
+        selected = selected.length > 0 ? selected : this.table.selectedRows;
+
+        if (!isArray(selected) || selected.length === 0) {
+            return;
+        }
+
+        this.crud.bulkAction('cancel', selected, {
+            acceptButtonText: 'Cancel Orders',
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'ban',
+            modelNamePath: `public_id`,
+            actionPath: `orders/bulk-cancel`,
+            actionMethod: `PATCH`,
+            onConfirm: (canceledOrders) => {
+                canceledOrders.forEach((order) => {
+                    order.set('status', 'canceled');
+                });
+            },
+            onSuccess: async () => {
+                await this.hostRouter.refresh();
+                this.table.untoggleSelectAll();
+            },
+        });
+    }
+
+    @action bulkDispatchOrders(selected = []) {
+        selected = selected.length > 0 ? selected : this.table.selectedRows;
+
+        if (!isArray(selected) || selected.length === 0) {
+            return;
+        }
+
+        this.crud.bulkAction('dispatch', selected, {
+            acceptButtonText: 'Dispatch Orders',
+            acceptButtonScheme: 'magic',
+            acceptButtonIcon: 'rocket',
+            modelNamePath: 'public_id',
+            actionPath: 'orders/bulk-dispatch',
+            actionMethod: 'POST',
+            onConfirm: (dispatchedOrders) => {
+                dispatchedOrders.forEach((order) => {
+                    order.set('status', 'dispatched');
+                });
+            },
+            onSuccess: async () => {
+                await this.hostRouter.refresh();
+                this.table.untoggleSelectAll();
+            },
+        });
     }
 }

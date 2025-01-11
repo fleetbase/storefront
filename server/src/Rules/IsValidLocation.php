@@ -20,12 +20,12 @@ class IsValidLocation implements Rule
     public function passes($attribute, $value)
     {
         // Validate Place id
-        if (Str::startsWith($value, 'place_')) {
+        if (is_string($value) && Str::startsWith($value, 'place_')) {
             return Place::where('public_id', $value)->exists();
         }
 
         // Validate StoreLocation id
-        if (Str::startsWith($value, 'store_location_')) {
+        if (is_string($value) && Str::startsWith($value, 'store_location_')) {
             return StoreLocation::where('public_id', $value)->exists();
         }
 

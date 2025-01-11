@@ -15,6 +15,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service hostRouter;
     @service abilities;
+    @service socket;
 
     /**
      * Gets the active store.
@@ -102,6 +103,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
+            modalClass: 'scrollable-height-dialog',
             order,
             store,
             confirm: async (modal) => {

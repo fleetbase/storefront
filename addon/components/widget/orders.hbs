@@ -1,58 +1,103 @@
-<ContentPanel
-    @title={{this.title}}
-    @titleStatusRight={{this.orders.length}}
-    @titleStatuRightClass="info-status-badge"
-    @hideStatusDot={{true}}
-    @open={{this.orders.length}}
-    @pad={{false}}
-    @wrapperClass={{@wrapperClass}}
-    @onInsert={{this.setupWidget}}
->
-    {{#if this.isLoading}}
-        <div class="px-3 py-2">
-            <Spinner class="text-sky-400" />
+{{#if (and this.loadOrders.isRunning (not this.loaded))}}
+    <div class="next-content-panel-wrapper">
+        <div class="next-content-panel-container">
+            <div class="next-content-panel next-content-panel-is-closed">
+                <div class="next-content-panel-header next-content-panel-toggle next-content-panel-is-closed">
+                    <a href="javascript:;" class="next-content-panel-header-left">
+                        <span class="icon-container">
+                            <Spinner class="text-sky-400" @height="13" @width="13" />
+                        </span>
+                        <div class="next-content-panel-title-container">
+                            <div class="panel-title flex-shrink-0">
+                                <div class="flex flex-col">
+                                    <span>{{this.title}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
         </div>
-    {{/if}}
-    <div class="hidden md:flex table-wrapper table-fluid">
-        <table>
-            <thead>
-                <tr class="h-12 text-left py-1">
-                    <th>{{t "storefront.component.widget.orders.id-column"}}</th>
-                    <th>{{t "storefront.common.amount"}}</th>
-                    <th>{{t "storefront.common.customer"}}</th>
-                    <th>{{t "storefront.common.driver"}}</th>
-                    <th>{{t "storefront.common.created"}}</th>
-                    <th>{{t "storefront.common.status"}}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
+    </div>
+{{else}}
+    <ContentPanel
+        @title={{this.title}}
+        @titleStatusRight={{this.orders.length}}
+        @titleStatuRightClass="info-status-badge"
+        @hideStatusDot={{true}}
+        @open={{gt this.orders.length 0}}
+        @isLoading={{this.loadOrders.isRunning}}
+        @pad={{false}}
+        @wrapperClass={{@wrapperClass}}
+    >
+        {{#if (media "isMobile")}}
+            <div class="flex flex-col p-3 space-y-3">
                 {{#each this.orders as |order|}}
-                    <tr class="h-12">
-                        <td><a href="javascript:;" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
-                        <td>{{format-currency order.meta.total order.meta.currency}}</td>
-                        <td>{{n-a order.customer.name}}</td>
-                        <td>{{n-a order.driver_assigned.name}}</td>
-                        <td>{{order.createdAgo}}</td>
-                        <td>
-                            <Badge @status={{order.status}} />
-                        </td>
-                        <td>
+                    <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
+                        <div class="flex flex-row mb-2">
+                            <div class="flex-1">
+                                <a href="javascript:;" {{on "click" (fn this.viewOrder order)}} class="text-sm font-semibold">{{order.public_id}}</a>
+                                <div class="text-xs">{{order.createdAt}}</div>
+                                <div class="text-xs">{{order.createdAgo}}</div>
+                            </div>
+                            <div class="flex-shrink-0 flex flex-col text-right">
+                                <Badge class="mb-1" @status={{order.status}} />
+                                {{#if order.meta.is_pickup}}
+                                    <Badge class="mb-1" @hideStatusDot={{true}} @status="info"><FaIcon @icon="hand-holding-dollar" class="mr-1" />{{t
+                                            "storefront.component.widget.orders.pickup-order"
+                                        }}</Badge>
+                                {{/if}}
+                                <div class="text-sm">{{format-currency order.meta.total order.meta.currency}}</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-2 flex-wrap mb-2">
+                            <Button
+                                @wrapperClass="w-full"
+                                class="btn-block w-full"
+                                @size="xs"
+                                @type="primary"
+                                @icon="eye"
+                                @text={{t "storefront.common.view"}}
+                                @onClick={{fn this.viewOrder order}}
+                            />
+                            {{#unless order.meta.is_pickup}}
+                                <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
+                                    @size="xs"
+                                    @type="default"
+                                    @icon="id-card"
+                                    @text={{if order.has_driver_assigned (t "storefront.component.widget.orders.change-driver") (t "storefront.component.widget.orders.assign-driver")}}
+                                    @onClick={{fn this.assignDriver order}}
+                                />
+                            {{/unless}}
                             {{#if order.isFresh}}
                                 <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
                                     @size="xs"
                                     @type="success"
                                     @iconPrefix="fas"
                                     @icon="check"
-                                    @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
+                                    @text={{t "storefront.component.widget.orders.accept-order"}}
                                     @onClick={{fn this.acceptOrder order}}
                                 />
                             {{/if}}
                             {{#if order.isPreparing}}
-                                <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-ready"}} @onClick={{fn this.markAsReady order}} />
+                                <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
+                                    @size="xs"
+                                    @type="success"
+                                    @icon="bell-concierge"
+                                    @text={{t "storefront.component.widget.orders.mark-as-ready"}}
+                                    @onClick={{fn this.markAsReady order}}
+                                />
                             {{/if}}
                             {{#if order.isPickupReady}}
                                 <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
                                     @size="xs"
                                     @type="success"
                                     @icon="check"
@@ -60,87 +105,201 @@
                                     @onClick={{fn this.markAsCompleted order}}
                                 />
                             {{/if}}
-                        </td>
-                    </tr>
+                            {{#unless order.isCanceled}}
+                                <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
+                                    @size="xs"
+                                    @type="danger"
+                                    @icon="ban"
+                                    @text={{t "storefront.component.widget.orders.cancel-order"}}
+                                    @onClick={{fn this.cancelOrder order}}
+                                />
+                            {{/unless}}
+                        </div>
+                        <ContentPanel @title={{t "storefront.component.widget.orders.more-details"}}>
+                            <div class="p-2 space-y-2">
+                                {{#unless order.meta.is_pickup}}
+                                    <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
+                                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
+                                        <div class="flex flex-col space-y-4">
+                                            {{#if order.driver_assigned.id}}
+                                                <div class="flex items-center">
+                                                    <Image src={{order.driver_assigned.photoUrl}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{order.driver_assigned.name}} />
+                                                    <div>
+                                                        <h5 class="font-semibold dark:text-white text-xs">{{n-a order.driver_assigned.displayName}}</h5>
+                                                        <div class="font-semibold dark:text-gray-100 text-xs">{{n-a
+                                                                order.driver_assigned.phone
+                                                                (t "storefront.component.modals.incoming-order.no-phone")
+                                                            }}</div>
+                                                    </div>
+                                                </div>
+                                            {{else}}
+                                                <div>
+                                                    <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
+                                                </div>
+                                            {{/if}}
+                                            <div>
+                                                <Button
+                                                    @size="xs"
+                                                    @type="default"
+                                                    @icon="id-card"
+                                                    @text={{if
+                                                        order.has_driver_assigned
+                                                        (t "storefront.component.modals.incoming-order.change-driver")
+                                                        (t "storefront.component.modals.incoming-order.assign-driver")
+                                                    }}
+                                                    @onClick={{this.assignDriver order}}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                {{/unless}}
+                                <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
+                                    <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
+                                    <div class="">
+                                        <div class="flex flex-row">
+                                            <div>
+                                                <Image src={{avatar-url order.customer.photo_url}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{order.customer.name}} />
+                                            </div>
+                                            <div>
+                                                <div class="text-xs font-bold dark:text-gray-100">{{order.customer.name}}</div>
+                                                <div class="text-xs dark:text-gray-100">{{order.customer.email}}</div>
+                                                <div class="text-xs dark:text-gray-100">{{order.customer.phone}}</div>
+                                            </div>
+                                        </div>
+                                        {{#unless order.meta.is_pickup}}
+                                            <div class="mt-2">
+                                                <h5 class="dark:text-gray-100 font-semibold text-xs truncate">{{t "storefront.component.modals.incoming-order.address"}}</h5>
+                                                <div class="flex flex-row mt-1">
+                                                    <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
+                                                        <FaIcon @icon="map-marker-alt" class="text-white" />
+                                                    </div>
+                                                    <div class="truncate">
+                                                        <DisplayPlace @place={{order.payload.dropoff}} @type="dropoff" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {{/unless}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="py-2 mt-2 space-y-2 border-t dark:border-gray-800">
+                                <div class="flex items-center justify-between px-3 text-xs">
+                                    <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.subtotal"}}</span>
+                                    <span class="dark:text-gray-50">{{format-currency order.meta.subtotal order.meta.currency}}</span>
+                                </div>
+                                {{#unless order.meta.is_pickup}}
+                                    <div class="flex items-center justify-between px-3 text-xs">
+                                        <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.delivery-fee"}}</span>
+                                        <span class="dark:text-gray-50">{{format-currency order.meta.delivery_fee order.meta.currency}}</span>
+                                    </div>
+                                {{/unless}}
+                                {{#if order.meta.tip}}
+                                    <div class="flex items-center justify-between px-3 py-2 text-xs">
+                                        <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.tip"}}</span>
+                                        <span class="dark:text-gray-50">{{get-tip-amount order.meta.tip order.meta.subtotal order.meta.currency}}</span>
+                                    </div>
+                                {{/if}}
+                                {{#if order.meta.delivery_tip}}
+                                    <div class="flex items-center justify-between px-3 text-xs">
+                                        <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.delivery-tip"}}</span>
+                                        <span class="dark:text-gray-50">{{get-tip-amount order.meta.delivery_tip order.meta.subtotal order.meta.currency}}</span>
+                                    </div>
+                                {{/if}}
+                                <div class="flex items-center justify-between px-3 text-xs">
+                                    <span class="dark:text-gray-50 font-bold">{{t "storefront.component.widget.orders.total"}}</span>
+                                    <span class="dark:text-gray-50 font-bold">{{format-currency order.meta.total order.meta.currency}}</span>
+                                </div>
+                            </div>
+                        </ContentPanel>
+                    </div>
                 {{/each}}
-            </tbody>
-        </table>
-    </div>
-    <div class="flex flex-col md:hidden p-3 space-y-3">
-        {{#each this.orders as |order|}}
-            <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
-                <div class="flex flex-row mb-3">
-                    <div class="flex-1">
-                        <a href="javascript:;" {{on "click" (fn this.viewOrder order)}} class="font-semibold">{{order.public_id}}</a>
-                        <div>{{order.createdAt}}</div>
-                        <div>{{order.createdAgo}}</div>
-                    </div>
-                    <div class="flex-shrink-0 flex flex-col text-right">
-                        <Badge class="mb-1" @status={{order.status}} />
-                        <div>{{format-currency order.meta.total order.meta.currency}}</div>
-                    </div>
-                </div>
-                <div class="flex flex-row space-x-2 flex-wrap">
-                    <Button @size="xs" @type="primary" @icon="eye" @text={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
-                    <Button
-                        @size="xs"
-                        @type="default"
-                        @icon="steering-wheel"
-                        @text={{if order.has_driver_assigned (t "storefront.component.widget.order.change-driver") (t "storefront.component.widget.order.assign-driver")}}
-                        @onClick={{fn this.assignDriver order}}
-                    />
-                    {{#if order.isFresh}}
-                        <Button
-                            @size="xs"
-                            @type="success"
-                            @iconPrefix="fas"
-                            @icon="check"
-                            @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
-                            @onClick={{fn this.acceptOrder order}}
-                        />
-                    {{/if}}
-                    {{#if order.isPreparing}}
-                        <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />
-                    {{/if}}
-                    {{#if order.isPickupReady}}
-                        <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.component.widget.orders.mark-as-completed"}} @onClick={{fn this.markAsCompleted order}} />
-                    {{/if}}
-                </div>
-                <ContentPanel @title={{t "storefront.component.widget.orders.title"}} class="mt-2">
-                    <div class="flex flex-col py-2 border-t dark:border-gray-800">
-                        <div>{{t "storefront.component.widget.orders.customer"}}: {{n-a order.customer_name}}</div>
-                        <div>{{t "storefront.component.widget.orders.driver"}}: {{n-a order.driver_name}}</div>
-                    </div>
-                    <div class="py-2 space-y-2 border-t dark:border-gray-800">
-                        <div class="flex items-center justify-between">
-                            <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.subtotal"}}</span>
-                            <span class="dark:text-gray-50">{{format-currency order.meta.subtotal order.meta.currency}}</span>
-                        </div>
-                        {{#unless order.meta.is_pickup}}
-                            <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.delivery-fee"}}</span>
-                                <span class="dark:text-gray-50">{{format-currency order.meta.delivery_fee order.meta.currency}}</span>
-                            </div>
-                        {{/unless}}
-                        {{#if order.meta.tip}}
-                            <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">{{t "storefront.component.widget.order.tip"}}</span>
-                                <span class="dark:text-gray-50">{{get-tip-amount order.meta.tip order.meta.subtotal order.meta.currency}}</span>
-                            </div>
-                        {{/if}}
-                        {{#if order.meta.delivery_tip}}
-                            <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">{{t "storefront.component.widget.order.delivery-tip"}}</span>
-                                <span class="dark:text-gray-50">{{get-tip-amount order.meta.delivery_tip order.meta.subtotal order.meta.currency}}</span>
-                            </div>
-                        {{/if}}
-                        <div class="flex items-center justify-between">
-                            <span class="dark:text-gray-50 font-bold">{{t "storefront.component.widget.order.tip"}}</span>
-                            <span class="dark:text-gray-50 font-bold">{{format-currency order.meta.total order.meta.currency}}</span>
-                        </div>
-                    </div>
-                </ContentPanel>
             </div>
-        {{/each}}
-    </div>
-</ContentPanel>
+        {{else}}
+            <div class="table-wrapper table-fluid">
+                <table class="storefront-widget-table">
+                    <thead>
+                        <tr class="h-12 text-left py-1">
+                            <th style={{"width: 15%"}}>{{t "storefront.component.widget.orders.id-column"}}</th>
+                            <th style={{"width: 10%"}}>{{t "storefront.common.amount"}}</th>
+                            <th style={{"width: 15%"}}>{{t "storefront.common.customer"}}</th>
+                            <th style={{"width: 15%"}}>{{t "storefront.common.driver"}}</th>
+                            <th style={{"width: 10%"}}>{{t "storefront.common.created"}}</th>
+                            <th style={{"width: 15%"}}>{{t "storefront.common.status"}}</th>
+                            <th style={{"width: 22%"}}></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.orders as |order|}}
+                            <tr class="h-12">
+                                <td><a href="javascript:;" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
+                                <td>{{format-currency order.meta.total order.meta.currency}}</td>
+                                <td>{{n-a order.customer.name}}</td>
+                                <td>
+                                    {{#if order.meta.is_pickup}}
+                                        <Badge @hideStatusDot={{true}} @status="info"><FaIcon @icon="hand-holding-dollar" class="mr-1" />{{t
+                                                "storefront.component.widget.orders.pickup-order"
+                                            }}</Badge>
+                                    {{else}}
+                                        {{n-a order.driver_assigned.name}}
+                                    {{/if}}
+                                </td>
+                                <td>{{order.createdAgo}}</td>
+                                <td>
+                                    <Badge @status={{order.status}} />
+                                </td>
+                                <td>
+                                    <div class="flex flex-row justify-end space-x-2">
+                                        {{#if order.isFresh}}
+                                            <Button
+                                                @size="xs"
+                                                @type="success"
+                                                @iconPrefix="fas"
+                                                @icon="check"
+                                                @text={{t "storefront.component.widget.orders.accept-order"}}
+                                                @onClick={{fn this.acceptOrder order}}
+                                            />
+                                        {{/if}}
+                                        {{#if order.isPreparing}}
+                                            <Button
+                                                @size="xs"
+                                                @type="success"
+                                                @icon="bell-concierge"
+                                                @text={{t "storefront.component.widget.orders.mark-as-ready"}}
+                                                @onClick={{fn this.markAsReady order}}
+                                            />
+                                        {{/if}}
+                                        {{#if order.isPickupReady}}
+                                            <Button
+                                                @size="xs"
+                                                @type="success"
+                                                @icon="check"
+                                                @text={{t "storefront.component.widget.orders.mark-as-completed"}}
+                                                @onClick={{fn this.markAsCompleted order}}
+                                            />
+                                        {{/if}}
+                                        {{#unless order.isCanceled}}
+                                            <Button
+                                                @size="xs"
+                                                @type="danger"
+                                                @icon="ban"
+                                                @helpText={{t "storefront.component.widget.orders.cancel-order"}}
+                                                @onClick={{fn this.cancelOrder order}}
+                                            />
+                                        {{/unless}}
+                                    </div>
+                                </td>
+                            </tr>
+                        {{/each}}
+
+                        <tr class="h-12">
+                            <td><div class="font-semibold text-green-500">TOTAL</div></td>
+                            <td colspan="6"><div class="flex justify-start text-green-500 font-semibold">{{format-currency this.total this.currency}}</div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        {{/if}}
+    </ContentPanel>
+{{/if}}

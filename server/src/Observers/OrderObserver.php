@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Observers;
 
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Support\Storefront;
 
 class OrderObserver
 {
@@ -11,7 +12,12 @@ class OrderObserver
      *
      * @return void
      */
-    public function created(Order $order)
+    public function creating(Order $order)
     {
+        // Set the storefront order config
+        $orderConfig = Storefront::getDefaultOrderConfig();
+        if ($orderConfig) {
+            $order->order_config_uuid = $orderConfig->uuid;
+        }
     }
 }

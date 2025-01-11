@@ -132,7 +132,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public static function initializeStripeCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public static function initializeStripeCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
     {
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
@@ -202,7 +202,7 @@ class CheckoutController extends Controller
             'network_uuid'       => session('storefront_network'),
             'cart_uuid'          => $cart->uuid,
             'gateway_uuid'       => $gateway->uuid,
-            'service_quote_uuid' => $serviceQuote->uuid,
+            'service_quote_uuid' => $serviceQuote ? $serviceQuote->uuid : null,
             'owner_uuid'         => $customer->uuid,
             'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
@@ -327,9 +327,6 @@ class CheckoutController extends Controller
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])
             ->where('public_id', $serviceQuoteId)
             ->first();
-        if (!$serviceQuote) {
-            return response()->apiError('Invalid service quote ID provided');
-        }
 
         // Recalculate amount based on cart, serviceQuote, and checkoutOptions
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
@@ -398,7 +395,7 @@ class CheckoutController extends Controller
             'network_uuid'       => session('storefront_network'),
             'cart_uuid'          => $cart->uuid,
             'gateway_uuid'       => $gateway->uuid,
-            'service_quote_uuid' => $serviceQuote->uuid,
+            'service_quote_uuid' => $serviceQuote ? $serviceQuote->uuid : null,
             'owner_uuid'         => $customer->uuid,
             'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
@@ -418,7 +415,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public static function initializeQPayCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public static function initializeQPayCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
     {
         // Get store info
         $about = Storefront::about();
@@ -455,7 +452,7 @@ class CheckoutController extends Controller
             'network_uuid'       => session('storefront_network'),
             'cart_uuid'          => $cart->uuid,
             'gateway_uuid'       => $gateway->uuid,
-            'service_quote_uuid' => $serviceQuote->uuid,
+            'service_quote_uuid' => $serviceQuote ? $serviceQuote->uuid : null,
             'owner_uuid'         => $customer->uuid,
             'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
@@ -612,8 +609,8 @@ class CheckoutController extends Controller
         $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
-        $origin       = $serviceQuote->getMeta('origin', []);
-        $destination  = $serviceQuote->getMeta('destination');
+        $origin       = $serviceQuote ? $serviceQuote->getMeta('origin', []) : null;
+        $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
         $cart         = $checkout->cart;
 
         // if cart is null then cart has either been deleted or expired
@@ -848,7 +845,9 @@ class CheckoutController extends Controller
         Storefront::alertNewOrder($order);
 
         // purchase service quote
-        $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
+        if ($serviceQuote) {
+            $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
+        }
 
         // if order is auto accepted update status
         if ($about->isOption('auto_accept_orders')) {
@@ -1199,7 +1198,7 @@ class CheckoutController extends Controller
      *
      * @param stdClass $checkoutOptions
      */
-    private static function calculateCheckoutAmount(Cart $cart, ServiceQuote $serviceQuote, $checkoutOptions): int
+    private static function calculateCheckoutAmount(Cart $cart, ?ServiceQuote $serviceQuote, $checkoutOptions): int
     {
         // cast checkout options to object always
         $checkoutOptions = (object) $checkoutOptions;

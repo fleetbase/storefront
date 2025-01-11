@@ -45,10 +45,8 @@ export default class ApplicationRoute extends Route {
         return this.store.query('store', { limit: 300, sort: '-updated_at' });
     }
 
-    afterModel(model) {
-        if (model.length) {
-            // this.storefront.listenForIncomingOrders();
-        }
+    afterModel() {
+        this.storefront.listenForIncomingOrders();
     }
 
     disableSandbox() {

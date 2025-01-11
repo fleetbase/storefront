@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Requests;
 use Fleetbase\Http\Requests\FleetbaseRequest;
 use Fleetbase\Storefront\Rules\CustomerExists;
 use Fleetbase\Storefront\Rules\GatewayExists;
+use Illuminate\Validation\Rule;
 
 class InitializeCheckoutRequest extends FleetbaseRequest
 {
@@ -29,7 +30,7 @@ class InitializeCheckoutRequest extends FleetbaseRequest
             'gateway'      => ['required', new GatewayExists()],
             'customer'     => ['required', new CustomerExists()],
             'cart'         => ['required', 'exists:storefront.carts,public_id'],
-            'serviceQuote' => ['required', 'exists:service_quotes,public_id'],
+            'serviceQuote' => [Rule::requiredIf(fn () => !$this->boolean('pickup')), 'exists:service_quotes,public_id'],
             'cash'         => ['sometimes', 'boolean'],
             'pickup'       => ['sometimes', 'boolean'],
         ];
