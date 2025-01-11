@@ -42,7 +42,7 @@
                                     />
                                 {{/if}}
                                 {{#if order.isPreparing}}
-                                    <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-ready"}} @onClick={{fn this.markAsReady order}} />
+                                    <Button @size="xs" @type="success" @icon="bell-concierge" @text={{t "storefront.component.widget.orders.mark-as-ready"}} @onClick={{fn this.markAsReady order}} />
                                 {{/if}}
                                 {{#if order.isPickupReady}}
                                     <Button
@@ -82,7 +82,7 @@
                     <Button
                         @size="xs"
                         @type="default"
-                        @icon="steering-wheel"
+                        @icon="id-card"
                         @text={{if order.has_driver_assigned (t "storefront.component.widget.order.change-driver") (t "storefront.component.widget.order.assign-driver")}}
                         @onClick={{fn this.assignDriver order}}
                     />
@@ -97,7 +97,7 @@
                         />
                     {{/if}}
                     {{#if order.isPreparing}}
-                        <Button @size="xs" @type="success" @icon="bells" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />
+                        <Button @size="xs" @type="success" @icon="bell-concierge" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />
                     {{/if}}
                     {{#if order.isPickupReady}}
                         <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.component.widget.orders.mark-as-completed"}} @onClick={{fn this.markAsCompleted order}} />

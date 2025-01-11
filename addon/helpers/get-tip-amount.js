@@ -6,7 +6,7 @@ import calculatePercentage from '@fleetbase/ember-core/utils/calculate-percentag
 export default helper(function getTipAmount([tip, subtotal, currency]) {
     let amount = tip;
     if (typeof tip === 'string' && tip.endsWith('%')) {
-        amount = percentage(numbersOnly(tip), subtotal);
+        amount = calculatePercentage(numbersOnly(tip), subtotal);
     }
 
     amount = parseInt(amount);

@@ -286,7 +286,7 @@ export default class OrdersIndexController extends BaseController {
         },
     ];
 
-    constructor(owner) {
+    constructor() {
         super(...arguments);
         this.currency = get(this.storefront, 'activeStore.currency');
     }
@@ -319,14 +319,14 @@ export default class OrdersIndexController extends BaseController {
         return this.transitionToRoute('orders.index.view', order);
     }
 
-     /**
+    /**
      * Cancels a specific order after confirmation.
      * @param {Object} order - The order to cancel.
      * @param {Object} [options={}] - Additional options for the modal.
      * @action
      * @memberof OperationsOrdersIndexController
      */
-     @action cancelOrder(order, options = {}) {
+    @action cancelOrder(order, options = {}) {
         this.modalsManager.confirm({
             title: this.intl.t('fleet-ops.operations.orders.index.cancel-title'),
             body: this.intl.t('fleet-ops.operations.orders.index.cancel-body'),
@@ -373,7 +373,6 @@ export default class OrdersIndexController extends BaseController {
         });
     }
 
-
     @action deleteOrder(order, options = {}) {
         this.crud.delete(order, {
             onSuccess: () => {
@@ -382,7 +381,6 @@ export default class OrdersIndexController extends BaseController {
             ...options,
         });
     }
-
 
     @action bulkDeleteOrders(selected = []) {
         selected = selected.length > 0 ? selected : this.table.selectedRows;

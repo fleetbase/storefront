@@ -1,7 +1,8 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action, computed, get } from '@ember/object';
+import { get } from '@ember/object';
+import { debug } from '@ember/debug';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { task } from 'ember-concurrency';
 
@@ -29,7 +30,7 @@ export default class WidgetStorefrontMetricsComponent extends Component {
             this.loadMetrics.perform();
         });
     }
-    
+
     @task *loadMetrics(start, end) {
         const store = get(this.storefront, 'activeStore.id');
 

@@ -226,7 +226,8 @@ storefront:
       orders:
         widget-title: Recent Orders
         id-column: Order ID
-        accept-order: Accept Order
+        cancel-order: Cancel Order
+        accept-order: Accept Order!
         mark-as-ready: Mark as Ready!
         mark-as-completed: Mark as Completed
         more-details: More Details
@@ -236,8 +237,11 @@ storefront:
         delivery-fee: Delivery fee
         delivery-tip: Delivery tip
         tip: Tip
+        total: Total
         change-driver: Change Driver
         assign-driver: Assign Driver
+        customer-pickup: Customer Pickup
+        pickup-order: Pickup Order
         mark-as-ready-modal-pickup-title: Mark order ready for pickup?
         mark-as-ready-modal-pickup-body: Marking the order as ready will notify the customer their order is ready for pickup!
         mark-as-ready-modal-pickup-accept-button-text: Ready for Pickup!

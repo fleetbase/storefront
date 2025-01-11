@@ -1,4 +1,5 @@
 import Service, { inject as service } from '@ember/service';
+import toBoolean from '@fleetbase/ember-core/utils/to-boolean';
 
 export default class OrderActionsService extends Service {
     @service intl;
@@ -120,8 +121,8 @@ export default class OrderActionsService extends Service {
 
     markAsReady(order, callback) {
         // for pickup orders
-        if (order.meta && order.meta.is_pickup === true) {
-            this.modalsManager.confirm({
+        if (order.meta && toBoolean(order.meta.is_pickup) === true) {
+            return this.modalsManager.confirm({
                 title: this.intl.t('storefront.component.widget.orders.mark-as-ready-modal-pickup-title'),
                 body: this.intl.t('storefront.component.widget.orders.mark-as-ready-modal-pickup-body'),
                 acceptButtonText: this.intl.t('storefront.component.widget.orders.mark-as-ready-modal-pickup-accept-button-text'),

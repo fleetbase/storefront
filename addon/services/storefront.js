@@ -103,6 +103,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
+            modalClass: 'scrollable-height-dialog',
             order,
             store,
             confirm: async (modal) => {

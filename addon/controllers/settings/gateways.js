@@ -71,7 +71,7 @@ export default class SettingsGatewaysController extends Controller {
 
                 set(gateway.config, key, value);
             },
-            confirm: async (modal, done) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
                 try {

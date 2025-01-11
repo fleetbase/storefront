@@ -2,7 +2,6 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, get } from '@ember/object';
-import { later } from '@ember/runloop';
 import { debug } from '@ember/debug';
 import { task } from 'ember-concurrency';
 
@@ -38,7 +37,7 @@ export default class WidgetCustomersComponent extends Component {
             const customers = yield this.store.query('customer', {
                 storefront,
                 limit: 14,
-                ...params
+                ...params,
             });
             this.loaded = true;
             this.customers = customers;

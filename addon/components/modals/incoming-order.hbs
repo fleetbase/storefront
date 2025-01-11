@@ -27,45 +27,47 @@
                 </div>
             </div>
             <div class="col-span-2">
-                <div class="flex flex-row items-stretch space-x-3">
-                    <div class="flex-1 self-stretch">
-                        <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
-                            <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
-                            <div class="flex flex-col space-y-4">
-                                {{#if @options.order.driver_assigned.id}}
-                                    <div class="flex items-center">
-                                        <Image src={{@options.order.driver_assigned.photoUrl}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.order.driver_assigned.name}} />
-                                        <div>
-                                            <h5 class="font-semibold dark:text-white text-xs">{{n-a @options.order.driver_assigned.displayName}}</h5>
-                                            <div class="font-semibold dark:text-gray-100 text-xs">{{n-a
-                                                    @options.order.driver_assigned.phone
-                                                    (t "storefront.component.modals.incoming-order.no-phone")
-                                                }}</div>
+                <div class="flex {{if (media 'isMobile') 'flex-col space-y-3' 'flex-row space-x-3'}} items-stretch">
+                    {{#unless @options.order.meta.is_pickup}}
+                        <div class="flex-1 self-stretch">
+                            <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
+                                <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
+                                <div class="flex flex-col space-y-4">
+                                    {{#if @options.order.driver_assigned.id}}
+                                        <div class="flex items-center">
+                                            <Image src={{@options.order.driver_assigned.photoUrl}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.order.driver_assigned.name}} />
+                                            <div>
+                                                <h5 class="font-semibold dark:text-white text-xs">{{n-a @options.order.driver_assigned.displayName}}</h5>
+                                                <div class="font-semibold dark:text-gray-100 text-xs">{{n-a
+                                                        @options.order.driver_assigned.phone
+                                                        (t "storefront.component.modals.incoming-order.no-phone")
+                                                    }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                {{else}}
-                                    <div>
-                                        <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
-                                    </div>
-                                {{/if}}
-                                {{#if @options.assignDriver}}
-                                    <div>
-                                        <Button
-                                            @size="xs"
-                                            @type="default"
-                                            @icon="steering-wheel"
-                                            @text={{if
-                                                @options.order.has_driver_assigned
-                                                (t "storefront.component.modals.incoming-order.change-driver")
-                                                (t "storefront.component.modals.incoming-order.assign-driver")
-                                            }}
-                                            @onClick={{@options.assignDriver}}
-                                        />
-                                    </div>
-                                {{/if}}
+                                    {{else}}
+                                        <div>
+                                            <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
+                                        </div>
+                                    {{/if}}
+                                    {{#if @options.assignDriver}}
+                                        <div>
+                                            <Button
+                                                @size="xs"
+                                                @type="default"
+                                                @icon="id-card"
+                                                @text={{if
+                                                    @options.order.has_driver_assigned
+                                                    (t "storefront.component.modals.incoming-order.change-driver")
+                                                    (t "storefront.component.modals.incoming-order.assign-driver")
+                                                }}
+                                                @onClick={{@options.assignDriver}}
+                                            />
+                                        </div>
+                                    {{/if}}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {{/unless}}
                     <div class="flex-1 self-stretch">
                         <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
                             <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
@@ -88,7 +90,12 @@
                                                 <FaIcon @icon="map-marker-alt" class="text-white" />
                                             </div>
                                             <div class="truncate">
-                                                <DisplayPlace @place={{@options.order.payload.dropoff}} @type="dropoff" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
+                                                <DisplayPlace
+                                                    @place={{@options.order.payload.dropoff}}
+                                                    @type="dropoff"
+                                                    @addressClass="text-xs dark:text-gray-100"
+                                                    @noAddressClass="text-xs"
+                                                />
                                             </div>
                                         </div>
                                     </div>
