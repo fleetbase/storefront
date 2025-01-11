@@ -609,8 +609,8 @@ class CheckoutController extends Controller
         $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
-        $origin       = $serviceQuote->getMeta('origin', []);
-        $destination  = $serviceQuote->getMeta('destination');
+        $origin       = $serviceQuote ? $serviceQuote->getMeta('origin', []) : null;
+        $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
         $cart         = $checkout->cart;
 
         // if cart is null then cart has either been deleted or expired
