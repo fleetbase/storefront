@@ -438,8 +438,7 @@ class CustomerController extends Controller
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
-
-        if (!$verificationCode && $code !== '999000') {
+        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
             return response()->error('Invalid verification code!');
         }
 
@@ -518,8 +517,8 @@ class CustomerController extends Controller
             );
 
             return response()->json([
-                'ephemeralKey'          => $ephemeralKey->secret,
-                'customer'              => $customer->getMeta('stripe_id'),
+                'ephemeralKey'            => $ephemeralKey->secret,
+                'customerId'              => $customer->getMeta('stripe_id'),
             ]);
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
@@ -554,6 +553,7 @@ class CustomerController extends Controller
             return response()->json([
                 'setupIntentId'          => $setupIntent->id,
                 'setupIntent'            => $setupIntent->client_secret,
+                'customerId'             => $customer->getMeta('stripe_id'),
             ]);
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
