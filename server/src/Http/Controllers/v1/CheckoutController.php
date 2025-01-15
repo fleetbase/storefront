@@ -283,6 +283,7 @@ class CheckoutController extends Controller
                 'setupIntent'          => $setupIntent->id,
                 'clientSecret'         => $setupIntent->client_secret,
                 'defaultPaymentMethod' => $defaultPaymentMethod,
+                'customerId'           => $customer->getMeta('stripe_id'),
             ]);
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());

@@ -44,7 +44,7 @@ class Cart extends FleetbaseResource
         $items = $this->items ?? [];
 
         return array_map(function ($cartItem) {
-            $product = Product::select(['public_id', 'primary_image_uuid', 'name', 'description'])->where('public_id', data_get($cartItem, 'product_id'))->first();
+            $product = Product::select(['uuid', 'public_id', 'primary_image_uuid', 'name', 'description'])->with(['files'])->where('public_id', data_get($cartItem, 'product_id'))->first();
             if ($product) {
                 data_set($cartItem, 'name', $product->name);
                 data_set($cartItem, 'description', $product->description);

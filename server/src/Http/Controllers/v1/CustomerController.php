@@ -518,8 +518,8 @@ class CustomerController extends Controller
             );
 
             return response()->json([
-                'ephemeralKey'          => $ephemeralKey->secret,
-                'customer'              => $customer->getMeta('stripe_id'),
+                'ephemeralKey'            => $ephemeralKey->secret,
+                'customerId'              => $customer->getMeta('stripe_id'),
             ]);
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
@@ -554,6 +554,7 @@ class CustomerController extends Controller
             return response()->json([
                 'setupIntentId'          => $setupIntent->id,
                 'setupIntent'            => $setupIntent->client_secret,
+                'customerId'             => $customer->getMeta('stripe_id'),
             ]);
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
