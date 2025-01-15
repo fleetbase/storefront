@@ -438,8 +438,7 @@ class CustomerController extends Controller
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
-
-        if (!$verificationCode && $code !== '999000') {
+        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
             return response()->error('Invalid verification code!');
         }
 
