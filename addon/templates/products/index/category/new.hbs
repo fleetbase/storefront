@@ -142,7 +142,7 @@
                         <Button @text="New Variant" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} @permission="storefront create product-variant" />
                     </div>
                 </div>
-                <Tabs as |Tab|>
+                <Tabs class="overlay-content-panel" as |Tab|>
                     {{#each this.product.variants as |variant|}}
                         <Tab @title={{variant.name}}>
                             <div class="px-4 py-3">
