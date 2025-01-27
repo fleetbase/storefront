@@ -20,7 +20,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
         | Public/Callback Receivable Storefront API Routes
         |--------------------------------------------------------------------------
         |
-        | End-user API routes, these are routes that the SDK and applications will interface with, and require API credentials.
+        | End-user API routes, these are routes that the SDK and applications will interface with, and DO NOT require API credentials.
         */
         Route::group(['prefix' => 'v1', 'namespace' => 'v1'], function ($router) {
             // storefront/v1/checkouts
@@ -94,6 +94,9 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'CustomerController@find');
                     $router->post('/', 'CustomerController@create');
                     $router->post('login-with-sms', 'CustomerController@loginWithPhone');
+                    $router->post('login-with-apple', 'CustomerController@loginWithApple');
+                    $router->post('login-with-facebook', 'CustomerController@loginWithFacebook');
+                    $router->post('login-with-google', 'CustomerController@loginWithGoogle');
                     $router->post('verify-code', 'CustomerController@verifyCode');
                     $router->post('login', 'CustomerController@login');
                     $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode');

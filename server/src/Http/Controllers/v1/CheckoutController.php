@@ -186,7 +186,7 @@ class CheckoutController extends Controller
 
         // Check if customer has a saved default payment method
         if (StripeUtils::isCustomerPaymentMethodValid($customer)) {
-            $paymentIntentData['payment_method'] = $$customer->getMeta('stripe_payment_method_id');
+            $paymentIntentData['payment_method'] = $customer->getMeta('stripe_payment_method_id');
         }
 
         try {
@@ -246,7 +246,7 @@ class CheckoutController extends Controller
 
         // Check if customer has a saved default payment method
         if (StripeUtils::isCustomerPaymentMethodValid($customer)) {
-            $paymentIntentData['payment_method'] = $$customer->getMeta('stripe_payment_method_id');
+            $paymentIntentData['payment_method'] = $customer->getMeta('stripe_payment_method_id');
         }
 
         try {

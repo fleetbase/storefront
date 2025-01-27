@@ -5,7 +5,7 @@ namespace Fleetbase\Storefront\Http\Requests;
 use Fleetbase\Http\Requests\FleetbaseRequest;
 use Fleetbase\Storefront\Rules\CustomerExists;
 
-class CustomerRequest extends FleetbaseRequest
+class StorefrontCustomerRequest extends FleetbaseRequest
 {
     /**
      * Determine if the user is authorized to make this request.

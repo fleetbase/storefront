@@ -54,6 +54,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
      */
     public $commands = [
         \Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby::class,
+        \Fleetbase\Storefront\Console\Commands\SendOrderNotification::class,
     ];
 
     /**

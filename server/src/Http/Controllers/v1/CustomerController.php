@@ -2,6 +2,8 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\Auth\AppleVerifier;
+use Fleetbase\Auth\GoogleVerifier;
 use Fleetbase\FleetOps\Exceptions\UserAlreadyExistsException;
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
@@ -36,7 +38,7 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->error('Not authorized to register device for cutomer');
+            return response()->apiError('Not authorized to register device for cutomer');
         }
 
         $device = UserDevice::firstOrCreate(
@@ -68,7 +70,7 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->error('Not authorized to view customers orders');
+            return response()->apiError('Not authorized to view customers orders');
         }
 
         $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
@@ -96,7 +98,7 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->error('Not authorized to view customers places');
+            return response()->apiError('Not authorized to view customers places');
         }
 
         $results = Place::queryWithRequest($request, function (&$query) use ($customer) {
@@ -121,7 +123,7 @@ class CustomerController extends Controller
 
         // validate identity
         if ($mode === 'email' && !$isEmail) {
-            return response()->error('Invalid email provided for identity');
+            return response()->apiError('Invalid email provided for identity');
         }
 
         // prepare phone number
@@ -176,7 +178,7 @@ class CustomerController extends Controller
         // verify code
         $isVerified = VerificationCode::where(['code' => $code, 'for' => 'storefront_create_customer', 'meta->identity' => $identity])->exists();
         if (!$isVerified) {
-            return response()->error('Invalid verification code provided!');
+            return response()->apiError('Invalid verification code provided!');
         }
 
         // check for existing user to attach contact to
@@ -250,7 +252,7 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Customer resource not found.');
+            return response()->apiError('Customer resource not found.');
         }
 
         // get request input
@@ -303,7 +305,7 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Customer resource not found.');
+            return response()->apiError('Customer resource not found.');
         }
 
         // response the customer resource
@@ -325,7 +327,7 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Customer resource not found.');
+            return response()->apiError('Customer resource not found.');
         }
 
         // delete the product
@@ -349,7 +351,7 @@ class CustomerController extends Controller
         $user = User::where('email', $identity)->orWhere('phone', static::phone($identity))->first();
 
         if (!Hash::check($password, $user->password)) {
-            return response()->error('Authentication failed using password provided.', 401);
+            return response()->apiError('Authentication failed using password provided.', 401);
         }
 
         // get the storefront or network logging in for
@@ -376,7 +378,7 @@ class CustomerController extends Controller
         try {
             $token = $user->createToken($contact->uuid);
         } catch (\Exception $e) {
-            return response()->error($e->getMessage());
+            return response()->apiError($e->getMessage());
         }
 
         $contact->token = $token->plainTextToken;
@@ -397,7 +399,7 @@ class CustomerController extends Controller
         $user = User::where('phone', $phone)->whereNull('deleted_at')->withoutGlobalScopes()->first();
 
         if (!$user) {
-            return response()->error('No customer with this phone # found.');
+            return response()->apiError('No customer with this phone # found.');
         }
 
         // get the storefront or network logging in for
@@ -411,6 +413,243 @@ class CustomerController extends Controller
         ]);
 
         return response()->json(['status' => 'OK']);
+    }
+
+    /**
+     * Handles user authentication via Apple Sign-In.
+     *
+     * This method validates the Apple ID token, checks if the user exists in the system,
+     * and creates a new user if necessary. It then ensures a contact record exists for
+     * the user and generates an authentication token.
+     *
+     * @param Request $request
+     *                         The HTTP request containing the following required fields:
+     *                         - `identityToken` (string): The token generated by Apple to identify the user.
+     *                         - `authorizationCode` (string): The one-time code issued by Apple during login.
+     *                         - `email` (string|null): The user's email address (provided on first login).
+     *                         - `phone` (string|null): The user's phone number (optional).
+     *                         - `name` (string|null): The user's full name (optional).
+     *                         - `appleUserId` (string): A unique identifier for the user assigned by Apple.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     *                                       A JSON response containing the authenticated customer's details, including an access token
+     *
+     * @throws \Exception
+     *                    If Apple authentication fails or any other error occurs during the process
+     */
+    public function loginWithApple(Request $request)
+    {
+        $identityToken     = $request->input('identityToken');
+        $authorizationCode = $request->input('authorizationCode');
+        $email             = $request->input('email');
+        $phone             = $request->input('phone');
+        $name              = $request->input('name');
+        $appleUserId       = $request->input('appleUserId');
+
+        if (!$identityToken || !$authorizationCode) {
+            return response()->apiError('Missing required Apple authentication parameters.', 400);
+        }
+
+        try {
+            // Verify the Apple token using the utility function
+            $isValid = AppleVerifier::verifyAppleJwt($identityToken);
+            if (!$isValid) {
+                return response()->apiError('Apple ID authentication is not valid.', 400);
+            }
+
+            // Check if the user exists in the system
+            $user = User::where(function ($query) use ($email, $appleUserId) {
+                if ($email) {
+                    $query->where('email', $email);
+                    $query->orWhere('apple_user_id', $appleUserId);
+                } else {
+                    $query->where('apple_user_id', $appleUserId);
+                }
+            })->first();
+
+            if (!$user) {
+                // Create a new user
+                $user = User::create([
+                    'email'         => $email,
+                    'phone'         => $phone,
+                    'name'          => $name,
+                    'apple_user_id' => $appleUserId,
+                    'type'          => 'customer',
+                    'company_uuid'  => session('company'),
+                ]);
+            } else {
+                // Update the `apple_user_id` if it's not already set
+                if (!$user->apple_user_id) {
+                    $user->apple_user_id = $appleUserId;
+                    $user->save();
+                }
+            }
+
+            // Ensure a customer contact exists
+            $contact = Contact::firstOrCreate(
+                ['user_uuid' => $user->uuid, 'company_uuid' => session('company')],
+                ['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone, 'meta' => ['apple_user_id' => $appleUserId], 'type' => 'customer']
+            );
+
+            // Generate an auth token
+            $token          = $user->createToken($contact->uuid);
+            $contact->token = $token->plainTextToken;
+
+            return new Customer($contact);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handles user authentication via Facebook Sign-In.
+     *
+     * This method checks if the user exists in the system based on their email or Facebook ID.
+     * If the user does not exist, it creates a new user and ensures a contact record is created.
+     * Finally, it generates an authentication token for the user.
+     *
+     * @param Request $request
+     *                         The HTTP request containing the following required fields:
+     *                         - `email` (string|null): The user's email address.
+     *                         - `name` (string|null): The user's full name.
+     *                         - `facebookUserId` (string): A unique identifier for the user assigned by Facebook.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     *                                       A JSON response containing the authenticated customer's details, including an access token
+     *
+     * @throws \Exception
+     *                    If Facebook authentication fails or any other error occurs during the process
+     */
+    public function loginWithFacebook(Request $request)
+    {
+        $email                = $request->input('email');
+        $name                 = $request->input('name');
+        $facebookUserId       = $request->input('facebookUserId');
+
+        try {
+            // Check if the user exists in the system
+            $user = User::where(function ($query) use ($email, $facebookUserId) {
+                if ($email) {
+                    $query->where('email', $email);
+                    $query->orWhere('facebook_user_id', $facebookUserId);
+                } else {
+                    $query->where('facebook_user_id', $facebookUserId);
+                }
+            })->first();
+
+            if (!$user) {
+                // Create a new user
+                $user = User::create([
+                    'email'            => $email,
+                    'name'             => $name,
+                    'facebook_user_id' => $facebookUserId,
+                    'type'             => 'customer',
+                    'company_uuid'     => session('company'),
+                ]);
+            } else {
+                // Update the `facebook_user_id` if it's not already set
+                if (!$user->facebook_user_id) {
+                    $user->facebook_user_id = $facebookUserId;
+                    $user->save();
+                }
+            }
+
+            // Ensure a customer contact exists
+            $contact = Contact::firstOrCreate(
+                ['user_uuid' => $user->uuid, 'company_uuid' => session('company')],
+                ['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone, 'meta' => ['facebook_user_id' => $facebookUserId], 'type' => 'customer']
+            );
+
+            // Generate an auth token
+            $token          = $user->createToken($contact->uuid);
+            $contact->token = $token->plainTextToken;
+
+            return new Customer($contact);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handles user authentication via Google Sign-In.
+     *
+     * This method validates the Google ID token, retrieves user details from the token payload,
+     * checks if the user exists in the system, and creates a new user if necessary.
+     * It ensures a contact record exists for the user and generates an authentication token.
+     *
+     * @param Request $request
+     *                         The HTTP request containing the following required fields:
+     *                         - `idToken` (string): The token generated by Google to identify the user.
+     *                         - `clientId` (string): The client ID associated with the app.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     *                                       A JSON response containing the authenticated customer's details, including an access token
+     *
+     * @throws \Exception
+     *                    If Google authentication fails or any other error occurs during the process
+     */
+    public function loginWithGoogle(Request $request)
+    {
+        $idToken  = $request->input('idToken');
+        $clientId = $request->input('clientId');
+        if (!$idToken || !$clientId) {
+            return response()->apiError('Missing required Google authentication parameters.', 400);
+        }
+
+        try {
+            // Verify the Google ID token using the utility function
+            $payload = GoogleVerifier::verifyIdToken($idToken, $clientId);
+            if (!$payload) {
+                return response()->apiError('Google Sign-In authentication is not valid.', 400);
+            }
+
+            // Extract user details from the payload
+            $email        = data_get($payload, 'email');
+            $name         = data_get($payload, 'name');
+            $googleUserId = data_get($payload, 'sub');
+            $avatarUrl    = data_get($payload, 'picture');
+
+            // Check if the user exists in the system
+            $user = User::where(function ($query) use ($email, $googleUserId) {
+                if ($email) {
+                    $query->where('email', $email);
+                    $query->orWhere('google_user_id', $googleUserId);
+                } else {
+                    $query->where('google_user_id', $googleUserId);
+                }
+            })->first();
+
+            if (!$user) {
+                // Create a new user
+                $user = User::create([
+                    'email'          => $email,
+                    'name'           => $name,
+                    'google_user_id' => $googleUserId,
+                    'type'           => 'customer',
+                    'company_uuid'   => session('company'),
+                ]);
+            } else {
+                // Update the `google_user_id` if it's not already set
+                if (!$user->google_user_id) {
+                    $user->google_user_id = $googleUserId;
+                    $user->save();
+                }
+            }
+
+            // Ensure a customer contact exists
+            $contact = Contact::firstOrCreate(
+                ['user_uuid' => $user->uuid, 'company_uuid' => session('company')],
+                ['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone, 'meta' => ['google_user_id' => $googleUserId], 'type' => 'customer']
+            );
+
+            // Generate an auth token
+            $token          = $user->createToken($contact->uuid);
+            $contact->token = $token->plainTextToken;
+
+            return new Customer($contact);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage(), 500);
+        }
     }
 
     /**
@@ -433,13 +672,13 @@ class CustomerController extends Controller
         $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
 
         if (!$user) {
-            return response()->error('Unable to verify code.');
+            return response()->apiError('Unable to verify code.');
         }
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
         if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
-            return response()->error('Invalid verification code!');
+            return response()->apiError('Invalid verification code!');
         }
 
         // get the storefront or network logging in for
@@ -466,7 +705,7 @@ class CustomerController extends Controller
         try {
             $token = $user->createToken($contact->uuid);
         } catch (\Exception $e) {
-            return response()->error($e->getMessage());
+            return response()->apiError($e->getMessage());
         }
 
         $contact->token = $token->plainTextToken;
@@ -494,7 +733,7 @@ class CustomerController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->error('Not authorized to view customers places');
+            return response()->apiError('Not authorized to view customers places');
         }
 
         $gateway    = Storefront::findGateway('stripe');
@@ -529,7 +768,7 @@ class CustomerController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->error('Not authorized to view customers places');
+            return response()->apiError('Not authorized to view customers places');
         }
 
         $gateway    = Storefront::findGateway('stripe');
