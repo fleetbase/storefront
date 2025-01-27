@@ -6,7 +6,7 @@ use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 class Product extends FleetbaseResource
 {
