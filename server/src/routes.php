@@ -84,6 +84,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->delete('{id}', 'ReviewController@find');
                 });
 
+                // storefront/v1/orders
+                $router->group(['prefix' => 'orders'], function () use ($router) {
+                    $router->put('picked-up', 'OrderController@completeOrderPickup');
+                });
+
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');

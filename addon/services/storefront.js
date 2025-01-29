@@ -221,7 +221,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 modal.startLoading();
 
                 try {
-                    const store = await store.save();
+                    await store.save();
                     this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
                     // this.currentUser.setOption('activeStorefront', store.id);
                     this.setActiveStorefront(store);

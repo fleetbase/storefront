@@ -5,8 +5,8 @@ namespace Fleetbase\Storefront\Http\Resources;
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class Product extends FleetbaseResource
 {
