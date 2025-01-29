@@ -5,7 +5,9 @@ namespace Fleetbase\Storefront\Notifications;
 use Exception;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NotificationChannel;
+use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
 // use Fleetbase\FleetOps\Support\Utils;
 use Illuminate\Bus\Queueable;
@@ -27,6 +29,9 @@ use Pushok\Client as PushOkClient;
 class StorefrontOrderPreparing extends Notification
 {
     use Queueable;
+
+    public Order $order;
+    public Store|Network $storefront;
 
     /**
      * Create a new notification instance.
