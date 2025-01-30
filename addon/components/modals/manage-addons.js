@@ -12,32 +12,18 @@ import { all } from 'rsvp';
  * This component uses various Ember services like store, internationalization, currentUser, modalsManager, and notifications for its operations.
  */
 export default class ModalsManageAddonsComponent extends Component {
-    /** Service for data store operations. */
     @service store;
-
-    /** Service for internationalization. */
     @service intl;
-
-    /** Service for accessing current user information. */
     @service currentUser;
-
-    /** Service for managing modal dialogs. */
     @service modalsManager;
-
-    /** Service for displaying notifications. */
     @service notifications;
-
-    /** Tracked array of addon categories. */
     @tracked categories = [];
-
-    /** Tracked options object for the component. */
     @tracked options = {};
-
-    /** The currently active store object. */
     @tracked activeStore;
 
     /**
      * Constructs the ModalsManageAddonsComponent instance with the given options.
+     *
      * @param {Object} owner - The owner of the instance.
      * @param {Object} options - Configuration options for the component.
      */
