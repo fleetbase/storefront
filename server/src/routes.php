@@ -185,6 +185,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('notification-channels');
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
+                        $router->fleetbaseRoutes('food-trucks');
+                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes('catalog-categories');
+                        $router->fleetbaseRoutes('catalog-hours');
                         $router->group(
                             [],
                             function ($router) {

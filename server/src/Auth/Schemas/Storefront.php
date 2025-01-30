@@ -96,6 +96,22 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'catalog',
+            'actions' => [],
+        ],
+        [
+            'name'    => 'catalog-category',
+            'actions' => [],
+        ],
+        [
+            'name'    => 'catalog-hour',
+            'actions' => [],
+        ],
+        [
+            'name'    => 'food-truck',
+            'actions' => [],
+        ],
+        [
             'name'           => 'settings',
             'action'         => ['import'],
             'remove_actions' => ['delete', 'export', 'list', 'create'],

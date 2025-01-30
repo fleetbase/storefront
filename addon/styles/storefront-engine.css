@@ -61,9 +61,9 @@
 }
 
 /** hotfix nav tab */
-body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .nav-item.active, 
-body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .nav-item.active, 
-body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .ui-tab.active, 
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .nav-item.active,
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .nav-item.active,
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .ui-tab.active,
 body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .ui-tab.active {
-    background-color: #202A37;
+    background-color: #202a37;
 }

@@ -24,7 +24,14 @@
                 <Textarea @value={{this.product.description}} class="form-input w-full" placeholder="Enter a description of your product...." disabled={{unauthorized}} rows={{4}} />
             </InputGroup>
             <InputGroup @name="Product Status">
-                <Select class="w-full" @value={{this.product.status}} @placeholder="Select product status" @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} />
+                <Select
+                    class="w-full"
+                    @value={{this.product.status}}
+                    @placeholder="Select product status"
+                    @options={{this.statusOptions}}
+                    @onSelect={{fn (mut this.product.status)}}
+                    @humanize={{true}}
+                />
             </InputGroup>
             <InputGroup @name="Product Tags">
                 <TagInput

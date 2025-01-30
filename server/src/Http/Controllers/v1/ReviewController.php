@@ -33,8 +33,8 @@ class ReviewController extends Controller
         }
 
         if (session('storefront_store')) {
-            $results = Review::queryWithRequest($request, function (&$query) use ($store, $limit, $offset) {
-                $query->where('subject_uuid', $store->uuid);
+            $results = Review::queryWithRequest($request, function (&$query) use ($limit, $offset) {
+                $query->where('subject_uuid', session('storefront_store'));
 
                 if ($limit) {
                     $query->limit($limit);
@@ -176,8 +176,10 @@ class ReviewController extends Controller
      */
     public function create(CreateReviewRequest $request)
     {
-        $customer = Storefront::getCustomerFromToken();
-        $about    = Storefront::about();
+        $customer    = Storefront::getCustomerFromToken();
+        $about       = Storefront::about();
+        $disk        = $request->input('disk', config('filesystems.default'));
+        $bucket      = $request->input('bucket', config('filesystems.disks.' . $disk . '.bucket', config('filesystems.disks.s3.bucket')));
 
         if (!$customer) {
             return response()->error('Not authorized to create reviews');
@@ -209,7 +211,7 @@ class ReviewController extends Controller
                 $bucketPath = 'hyperstore/' . $about->public_id . '/review-photos/' . $review->uuid . '/' . File::randomFileName($extension);
 
                 // upload file to path
-                $upload = Storage::disk('s3')->put($bucketPath, base64_decode($data), 'public');
+                $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data), 'public');
 
                 // create the file
                 $file = File::create([
@@ -222,7 +224,7 @@ class ReviewController extends Controller
                     'extension'         => $extension,
                     'content_type'      => $mimeType,
                     'path'              => $bucketPath,
-                    'bucket'            => config('filesystems.disks.s3.bucket'),
+                    'bucket'            => $bucket,
                     'type'              => 'storefront_review_upload',
                     'size'              => Utils::getBase64ImageSize($data),
                 ]);

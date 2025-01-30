@@ -24,9 +24,9 @@
             {{#if this.order.isPickupReady}}
                 <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.component.widget.orders.mark-as-completed"}} @onClick={{fn this.markAsCompleted this.order}} />
             {{/if}}
-            {{#unless this.order.isCanceled}}
+            {{#if (not (or this.order.isCanceled (eq this.order.status "order_canceled")))}}
                 <Button @size="xs" @type="danger" @icon="ban" @helpText={{t "storefront.component.widget.orders.cancel-order"}} @onClick={{fn this.cancelOrder this.order}} />
-            {{/unless}}
+            {{/if}}
         </div>
     </Overlay::Header>
     <Overlay::Body>

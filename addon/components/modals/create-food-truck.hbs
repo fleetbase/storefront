@@ -1,0 +1,37 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <InputGroup @name="Assign Food Truck Vehicle">
+            <ModelSelect
+                @modelName="vehicle"
+                @selectedModel={{@options.foodTruck.vehicle}}
+                @placeholder="Assign Food Truck Vehicle"
+                @triggerClass="form-select form-input"
+                @infiniteScroll={{false}}
+                @renderInPlace={{true}}
+                @onChange={{fn (mut @options.foodTruck.vehicle)}}
+                as |model|
+            >
+                <div class="flex flex-row">
+                    <div class="mr-2">
+                        <Image src={{model.photo_url}} class="w-10 h-10 rounded-md shadow-sm" />
+                    </div>
+                    <div class="flex flex-col flex-1">
+                        <div class="font-semibold">{{model.display_name}}</div>
+                        <div>{{model.plate_number}}</div>
+                    </div>
+                </div>
+            </ModelSelect>
+
+        </InputGroup>
+        <InputGroup @name="Food Truck Status">
+            <Select
+                class="w-full"
+                @value={{@options.foodTruck.status}}
+                @placeholder="Select food truck status"
+                @options={{@options.statusOptions}}
+                @onSelect={{fn (mut @options.foodTruck.status)}}
+                @humanize={{true}}
+            />
+        </InputGroup>
+    </div>
+</Modal::Default>

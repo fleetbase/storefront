@@ -1,0 +1,27 @@
+<Layout::Section::Header @title={{t "storefront.common.food-trucks"}}>
+    <Button @type="primary" @icon="plus" @text={{t "storefront.common.new"}} @onClick={{this.createFoodTruck}} @permission="storefront create food-truck" class="mr-2" />
+    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export food-truck" />
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    <div class="p-4">
+        <div class="grid grid-cols-3 gap-4">
+            {{#each @model as |foodTruck|}}
+                <div class="px-2 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 border-gray-200 bg-gray-100">
+                    <div class="flex flex-row mb-2">
+                        <div class="mr-2">
+                            <Image src={{foodTruck.vehicle.photo_url}} class="w-14 h-14 rounded-md shadow-sm" />
+                        </div>
+                        <div class="flex flex-col flex-1">
+                            <div class="font-semibold">{{foodTruck.vehicle.display_name}}</div>
+                            <div>{{foodTruck.vehicle.plate_number}}</div>
+                        </div>
+                    </div>
+                    <Button @type="danger" @icon="trash" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteFoodTruck foodTruck}} @permission="storefront delete food-truck" />
+                </div>
+            {{/each}}
+        </div>
+    </div>
+</Layout::Section::Body>
+
+{{outlet}}

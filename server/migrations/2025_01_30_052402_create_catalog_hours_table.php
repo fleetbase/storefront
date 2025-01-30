@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->bigIncrements('id');
             $table->uuid('uuid')->unique()->default(Str::uuid()->toString());
             $table->foreignUuid('catalog_uuid')
-                ->constrained('catalogs')
+                ->references('uuid')->on('catalogs')
                 ->onUpdate('CASCADE')
                 ->onDelete('CASCADE');
             $table->string('day_of_week');

@@ -42,7 +42,13 @@
                                     />
                                 {{/if}}
                                 {{#if order.isPreparing}}
-                                    <Button @size="xs" @type="success" @icon="bell-concierge" @text={{t "storefront.component.widget.orders.mark-as-ready"}} @onClick={{fn this.markAsReady order}} />
+                                    <Button
+                                        @size="xs"
+                                        @type="success"
+                                        @icon="bell-concierge"
+                                        @text={{t "storefront.component.widget.orders.mark-as-ready"}}
+                                        @onClick={{fn this.markAsReady order}}
+                                    />
                                 {{/if}}
                                 {{#if order.isPickupReady}}
                                     <Button

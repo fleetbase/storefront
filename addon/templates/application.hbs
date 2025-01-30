@@ -9,6 +9,13 @@
             @visible="storefront see product"
             disabled={{not this.activeStore.id}}
         >{{t "storefront.sidebar.products"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item
+            @route="console.storefront.catalogs"
+            @icon="book-open"
+            @permission="storefront list catalog"
+            @visible="storefront see catalog"
+            disabled={{not this.activeStore.id}}
+        >{{t "storefront.sidebar.catalogs"}}</Layout::Sidebar::Item>
         <Layout::Sidebar::Item @route="console.storefront.customers" @icon="users" @permission="storefront list user" @visible="storefront see user" disabled={{not this.activeStore.id}}>{{t
                 "storefront.sidebar.customers"
             }}</Layout::Sidebar::Item>
@@ -26,6 +33,13 @@
             @visible="storefront see network"
             disabled={{not this.activeStore.id}}
         >{{t "storefront.sidebar.networks"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item
+            @route="console.storefront.food-trucks"
+            @icon="truck"
+            @permission="storefront list food-truck"
+            @visible="storefront see food-truck"
+            disabled={{not this.activeStore.id}}
+        >{{t "storefront.sidebar.food-trucks"}}</Layout::Sidebar::Item>
         <Layout::Sidebar::Item
             @route="console.storefront.settings"
             @icon="cogs"

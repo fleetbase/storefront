@@ -19,44 +19,32 @@ return new class extends Migration {
         Schema::connection(config('storefront.connection.db'))->create('food_trucks', function (Blueprint $table) use ($databaseName) {
             $table->bigIncrements('id');
             $table->uuid('uuid')->unique()->default(Str::uuid()->toString());
-
-            // The vehicle UUID from Fleetbase "vehicles" table
+            $table->string('public_id')->unique()->nullable();
             $table->foreignUuid('vehicle_uuid')
                 ->nullable()
                 ->references('uuid')
                 ->on(new Expression($databaseName . '.vehicles'))
                 ->onUpdate('CASCADE')
                 ->onDelete('SET NULL');
-
-            // The store that "owns" this food truck
             $table->foreignUuid('store_uuid')
                 ->nullable()
                 ->references('uuid')
                 ->on('stores')
                 ->onUpdate('CASCADE')
                 ->onDelete('SET NULL');
-
-            // The company UUID from Fleetbase "companies" table
             $table->foreignUuid('company_uuid')
                 ->nullable()
                 ->references('uuid')
                 ->on(new Expression($databaseName . '.companies'))
                 ->onUpdate('CASCADE')
                 ->onDelete('SET NULL');
-
-            // The user who created this record
             $table->foreignUuid('created_by_uuid')
                 ->nullable()
                 ->references('uuid')
                 ->on(new Expression($databaseName . '.users'))
                 ->onUpdate('CASCADE')
                 ->onDelete('SET NULL');
-
-            // Add any additional fields you might need:
-            $table->string('name')->nullable();
-            $table->text('description')->nullable();
             $table->string('status')->default('inactive');
-
             $table->timestamps();
             $table->softDeletes();
         });

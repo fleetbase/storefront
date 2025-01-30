@@ -1,7 +1,6 @@
 <Layout::Section::Header @title="All Products" @searchQuery={{this.query}} @onSearch={{perform this.search}} />
 
 <Layout::Section::Body class="h-full overflow-y-scroll p-6">
-
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         {{#each @model as |product|}}
             <div class="border border-gray-200 bg-white dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 text-center rounded-md px-2 py-3">

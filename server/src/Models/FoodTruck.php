@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
@@ -41,8 +42,6 @@ class FoodTruck extends StorefrontModel
         'store_uuid',
         'company_uuid',
         'created_by_uuid',
-        'name',
-        'description',
         'status',
     ];
 
@@ -52,6 +51,14 @@ class FoodTruck extends StorefrontModel
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class, 'store_uuid', 'uuid');
+    }
+
+    /**
+     * Get the vehicle that is the food truck.
+     */
+    public function vehicle(): BelongsTo
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Vehicle::class, 'vehicle_uuid', 'uuid');
     }
 
     /**
@@ -73,6 +80,6 @@ class FoodTruck extends StorefrontModel
             ->with('catalog')
             ->get()
             ->pluck('catalog')
-            ->filter(); // filter out null if there's no associated catalog
+            ->filter();
     }
 }
