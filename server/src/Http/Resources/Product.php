@@ -53,6 +53,7 @@ class Product extends FleetbaseResource
             'youtube_urls'       => $this->youtube_urls ?? [],
             'created_at'         => $this->created_at,
             'updated_at'         => $this->updated_at,
+            'type'               => $this->when(Http::isInternalRequest(), 'product'),
         ];
     }
 

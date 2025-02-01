@@ -26,6 +26,18 @@ return new class extends Migration {
                 ->on(new Expression($databaseName . '.vehicles'))
                 ->onUpdate('CASCADE')
                 ->onDelete('SET NULL');
+            $table->foreignUuid('service_area_uuid')
+                ->nullable()
+                ->references('uuid')
+                ->on(new Expression($databaseName . '.service_areas'))
+                ->onUpdate('CASCADE')
+                ->onDelete('SET NULL');
+            $table->foreignUuid('zone_uuid')
+                ->nullable()
+                ->references('uuid')
+                ->on(new Expression($databaseName . '.zones'))
+                ->onUpdate('CASCADE')
+                ->onDelete('SET NULL');
             $table->foreignUuid('store_uuid')
                 ->nullable()
                 ->references('uuid')

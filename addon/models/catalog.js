@@ -1,20 +1,19 @@
-import Model, { attr, belongsTo, hasMany } from '@ember-data/model';
+import Model, { attr, hasMany } from '@ember-data/model';
 import { format, formatDistanceToNow } from 'date-fns';
 
 export default class CatalogModel extends Model {
     /** @ids */
+    @attr('string') store_uuid;
     @attr('string') created_by_uuid;
     @attr('string') company_uuid;
-    @attr('string') subject_uuid;
 
     /** @relationships */
-    @hasMany('catalog-category') categories;
-    @hasMany('catalog-hour') hours;
+    @hasMany('catalog-category', { async: false }) categories;
+    @hasMany('catalog-hour', { async: false }) hours;
 
     /** @attributes */
     @attr('string') name;
     @attr('string') description;
-    @attr('string', { defaultValue: 'storefront:store' }) subject_type;
     @attr('raw') meta;
     @attr('string') status;
 

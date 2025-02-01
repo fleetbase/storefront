@@ -282,8 +282,8 @@
                 </div>
             </ContentPanel>
 
-            <ContentPanel @title="Availability" @open={{this.product.hours.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
-                <div class="px-4 py-3">
+            <ContentPanel @title="Availability" @open={{this.product.hours.length}} @pad={{false}} @panelBodyClass="bg-white dark:bg-gray-800">
+                <div class="p-2">
                     <ScheduleManager
                         @subject={{this.product}}
                         @subjectKey="product_uuid"

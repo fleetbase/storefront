@@ -1,8 +1,46 @@
 <Layout::Section::Header @title={{t "storefront.common.catalogs"}}>
-    <Button @type="primary" @icon="plus" @text={{t "storefront.common.new"}} @permission="storefront create food-truck" class="mr-2" />
-    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export food-truck" />
+    <Button @type="primary" @icon="plus" @text={{t "storefront.common.new"}} @permission="storefront create catalog" @onClick={{this.createCatalog}} class="mr-2" />
+    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export catalog" />
 </Layout::Section::Header>
 
-<Layout::Section::Body />
+<Layout::Section::Body>
+    <div class="p-4">
+        <div class="grid grid-cols-3 gap-4">
+            {{#each @model as |catalog|}}
+                <div class="px-2 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 border-gray-200 bg-gray-100">
+                    <div class="flex flex-row mb-2">
+                        <div class="flex flex-col flex-1">
+                            <div class="text-sm font-semibold">{{catalog.name}}</div>
+                            <div class="mt-1 flex flex-row">
+                                <div class="text-sm">{{n-a catalog.description}}</div>
+                            </div>
+                            <div>
+                                <Badge @status={{catalog.status}} @hideStatusDot={{true}} />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex flex-row space-x-2">
+                        <Button
+                            @type="default"
+                            @icon="pencil"
+                            @text={{t "storefront.common.edit"}}
+                            @onClick={{fn this.editCatalog catalog}}
+                            @permission="storefront update food-truck"
+                            @size="sm"
+                        />
+                        <Button
+                            @type="danger"
+                            @icon="trash"
+                            @text={{t "storefront.common.delete"}}
+                            @onClick={{fn this.deleteCatalog catalog}}
+                            @permission="storefront delete food-truck"
+                            @size="sm"
+                        />
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    </div>
+</Layout::Section::Body>
 
 {{outlet}}

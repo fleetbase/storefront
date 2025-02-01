@@ -3,25 +3,24 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Traits\HasApiModelBehavior;
-use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class CatalogSubject extends StorefrontModel
+class CatalogSubject extends MorphPivot
 {
     use HasUuid;
-    use HasPublicid;
     use HasApiModelBehavior;
     use SoftDeletes;
 
     /**
-     * The type of public ID to generate.
+     * The default database connection to use.
      *
      * @var string
      */
-    protected $publicIdType = 'catalog_subject';
+    protected $conntection = 'storefront';
 
     /**
      * The table associated with the model.
@@ -43,6 +42,15 @@ class CatalogSubject extends StorefrontModel
         'company_uuid',
         'created_by_uuid',
     ];
+
+    /**
+     * Set the configured connection.
+     */
+    public function __construct(array $attributes = [])
+    {
+        $this->setConnection(config('storefront.connection.db'));
+        parent::__construct($attributes);
+    }
 
     /**
      * The "subject" of this pivot - can be a Store, FoodTruck, etc.

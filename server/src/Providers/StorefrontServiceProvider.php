@@ -24,9 +24,11 @@ class StorefrontServiceProvider extends CoreServiceProvider
      * @var array
      */
     public $observers = [
-        \Fleetbase\Storefront\Models\Product::class => \Fleetbase\Storefront\Observers\ProductObserver::class,
-        \Fleetbase\Storefront\Models\Network::class => \Fleetbase\Storefront\Observers\NetworkObserver::class,
-        \Fleetbase\Models\Company::class            => \Fleetbase\Storefront\Observers\CompanyObserver::class,
+        \Fleetbase\Storefront\Models\Product::class   => \Fleetbase\Storefront\Observers\ProductObserver::class,
+        \Fleetbase\Storefront\Models\Network::class   => \Fleetbase\Storefront\Observers\NetworkObserver::class,
+        \Fleetbase\Storefront\Models\Catalog::class   => \Fleetbase\Storefront\Observers\CatalogObserver::class,
+        \Fleetbase\Storefront\Models\FoodTruck::class => \Fleetbase\Storefront\Observers\FoodTruckObserver::class,
+        \Fleetbase\Models\Company::class              => \Fleetbase\Storefront\Observers\CompanyObserver::class,
     ];
 
     /**

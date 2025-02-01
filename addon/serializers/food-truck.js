@@ -11,6 +11,8 @@ export default class FoodTruckSerializer extends ApplicationSerializer.extend(Em
         return {
             catalogs: { embedded: 'always' },
             vehicle: { embedded: 'always' },
+            serviceArea: { embedded: 'always' },
+            zone: { embedded: 'always' },
         };
     }
 }

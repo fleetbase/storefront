@@ -13,11 +13,36 @@
                             <Image src={{foodTruck.vehicle.photo_url}} class="w-14 h-14 rounded-md shadow-sm" />
                         </div>
                         <div class="flex flex-col flex-1">
-                            <div class="font-semibold">{{foodTruck.vehicle.display_name}}</div>
-                            <div>{{foodTruck.vehicle.plate_number}}</div>
+                            <div class="text-sm font-semibold mb-0.5">{{foodTruck.vehicle.display_name}}</div>
+                            <div class="flex flex-row items-center space-x-1">
+                                <FaIcon @icon="draw-polygon" class="mr-1" />
+                                <div class="text-sm">{{n-a foodTruck.service_area.name}}</div>
+                                <div>•</div>
+                                <div class="text-sm">{{n-a foodTruck.zone.name}}</div>
+                            </div>
+                            {{!-- <div>{{format-point foodTruck.vehicle.location}}</div> --}}
+                            <Badge @status={{foodTruck.status}} @hideStatusDot={{true}} />
                         </div>
                     </div>
-                    <Button @type="danger" @icon="trash" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteFoodTruck foodTruck}} @permission="storefront delete food-truck" />
+                    <div class="mt-2 flex flex-row space-x-2">
+                        <Button
+                            @type="default"
+                            @icon="pencil"
+                            @text={{t "storefront.common.edit"}}
+                            @onClick={{fn this.editFoodTruck foodTruck}}
+                            @permission="storefront update food-truck"
+                            @size="xs"
+                        />
+                        <Button @type="default" @icon="square-check" @text="Catalogs" @onClick={{fn this.assignCatalogs foodTruck}} @permission="storefront update food-truck" @size="xs" />
+                        <Button
+                            @type="danger"
+                            @icon="trash"
+                            @text={{t "storefront.common.delete"}}
+                            @onClick={{fn this.deleteFoodTruck foodTruck}}
+                            @permission="storefront delete food-truck"
+                            @size="xs"
+                        />
+                    </div>
                 </div>
             {{/each}}
         </div>

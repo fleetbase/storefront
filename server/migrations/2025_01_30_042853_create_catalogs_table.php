@@ -19,8 +19,9 @@ return new class extends Migration {
             $table->bigIncrements('id');
             $table->uuid('uuid')->unique()->default(Str::uuid()->toString());
             $table->string('public_id')->unique()->nullable();
-            $table->foreignUuid('company_uuid')->nullable()->references('uuid')->on(new Expression($databaseName . '.companies'))->onUpdate('CASCADE')->onDelete('CASCADE');
-            $table->foreignUuid('created_by_uuid')->nullable()->references('uuid')->on(new Expression($databaseName . '.users'))->onUpdate('CASCADE')->onDelete('CASCADE');
+            $table->foreignUuid('store_uuid')->nullable()->references('uuid')->on('stores')->onUpdate('CASCADE')->onDelete('SET NULL');
+            $table->foreignUuid('company_uuid')->nullable()->references('uuid')->on(new Expression($databaseName . '.companies'))->onUpdate('CASCADE')->onDelete('SET NULL');
+            $table->foreignUuid('created_by_uuid')->nullable()->references('uuid')->on(new Expression($databaseName . '.users'))->onUpdate('CASCADE')->onDelete('SET NULL');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('status')->default('draft');

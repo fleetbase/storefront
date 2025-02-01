@@ -10,7 +10,9 @@ export default class FoodTruckModel extends Model {
 
     /** @relationships */
     @belongsTo('vehicle') vehicle;
-    // @belongsTo('store') store;
+    @belongsTo('service-area') service_area;
+    @belongsTo('zone') zone;
+    @hasMany('catalog') catalogs;
 
     /** @attributes */
     @attr('string', { defaultValue: 'storefront:store' }) subject_type;

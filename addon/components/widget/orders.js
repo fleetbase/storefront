@@ -41,7 +41,7 @@ export default class WidgetOrdersComponent extends Component {
     }
 
     @action async reloadOrders(params = {}) {
-        this.loadOrders.perform();
+        this.loadOrders.perform(params);
     }
 
     @task *loadOrders(params = {}) {

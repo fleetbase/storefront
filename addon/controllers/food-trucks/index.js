@@ -14,7 +14,6 @@ export default class FoodTrucksIndexController extends Controller {
     @tracked statusOptions = ['active', 'inactive'];
 
     @action createFoodTruck() {
-        console.log('create food truck fn called!');
         const foodTruck = this.store.createRecord('food-truck', {
             store_uuid: this.storefront.activeStore.id,
             status: 'active',
@@ -30,7 +29,58 @@ export default class FoodTrucksIndexController extends Controller {
                 try {
                     await foodTruck.save();
                     this.hostRouter.refresh();
-                    this.notifications.success('New food truck saved');
+                    this.notifications.success('New food truck created.');
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
+    @action editFoodTruck(foodTruck) {
+        this.modalsManager.show('modals/create-food-truck', {
+            title: 'Edit Food Truck',
+            acceptButtonText: 'Save Changes',
+            acceptButtonIcon: 'save',
+            statusOptions: this.statusOptions,
+            foodTruck,
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await foodTruck.save();
+                    this.hostRouter.refresh();
+                    this.notifications.success('Changes to food truck saved.');
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
+    @action async assignCatalogs(foodTruck) {
+        const allCatalogs = await this.store.query('catalog', { limit: -1 });
+        console.log('[allCatalogs]', allCatalogs);
+        this.modalsManager.show('modals/assign-food-truck-catalogs', {
+            title: "Assign Catalog's to this Food Truck",
+            acceptButtonText: 'Done',
+            acceptButtonIcon: 'save',
+            foodTruck,
+            allCatalogs,
+            updateCatalogSelections: (catalogs) => {
+                foodTruck.set('catalogs', catalogs);
+            },
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await foodTruck.save();
+                    this.hostRouter.refresh();
+                    this.notifications.success('Changes to food truck saved.');
                 } catch (error) {
                     this.notifications.serverError(error);
                 } finally {

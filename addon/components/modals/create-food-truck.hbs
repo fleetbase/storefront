@@ -21,8 +21,40 @@
                     </div>
                 </div>
             </ModelSelect>
-
         </InputGroup>
+        <InputGroup @name="Service Area">
+            <ModelSelect
+                @modelName="service-area"
+                @selectedModel={{@options.foodTruck.service_area}}
+                @placeholder="Assign Food Truck to Service Area"
+                @triggerClass="form-select form-input"
+                @infiniteScroll={{false}}
+                @renderInPlace={{true}}
+                @onChange={{fn (mut @options.foodTruck.service_area)}}
+                @allowClear={{true}}
+                as |model|
+            >
+                {{model.name}}
+            </ModelSelect>
+        </InputGroup>
+        {{#if @options.foodTruck.service_area}}
+            <InputGroup @name="Zone">
+                <ModelSelect
+                    @modelName="zone"
+                    @selectedModel={{@options.foodTruck.zone}}
+                    @query={{hash service_area_uuid=@options.foodTruck.service_area.id}}
+                    @placeholder="Assign Food Truck to Zone"
+                    @triggerClass="form-select form-input"
+                    @infiniteScroll={{false}}
+                    @renderInPlace={{true}}
+                    @onChange={{fn (mut @options.foodTruck.zone)}}
+                    @allowClear={{true}}
+                    as |model|
+                >
+                    {{model.name}}
+                </ModelSelect>
+            </InputGroup>
+        {{/if}}
         <InputGroup @name="Food Truck Status">
             <Select
                 class="w-full"

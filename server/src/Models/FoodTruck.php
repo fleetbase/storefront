@@ -2,13 +2,17 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\FleetOps\Models\ServiceArea;
 use Fleetbase\FleetOps\Models\Vehicle;
+use Fleetbase\FleetOps\Models\Zone;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class FoodTruck extends StorefrontModel
 {
@@ -42,6 +46,8 @@ class FoodTruck extends StorefrontModel
         'store_uuid',
         'company_uuid',
         'created_by_uuid',
+        'service_area_uuid',
+        'zone_uuid',
         'status',
     ];
 
@@ -62,6 +68,22 @@ class FoodTruck extends StorefrontModel
     }
 
     /**
+     * Get the service area the food truck is assigned to.
+     */
+    public function serviceArea(): BelongsTo
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(ServiceArea::class, 'service_area_uuid', 'uuid');
+    }
+
+    /**
+     * Get the zone the food truck is assigned to.
+     */
+    public function zone(): BelongsTo
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Zone::class, 'zone_uuid', 'uuid');
+    }
+
+    /**
      * Polymorphic relationship to the CatalogSubject pivot.
      * This allows you to retrieve all catalogs assigned to this food truck.
      */
@@ -71,15 +93,80 @@ class FoodTruck extends StorefrontModel
     }
 
     /**
-     * Shortcut to get the actual Catalog models assigned via pivot.
+     * The catalogs assigned to this food truck.
      */
-    public function catalogs()
+    public function catalogs(): MorphToMany
     {
-        return $this
-            ->catalogAssignments()
-            ->with('catalog')
-            ->get()
-            ->pluck('catalog')
-            ->filter();
+        return $this->morphToMany(
+            Catalog::class,
+            'subject',
+            'catalog_subjects',
+            'subject_uuid',
+            'catalog_uuid',
+        )->using(CatalogSubject::class)
+        ->withTimestamps()
+        ->wherePivotNull('deleted_at');
+    }
+
+    /**
+     * Sync the given catalogs to this food truck by creating or deleting pivot rows
+     * in catalog_subjects. If pivot rows are polymorphic, also filter by subject_type.
+     *
+     * @return $this
+     */
+    public function setCatalogs(array $catalogs = []): FoodTruck
+    {
+        // Ensure 'catalogs' relationship is loaded
+        $this->loadMissing('catalogs');
+
+        // Collect existing catalogs
+        $existingCatalogs = $this->catalogs;
+
+        // Extract incoming UUIDs
+        $incomingUuids = collect($catalogs)
+        ->map(function ($item) {
+            // If it's already a Catalog model, use its uuid
+            if ($item instanceof Catalog) {
+                return $item->uuid;
+            }
+            // If it's a string UUID, return as is
+            if (is_string($item) && Str::isUuid($item)) {
+                return $item;
+            }
+
+            // If it's an array/object with a 'uuid' key, return that
+            return data_get($item, 'uuid');
+        })
+        ->filter(fn ($uuid) => Str::isUuid($uuid))
+        ->unique()
+        ->values();
+
+        // Remove pivot rows for catalogs not in incoming list
+        $existingCatalogs
+            ->whereNotIn('uuid', $incomingUuids)
+            ->each(function (Catalog $catalog) {
+                CatalogSubject::where([
+                    'catalog_uuid' => $catalog->uuid,
+                    'subject_uuid' => $this->uuid,
+                    'subject_type' => get_class($this),
+                ])->delete();
+            });
+
+        // Create or restore pivot rows for each incoming
+        foreach ($incomingUuids as $catalogUuid) {
+            CatalogSubject::firstOrCreate(
+                [
+                    'catalog_uuid'  => $catalogUuid,
+                    'subject_uuid'  => $this->uuid,
+                    'subject_type'  => get_class($this),
+                ],
+                [
+                    'company_uuid'   => $this->company_uuid,
+                    'created_by_uuid'=> session('user'),
+                ]
+            );
+        }
+
+        return $this;
     }
 }
