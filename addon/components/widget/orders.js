@@ -19,6 +19,7 @@ export default class WidgetOrdersComponent extends Component {
     @tracked title = this.intl.t('storefront.component.widget.orders.widget-title');
     @tracked loaded = false;
     @tracked total = 0;
+    @tracked activeFilter = false;
 
     constructor(owner, { title }) {
         super(...arguments);
@@ -34,8 +35,13 @@ export default class WidgetOrdersComponent extends Component {
         });
     }
 
+    @action toggleActiveFilter(toggled) {
+        this.activeFilter = toggled;
+        this.loadOrders.perform();
+    }
+
     @action async reloadOrders(params = {}) {
-        this.orders = await this.fetchOrders(params);
+        this.loadOrders.perform(params);
     }
 
     @task *loadOrders(params = {}) {
@@ -46,6 +52,10 @@ export default class WidgetOrdersComponent extends Component {
             sort: '-created_at',
             ...params,
         };
+
+        if (this.activeFilter) {
+            queryParams.status = 'active';
+        }
 
         try {
             const orders = yield this.fetch.get('orders', queryParams, { namespace: 'storefront/int/v1', normalizeToEmberData: true });

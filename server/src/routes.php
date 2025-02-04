@@ -75,6 +75,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'ProductController@find');
                 });
 
+                // storefront/v1/food-trucks
+                $router->group(['prefix' => 'food-trucks'], function () use ($router) {
+                    $router->get('/', 'FoodTruckController@query');
+                    $router->get('{id}', 'FoodTruckController@find');
+                });
+
                 // storefront/v1/reviews
                 $router->group(['prefix' => 'reviews'], function () use ($router) {
                     $router->get('/', 'ReviewController@query');
@@ -185,6 +191,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('notification-channels');
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
+                        $router->fleetbaseRoutes('food-trucks');
+                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes('catalog-categories');
+                        $router->fleetbaseRoutes('catalog-hours');
                         $router->group(
                             [],
                             function ($router) {

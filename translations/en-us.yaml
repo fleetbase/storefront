@@ -70,10 +70,15 @@ storefront:
     facebook: Facebook
     instagram: Instagram
     twitter: Twitter
+    food-trucks: Food Trucks
+    catalog: Catalog
+    catalogs: Catalogs
   sidebar:
     storefront: Storefront
     dashboard: Dashboard
     products: Products
+    catalogs: Catalogs
+    food-trucks: Food Trucks
     customers: Customers
     orders: Orders
     networks: Networks

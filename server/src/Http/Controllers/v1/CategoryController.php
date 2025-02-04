@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class CategoryController extends Controller
 {
     /**
-     * Query for Storefront Product resources.
+     * Query for Storefront Category resources.
      *
      * @return \Illuminate\Http\Response
      */

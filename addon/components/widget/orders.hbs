@@ -30,6 +30,9 @@
         @pad={{false}}
         @wrapperClass={{@wrapperClass}}
     >
+        <div class="flex justify-end px-4 py-2">
+            <Toggle @label="Active Orders Filter" @isToggled={{this.activeFilter}} @onToggle={{this.toggleActiveFilter}} />
+        </div>
         {{#if (media "isMobile")}}
             <div class="flex flex-col p-3 space-y-3">
                 {{#each this.orders as |order|}}
@@ -105,7 +108,7 @@
                                     @onClick={{fn this.markAsCompleted order}}
                                 />
                             {{/if}}
-                            {{#unless order.isCanceled}}
+                            {{#if (not (or order.isCanceled (eq order.status "order_canceled")))}}
                                 <Button
                                     @wrapperClass="w-full"
                                     class="btn-block w-full"
@@ -115,7 +118,7 @@
                                     @text={{t "storefront.component.widget.orders.cancel-order"}}
                                     @onClick={{fn this.cancelOrder order}}
                                 />
-                            {{/unless}}
+                            {{/if}}
                         </div>
                         <ContentPanel @title={{t "storefront.component.widget.orders.more-details"}}>
                             <div class="p-2 space-y-2">
@@ -279,7 +282,7 @@
                                                 @onClick={{fn this.markAsCompleted order}}
                                             />
                                         {{/if}}
-                                        {{#unless order.isCanceled}}
+                                        {{#if (not (or order.isCanceled (eq order.status "order_canceled")))}}
                                             <Button
                                                 @size="xs"
                                                 @type="danger"
@@ -287,7 +290,7 @@
                                                 @helpText={{t "storefront.component.widget.orders.cancel-order"}}
                                                 @onClick={{fn this.cancelOrder order}}
                                             />
-                                        {{/unless}}
+                                        {{/if}}
                                     </div>
                                 </td>
                             </tr>

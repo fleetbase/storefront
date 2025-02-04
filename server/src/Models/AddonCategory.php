@@ -21,6 +21,18 @@ class AddonCategory extends Category
     protected string $payloadKey = 'addon_category';
 
     /**
+     * Override the boot method to set "for" automatically.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Category $model) {
+            $model->for = 'storefront_product_addon';
+        });
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function addons()

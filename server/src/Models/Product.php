@@ -225,6 +225,21 @@ class Product extends StorefrontModel
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function catalogCategories()
+    {
+        return $this->belongsToMany(
+            CatalogCategory::class,
+            'catalog_category_product',
+            'product_uuid',
+            'catalog_category_uuid'
+        )
+        ->using(CatalogProduct::class)
+        ->withTimestamps();
+    }
+
+    /**
      * @return array
      */
     public function getMetaArrayAttribute()
@@ -494,7 +509,7 @@ class Product extends StorefrontModel
      */
     public function createAsEntity(array $additionalAttributes = []): Entity
     {
-        $entity = $this->toEntity();
+        $entity = $this->toEntity($additionalAttributes);
         $entity->save();
 
         return $entity;
