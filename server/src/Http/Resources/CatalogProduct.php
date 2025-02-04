@@ -40,6 +40,8 @@ class CatalogProduct extends Product
             'status'             => $this->status,
             'slug'               => $this->slug,
             'translations'       => $this->translations ?? [],
+            'addon_categories'   => $this->mapAddonCategories($this->addonCategories),
+            'variants'           => $this->mapVariants($this->variants),
             'files'              => $this->when(Http::isInternalRequest(), $this->files),
             'images'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files)),
             'videos'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files, 'video')),

@@ -334,6 +334,12 @@ class Cart extends StorefrontModel
             'addons'            => $addons,
         ];
 
+        // If item was added from a food truck
+        if ($storeLocationId && Str::startsWith($storeLocationId, 'food_truck_')) {
+            $properties['food_truck_id']     = $storeLocationId;
+            $properties['store_location_id'] = Utils::get($product, 'store.locations.0.public_id');
+        }
+
         $this->updateCurrency($product->currency, false);
 
         foreach ($properties as $prop => $value) {

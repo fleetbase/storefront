@@ -20,7 +20,7 @@ class CatalogSubject extends MorphPivot
      *
      * @var string
      */
-    protected $conntection = 'storefront';
+    protected $connection = 'storefront';
 
     /**
      * The table associated with the model.

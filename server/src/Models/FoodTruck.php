@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\FleetOps\Models\ServiceArea;
 use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Models\Zone;
+use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
@@ -20,6 +21,15 @@ class FoodTruck extends StorefrontModel
     use HasPublicid;
     use HasApiModelBehavior;
     use SoftDeletes;
+
+    /**
+     * The default database connection to use.
+     *
+     * @var string
+     */
+    protected $connection = 'storefront';
+
+    protected $resource = FoodTruckResource::class;
 
     /**
      * The type of public ID to generate.

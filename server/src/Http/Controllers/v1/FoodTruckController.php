@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Illuminate\Http\Request;
 
@@ -33,6 +34,6 @@ class FoodTruckController extends Controller
             });
         }
 
-        return $results;
+        return FoodTruckResource::collection($results);
     }
 }
