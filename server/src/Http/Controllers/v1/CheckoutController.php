@@ -598,6 +598,7 @@ class CheckoutController extends Controller
     {
         $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
+        $notes              = $request->input('notes');
 
         // validate transaction details
         if (!is_array($transactionDetails)) {
@@ -828,6 +829,7 @@ class CheckoutController extends Controller
             'type'             => 'storefront',
             'status'           => 'created',
             'meta'             => $orderMeta,
+            'notes'            => $notes,
         ];
 
         // if it's integrated vendor order apply to meta
@@ -879,6 +881,7 @@ class CheckoutController extends Controller
     {
         $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
+        $notes              = $request->input('notes');
 
         // validate transaction details
         if (!is_array($transactionDetails)) {
@@ -1055,6 +1058,7 @@ class CheckoutController extends Controller
                 'adhoc'            => $about->isOption('auto_dispatch'),
                 'type'             => 'storefront',
                 'status'           => 'created',
+                'notes'            => $notes,
             ];
 
             // if it's integrated vendor order apply to meta

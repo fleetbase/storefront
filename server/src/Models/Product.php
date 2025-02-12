@@ -49,11 +49,18 @@ class Product extends StorefrontModel
     protected $table = 'products';
 
     /**
+     * The default database connection to use.
+     *
+     * @var string
+     */
+    protected $connection = 'storefront';
+
+    /**
      * These attributes that can be queried.
      *
      * @var array
      */
-    protected $searchableColumns = ['name', 'description'];
+    protected $searchableColumns = ['name', 'description', 'tags'];
 
     /**
      * The attributes that are mass assignable.
@@ -381,6 +388,11 @@ class Product extends StorefrontModel
                             // make sure additional cost is always numbers only
                             if (isset($option['additional_cost'])) {
                                 $option['additional_cost'] = Utils::numbersOnly($option['additional_cost']);
+                            }
+
+                            // additional cost can never be null
+                            if ($option['additional_cost'] === null) {
+                                $option['additional_cost'] = 0;
                             }
 
                             $productVariantOptionInput = Arr::except($option, ['uuid', 'created_at', 'updated_at']);

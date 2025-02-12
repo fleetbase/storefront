@@ -270,7 +270,11 @@ class CustomerController extends Controller
         }
 
         // update the contact
-        $contact->update($input);
+        try {
+            $contact->update($input);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
 
         // response the contact resource
         return new Customer($contact);
