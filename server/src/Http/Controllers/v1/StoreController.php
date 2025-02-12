@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Gateway as GatewayResource;
 use Fleetbase\Storefront\Http\Resources\Network as NetworkResource;
 use Fleetbase\Storefront\Http\Resources\Product as ProductResource;
@@ -187,6 +188,15 @@ class StoreController extends Controller
                 ->whereIsAvailable(1)
                 ->whereStatus('published')
                 ->get();
+
+            // Search categories as well
+            $categories = Category::where(['company_uuid' => session('company'), 'for' => 'storefront_product'])->search($searchQuery)->get();
+            if ($categories) {
+                foreach ($categories as $category) {
+                    $categoryProducts = Product::where('category_uuid', $category->uuid)->get();
+                    $results          = $results->merge($categoryProducts)->unique('uuid');
+                }
+            }
 
             return ProductResource::collection($results);
         }

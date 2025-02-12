@@ -2,8 +2,8 @@
 
 namespace Fleetbase\Storefront\Models;
 
-use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\Models\File;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
@@ -84,7 +84,7 @@ class Review extends StorefrontModel
      */
     public function customer()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Contact::class);
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Customer::class);
     }
 
     /**
