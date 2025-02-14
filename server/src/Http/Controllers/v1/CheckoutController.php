@@ -19,6 +19,7 @@ use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Customer;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
@@ -475,8 +476,8 @@ class CheckoutController extends Controller
         $invoiceAmount       = $amount;
         $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
         $invoiceDescription  = $about->name . ' cart checkout';
-        $invoiceReceiverCode = $gateway->public_id;
-        $senderInvoiceNo     = $cart->id;
+        $invoiceReceiverCode = $checkout->public_id;
+        $senderInvoiceNo     = $checkout->public_id;
 
         // Create qpay invoice
         $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
@@ -491,69 +492,137 @@ class CheckoutController extends Controller
         ]);
     }
 
+    /**
+     * Capture and process QPay callback.
+     *
+     * This controller method handles QPay callback requests by verifying and processing
+     * payment information for a specified checkout. It performs the following steps:
+     *
+     * - Retrieves the checkout identifier from the request.
+     * - Looks up the associated Checkout and Gateway records.
+     * - If in sandbox mode and a test scenario is provided, it simulates a test payment
+     *   response for either success or error scenarios.
+     * - Initializes a QPay instance with the gateway configuration and sets the authentication token.
+     * - Retrieves the invoice ID from the checkout options and performs a payment check using QPay's API.
+     * - Publishes the payment data or error response to the SocketCluster channel.
+     *
+     * Depending on the 'respond' flag from the request, the method returns a JSON response
+     * or completes the processing without returning data.
+     *
+     * @param Request $request The HTTP request containing:
+     *                         - `checkout` (string): The public checkout identifier.
+     *                         - `respond` (boolean): Whether to return a JSON response.
+     *                         - `test` (string|null): A test scenario indicator ('success' or 'error') for sandbox mode.
+     *
+     * @return \Illuminate\Http\JsonResponse a JSON response with payment data or error details
+     *
+     * @throws \Exception if an error occurs during payment processing, an API error is returned
+     */
     public function captureQPayCallback(Request $request)
     {
-        $checkoutId = $request->input('checkout');
-        $respond    = $request->boolean('respond');
-        $test       = $request->input('test'); // success, error
+        $checkoutId    = $request->input('checkout');
+        $shouldRespond = $request->boolean('respond');
+        $testScenario  = $request->input('test'); // Expected: 'success' or 'error'
 
-        if ($checkoutId) {
-            // Get the checkout instance
-            $checkout = Checkout::where('public_id', $checkoutId)->first();
-            if ($checkout) {
-                // Restore the payment gateway instance
-                $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
-                if ($gateway) {
-                    try {
-                        // If testing send back test data
-                        // Handle test below
-                        if ($gateway->sandbox && is_string($test) && in_array($test, ['success', 'error'])) {
-                            $data = ['error' => null, 'checkout' => $checkout->public_id, 'payment' => null];
-                            if ($test === 'success') {
-                                $data['payment'] = QPay::createTestPaymentDataFromCheckout($checkout);
-                            } else {
-                                $data['error'] = ['error' => 'PAYMENT_NOT_PAID', 'message' => 'Payment has not paid!'];
-                            }
+        if (!$checkoutId) {
+            return response()->json([
+                'error'    => 'CHECKOUT_ID_MISSING',
+                'checkout' => null,
+                'payment'  => null,
+            ]);
+        }
 
-                            SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
-                            if ($respond) {
-                                return response()->json($data);
-                            }
+        $checkout = Checkout::where('public_id', $checkoutId)->first();
+        if (!$checkout) {
+            return response()->json([
+                'error'    => 'CHECKOUT_SESSION_NOT_FOUND',
+                'checkout' => null,
+                'payment'  => null,
+            ]);
+        }
 
-                            return;
-                        }
+        $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
+        if (!$gateway) {
+            return response()->json([
+                'error'    => 'GATEWAY_NOT_CONFIGURED',
+                'checkout' => $checkout->public_id,
+                'payment'  => null,
+            ]);
+        }
 
-                        // Create qpay instance
-                        $qpay = QPay::instance($gateway->config->username, $gateway->config->password, $gateway->callback_url);
-                        if ($gateway->sandbox) {
-                            $qpay = $qpay->useSandbox();
-                        }
+        try {
+            // Handle test scenarios if in sandbox mode.
+            if ($gateway->sandbox && in_array($testScenario, ['success', 'error'], true)) {
+                $data = [
+                    'checkout' => $checkout->public_id,
+                    'payment'  => null,
+                    'error'    => null,
+                ];
 
-                        // Set auth token
-                        $qpay = $qpay->setAuthToken();
-
-                        // Check payment status from qpay
-                        $payment = $qpay->paymentGet($checkoutId);
-                        if ($payment) {
-                            $data = [];
-                            if ($payment->error) {
-                                $data = ['error' => (array) $payment, 'checkout' => $checkout->public_id, 'payment' => null];
-                            } else {
-                                $data = ['payment' =>(array) $payment, 'checkout' => $checkout->public_id, 'error' => null];
-                            }
-
-                            SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
-                            if ($respond) {
-                                return response()->json($data);
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        Log::error('[QPAY CHECKOUT ERROR: ' . $e->getMessage() . ']', $checkout->toArray());
-                        if ($respond) {
-                            return response()->apiError($e->getMessage());
-                        }
-                    }
+                if ($testScenario === 'success') {
+                    $data['payment'] = QPay::createTestPaymentDataFromCheckout($checkout);
+                } else {
+                    $data['error'] = [
+                        'error'   => 'PAYMENT_NOT_PAID',
+                        'message' => 'Payment has not been paid!',
+                    ];
                 }
+
+                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+
+                return $shouldRespond ? response()->json($data) : response()->json();
+            }
+
+            // Create the QPay instance.
+            $qpay = QPay::instance(
+                $gateway->config->username,
+                $gateway->config->password,
+                $gateway->callback_url
+            );
+
+            if ($gateway->sandbox) {
+                $qpay->useSandbox();
+            }
+
+            $qpay->setAuthToken();
+
+            $invoiceId = $checkout->getOption('qpay_invoice_id');
+            if (!$invoiceId) {
+                Log::error("Missing QPay invoice ID for checkout: {$checkout->public_id}");
+
+                return response()->json([
+                    'error'    => 'MISSING_INVOICE_ID',
+                    'checkout' => $checkout->public_id,
+                    'payment'  => null,
+                ]);
+            }
+
+            $paymentCheck = $qpay->paymentCheck($invoiceId);
+
+            if (!$paymentCheck || empty($paymentCheck->count) || $paymentCheck->count < 1) {
+                return response()->json([
+                    'error'    => 'PAYMENT_NOTFOUND',
+                    'checkout' => $checkout->public_id,
+                    'payment'  => null,
+                ]);
+            }
+
+            $payment = data_get($paymentCheck, 'rows.0');
+            if ($payment) {
+                $data = [
+                    'checkout' => $checkout->public_id,
+                    'payment'  => (array) $payment,
+                    'error'    => null,
+                ];
+
+                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+
+                return $shouldRespond ? response()->json($data) : response()->json();
+            }
+        } catch (\Exception $e) {
+            Log::error('[QPAY CHECKOUT ERROR]: ' . $e->getMessage(), ['checkout' => $checkout->toArray()]);
+            if ($shouldRespond) {
+                return response()->apiError($e->getMessage());
             }
         }
 
@@ -738,6 +807,18 @@ class CheckoutController extends Controller
             $origin = Arr::first($origin);
         }
 
+        // Check if the order origin is from a food truck via cart property
+        $foodTruck = collect($cart->items)
+            ->map(function ($cartItem) {
+                return data_get($cartItem, 'food_truck_id');
+            })
+            ->unique()
+            ->filter()
+            ->map(function ($foodTruckId) {
+                return FoodTruck::where('public_id', $foodTruckId)->first();
+            })
+            ->first();
+
         // if there is no origin attempt to get from cart
         if (!$origin) {
             $storeLocation = collect($cart->items)->map(function ($cartItem) {
@@ -817,6 +898,11 @@ class CheckoutController extends Controller
             'is_pickup'    => $checkout->is_pickup,
             ...$transactionDetails,
         ]);
+
+        // if there is a food truck include it in the order meta
+        if ($foodTruck) {
+            $orderMeta['food_truck_id'] = $foodTruck->public_id;
+        }
 
         // initialize order creation input
         $orderInput = [

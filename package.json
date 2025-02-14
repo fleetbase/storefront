@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/storefront-engine",
-    "version": "0.3.26",
+    "version": "0.3.27",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
