@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
 use Fleetbase\Storefront\Models\FoodTruck;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class FoodTruckController extends Controller
@@ -35,5 +36,23 @@ class FoodTruckController extends Controller
         }
 
         return FoodTruckResource::collection($results);
+    }
+
+    /**
+     * Finds a single Storefront FoodTruck resources.
+     *
+     * @return \Fleetbase\Http\Resources\EntityCollection
+     */
+    public function find($id)
+    {
+        // find for the food truck
+        try {
+            $foodTruck = FoodTruck::findRecordOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Food Truck resource not found.');
+        }
+
+        // response the product resource
+        return new FoodTruckResource($foodTruck);
     }
 }

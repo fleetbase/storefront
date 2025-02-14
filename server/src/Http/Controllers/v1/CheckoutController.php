@@ -19,6 +19,7 @@ use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Customer;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
@@ -806,6 +807,18 @@ class CheckoutController extends Controller
             $origin = Arr::first($origin);
         }
 
+        // Check if the order origin is from a food truck via cart property
+        $foodTruck = collect($cart->items)
+            ->map(function ($cartItem) {
+                return data_get($cartItem, 'food_truck_id');
+            })
+            ->unique()
+            ->filter()
+            ->map(function ($foodTruckId) {
+                return FoodTruck::where('public_id', $foodTruckId)->first();
+            })
+            ->first();
+
         // if there is no origin attempt to get from cart
         if (!$origin) {
             $storeLocation = collect($cart->items)->map(function ($cartItem) {
@@ -885,6 +898,11 @@ class CheckoutController extends Controller
             'is_pickup'    => $checkout->is_pickup,
             ...$transactionDetails,
         ]);
+
+        // if there is a food truck include it in the order meta
+        if ($foodTruck) {
+            $orderMeta['food_truck_id'] = $foodTruck->public_id;
+        }
 
         // initialize order creation input
         $orderInput = [
