@@ -28,7 +28,12 @@
                 @value={{@options.store.currency}}
                 @helpText={{t "storefront.component.modals.create-first-store.select-currency"}}
             >
-                <CurrencySelect @currency={{@options.store.currency}} @onCurrencyChange={{fn (mut @options.store.currency)}} @triggerClass="w-full form-select" @disabled={{cannot "storefront create store"}} />
+                <CurrencySelect
+                    @currency={{@options.store.currency}}
+                    @onCurrencyChange={{fn (mut @options.store.currency)}}
+                    @triggerClass="w-full form-select"
+                    @disabled={{cannot "storefront create store"}}
+                />
             </InputGroup>
         </div>
     </div>

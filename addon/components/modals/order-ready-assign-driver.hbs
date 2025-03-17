@@ -19,7 +19,7 @@
                     </p>
                 </div>
                 <div class="input-group">
-                    <ShortToggle
+                    <Toggle
                         @isToggled={{@options.adhoc}}
                         @onToggle={{fn (mut @options.adhoc)}}
                         @label={{t "storefront.component.modals.order-ready-assign-driver.adhoc-dispatch-nearby-drivers"}}

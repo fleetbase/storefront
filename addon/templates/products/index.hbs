@@ -1,5 +1,12 @@
 <Layout::Section::Header @title={{t "storefront.common.product"}}>
-    <Button @type="magic" @icon="tags" @text={{t "storefront.products.index.manage-addons"}} class="mr-2 flex-shrink-0" @permission="storefront list product-addon" @onClick={{this.manageAddons}} />
+    <Button
+        @type="magic"
+        @icon="tags"
+        @text={{t "storefront.products.index.manage-addons"}}
+        class="mr-2 flex-shrink-0"
+        @permission="storefront list product-addon"
+        @onClick={{this.manageAddons}}
+    />
     <Button
         @type="primary"
         @icon="plus"
@@ -11,7 +18,14 @@
         @permission="storefront create product"
         class="mr-2 flex-shrink-0"
     />
-    <Button @icon="file-import" @text={{t "storefront.common.import"}} class="mr-2" @wrapperClass="hidden lg:flex flex-shrink-0" @permission="storefront import product" @onClick={{this.importProducts}} />
+    <Button
+        @icon="file-import"
+        @text={{t "storefront.common.import"}}
+        class="mr-2"
+        @wrapperClass="hidden lg:flex flex-shrink-0"
+        @permission="storefront import product"
+        @onClick={{this.importProducts}}
+    />
     <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @wrapperClass="hidden lg:flex flex-shrink-0" @permission="storefront export product" @text={{t "storefront.common.export"}} />
 </Layout::Section::Header>
 

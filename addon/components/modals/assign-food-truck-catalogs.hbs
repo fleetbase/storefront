@@ -1,0 +1,14 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <InputGroup>
+            <ComboBox
+                @options={{@options.allCatalogs}}
+                @selected={{@options.foodTruck.catalogs}}
+                @optionLabel="name"
+                @comparator="name"
+                @selectionBoxLabel="Selected Catalogs"
+                @onChange={{@options.updateCatalogSelections}}
+            />
+        </InputGroup>
+    </div>
+</Modal::Default>

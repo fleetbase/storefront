@@ -25,6 +25,8 @@ class ReviewCustomer extends FleetbaseResource
             'email'         => $this->email,
             'phone'         => $this->phone,
             'photo_url'     => $this->photo_url,
+            'reviews_count' => $this->resource->reviews()->count(),
+            'uploads_count' => $this->resource->reviewUploads()->count(),
             'slug'          => $this->slug,
             'created_at'    => $this->created_at,
             'updated_at'    => $this->updated_at,

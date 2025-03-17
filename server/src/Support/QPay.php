@@ -2,7 +2,10 @@
 
 namespace Fleetbase\Storefront\Support;
 
+use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Support\Utils;
 use GuzzleHttp\Client;
+use Illuminate\Support\Str;
 
 class QPay
 {
@@ -14,7 +17,7 @@ class QPay
 
     public function __construct(?string $username = null, ?string $password = null, ?string $callbackUrl = null)
     {
-        $this->callbackUrl    = $callbackUrl;
+        $this->callbackUrl    = $callbackUrl ?? Utils::apiUrl('storefront/v1/checkouts/process-qpay');
         $this->requestOptions = [
             'base_uri' => $this->buildRequestUrl(),
             'auth'     => [$username, $password],
@@ -35,6 +38,13 @@ class QPay
     public function getClient()
     {
         return $this->client;
+    }
+
+    public function setCallback(string $url)
+    {
+        $this->callbackUrl = $url;
+
+        return $this;
     }
 
     public function setNamespace(string $namespace): ?QPay
@@ -163,6 +173,11 @@ class QPay
         return $this->post('invoice', $params, $options);
     }
 
+    public function paymentGet(string $paymentId)
+    {
+        return $this->get('payment/' . $paymentId);
+    }
+
     public function paymentCheck(string $invoiceId, $options = [])
     {
         $params = [
@@ -206,5 +221,24 @@ class QPay
         $code = str_replace(' ', '-', $code);
 
         return preg_replace('/[^A-Za-z0-9\-]/', '', $code);
+    }
+
+    public static function createTestPaymentDataFromCheckout(Checkout $checkout): array
+    {
+        return [
+            'payment_id'        => (string) Str::uuid(),
+            'payment_status'    => 'PAID',
+            'payment_fee'       => '1.00',
+            'payment_amount'    => $checkout->amount,
+            'payment_currency'  => $checkout->currency,
+            'payment_date'      => now(),
+            'payment_wallet'    => 'TEST',
+            'object_type'       => 'INVOICE',
+            'object_id'         => $checkout->getOption('qpay_invoice_id', (string) Str::uuid()),
+            'next_payment_date' => null,
+            'transaction_type'  => 'P2P',
+            'card_transactions' => [],
+            'p2p_transactions'  => [],
+        ];
     }
 }

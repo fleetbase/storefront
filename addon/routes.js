@@ -13,6 +13,9 @@ export default buildRoutes(function () {
             });
         });
     });
+    this.route('catalogs', function () {
+        this.route('index', { path: '/' }, function () {});
+    });
     this.route('customers', function () {
         this.route('index', { path: '/' }, function () {
             this.route('edit', { path: '/:public_id' });
@@ -34,6 +37,9 @@ export default buildRoutes(function () {
                 this.route('orders');
             });
         });
+    });
+    this.route('food-trucks', function () {
+        this.route('index', { path: '/' }, function () {});
     });
     this.route('promotions');
     this.route('coupons');

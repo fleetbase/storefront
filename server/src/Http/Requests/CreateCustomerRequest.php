@@ -29,11 +29,15 @@ class CreateCustomerRequest extends FleetbaseRequest
             'name'  => 'required',
             'email' => [
                 'email', 'nullable', Rule::unique('contacts')->where(function ($query) {
+                    $query->where('company_uuid', session('company'));
+
                     return $query->whereNull('deleted_at');
                 }),
             ],
             'phone' => [
                 'nullable', Rule::unique('contacts')->where(function ($query) {
+                    $query->where('company_uuid', session('company'));
+
                     return $query->whereNull('deleted_at');
                 }),
             ],

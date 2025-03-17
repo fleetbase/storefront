@@ -15,7 +15,7 @@
                 </div>
             </div>
 
-            {{#each this.model as |gateway|}}
+            {{#each @model as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{true}}>
                     <InputGroup @name={{t "storefront.settings.gateways.gateway-name"}} @value={{gateway.name}} @helpText={{t "storefront.settings.gateways.helpText"}} />
                     <InputGroup

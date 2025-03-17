@@ -3,9 +3,10 @@
 namespace Fleetbase\Storefront\Notifications;
 
 use Fleetbase\FleetOps\Models\Order;
-// use Illuminate\Contracts\Queue\ShouldQueue;
-use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Storefront\Models\Network;
+use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Support\Utils;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -16,7 +17,25 @@ class StorefrontOrderCreated extends Notification
 {
     use Queueable;
 
-    // public ?Order $order;
+    /**
+     * The order instance this notification is for.
+     */
+    public Order $order;
+
+    /**
+     * The order instance this notification is for.
+     */
+    public Store|Network $storefront;
+
+    /**
+     * The time the notification was sent.
+     */
+    public string $sentAt;
+
+    /**
+     * The ID of the notification.
+     */
+    public string $notificationId;
 
     /**
      * Create a new notification instance.
@@ -25,18 +44,16 @@ class StorefrontOrderCreated extends Notification
      */
     public function __construct(Order $order)
     {
-        $storefrontId = $order->getMeta('storefront_id');
-
-        $this->order      = $order;
-        $this->storefront = Storefront::findAbout($storefrontId);
+        $this->order          = $order;
+        $this->storefront     = Storefront::findAbout($order->getMeta('storefront_id'));
+        $this->sentAt         = now()->toDateTimeString();
+        $this->notificationId = uniqid('notification_');
     }
 
     /**
      * Get the notification's delivery channels.
-     *
-     * @return array
      */
-    public function via($notifiable)
+    public function via($notifiable): array
     {
         return ['mail', TwilioChannel::class];
     }
@@ -141,12 +158,9 @@ class StorefrontOrderCreated extends Notification
 
     /**
      * Get the array representation of the notification.
-     *
-     * @return array
      */
-    public function toArray($notifiable)
+    public function toArray($notifiable): array
     {
-        return [
-        ];
+        return [...$this->order->toArray()];
     }
 }

@@ -1,36 +1,35 @@
 <Layout::Section::Header @title="All Products" @searchQuery={{this.query}} @onSearch={{perform this.search}} />
 
-<Layout::Section::Body>
-    <div class="h-screen overflow-y-scroll p-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {{#each @model as |product|}}
-                <div class="border border-gray-200 bg-white dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 text-center rounded-md px-2 py-3">
-                    <div class="flex flex-col items-center justify-center overflow-hidden">
-                        <div class="mb-3 flex items-center justify-center">
-                            <img src={{product.primary_image_url}} alt={{product.name}} class="w-24 h-24" />
-                        </div>
-                        <h4 class="font-semibold mb-1">{{product.name}}</h4>
-                        <p class="text-sm truncate">{{product.description}}</p>
-                        <p class="mb-2 text-sm text-green-400">{{format-currency product.price product.currency}}</p>
-                        <div class="flex items-center justify-evenly space-x-4">
-                            <LinkTo @route="products.index.index.edit" @model={{product}} disabled={{cannot "storefront update product"}} class="text-sm">
-                                <FaIcon @icon="pencil" class="mr-1" />
-                                <span class="destroy-action">Edit</span>
-                            </LinkTo>
-                            <a href="javascript:;" class="destroy-action text-sm" disabled={{cannot "storefront delete product"}} {{on "click" (fn this.deleteProduct product)}}>
-                                <FaIcon @icon="trash" class="text-red-500 mr-1" />
-                                <span class="destroy-action">Delete</span>
-                            </a>
-                        </div>
+<Layout::Section::Body class="h-full overflow-y-scroll p-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {{#each @model as |product|}}
+            <div class="border border-gray-200 bg-white dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 text-center rounded-md px-2 py-3">
+                <div class="flex flex-col items-center justify-center overflow-hidden">
+                    <div class="mb-3 flex items-center justify-center">
+                        <Image src={{product.primary_image_url}} alt={{product.name}} class="w-24 h-24" />
+                    </div>
+                    <h4 class="font-semibold mb-1">{{product.name}}</h4>
+                    <p class="text-sm truncate">{{product.description}}</p>
+                    <p class="mb-2 text-sm text-green-400">{{format-currency product.price product.currency}}</p>
+                    <div class="flex items-center justify-evenly space-x-4">
+                        <LinkTo @route="products.index.index.edit" @model={{product}} disabled={{cannot "storefront update product"}} class="text-sm">
+                            <FaIcon @icon="pencil" class="mr-1" />
+                            <span class="destroy-action">Edit</span>
+                        </LinkTo>
+                        <a href="javascript:;" class="destroy-action text-sm" disabled={{cannot "storefront delete product"}} {{on "click" (fn this.deleteProduct product)}}>
+                            <FaIcon @icon="trash" class="text-red-500 mr-1" />
+                            <span class="destroy-action">Delete</span>
+                        </a>
                     </div>
                 </div>
-            {{else}}
-                <div>
-                    <h3 class="dark:text-gray-100 text-opacity-75 text-sm">No products</h3>
-                </div>
-            {{/each}}
-        </div>
+            </div>
+        {{else}}
+            <div>
+                <h3 class="dark:text-gray-100 text-opacity-75 text-sm">No products</h3>
+            </div>
+        {{/each}}
     </div>
+    <Spacer @height="400px" />
 </Layout::Section::Body>
 
 <Layout::Section::Footer>

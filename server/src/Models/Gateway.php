@@ -136,14 +136,19 @@ class Gateway extends StorefrontModel
         return (object) $sortedConfig;
     }
 
-    public function getIsStripeGatewayAttribute()
+    public function getIsStripeGatewayAttribute(): bool
     {
-        return $this->type === 'stripe';
+        return $this->isGateway('stripe');
     }
 
-    public function getIsQpayGatewayAttribute()
+    public function getIsQPayGatewayAttribute(): bool
     {
-        return $this->type === 'qpay';
+        return $this->isGateway('qpay');
+    }
+
+    public function isGateway(string $type): bool
+    {
+        return strtolower($this->type) === strtolower($type);
     }
 
     /**

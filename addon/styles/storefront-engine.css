@@ -4,3 +4,76 @@
 .ui-combo-box .selected-list a.combo-box-option.selected:hover {
     background-color: #76a9fa !important;
 }
+
+/** hotfix tag input */
+.emberTagInput.form-input {
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    height: auto !important;
+}
+
+.scrollable-height-dialog {
+    display: flex !important;
+    padding: 0;
+    min-width: 100%;
+    min-height: 100%;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.scrollable-height-dialog > .flb--modal-dialog {
+    padding: 25rem 0 5rem;
+    height: 100%;
+    overflow-y: scroll;
+    width: 100%;
+    margin: 1rem 0 0;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.storefront-widget-table {
+    table-layout: fixed;
+    width: 100%;
+    max-width: 100%;
+}
+
+.status-badge.pickup-ready-status-badge > span {
+    background-color: #166534;
+    border: 1px solid #15803d;
+    color: #dcfce7;
+}
+
+.status-badge.pickup-ready-status-badge > span svg {
+    color: #86efac;
+}
+
+.status-badge.order-canceled-status-badge > span {
+    background-color: #991b1b;
+    border: 1px solid #b91c1c;
+    color: #fee2e2;
+}
+
+.status-badge.order-canceled-status-badge > span svg {
+    color: #fca5a5;
+}
+
+.status-badge.draft-status-badge > span {
+    background-color: #a16207;
+    border: 1px solid #a16207;
+    color: #fef9c3;
+}
+
+.status-badge.draft-status-badge > span svg {
+    color: #fef9c3;
+}
+
+/** hotfix nav tab */
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .nav-item.active,
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .nav-item.active,
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .ui-tab.active,
+body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .ui-tab.active {
+    background-color: #202a37;
+}

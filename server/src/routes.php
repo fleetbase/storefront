@@ -17,6 +17,20 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
     function ($router) {
         /*
         |--------------------------------------------------------------------------
+        | Public/Callback Receivable Storefront API Routes
+        |--------------------------------------------------------------------------
+        |
+        | End-user API routes, these are routes that the SDK and applications will interface with, and DO NOT require API credentials.
+        */
+        Route::group(['prefix' => 'v1', 'namespace' => 'v1'], function ($router) {
+            // storefront/v1/checkouts
+            $router->group(['prefix' => 'checkouts'], function () use ($router) {
+                $router->match(['get', 'post'], 'capture-qpay', 'CheckoutController@captureQpayCallback');
+            });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | Consumable Storefront API Routes
         |--------------------------------------------------------------------------
         |
@@ -26,6 +40,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
             ->middleware('storefront.api')
             ->namespace('v1')
             ->group(function ($router) {
+                $router->get('lookup/{id}', 'StoreController@lookup');
                 $router->get('about', 'StoreController@about');
                 $router->get('locations/{id}', 'StoreController@location');
                 $router->get('locations', 'StoreController@locations');
@@ -40,6 +55,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'checkouts'], function () use ($router) {
                     $router->get('before', 'CheckoutController@beforeCheckout');
                     $router->post('capture', 'CheckoutController@captureOrder');
+                    $router->post('stripe-setup-intent', 'CheckoutController@createStripeSetupIntentForCustomer');
+                    $router->put('stripe-update-payment-intent', 'CheckoutController@updateStripePaymentIntent');
                 });
 
                 // storefront/v1/service-quotes
@@ -58,6 +75,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'ProductController@find');
                 });
 
+                // storefront/v1/food-trucks
+                $router->group(['prefix' => 'food-trucks'], function () use ($router) {
+                    $router->get('/', 'FoodTruckController@query');
+                    $router->get('{id}', 'FoodTruckController@find');
+                });
+
                 // storefront/v1/reviews
                 $router->group(['prefix' => 'reviews'], function () use ($router) {
                     $router->get('/', 'ReviewController@query');
@@ -65,6 +88,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'ReviewController@find');
                     $router->post('/', 'ReviewController@create');
                     $router->delete('{id}', 'ReviewController@find');
+                });
+
+                // storefront/v1/orders
+                $router->group(['prefix' => 'orders'], function () use ($router) {
+                    $router->put('picked-up', 'OrderController@completeOrderPickup');
                 });
 
                 // storefront/v1/customers
@@ -77,9 +105,16 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'CustomerController@find');
                     $router->post('/', 'CustomerController@create');
                     $router->post('login-with-sms', 'CustomerController@loginWithPhone');
+                    $router->post('login-with-apple', 'CustomerController@loginWithApple');
+                    $router->post('login-with-facebook', 'CustomerController@loginWithFacebook');
+                    $router->post('login-with-google', 'CustomerController@loginWithGoogle');
                     $router->post('verify-code', 'CustomerController@verifyCode');
                     $router->post('login', 'CustomerController@login');
                     $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode');
+                    $router->post('stripe-ephemeral-key', 'CustomerController@getStripeEphemeralKey');
+                    $router->post('stripe-setup-intent', 'CustomerController@getStripeSetupIntent');
+                    $router->post('account-closure', 'CustomerController@startAccountClosure');
+                    $router->post('confirm-account-closure', 'CustomerController@confirmAccountClosure');
                 });
 
                 // hotfix! storefront-app sending customer update to /contacts/ route
@@ -158,6 +193,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('notification-channels');
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
+                        $router->fleetbaseRoutes('food-trucks');
+                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes('catalog-categories');
+                        $router->fleetbaseRoutes('catalog-hours');
                         $router->group(
                             [],
                             function ($router) {

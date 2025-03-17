@@ -49,11 +49,18 @@ class Product extends StorefrontModel
     protected $table = 'products';
 
     /**
+     * The default database connection to use.
+     *
+     * @var string
+     */
+    protected $connection = 'storefront';
+
+    /**
      * These attributes that can be queried.
      *
      * @var array
      */
-    protected $searchableColumns = ['name', 'description'];
+    protected $searchableColumns = ['name', 'description', 'tags'];
 
     /**
      * The attributes that are mass assignable.
@@ -225,6 +232,21 @@ class Product extends StorefrontModel
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function catalogCategories()
+    {
+        return $this->belongsToMany(
+            CatalogCategory::class,
+            'catalog_category_product',
+            'product_uuid',
+            'catalog_category_uuid'
+        )
+        ->using(CatalogProduct::class)
+        ->withTimestamps();
+    }
+
+    /**
      * @return array
      */
     public function getMetaArrayAttribute()
@@ -305,23 +327,22 @@ class Product extends StorefrontModel
             // get uuid if set
             $id = data_get($addonCategory, 'uuid');
 
-            // Make sure product is set
-            data_set($addonCategory, 'product_uuid', $this->uuid);
-
-            // update product addon category
-            if (Str::isUuid($id)) {
-                ProductAddonCategory::where('uuid', $id)->update(Arr::except($addonCategory, ['uuid', 'created_at', 'updated_at', 'name', 'category']));
-                continue;
-            }
-
-            // create new product addon category
-            ProductAddonCategory::create([
+            $upsertableAddonCategory = [
                 'product_uuid'    => $this->uuid,
                 'category_uuid'   => data_get($addonCategory, 'category_uuid'),
                 'excluded_addons' => data_get($addonCategory, 'excluded_addons'),
                 'max_selectable'  => data_get($addonCategory, 'max_selectable'),
                 'is_required'     => data_get($addonCategory, 'is_required'),
-            ]);
+            ];
+
+            // update product addon category
+            if (Str::isUuid($id)) {
+                ProductAddonCategory::where('uuid', $id)->update($upsertableAddonCategory);
+                continue;
+            }
+
+            // create new product addon category
+            ProductAddonCategory::create($upsertableAddonCategory);
         }
 
         return $this;
@@ -367,6 +388,11 @@ class Product extends StorefrontModel
                             // make sure additional cost is always numbers only
                             if (isset($option['additional_cost'])) {
                                 $option['additional_cost'] = Utils::numbersOnly($option['additional_cost']);
+                            }
+
+                            // additional cost can never be null
+                            if ($option['additional_cost'] === null) {
+                                $option['additional_cost'] = 0;
                             }
 
                             $productVariantOptionInput = Arr::except($option, ['uuid', 'created_at', 'updated_at']);
@@ -495,7 +521,7 @@ class Product extends StorefrontModel
      */
     public function createAsEntity(array $additionalAttributes = []): Entity
     {
-        $entity = $this->toEntity();
+        $entity = $this->toEntity($additionalAttributes);
         $entity->save();
 
         return $entity;

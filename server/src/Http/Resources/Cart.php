@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
+use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Support\Http;
 
 class Cart extends FleetbaseResource
@@ -29,12 +30,28 @@ class Cart extends FleetbaseResource
             'subtotal'           => $this->subtotal,
             'total_items'        => $this->total_items,
             'total_unique_items' => $this->total_unique_items,
-            'items'              => $this->items ?? [],
+            'items'              => $this->getCartItems(),
             'events'             => $this->events ?? [],
             'discount_code'      => $this->discount_code,
             'expires_at'         => $this->expires_at,
             'created_at'         => $this->created_at,
             'updated_at'         => $this->updated_at,
         ];
+    }
+
+    public function getCartItems()
+    {
+        $items = $this->items ?? [];
+
+        return array_map(function ($cartItem) {
+            $product = Product::select(['uuid', 'public_id', 'primary_image_uuid', 'name', 'description'])->with(['files'])->where('public_id', data_get($cartItem, 'product_id'))->first();
+            if ($product) {
+                data_set($cartItem, 'name', $product->name);
+                data_set($cartItem, 'description', $product->description);
+                data_set($cartItem, 'product_image_url', $product->primary_image_url);
+            }
+
+            return $cartItem;
+        }, $items);
     }
 }

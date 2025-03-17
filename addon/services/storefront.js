@@ -15,6 +15,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service hostRouter;
     @service abilities;
+    @service socket;
 
     /**
      * Gets the active store.
@@ -102,6 +103,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
+            modalClass: 'scrollable-height-dialog',
             order,
             store,
             confirm: async (modal) => {
@@ -219,7 +221,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 modal.startLoading();
 
                 try {
-                    const store = await store.save();
+                    await store.save();
                     this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
                     // this.currentUser.setOption('activeStorefront', store.id);
                     this.setActiveStorefront(store);

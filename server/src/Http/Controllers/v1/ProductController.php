@@ -2,8 +2,8 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
 use Fleetbase\Http\Controllers\Controller;
-use Fleetbase\Http\Resources\v1\DeletedResource;
 use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Product as StorefrontProduct;
 use Fleetbase\Storefront\Models\Product;

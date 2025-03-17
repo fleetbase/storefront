@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Product extends FleetbaseResource
@@ -52,10 +53,11 @@ class Product extends FleetbaseResource
             'youtube_urls'       => $this->youtube_urls ?? [],
             'created_at'         => $this->created_at,
             'updated_at'         => $this->updated_at,
+            'type'               => $this->when(Http::isInternalRequest(), 'product'),
         ];
     }
 
-    public function mapHours(?\Illuminate\Database\Eloquent\Collection $hours = null): array
+    public function mapHours(Collection|array $hours = []): array
     {
         if (empty($hours)) {
             return [];
@@ -79,7 +81,7 @@ class Product extends FleetbaseResource
         );
     }
 
-    public function mapFiles(?\Illuminate\Database\Eloquent\Collection $files = null, $contentType = 'image')
+    public function mapFiles(Collection|array $files = [], $contentType = 'image')
     {
         return collect($files)->map(function ($file) use ($contentType) {
             if (!Str::contains($file->content_type, $contentType)) {
@@ -90,7 +92,7 @@ class Product extends FleetbaseResource
         })->filter()->values();
     }
 
-    public function mapAddonCategories(?\Illuminate\Database\Eloquent\Collection $addonCategories = null)
+    public function mapAddonCategories(Collection|array $addonCategories = [])
     {
         return collect($addonCategories)->map(function ($addonCategory) {
             $addons = data_get($addonCategory, 'category.addons', []);
@@ -122,7 +124,7 @@ class Product extends FleetbaseResource
         });
     }
 
-    public function mapProductAddons(?\Illuminate\Database\Eloquent\Collection $addons = null, $excluded = [])
+    public function mapProductAddons(Collection|array $addons = [], $excluded = [])
     {
         return collect($addons)->map(function ($addon) use ($excluded) {
             if (is_array($excluded) && in_array($addon->uuid, $excluded)) {
@@ -159,7 +161,7 @@ class Product extends FleetbaseResource
         })->filter()->values();
     }
 
-    public function mapVariants(?\Illuminate\Database\Eloquent\Collection $variants = null)
+    public function mapVariants(Collection|array $variants = [])
     {
         return collect($variants)->map(function ($variant) {
             $productVariantArr = [

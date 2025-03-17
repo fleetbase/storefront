@@ -1,13 +1,17 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action, computed } from '@ember/object';
+import { get } from '@ember/object';
+import { debug } from '@ember/debug';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { task } from 'ember-concurrency';
 
 export default class WidgetStorefrontMetricsComponent extends Component {
     @service fetch;
     @service storefront;
-
+    @tracked title = 'This Month';
+    @tracked start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    @tracked end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
     @tracked metrics = {
         orders_count: 0,
         customers_count: 0,
@@ -15,47 +19,27 @@ export default class WidgetStorefrontMetricsComponent extends Component {
         earnings_sum: 0,
     };
 
-    @tracked isLoading = true;
-    @tracked start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-    @tracked end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-
-    @computed('args.title') get title() {
-        return this.args.title || 'This Month';
-    }
-
-    @action async setupWidget() {
-        this.metrics = await this.fetchMetrics(this.start, this.end);
-
-        this.storefront.on('order.broadcasted', this.reloadMetrics);
-        this.storefront.on('storefront.changed', this.reloadMetrics);
-    }
-
-    @action async reloadMetrics() {
-        this.metrics = await this.fetchMetrics(this.start, this.end);
-    }
-
-    @action fetchMetrics(start, end) {
-        this.isLoading = true;
-
-        return new Promise((resolve) => {
-            const store = this.storefront?.activeStore?.id;
-
-            if (!store) {
-                this.isLoading = false;
-                return resolve(this.metrics);
-            }
-
-            this.fetch
-                .get('actions/metrics', { start, end, store }, { namespace: 'storefront/int/v1' })
-                .then((metrics) => {
-                    this.isLoading = false;
-                    resolve(metrics);
-                })
-                .catch(() => {
-                    this.isLoading = false;
-
-                    resolve(this.metrics);
-                });
+    constructor(owner, { title = 'This Month' }) {
+        super(...arguments);
+        this.title = title;
+        this.loadMetrics.perform(this.start, this.end);
+        this.storefront.on('order.broadcasted', () => {
+            this.loadMetrics.perform();
         });
+        this.storefront.on('storefront.changed', () => {
+            this.loadMetrics.perform();
+        });
+    }
+
+    @task *loadMetrics(start, end) {
+        const store = get(this.storefront, 'activeStore.id');
+
+        try {
+            const metrics = yield this.fetch.get('actions/metrics', { start, end, store }, { namespace: 'storefront/int/v1' });
+            this.metrics = metrics;
+            return metrics;
+        } catch (err) {
+            debug('Error loading storefront metrics:', err);
+        }
     }
 }

@@ -10,7 +10,6 @@ use Fleetbase\Storefront\Imports\ProductsImport;
 use Fleetbase\Storefront\Jobs\DownloadProductImageUrl;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Support\Http;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -24,51 +23,6 @@ class ProductController extends StorefrontController
      * @var string
      */
     public $resource = 'product';
-
-    /**
-     * Update a Product record.
-     * This update method was overwritten because the ProductObserver
-     * isn't firing on the `updated` callback.
-     *
-     * @return \Fleetbase\Storefront\Http\Resources\Product
-     */
-    public function updateRecord(Request $request, string $id)
-    {
-        try {
-            $this->validateRequest($request);
-            $record = $this->model->updateRecordFromRequest($request, $id, function (&$request, Product &$product) {
-                $addonCategories = $request->array('product.addon_categories');
-                $variants        = $request->array('product.variants');
-                $files           = $request->array('product.files');
-
-                // save addon categories
-                $product->setAddonCategories($addonCategories);
-
-                // save product variants
-                $product->setProductVariants($variants);
-
-                // set keys on files
-                foreach ($files as $file) {
-                    $fileRecord = File::where('uuid', $file['uuid'])->first();
-                    $fileRecord->setKey($product);
-                }
-            });
-
-            if (Http::isInternalRequest($request)) {
-                $this->resource::wrap($this->resourceSingularlName);
-
-                return new $this->resource($record);
-            }
-
-            return new $this->resource($record);
-        } catch (\Exception $e) {
-            return response()->error($e->getMessage());
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->error($e->getMessage());
-        } catch (\Fleetbase\Exceptions\FleetbaseRequestValidationException $e) {
-            return response()->error($e->getErrors());
-        }
-    }
 
     /**
      * List all activity options for current order.

@@ -24,9 +24,11 @@ class StorefrontServiceProvider extends CoreServiceProvider
      * @var array
      */
     public $observers = [
-        \Fleetbase\Storefront\Models\Product::class => \Fleetbase\Storefront\Observers\ProductObserver::class,
-        \Fleetbase\Storefront\Models\Network::class => \Fleetbase\Storefront\Observers\NetworkObserver::class,
-        \Fleetbase\Models\Company::class            => \Fleetbase\Storefront\Observers\CompanyObserver::class,
+        \Fleetbase\Storefront\Models\Product::class   => \Fleetbase\Storefront\Observers\ProductObserver::class,
+        \Fleetbase\Storefront\Models\Network::class   => \Fleetbase\Storefront\Observers\NetworkObserver::class,
+        \Fleetbase\Storefront\Models\Catalog::class   => \Fleetbase\Storefront\Observers\CatalogObserver::class,
+        \Fleetbase\Storefront\Models\FoodTruck::class => \Fleetbase\Storefront\Observers\FoodTruckObserver::class,
+        \Fleetbase\Models\Company::class              => \Fleetbase\Storefront\Observers\CompanyObserver::class,
     ];
 
     /**
@@ -54,6 +56,8 @@ class StorefrontServiceProvider extends CoreServiceProvider
      */
     public $commands = [
         \Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby::class,
+        \Fleetbase\Storefront\Console\Commands\SendOrderNotification::class,
+        \Fleetbase\Storefront\Console\Commands\PurgeExpiredCarts::class,
     ];
 
     /**
@@ -88,6 +92,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->registerCommands();
         $this->scheduleCommands(function ($schedule) {
             $schedule->command('storefront:notify-order-nearby')->everyMinute()->storeOutputInDb();
+            $schedule->command('storefront:purge-carts')->daily()->storeOutputInDb();
         });
         $this->registerObservers();
         $this->registerMiddleware();

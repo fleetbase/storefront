@@ -34,7 +34,6 @@ export default class ProductVariantSerializer extends ApplicationSerializer.exte
         if (key === 'options') {
             const options = snapshot.record.get('options');
             json.options = isArray(options) ? Array.from(options) : [];
-            console.log('[ProductVariantSerializer #json.options]', json.options);
         }
 
         return super.serializeHasMany(...arguments);

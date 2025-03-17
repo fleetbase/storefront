@@ -2,8 +2,8 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\Casts\Money as MoneyCast;
 use Fleetbase\Models\Category;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class AddonCategory extends Category
@@ -21,6 +21,18 @@ class AddonCategory extends Category
     protected string $payloadKey = 'addon_category';
 
     /**
+     * Override the boot method to set "for" automatically.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Category $model) {
+            $model->for = 'storefront_product_addon';
+        });
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function addons()
@@ -34,29 +46,27 @@ class AddonCategory extends Category
             // get uuid if set
             $id = data_get($addon, 'uuid');
 
-            // make sure the cateogry is set to this current
-            data_set($addon, 'category_uuid', $this->uuid);
-
-            // make sure sale price is 0 if null
-            if (data_get($addon, 'sale_price') === null) {
-                data_set($addon, 'sale_price', 0);
-            }
+            // create an upsertable array
+            $upsertableProductAddon = [
+                'category_uuid'    => $this->uuid,
+                'name'             => data_get($addon, 'name'),
+                'description'      => data_get($addon, 'description'),
+                'translations'     => data_get($addon, 'translations', []),
+                'price'            => MoneyCast::apply($addon['price'] ?? 0),
+                'sale_price'       => MoneyCast::apply($addon['sale_price'] ?? 0),
+                'is_on_sale'       => data_get($addon, 'is_on_sale'),
+            ];
 
             // update product addon category
             if (Str::isUuid($id)) {
-                ProductAddon::where('uuid', $id)->update(Arr::except($addon, ['uuid', 'created_at', 'updated_at']));
+                ProductAddon::where('uuid', $id)->update($upsertableProductAddon);
                 continue;
             }
 
             // create new product addon category
             ProductAddon::create([
-                'category_uuid'    => $this->uuid,
-                'name'             => data_get($addon, 'name'),
-                'description'      => data_get($addon, 'description'),
-                'translations'     => data_get($addon, 'translations', []),
-                'price'            => data_get($addon, 'price'),
-                'sale_price'       => data_get($addon, 'sale_price'),
-                'is_on_sale'       => data_get($addon, 'is_on_sale'),
+                ...$upsertableProductAddon,
+                'created_by_uuid' => session('user'),
             ]);
         }
 
