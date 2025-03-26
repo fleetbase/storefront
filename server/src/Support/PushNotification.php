@@ -52,7 +52,7 @@ class PushNotification
         );
 
         return (new FcmMessage(notification: $notification))
-            ->setData(['order' => $order->uuid, 'id' => $order->public_id, 'type' => $status])
+            ->data(['order' => $order->uuid, 'id' => $order->public_id, 'type' => $status])
             ->custom([
                 'android' => [
                     'notification' => [

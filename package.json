@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/storefront-engine",
-    "version": "0.3.28",
+    "version": "0.3.29",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
@@ -43,14 +43,14 @@
         "publish:github": "npm config set '@fleetbase:registry' https://npm.pkg.github.com/ && npm publish"
     },
     "dependencies": {
+        "@babel/core": "^7.23.2",
         "@fleetbase/ember-core": "latest",
         "@fleetbase/ember-ui": "latest",
         "@fleetbase/fleetops-data": "latest",
-        "@babel/core": "^7.23.2",
         "@fortawesome/ember-fontawesome": "^2.0.0",
         "@fortawesome/fontawesome-svg-core": "6.4.0",
-        "@fortawesome/free-solid-svg-icons": "6.4.0",
         "@fortawesome/free-brands-svg-icons": "6.4.0",
+        "@fortawesome/free-solid-svg-icons": "6.4.0",
         "ember-auto-import": "^2.7.4",
         "ember-cli-babel": "^8.2.0",
         "ember-cli-htmlbars": "^6.3.0",
@@ -59,12 +59,12 @@
         "ember-wormhole": "^0.6.0"
     },
     "devDependencies": {
-        "@fleetbase/intl-lint": "^0.0.1",
         "@babel/eslint-parser": "^7.22.15",
         "@babel/plugin-proposal-decorators": "^7.23.2",
         "@ember/optional-features": "^2.0.0",
         "@ember/test-helpers": "^3.2.0",
         "@embroider/test-setup": "^3.0.2",
+        "@fleetbase/intl-lint": "^0.0.1",
         "@glimmer/component": "^1.1.2",
         "@glimmer/tracking": "^1.1.2",
         "broccoli-asset-rev": "^3.0.0",
