@@ -6,6 +6,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NotificationChannel;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Support\Utils;
 use Illuminate\Container\Container;
 use Kreait\Laravel\Firebase\FirebaseProjectManager;
 use NotificationChannels\Apn\ApnMessage;
@@ -117,7 +118,9 @@ class PushNotification
         $notificationChannel = static::getNotificationChannel('apn', $storefront, $order);
         $config              = (array) $notificationChannel->config;
 
-        return new PushOkClient(PuskOkToken::create($config));
+        $isProductionEnv = Utils::castBoolean(data_get($config, 'production', app()->isProduction()));
+
+        return new PushOkClient(PuskOkToken::create($config), $isProductionEnv);
     }
 
     public static function getStorefrontFromOrder(Order $order): Network|Store|null
