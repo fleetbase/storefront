@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 use Fleetbase\FleetOps\Http\Resources\v1\Place;
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
+use Fleetbase\Support\Utils;
 use Illuminate\Support\Str;
 
 class Customer extends FleetbaseResource
@@ -33,7 +34,7 @@ class Customer extends FleetbaseResource
             'address'              => data_get($this, 'place.address'),
             'addresses'            => $this->whenLoaded('places', Place::collection($this->places)),
             'token'                => $this->when($this->token, $this->token),
-            'meta'                 => $this->meta ?? [],
+            'meta'                 => data_get($this, 'meta', Utils::createObject()),
             'slug'                 => $this->slug,
             'created_at'           => $this->created_at,
             'updated_at'           => $this->updated_at,
