@@ -73,6 +73,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'products'], function () use ($router) {
                     $router->get('/', 'ProductController@query');
                     $router->get('{id}', 'ProductController@find');
+                    $router->post('/', 'ProductController@create');
+                    $router->put('{id}', 'ProductController@update');
                 });
 
                 // storefront/v1/food-trucks

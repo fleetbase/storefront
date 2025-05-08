@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
+use Fleetbase\Support\Utils;
 
 class CatalogCategory extends FleetbaseResource
 {
@@ -26,8 +27,8 @@ class CatalogCategory extends FleetbaseResource
             'owner_uuid'                         => $this->when(Http::isInternalRequest(), $this->owner_uuid),
             'name'                               => $this->name,
             'description'                        => $this->description,
-            'tags'                               => $this->tags ?? [],
-            'meta'                               => $this->meta ?? [],
+            'tags'                               => data_get($this, 'tags', []),
+            'meta'                               => data_get($this, 'meta', Utils::createObject()),
             'products'                           => CatalogProduct::collection($this->products ?? []),
             'for'                                => $this->for,
             'order'                              => $this->order,

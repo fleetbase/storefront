@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
+use Fleetbase\Support\Utils;
 
 class Category extends FleetbaseResource
 {
@@ -28,7 +29,7 @@ class Category extends FleetbaseResource
                     return $parentCategory->public_id;
                 }
             ),
-            'tags'          => $this->tags ?? [],
+            'tags'          => Utils::arrayFrom($this->tags),
             'translations'  => $this->translations ?? [],
             'products'      => $this->when($request->has('with_products') || $request->inArray('with', 'products'), $this->products ? Product::collection($this->products) : []),
             'subcategories' => $this->when(
@@ -40,6 +41,7 @@ class Category extends FleetbaseResource
                     $this->subCategories->toArray()
                 )
             ),
+            'meta'       => data_get($this, 'meta', Utils::createObject()),
             'order'      => $this->order,
             'slug'       => $this->slug,
             'created_at' => $this->created_at,
