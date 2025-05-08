@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
 use Fleetbase\Support\Http;
+use Fleetbase\Support\Utils;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -42,6 +43,7 @@ class Product extends FleetbaseResource
             'is_available'       => $this->is_available,
             'tags'               => $this->tags ?? [],
             'status'             => $this->status,
+            'meta'               => data_get($this, 'meta', Utils::createObject()),
             'slug'               => $this->slug,
             'translations'       => $this->translations ?? [],
             'addon_categories'   => $this->mapAddonCategories($this->addonCategories),
