@@ -3,67 +3,19 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
-import { timeout } from 'ember-concurrency';
-import { task } from 'ember-concurrency-decorators';
+import { debug } from '@ember/debug';
+import { timeout, task } from 'ember-concurrency';
 import createShareableLink from '../../../../utils/create-shareable-link';
 import isEmail from '@fleetbase/ember-core/utils/is-email';
 import isModel from '@fleetbase/ember-core/utils/is-model';
 
 export default class NetworksIndexNetworkStoresController extends Controller {
-    /**
-     * Inject the `notifications` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service notifications;
-
-    /**
-     * Inject the `intl` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service intl;
-
-    /**
-     * Inject the `modals-manager` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service modalsManager;
-
-    /**
-     * Inject the `crud` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service crud;
-
-    /**
-     * Inject the `fetch` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service fetch;
-
-    /**
-     * Inject the `store` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service store;
-
-    /**
-     * Inject the `hostRouter` service
-     *
-     * @var {Service}
-     * @memberof NetworksIndexNetworkStoresController
-     */
     @service hostRouter;
 
     /**
@@ -122,12 +74,25 @@ export default class NetworksIndexNetworkStoresController extends Controller {
     @tracked network;
 
     /**
-     * The loading state.
+     * The stores loaded.
      *
-     * @var {Boolean}
      * @memberof NetworksIndexNetworkStoresController
      */
-    @tracked isLoading = false;
+    @tracked stores = [];
+
+    /**
+     * The category picker component context.
+     *
+     * @memberof NetworksIndexNetworkStoresController
+     */
+    @tracked categoryPicker;
+
+    /**
+     * The current category model instance.
+     *
+     * @memberof NetworksIndexNetworkStoresController
+     */
+    @tracked categoryModel;
 
     /**
      * All columns applicable for network stores
@@ -144,6 +109,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterable: true,
             filterComponent: 'filter/string',
             showOnlineIndicator: true,
+            cellClassNames: 'network-store-name-column',
         },
         {
             label: this.intl.t('storefront.common.id'),
@@ -209,6 +175,11 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                     fn: this.assignStoreToCategory,
                 },
                 {
+                    label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
+                    fn: this.removeStoreCategory,
+                    isVisible: (store) => store.category,
+                },
+                {
                     separator: true,
                 },
                 {
@@ -247,6 +218,10 @@ export default class NetworksIndexNetworkStoresController extends Controller {
         this.storeQuery = value;
     }
 
+    @action setCategoryPickerContext(context) {
+        this.categoryPicker = context;
+    }
+
     /**
      * Selects a category and assigns its ID to the current category property.
      * If the selected category is null, the category property is set to null.
@@ -255,6 +230,8 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      * @param {CategoryModel|null} selectedCategory - The selected category object containing the ID.
      */
     @action selectCategory(selectedCategory) {
+        this.categoryModel = selectedCategory;
+
         if (selectedCategory) {
             this.category = selectedCategory.id;
         } else {
@@ -281,6 +258,36 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                     this.leaveCategory();
                     modal.done();
                 });
+            },
+        });
+    }
+
+    /**
+     * Displays a confirmation modal to remove a specified store from the network.
+     * Allows the user to confirm the removal.
+     *
+     * @action
+     * @param {StoreModel} store - The store object to be removed.
+     */
+    @action async removeStoreCategory(store) {
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.index.network.stores.remove-store-category'),
+            body: this.intl.t('storefront.networks.index.network.stores.remove-store-category-body', { storeName: store.name, categoryName: store.category?.get('name') }),
+            acceptButtonIcon: 'check',
+            acceptButtonIconPrefix: 'fas',
+            declineButtonIcon: 'times',
+            declineButtonIconPrefix: 'fas',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.post(`networks/${this.network.id}/remove-store-category`, { store: store.id }, { namespace: 'storefront/int/v1' });
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
         });
     }
@@ -516,19 +523,17 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
-            confirm: (modal) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                this.fetch
-                    .post(`networks/${this.network.id}/remove-stores`, { stores: [store.id] }, { namespace: 'storefront/int/v1' })
-                    .then(() => {
-                        this.stores.removeObject(store);
-                        modal.done();
-                    })
-                    .catch((error) => {
-                        modal.stopLoading();
-                        this.notifications.serverError(error);
-                    });
+                try {
+                    await this.fetch.post(`networks/${this.network.id}/remove-stores`, { stores: [store.id] }, { namespace: 'storefront/int/v1' });
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
         });
     }

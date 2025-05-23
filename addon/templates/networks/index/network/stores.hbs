@@ -19,6 +19,13 @@
 </Layout::Section::Header>
 
 <Layout::Section::Body>
-    <NetworkCategoryPicker @network={{this.network}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @wrapperClass="my-4 ml-9" />
+    <div class="flex flex-row items-center space-x-2">
+        <NetworkCategoryPicker @network={{this.network}} @category={{this.category}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @onReady={{this.setCategoryPickerContext}} @wrapperClass="w-64 my-4 ml-9" />
+        {{#if this.categoryModel}}
+            <Button @icon="arrow-left" @size="xs" @onClick={{this.categoryPicker.loadParentCategories}} />
+            <Button @icon="cog" @text="Edit Category" @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />
+            <Button @icon="trash" @text="Delete Category" @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
+        {{/if}}
+    </div>
     <Table @rows={{@model}} @columns={{this.columns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
 </Layout::Section::Body>

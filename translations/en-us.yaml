@@ -409,6 +409,7 @@ storefront:
           view-store-details: View Store Details
           edit-store: Edit Store
           assign-category: Assign Category
+          remove-category: Remove Category
           remove-store-from-network: Remove Store from Network
           delete-network-category: Delete network category?
           deleting-category-move-all-stores-inside-on-top-level: Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?
@@ -429,6 +430,8 @@ storefront:
           send-invitations: Send Invitations
           invitation-sent-recipients: Invitations sent to recipients!
           invalid-emails-provided-error: Invalid emails provided!
+          remove-store-category: Remove store category
+          remove-store-category-body: You are about to remove {storeName} from the category {categoryName}, do you wish to proceed?
   orders:
     index:
       internal-id: Internal ID

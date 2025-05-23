@@ -2,6 +2,8 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { debug } from '@ember/debug';
+import { task } from 'ember-concurrency';
 import isModel from '@fleetbase/ember-core/utils/is-model';
 
 export default class NetworkCategoryPickerComponent extends Component {
@@ -11,20 +13,27 @@ export default class NetworkCategoryPickerComponent extends Component {
     @tracked categories = [];
     @tracked selectedCategory;
     @tracked network;
-    @tracked isLoading = false;
-    @tracked buttonTitle = null;
+    @tracked buttonTitle = 'Select Category';
 
-    constructor() {
+    context = {
+        loadCategories: this.loadCategories,
+        loadParentCategories: this.loadParentCategories,
+        onSelectCategory: this.onSelectCategory,
+        onCreateNewCategory: this.onCreateNewCategory,
+    };
+
+    constructor(owner, { network, category, onReady }) {
         super(...arguments);
-        this.network = this.args.network;
-        this.category = this.args.category;
-        this.setButtonTitle(this.category);
-        this.loadCategories(this.category);
+        this.network = network;
+        this.setCategory(category);
+
+        if (typeof onReady === 'function') {
+            onReady(this.context);
+        }
     }
 
     setButtonTitle(selectedCategory) {
         let buttonTitle = this.args.buttonTitle ?? 'Select Category';
-
         if (selectedCategory) {
             buttonTitle = selectedCategory.name;
         }
@@ -32,7 +41,7 @@ export default class NetworkCategoryPickerComponent extends Component {
         this.buttonTitle = buttonTitle;
     }
 
-    @action loadCategories(parentCategory) {
+    @task *loadCategories(parentCategory) {
         const queryParams = {
             owner_uuid: this.network.id,
             parents_only: parentCategory ? false : true,
@@ -45,26 +54,20 @@ export default class NetworkCategoryPickerComponent extends Component {
             queryParams.with_parent = true;
         }
 
-        this.isLoading = true;
-        this.store
-            .query('category', queryParams)
-            .then((categories) => {
-                this.categories = categories.toArray();
-            })
-            .finally(() => {
-                this.isLoading = false;
-            });
+        try {
+            const categories = yield this.store.query('category', queryParams);
+            this.categories = categories.toArray();
+        } catch (error) {
+            debug(`Unable to load categories : ${error.message}`)
+        }
     }
 
     @action onSelectCategory(category) {
-        this.selectedCategory = category;
-        this.setButtonTitle(category);
+        this.setCategory(category);
 
         if (typeof this.args.onSelect === 'function') {
             this.args.onSelect(category);
         }
-
-        this.loadCategories(category);
     }
 
     @action onCreateNewCategory() {
@@ -79,5 +82,32 @@ export default class NetworkCategoryPickerComponent extends Component {
         }
 
         this.onSelectCategory(null);
+    }
+
+    @action updateArgs(el, [category]) {
+        this.setCategory(category);
+    }
+
+    async setCategoryById(categoryId) {
+        const category = this.store.peekRecord('category', categoryId);
+        if (category) {
+            this.setCategory(category);
+        } else {
+            // load from server if possible
+            const categoryRecord = await this.store.findRecord('category', categoryId);
+            if (categoryRecord) {
+                this.onSelectCategory(categoryRecord);
+            }
+        }
+    }
+
+    setCategory(category) {
+        if (typeof category === 'string') {
+            return this.setCategoryById(category);
+        }
+
+        this.selectedCategory = category;
+        this.setButtonTitle(category);
+        this.loadCategories.perform(category);
     }
 }

@@ -110,7 +110,7 @@ class NetworkController extends StorefrontController
      */
     public function removeStores(string $id, NetworkActionRequest $request)
     {
-        $stores = collect($request->input('stores', []));
+        $stores = $request->array('stores');
 
         // delete each
         foreach ($stores as $storeId) {
@@ -121,7 +121,7 @@ class NetworkController extends StorefrontController
     }
 
     /**
-     * Remove stores to a network.
+     * Add a store to a network category
      *
      * @return \Illuminate\Http\Response
      */
@@ -132,9 +132,26 @@ class NetworkController extends StorefrontController
 
         // get network store instance
         $networkStore = NetworkStore::where(['network_uuid' => $id, 'store_uuid' => $store])->first();
-
         if ($networkStore) {
             $networkStore->update(['category_uuid' => $category]);
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Remove stores to a network.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function removeStoreCategory(string $id, NetworkActionRequest $request)
+    {
+        $store    = $request->input('store');
+
+        // get network store instance
+        $networkStore = NetworkStore::where(['network_uuid' => $id, 'store_uuid' => $store])->first();
+        if ($networkStore) {
+            $networkStore->update(['category_uuid' => null]);
         }
 
         return response()->json(['status' => 'ok']);

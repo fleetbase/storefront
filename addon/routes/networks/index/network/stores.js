@@ -3,6 +3,7 @@ import { inject as service } from '@ember/service';
 
 export default class NetworksIndexNetworkStoresRoute extends Route {
     @service store;
+    @service hostRouter;
 
     queryParams = {
         category: { refreshModel: true },
@@ -23,10 +24,10 @@ export default class NetworksIndexNetworkStoresRoute extends Route {
         // set the network to controller
         controller.network = this.network;
 
-        // // load the network categories
-        // const categories = await this.store.query('category', { owner_uuid: network.id, parents_only: true, for: 'storefront_network' });
-
-        // // set the categories loaded
-        // controller.categories = categories.toArray();
+        // set the cateogry if set
+        const { category: categoryId } = this.paramsFor(this.routeName);
+        if (categoryId) {
+            controller.category = categoryId;
+        }
     }
 }
