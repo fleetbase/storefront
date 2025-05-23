@@ -2,6 +2,8 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { debug } from '@ember/debug';
+import { task } from 'ember-concurrency';
 import isModel from '@fleetbase/ember-core/utils/is-model';
 
 export default class NetworkCategoryPickerComponent extends Component {
@@ -11,7 +13,6 @@ export default class NetworkCategoryPickerComponent extends Component {
     @tracked categories = [];
     @tracked selectedCategory;
     @tracked network;
-    @tracked isLoading = false;
     @tracked buttonTitle = 'Select Category';
 
     context = {
@@ -40,7 +41,7 @@ export default class NetworkCategoryPickerComponent extends Component {
         this.buttonTitle = buttonTitle;
     }
 
-    @action loadCategories(parentCategory) {
+    @task *loadCategories(parentCategory) {
         const queryParams = {
             owner_uuid: this.network.id,
             parents_only: parentCategory ? false : true,
@@ -53,15 +54,12 @@ export default class NetworkCategoryPickerComponent extends Component {
             queryParams.with_parent = true;
         }
 
-        this.isLoading = true;
-        this.store
-            .query('category', queryParams)
-            .then((categories) => {
-                this.categories = categories.toArray();
-            })
-            .finally(() => {
-                this.isLoading = false;
-            });
+        try {
+            const categories = yield this.store.query('category', queryParams);
+            this.categories = categories.toArray();
+        } catch (error) {
+            debug(`Unable to load categories : ${error.message}`)
+        }
     }
 
     @action onSelectCategory(category) {
@@ -90,10 +88,16 @@ export default class NetworkCategoryPickerComponent extends Component {
         this.setCategory(category);
     }
 
-    setCategoryById(categoryId) {
+    async setCategoryById(categoryId) {
         const category = this.store.peekRecord('category', categoryId);
         if (category) {
             this.setCategory(category);
+        } else {
+            // load from server if possible
+            const categoryRecord = await this.store.findRecord('category', categoryId);
+            if (categoryRecord) {
+                this.onSelectCategory(categoryRecord);
+            }
         }
     }
 
@@ -104,6 +108,6 @@ export default class NetworkCategoryPickerComponent extends Component {
 
         this.selectedCategory = category;
         this.setButtonTitle(category);
-        this.loadCategories(category);
+        this.loadCategories.perform(category);
     }
 }
