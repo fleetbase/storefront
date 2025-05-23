@@ -8,6 +8,7 @@
     @buttonClass={{concat "w-full truncate w-48" " " @buttonClass}}
     @buttonWrapperClass={{concat "w-full" " " @buttonWrapperClass}}
     @wrapperClass={{@wrapperClass}}
+    {{did-update this.updateArgs @category}}
     as |dd|
 >
     <div role="menu" class="store-selector-dropdown-menu next-dd-menu py-1">

@@ -4,8 +4,7 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { dasherize } from '@ember/string';
 import { isBlank } from '@ember/utils';
-import { timeout } from 'ember-concurrency';
-import { task } from 'ember-concurrency-decorators';
+import { timeout, task } from 'ember-concurrency';
 
 export default class ProductsIndexCategoryController extends BaseController {
     @service intl;

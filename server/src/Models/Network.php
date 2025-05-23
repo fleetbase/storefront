@@ -156,7 +156,8 @@ class Network extends StorefrontModel
     {
         return $this->belongsToMany(Store::class, 'network_stores', 'network_uuid', 'store_uuid')
             ->using(NetworkStore::class)
-            ->withPivot('category_uuid');
+            ->withPivot(['category_uuid', 'deleted_at'])
+            ->wherePivotNull('deleted_at');
     }
 
     /**

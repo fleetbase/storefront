@@ -77,3 +77,10 @@ body[data-theme='dark'] .ui-tabs.overlay-content-panel > ul .ui-tab.active,
 body[data-theme='dark'] .ui-tabs.overlay-content-panel > nav .ui-tab.active {
     background-color: #202a37;
 }
+
+/** hotfix online indicator overflowing store name */
+td.network-store-name-column > div > svg {
+    margin-left: -0.7rem;
+    height: 0.5rem;
+    width: 0.5rem;
+}

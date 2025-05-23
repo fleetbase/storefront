@@ -2,9 +2,9 @@ import { inject as service } from '@ember/service';
 import { isBlank } from '@ember/utils';
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { tracked } from '@glimmer/tracking';
-import { timeout } from 'ember-concurrency';
-import { task } from 'ember-concurrency-decorators';
+import { timeout, task } from 'ember-concurrency';
 import { action } from '@ember/object';
+
 export default class CustomersIndexController extends BaseController {
     /**
      * Inject the `notifications` service

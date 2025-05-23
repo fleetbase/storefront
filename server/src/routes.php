@@ -169,6 +169,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->delete('{id}/remove-category', $controller('deleteCategory'));
                                 $router->post('{id}/set-store-category', $controller('addStoreToCategory'));
+                                $router->post('{id}/remove-store-category', $controller('removeStoreCategory'));
                                 $router->post('{id}/add-stores', $controller('addStores'));
                                 $router->post('{id}/remove-stores', $controller('removeStores'));
                                 $router->post('{id}/invite', $controller('sendInvites'));

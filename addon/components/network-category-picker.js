@@ -12,19 +12,27 @@ export default class NetworkCategoryPickerComponent extends Component {
     @tracked selectedCategory;
     @tracked network;
     @tracked isLoading = false;
-    @tracked buttonTitle = null;
+    @tracked buttonTitle = 'Select Category';
 
-    constructor() {
+    context = {
+        loadCategories: this.loadCategories,
+        loadParentCategories: this.loadParentCategories,
+        onSelectCategory: this.onSelectCategory,
+        onCreateNewCategory: this.onCreateNewCategory,
+    };
+
+    constructor(owner, { network, category, onReady }) {
         super(...arguments);
-        this.network = this.args.network;
-        this.category = this.args.category;
-        this.setButtonTitle(this.category);
-        this.loadCategories(this.category);
+        this.network = network;
+        this.setCategory(category);
+
+        if (typeof onReady === 'function') {
+            onReady(this.context);
+        }
     }
 
     setButtonTitle(selectedCategory) {
         let buttonTitle = this.args.buttonTitle ?? 'Select Category';
-
         if (selectedCategory) {
             buttonTitle = selectedCategory.name;
         }
@@ -57,14 +65,11 @@ export default class NetworkCategoryPickerComponent extends Component {
     }
 
     @action onSelectCategory(category) {
-        this.selectedCategory = category;
-        this.setButtonTitle(category);
+        this.setCategory(category);
 
         if (typeof this.args.onSelect === 'function') {
             this.args.onSelect(category);
         }
-
-        this.loadCategories(category);
     }
 
     @action onCreateNewCategory() {
@@ -79,5 +84,26 @@ export default class NetworkCategoryPickerComponent extends Component {
         }
 
         this.onSelectCategory(null);
+    }
+
+    @action updateArgs(el, [category]) {
+        this.setCategory(category);
+    }
+
+    setCategoryById(categoryId) {
+        const category = this.store.peekRecord('category', categoryId);
+        if (category) {
+            this.setCategory(category);
+        }
+    }
+
+    setCategory(category) {
+        if (typeof category === 'string') {
+            return this.setCategoryById(category);
+        }
+
+        this.selectedCategory = category;
+        this.setButtonTitle(category);
+        this.loadCategories(category);
     }
 }
