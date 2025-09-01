@@ -70,6 +70,8 @@ export default class NetworksIndexNetworkIndexController extends Controller {
      */
     @tracked isLoading = false;
 
+    @tracked orderConfigs = [];
+
     /**
      * Alias for model.gateways, representing the gateways associated with the network.
      *

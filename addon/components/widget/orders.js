@@ -66,7 +66,7 @@ export default class WidgetOrdersComponent extends Component {
 
             return orders;
         } catch (err) {
-            debug('Error loading orders for widget:', err);
+            debug('Error loading orders for widget:', err.message);
         }
     }
 

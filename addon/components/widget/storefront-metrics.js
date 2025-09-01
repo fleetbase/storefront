@@ -1,10 +1,11 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { get } from '@ember/object';
+import { get, action } from '@ember/object';
 import { debug } from '@ember/debug';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { task } from 'ember-concurrency';
+import { getDateRangeByLabel } from '../../utils/commerce-date-ranges';
 
 export default class WidgetStorefrontMetricsComponent extends Component {
     @service fetch;
@@ -18,6 +19,98 @@ export default class WidgetStorefrontMetricsComponent extends Component {
         stores_count: 0,
         earnings_sum: 0,
     };
+    @tracked datePickerButtons = [
+        {
+            content: 'Yesterday',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Yesterday');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'Last 7 Days',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Last 7 Days');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'Last Week',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Last Week');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'This Month',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('This Month');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'Last Month',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Last Month');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'This Quarter',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('This Quarter');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'Last Quarter',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Last Quarter');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'This Year',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('This Year');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+        {
+            content: 'Last Year',
+            className: 'quick-select-btn',
+            onClick: (datepicker) => {
+                const thisMonthRange = getDateRangeByLabel('Last Year');
+                if (thisMonthRange) {
+                    datepicker.selectDate(thisMonthRange);
+                }
+            },
+        },
+    ];
 
     constructor(owner, { title = 'This Month' }) {
         super(...arguments);
@@ -40,6 +133,15 @@ export default class WidgetStorefrontMetricsComponent extends Component {
             return metrics;
         } catch (err) {
             debug('Error loading storefront metrics:', err);
+        }
+    }
+
+    @action selectDates({ formattedDate }) {
+        const [start, end] = formattedDate;
+        this.start = start;
+        this.end = end;
+        if (start && end) {
+            this.loadMetrics.perform(start, end);
         }
     }
 }

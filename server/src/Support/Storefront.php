@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Support;
 
+use Fleetbase\FleetOps\Flow\Activity;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\OrderConfig;
@@ -11,9 +12,12 @@ use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCreated;
 use Fleetbase\Support\Auth;
 use Fleetbase\Support\Utils;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
@@ -21,15 +25,20 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class Storefront
 {
+    /** @var string */
+    private const CONFIG_KEY = 'storefront';
+    /** @var string */
+    private const CONFIG_NS  = 'system:order-config:storefront';
+    /** @var array<string,OrderConfig> In-memory cache keyed by company UUID */
+    private static array $configCache = [];
+
     /**
      * Returns current store or network based on session `storefront_key`
      * with bare minimum columns, but can optionally pass in more columns to receive.
      *
      * @param array $columns
-     *
-     * @return \Fleetbase\Models\Storefront\Network|\Fleetbase\Models\Storefront\Store
      */
-    public static function about($columns = [], $with = [])
+    public static function about($columns = [], $with = []): Store|Network|null
     {
         $key = session('storefront_key');
 
@@ -38,7 +47,7 @@ class Storefront
         }
 
         if (is_array($columns)) {
-            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
+            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'order_config_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
         }
 
         if (Str::startsWith($key, 'store')) {
@@ -53,10 +62,16 @@ class Storefront
         return $about;
     }
 
-    public static function findAbout($id, $columns = [], $with = [])
+    /**
+     * Returns current store or network based ID param passed
+     * with bare minimum columns, but can optionally pass in more columns to receive.
+     *
+     * @param array $columns
+     */
+    public static function findAbout($id, $columns = [], $with = []): Store|Network|null
     {
         if (is_array($columns)) {
-            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
+            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'order_config_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
         }
 
         if (Str::startsWith($id, 'store')) {
@@ -204,57 +219,106 @@ class Storefront
         return $stripeCustomer;
     }
 
-    public static function patchOrderConfig(Order $order)
+    /**
+     * Ensure an Order has an effective OrderConfig.
+     * - If already set (FK or relation), return it.
+     * - Else resolve default for the order's company and patch the FK quietly.
+     *
+     * @param \Fleetbase\Storefront\Models\Order $order
+     *
+     * @return \Fleetbase\Storefront\Models\OrderConfig|null
+     */
+    public static function patchOrderConfig($order): ?OrderConfig
     {
-        $orderConfig = $order->config();
-        if (!$orderConfig) {
-            $orderConfig = Storefront::getDefaultOrderConfig();
-            if ($orderConfig) {
-                $order->update(['order_config_uuid' => $orderConfig->uuid]);
-            }
+        // FK fast-path
+        if (!empty($order->order_config_uuid)) {
+            return OrderConfig::where('uuid', $order->order_config_uuid)->first();
         }
 
-        return $orderConfig;
-    }
-
-    public static function getDefaultOrderConfig()
-    {
-        $company = Auth::getCompany();
-        if ($company) {
-            return static::getOrderConfig($company);
+        // Relation fast-path (if your Order has relation 'orderConfig')
+        $order->loadMissing('orderConfig');
+        if ($order->orderConfig instanceof OrderConfig) {
+            return $order->orderConfig;
         }
 
-        return null;
-    }
+        // Resolve by company
+        $companyUuid = $order->company_uuid ?? ($order->company->uuid ?? null);
+        $orderConfig = static::getOrderConfig($companyUuid);
 
-    public static function getOrderConfig(Company $company)
-    {
-        $orderConfig = OrderConfig::where(['company_uuid' => $company->uuid, 'key' => 'storefront', 'namespace' => 'system:order-config:storefront'])->first();
-        if (!$orderConfig) {
-            $orderConfig = static::createStorefrontConfig($company);
+        if ($orderConfig) {
+            // Quiet write to avoid events, if preferred
+            $order->forceFill(['order_config_uuid' => $orderConfig->uuid]);
+            method_exists($order, 'saveQuietly') ? $order->saveQuietly() : $order->save();
         }
 
         return $orderConfig;
     }
 
     /**
-     * Creates or retrieves an existing storefront configuration for a given company.
+     * Get the default Storefront OrderConfig for the "current" company context.
      *
-     * This method checks if a storefront configuration (OrderConfig) already exists for the given company.
-     * If it exists, the method returns the existing configuration. Otherwise, it creates a new configuration with
-     * predefined settings for a storefront order process. The configuration includes various stages like 'created',
-     * 'started', 'canceled', 'completed', etc., each defined with specific attributes like key, code, color, logic,
-     * events, status, actions, details, and more. These stages help manage the order lifecycle in a storefront context.
-     *
-     * @param Company $company the company for which the storefront configuration is being created or retrieved
-     *
-     * @return OrderConfig the storefront order configuration associated with the specified company
+     * @return \Fleetbase\Storefront\Models\OrderConfig|null
      */
-    public static function createStorefrontConfig(Company $company): OrderConfig
+    public static function getDefaultOrderConfig(): ?OrderConfig
     {
+        $company = session('company') ?? (method_exists(Auth::class, 'getCompany') ? Auth::getCompany() : null);
+
+        return static::getOrderConfig($company);
+    }
+
+    /**
+     * Get (or lazily create) the Storefront OrderConfig for a company.
+     * Accepts Company model, UUID string, or null (falls back to session company).
+     *
+     * @return \Fleetbase\Storefront\Models\OrderConfig|null
+     */
+    public static function getOrderConfig(Company|string|null $company): ?OrderConfig
+    {
+        $companyUuid = static::resolveCompanyUuid($company);
+        if (!$companyUuid) {
+            return null;
+        }
+
+        // Request-lifetime cache
+        if (isset(static::$configCache[$companyUuid])) {
+            return static::$configCache[$companyUuid];
+        }
+
+        $attrs = [
+            'company_uuid' => $companyUuid,
+            'key'          => self::CONFIG_KEY,
+            'namespace'    => self::CONFIG_NS,
+        ];
+
+        $config = OrderConfig::where($attrs)->first();
+        if (!$config) {
+            // Short transaction to avoid dupes under race
+            $config = DB::transaction(function () use ($attrs, $companyUuid) {
+                $existing = OrderConfig::where($attrs)->first();
+                if ($existing) {
+                    return $existing;
+                }
+
+                return static::createStorefrontConfig($companyUuid);
+            });
+        }
+
+        return static::$configCache[$companyUuid] = $config;
+    }
+
+    /**
+     * Create (or retrieve) the Storefront config for a company.
+     * Accepts Company model or UUID string.
+     *
+     * @return \Fleetbase\Storefront\Models\OrderConfig
+     */
+    public static function createStorefrontConfig(Company|string $company): OrderConfig
+    {
+        $companyUuid = $company instanceof Company ? $company->uuid : $company;
+
         return OrderConfig::firstOrCreate(
             [
-                'company_uuid' => $company->uuid,
+                'company_uuid' => $companyUuid,
                 'key'          => 'storefront',
                 'namespace'    => 'system:order-config:storefront',
             ],
@@ -343,7 +407,7 @@ class Storefront
                         'require_pod' => false,
                     ],
                     'picked_up' => [
-                        'key'         => 'completed',
+                        'key'         => 'picked_up',
                         'code'        => 'picked_up',
                         'color'       => '#1f2937',
                         'logic'       => [],
@@ -482,5 +546,103 @@ class Storefront
                 ],
             ]
         );
+    }
+
+    /**
+     * Normalize a Company|UUID|null to a UUID string (or null if unresolved).
+     */
+    protected static function resolveCompanyUuid(Company|string|null $company): ?string
+    {
+        if ($company instanceof Company && !empty($company->uuid)) {
+            return (string) $company->uuid;
+        }
+        if (is_string($company) && $company !== '' && (method_exists(Str::class, 'isUuid') ? Str::isUuid($company) : true)) {
+            return $company;
+        }
+        $sessionCompany = session('company');
+
+        return !empty($sessionCompany) ? (string) $sessionCompany : null;
+    }
+
+    public static function createAcceptedActivity(?OrderConfig $orderConfig = null): Activity
+    {
+        return new Activity([
+            'key'         => 'accepted',
+            'code'        => 'accepted',
+            'color'       => '#1f2937',
+            'logic'       => [],
+            'events'      => [],
+            'status'      => 'Order has been accepted',
+            'actions'     => [],
+            'details'     => 'Order has been accepted by {storefront.name}',
+            'options'     => [],
+            'complete'    => false,
+            'entities'    => [],
+            'sequence'    => 0,
+            'activities'  => ['dispatched'],
+            'internalId'  => Str::uuid(),
+            'pod_method'  => 'scan',
+            'require_pod' => false,
+        ], $orderConfig ? $orderConfig->activities()->toArray() : []);
+    }
+
+    public static function autoAcceptOrder(Order $order)
+    {
+        // Patch order config
+        $orderConfig = static::patchOrderConfig($order);
+        $activity    = static::createAcceptedActivity($orderConfig);
+
+        // Dispatch already if order is a pickup
+        if ($order->isMeta('is_pickup')) {
+            $order->firstDispatchWithActivity();
+        }
+
+        // Set order as accepted
+        try {
+            $order->setStatus($activity->code);
+            $order->insertActivity($activity, $order->getLastLocation());
+        } catch (\Exception $e) {
+            Log::debug('[Storefront] was able to accept an order.', ['order' => $order, 'activity' => $activity]);
+
+            return response()->error('Unable to accept order.');
+        }
+
+        // Notify customer order was accepted
+        try {
+            $order->customer->notify(new StorefrontOrderAccepted($order));
+        } catch (\Exception $e) {
+        }
+
+        return $order;
+    }
+
+    public static function autoDispatchOrder(Order $order, bool $adhoc = true)
+    {
+        // Patch order config
+        Storefront::patchOrderConfig($order);
+
+        if ($order->isMeta('is_pickup')) {
+            $order->updateStatus('pickup_ready');
+
+            return $order;
+        }
+
+        // toggle order to adhoc
+        if ($adhoc === true) {
+            $order->update(['adhoc' => true]);
+        } else {
+            // Find nearest driver and assign
+            $driver = $order->findClosestDrivers()->first();
+            if ($driver) {
+                $order->assignDriver($driver);
+            } else {
+                // no driver available to make adhoc
+                $order->update(['adhoc' => true]);
+            }
+        }
+
+        $order->dispatchWithActivity();
+
+        return $order;
     }
 }

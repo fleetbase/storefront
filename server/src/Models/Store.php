@@ -3,11 +3,13 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Models\OrderConfig;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
+use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils as FleetbaseUtils;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasMetaAttributes;
@@ -56,7 +58,7 @@ class Store extends StorefrontModel
      *
      * @var array
      */
-    protected $fillable = ['created_by_uuid', 'company_uuid', 'logo_uuid', 'backdrop_uuid', 'key', 'online', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'meta', 'timezone', 'pod_method', 'options', 'alertable', 'slug'];
+    protected $fillable = ['created_by_uuid', 'company_uuid', 'logo_uuid', 'backdrop_uuid', 'order_config_uuid', 'key', 'online', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'meta', 'timezone', 'pod_method', 'options', 'alertable', 'slug'];
 
     /**
      * The attributes that should be cast to native types.
@@ -138,6 +140,22 @@ class Store extends StorefrontModel
     }
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function backdrop()
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(File::class);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function orderConfig()
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(OrderConfig::class);
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function files()
@@ -165,14 +183,6 @@ class Store extends StorefrontModel
                     'updated_at',
                 ]
             )->where('type', 'storefront_store_media');
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function backdrop()
-    {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(File::class);
     }
 
     /**
@@ -459,5 +469,57 @@ class Store extends StorefrontModel
         }
 
         return null;
+    }
+
+    /**
+     * Get the effective OrderConfig for this model.
+     *
+     * Loads the related `orderConfig` if missing and returns it.
+     * If no specific config is set, it falls back to the global default
+     * and memoizes that default into the relation (no DB write; just the relation cache)
+     * to avoid repeat lookups in the same request lifecycle.
+     *
+     * @throws \RuntimeException if no default OrderConfig is available (should not happen in a healthy install)
+     */
+    public function getOrderConfig(): OrderConfig
+    {
+        // Ensure relation is loaded once
+        $this->loadMissing('orderConfig');
+
+        if ($this->orderConfig instanceof OrderConfig) {
+            return $this->orderConfig;
+        }
+
+        // Fallback to default (must exist in your environment)
+        $default = Storefront::getDefaultOrderConfig();
+
+        if (!$default instanceof OrderConfig) {
+            // Keep your hard return type contract honest
+            throw new \RuntimeException('No default OrderConfig is configured.');
+        }
+
+        // Memoize the fallback in the in-memory relation to avoid repeated lookups
+        $this->setRelation('orderConfig', $default);
+
+        return $default;
+    }
+
+    /**
+     * Get the UUID of the effective OrderConfig for this model.
+     *
+     * Tries to use the local FK if present to avoid loading the relation;
+     * otherwise, resolves via getOrderConfig() (which memoizes).
+     *
+     * @return string non-empty UUID of the effective order config
+     */
+    public function getOrderConfigId(): string
+    {
+        // Fast path: if the FK column is set, use it directly
+        if (!empty($this->order_config_uuid)) {
+            return (string) $this->order_config_uuid;
+        }
+
+        // Otherwise rely on the resolved config (relation or default)
+        return (string) $this->getOrderConfig()->uuid;
     }
 }

@@ -10,6 +10,7 @@ export default class NetworkModel extends Model {
     @attr('string') company_uuid;
     @attr('string') logo_uuid;
     @attr('string') backdrop_uuid;
+    @attr('string') order_config_uuid;
 
     /** @relationships */
     @hasMany('store') stores;

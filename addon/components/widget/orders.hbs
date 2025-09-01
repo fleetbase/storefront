@@ -30,7 +30,8 @@
         @pad={{false}}
         @wrapperClass={{@wrapperClass}}
     >
-        <div class="flex justify-end px-4 py-2">
+        <div class="flex justify-end px-4 py-2 space-x-2">
+            <Button @icon="refresh" @size="xs" @onClick={{perform this.loadOrders}} />
             <Toggle @label="Active Orders Filter" @isToggled={{this.activeFilter}} @onToggle={{this.toggleActiveFilter}} />
         </div>
         {{#if (media "isMobile")}}
@@ -86,7 +87,7 @@
                                     @onClick={{fn this.acceptOrder order}}
                                 />
                             {{/if}}
-                            {{#if order.isPreparing}}
+                            {{#if (or order.isPreparing (eq order.status "accepted"))}}
                                 <Button
                                     @wrapperClass="w-full"
                                     class="btn-block w-full"
@@ -264,7 +265,7 @@
                                                 @onClick={{fn this.acceptOrder order}}
                                             />
                                         {{/if}}
-                                        {{#if order.isPreparing}}
+                                        {{#if (or order.isPreparing (eq order.status "accepted"))}}
                                             <Button
                                                 @size="xs"
                                                 @type="success"

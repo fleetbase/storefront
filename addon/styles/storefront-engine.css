@@ -40,12 +40,14 @@
     max-width: 100%;
 }
 
+.status-badge.accepted-status-badge > span,
 .status-badge.pickup-ready-status-badge > span {
     background-color: #166534;
     border: 1px solid #15803d;
     color: #dcfce7;
 }
 
+.status-badge.accepted-status-badge > span svg,
 .status-badge.pickup-ready-status-badge > span svg {
     color: #86efac;
 }
@@ -83,4 +85,20 @@ td.network-store-name-column > div > svg {
     margin-left: -0.7rem;
     height: 0.5rem;
     width: 0.5rem;
+}
+
+.storefront-datepicker .air-datepicker-buttons {
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0.5rem;
+    max-height: 235px;
+    overflow-y: auto;
+}
+
+.storefront-datepicker .air-datepicker-buttons .quick-select-btn {
+    display: flex;
+    align-items: center;
+    width: 48%;
 }

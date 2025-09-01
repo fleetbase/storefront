@@ -4,9 +4,10 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
+use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends FleetbaseOrderController
 {
@@ -40,11 +41,29 @@ class OrderController extends FleetbaseOrderController
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $orderConfig = Storefront::patchOrderConfig($order);
+        $activity    = Storefront::createAcceptedActivity($orderConfig);
 
-        // update activity to prepating
-        $order->updateStatus('preparing');
-        $order->customer->notify(new StorefrontOrderPreparing($order));
+        // Dispatch already if order is a pickup
+        if ($order->isMeta('is_pickup')) {
+            $order->firstDispatchWithActivity();
+        }
+
+        // Set order as accepted
+        try {
+            $order->setStatus($activity->code);
+            $order->insertActivity($activity, $order->getLastLocation());
+        } catch (\Exception $e) {
+            Log::debug('[Storefront] was able to accept an order.', ['order' => $order, 'activity' => $activity]);
+
+            return response()->error('Unable to accept order.');
+        }
+
+        // Notify customer order was accepted
+        try {
+            $order->customer->notify(new StorefrontOrderAccepted($order));
+        } catch (\Exception $e) {
+        }
 
         return response()->json([
             'status' => 'ok',
@@ -95,7 +114,7 @@ class OrderController extends FleetbaseOrderController
         }
 
         // update activity to dispatched
-        $order->updateStatus('dispatched');
+        $order->dispatchWithActivity();
 
         return response()->json([
             'status' => 'ok',
@@ -105,7 +124,7 @@ class OrderController extends FleetbaseOrderController
     }
 
     /**
-     * Accept an order by incrementing status to preparing.
+     * Accept an order by incrementing status to completed.
      *
      * @return \Illuminate\Http\Response
      */

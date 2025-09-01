@@ -58,7 +58,7 @@ export default class NetworkCategoryPickerComponent extends Component {
             const categories = yield this.store.query('category', queryParams);
             this.categories = categories.toArray();
         } catch (error) {
-            debug(`Unable to load categories : ${error.message}`)
+            debug(`Unable to load categories : ${error.message}`);
         }
     }
 

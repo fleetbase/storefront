@@ -2,13 +2,13 @@
 
 namespace Fleetbase\Storefront\Console\Commands;
 
-use Illuminate\Console\Command;
-use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\Gateway;
-use Stripe\Stripe;
+use Fleetbase\Storefront\Models\Store;
+use Illuminate\Console\Command;
 use Stripe\Customer as StripeCustomer;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Stripe;
 
 class MigrateStripeSandboxCustomers extends Command
 {
@@ -40,6 +40,7 @@ class MigrateStripeSandboxCustomers extends Command
 
             if (!$store) {
                 $this->error("Store '{$storeInput}' not found.");
+
                 return Command::FAILURE;
             }
 
@@ -53,6 +54,7 @@ class MigrateStripeSandboxCustomers extends Command
         }
 
         $this->info('Stripe customer migration complete.');
+
         return Command::SUCCESS;
     }
 
@@ -71,12 +73,14 @@ class MigrateStripeSandboxCustomers extends Command
 
         if (!$gateway) {
             $this->warn("Store {$store->name}: no Stripe gateway configured.");
+
             return Command::SUCCESS;
         }
 
         // If the gateway is still sandbox, skip migration because we can't create live customers yet.
         if ($gateway->sandbox) {
             $this->warn("Store {$store->name} is using a sandbox gateway. Migration will only run when the gateway is switched to live.");
+
             return Command::SUCCESS;
         }
 

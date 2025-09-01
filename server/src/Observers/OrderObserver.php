@@ -14,10 +14,12 @@ class OrderObserver
      */
     public function creating(Order $order)
     {
-        // Set the storefront order config
-        $orderConfig = Storefront::getDefaultOrderConfig();
-        if ($orderConfig) {
-            $order->order_config_uuid = $orderConfig->uuid;
+        // Set the storefront order config if none is set already
+        if (!$order->order_config_uuid) {
+            $orderConfig = Storefront::getDefaultOrderConfig();
+            if ($orderConfig) {
+                $order->order_config_uuid = $orderConfig->uuid;
+            }
         }
     }
 }

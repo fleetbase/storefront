@@ -17,6 +17,7 @@ export default class SettingsIndexController extends Controller {
     @tracked isLoading = false;
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
+    @tracked orderConfigs = [];
 
     @action addTag(tag) {
         if (!isArray(this.model.tags)) {

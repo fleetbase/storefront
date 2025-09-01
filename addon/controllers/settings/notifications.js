@@ -14,7 +14,6 @@ export default class SettingsNotificationsController extends Controller {
     @service crud;
     @service storefront;
     @alias('storefront.activeStore') activeStore;
-    @tracked channels = [];
 
     @action createChannel() {
         const channel = this.store.createRecord('notification-channel', {
@@ -73,7 +72,7 @@ export default class SettingsNotificationsController extends Controller {
                     .save()
                     .then((channel) => {
                         this.notifications.success(this.intl.t('storefront.settings.notification.new-notification-channel-added'));
-                        this.channels.pushObject(channel);
+                        this.hostRouter.refresh();
                     })
                     .catch((error) => {
                         // gateway.rollbackAttributes();
@@ -94,7 +93,7 @@ export default class SettingsNotificationsController extends Controller {
 
                 return channel.destroyRecord().then(() => {
                     // justincase
-                    this.channels.removeObject(channel);
+                    this.hostRouter.refresh();
                     modal.stopLoading();
                 });
             },
