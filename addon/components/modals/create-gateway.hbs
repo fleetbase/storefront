@@ -2,7 +2,14 @@
     <div class="modal-body-container">
         <div class="mb-4 w-full">
             <InputGroup @name={{t "storefront.component.modals.create-getaway.getaway"}} @helpText={{t "storefront.component.modals.create-getaway.getaway-text"}}>
-                <Select class="w-full" @placeholder="Select gateway type" @options={{@options.schemaOptions}} @onSelect={{@options.selectSchema}} @humanize={{true}} />
+                <Select
+                    @value={{@options.gateway.code}}
+                    class="w-full"
+                    @placeholder="Select gateway type"
+                    @options={{@options.schemaOptions}}
+                    @onSelect={{@options.selectSchema}}
+                    @humanize={{true}}
+                />
             </InputGroup>
         </div>
 
@@ -30,17 +37,31 @@
             </div>
             <div class="p-2 rounded-md my-2 border border-gray-200 dark:border-gray-800">
                 <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
-                {{#each-in @options.schema as |key value|}}
-                    {{#if (is-bool-value value)}}
-                        <div class="input-group">
-                            <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
-                        </div>
-                    {{else}}
-                        <InputGroup @name={{humanize key}}>
-                            <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
-                        </InputGroup>
-                    {{/if}}
-                {{/each-in}}
+                {{#if @options.gateway.isNew}}
+                    {{#each-in @options.schema as |key value|}}
+                        {{#if (is-bool-value value)}}
+                            <div class="input-group">
+                                <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
+                            </div>
+                        {{else}}
+                            <InputGroup @name={{humanize key}}>
+                                <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
+                            </InputGroup>
+                        {{/if}}
+                    {{/each-in}}
+                {{else}}
+                    {{#each-in @options.gateway.config as |key value|}}
+                        {{#if (is-bool-value value)}}
+                            <div class="input-group">
+                                <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
+                            </div>
+                        {{else}}
+                            <InputGroup @name={{humanize key}}>
+                                <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
+                            </InputGroup>
+                        {{/if}}
+                    {{/each-in}}
+                {{/if}}
             </div>
         {{/if}}
     </div>

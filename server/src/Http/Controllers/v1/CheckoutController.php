@@ -888,7 +888,7 @@ class CheckoutController extends Controller
         $orderMeta = array_merge($orderMeta, [
             'checkout_id'  => $checkout->public_id,
             'subtotal'     => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee' => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'delivery_fee' => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'          => $checkout->getOption('tip'),
             'delivery_tip' => $checkout->getOption('delivery_tip'),
             'total'        => Utils::numbersOnly($amount),
@@ -1212,7 +1212,7 @@ class CheckoutController extends Controller
             'storefront_network_id' => $about->public_id,
             'checkout_id'           => $checkout->public_id,
             'subtotal'              => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee'          => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'                   => $checkout->getOption('tip'),
             'delivery_tip'          => $checkout->getOption('delivery_tip'),
             'total'                 => Utils::numbersOnly($amount),

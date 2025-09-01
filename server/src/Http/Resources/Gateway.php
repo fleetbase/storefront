@@ -20,6 +20,7 @@ class Gateway extends FleetbaseResource
             'id'           => $this->when(Http::isInternalRequest(), $this->id, $this->public_id),
             'uuid'         => $this->when(Http::isInternalRequest(), $this->uuid),
             'public_id'    => $this->when(Http::isInternalRequest(), $this->public_id),
+            'owner_uuid'    => $this->when(Http::isInternalRequest(), $this->owner_uuid),
             'name'         => $this->name,
             'description'  => $this->description,
             'logo_url'     => $this->logo_url,
@@ -28,6 +29,10 @@ class Gateway extends FleetbaseResource
             'sandbox'      => $this->sandbox,
             'return_url'   => $this->return_url,
             'callback_url' => $this->callback_url,
+            'meta'         => $this->meta,
+            'config'       => $this->when(Http::isInternalRequest(), $this->config),
+            'updated_at'   => $this->updated_at,
+            'created_at'   => $this->created_at,
         ];
     }
 }

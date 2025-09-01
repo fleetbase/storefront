@@ -121,7 +121,7 @@ class NetworkController extends StorefrontController
     }
 
     /**
-     * Add a store to a network category
+     * Add a store to a network category.
      *
      * @return \Illuminate\Http\Response
      */

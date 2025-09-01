@@ -43,10 +43,15 @@ export default class SettingsGatewaysController extends Controller {
         const schemas = getGatewaySchemas();
         const schemaOptions = Object.keys(schemas);
 
+        let schema = null;
+        if (!gateway.get('isNew')) {
+            schema = schemas[gateway.code];
+        }
+
         this.modalsManager.show('modals/create-gateway', {
             title: this.intl.t('storefront.settings.gateways.edit-payment-gateway'),
             acceptButtonText: this.intl.t('storefront.settings.gateways.save-changes'),
-            schema: null,
+            schema,
             schemas,
             schemaOptions,
             gateway,

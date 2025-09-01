@@ -38,17 +38,28 @@
                         {{#each-in gateway.config as |key value|}}
                             {{#if (is-bool-value value)}}
                                 <div class="input-group">
-                                    <Checkbox @value={{value}} @label={{humanize key}} />
+                                    <Checkbox @value={{value}} @label={{humanize key}} @disabled={{true}} />
                                 </div>
                             {{else}}
                                 <InputGroup @name={{humanize key}}>
-                                    <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} />
+                                    <Input
+                                        @type={{if (can "storefront update gateway") "text" "password"}}
+                                        class="form-input w-full"
+                                        placeholder={{humanize key}}
+                                        @value={{value}}
+                                        disabled
+                                    />
                                 </InputGroup>
                             {{/if}}
                         {{/each-in}}
                     </div>
-                    <div>
-                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.settings.gateways.delete-payment-gateway"}} @onClick={{fn this.deleteGateway gateway}} />
+                    <div class="flex flex-row items-center space-x-2">
+                        {{#if (can "storefront update gateway")}}
+                            <Button @size="sm" @type="primary" @icon="pencil" @text="Edit Gateway" @onClick={{fn this.editGateway gateway}} />
+                        {{/if}}
+                        {{#if (can "storefront delete gateway")}}
+                            <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.settings.gateways.delete-payment-gateway"}} @onClick={{fn this.deleteGateway gateway}} />
+                        {{/if}}
                     </div>
                 </ContentPanel>
             {{/each}}

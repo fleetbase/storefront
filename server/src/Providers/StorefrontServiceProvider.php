@@ -58,6 +58,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby::class,
         \Fleetbase\Storefront\Console\Commands\SendOrderNotification::class,
         \Fleetbase\Storefront\Console\Commands\PurgeExpiredCarts::class,
+        \Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers::class,
     ];
 
     /**
