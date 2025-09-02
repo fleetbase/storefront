@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\FleetOps\Models\ServiceArea;
 use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Models\Zone;
+use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
@@ -60,6 +61,13 @@ class FoodTruck extends StorefrontModel
         'zone_uuid',
         'status',
     ];
+
+    /**
+     * Dynamic attributes that are appended to object.
+     *
+     * @var array
+     */
+    protected $appends = ['location'];
 
     /**
      * Get the store that owns this food truck.
@@ -178,5 +186,12 @@ class FoodTruck extends StorefrontModel
         }
 
         return $this;
+    }
+
+    public function getLocationAttribute(): ?Point
+    {
+        $this->loadMissing('vehicle');
+
+        return $this->vehicle->location;
     }
 }

@@ -812,9 +812,14 @@ class CheckoutController extends Controller
             ->unique()
             ->filter()
             ->map(function ($foodTruckId) {
-                return FoodTruck::where('public_id', $foodTruckId)->first();
+                return FoodTruck::where('public_id', $foodTruckId)->with(['zone', 'serviceArea'])->first();
             })
             ->first();
+
+        // Set food truck vehicle location as origin
+        if ($foodTruck && $foodTruck->vehicle) {
+            $origin = ['name' => $foodTruck->name, 'street1' => data_get($foodTruck, 'zone.name'), 'city' => data_get($foodTruck, 'serviceArea.name'), 'country' => data_get($foodTruck, 'serviceArea.country'), 'location' => $foodTruck->vehicle->location];
+        }
 
         // if there is no origin attempt to get from cart
         if (!$origin) {

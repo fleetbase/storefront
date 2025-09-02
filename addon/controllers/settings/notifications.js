@@ -1,5 +1,4 @@
 import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { alias } from '@ember/object/computed';
 import { action, set } from '@ember/object';
@@ -70,7 +69,7 @@ export default class SettingsNotificationsController extends Controller {
 
                 return channel
                     .save()
-                    .then((channel) => {
+                    .then(() => {
                         this.notifications.success(this.intl.t('storefront.settings.notification.new-notification-channel-added'));
                         this.hostRouter.refresh();
                     })

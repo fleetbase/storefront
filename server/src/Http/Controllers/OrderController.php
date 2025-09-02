@@ -85,9 +85,7 @@ class OrderController extends FleetbaseOrderController
         $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
 
         if (!$order) {
-            return response()->json([
-                'error' => 'No order to update!',
-            ], 400);
+            return response()->error('No order to update!');
         }
 
         // Patch order config

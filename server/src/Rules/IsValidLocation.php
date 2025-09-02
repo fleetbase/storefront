@@ -3,7 +3,9 @@
 namespace Fleetbase\Storefront\Rules;
 
 use Fleetbase\FleetOps\Models\Place;
+use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Support\Str;
@@ -27,6 +29,16 @@ class IsValidLocation implements Rule
         // Validate StoreLocation id
         if (is_string($value) && Str::startsWith($value, 'store_location_')) {
             return StoreLocation::where('public_id', $value)->exists();
+        }
+
+        // Validate Vehicle id
+        if (is_string($value) && Str::startsWith($value, 'vehicle_')) {
+            return Vehicle::where('public_id', $value)->exists();
+        }
+
+        // Validate FoodTruck id
+        if (is_string($value) && Str::startsWith($value, 'food_truck_')) {
+            return FoodTruck::where('public_id', $value)->exists();
         }
 
         // Validate object with coordinates
