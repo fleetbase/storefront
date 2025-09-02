@@ -20,7 +20,14 @@
 
 <Layout::Section::Body>
     <div class="flex flex-row items-center space-x-2">
-        <NetworkCategoryPicker @network={{this.network}} @category={{this.category}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @onReady={{this.setCategoryPickerContext}} @wrapperClass="w-64 my-4 ml-9" />
+        <NetworkCategoryPicker
+            @network={{this.network}}
+            @category={{this.category}}
+            @onCreateNewCategory={{this.createNewCategory}}
+            @onSelect={{this.selectCategory}}
+            @onReady={{this.setCategoryPickerContext}}
+            @wrapperClass="w-64 my-4 ml-9"
+        />
         {{#if this.categoryModel}}
             <Button @icon="arrow-left" @size="xs" @onClick={{this.categoryPicker.loadParentCategories}} />
             <Button @icon="cog" @text="Edit Category" @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />

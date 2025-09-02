@@ -1,5 +1,4 @@
 import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { alias } from '@ember/object/computed';
 import { action, set } from '@ember/object';
@@ -14,7 +13,6 @@ export default class SettingsNotificationsController extends Controller {
     @service crud;
     @service storefront;
     @alias('storefront.activeStore') activeStore;
-    @tracked channels = [];
 
     @action createChannel() {
         const channel = this.store.createRecord('notification-channel', {
@@ -71,9 +69,9 @@ export default class SettingsNotificationsController extends Controller {
 
                 return channel
                     .save()
-                    .then((channel) => {
+                    .then(() => {
                         this.notifications.success(this.intl.t('storefront.settings.notification.new-notification-channel-added'));
-                        this.channels.pushObject(channel);
+                        this.hostRouter.refresh();
                     })
                     .catch((error) => {
                         // gateway.rollbackAttributes();
@@ -94,7 +92,7 @@ export default class SettingsNotificationsController extends Controller {
 
                 return channel.destroyRecord().then(() => {
                     // justincase
-                    this.channels.removeObject(channel);
+                    this.hostRouter.refresh();
                     modal.stopLoading();
                 });
             },

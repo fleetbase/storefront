@@ -24,4 +24,9 @@ export default class SettingsIndexRoute extends Route {
     afterModel(model) {
         model?.loadFiles();
     }
+
+    async setupController(controller) {
+        super.setupController(...arguments);
+        controller.orderConfigs = await this.store.findAll('order-config');
+    }
 }

@@ -7,6 +7,7 @@ import { task } from 'ember-concurrency';
 
 export default class WidgetCustomersComponent extends Component {
     @service store;
+    @service fetch;
     @service storefront;
     @service intl;
     @service contextPanel;
@@ -34,17 +35,24 @@ export default class WidgetCustomersComponent extends Component {
         const storefront = get(this.storefront, 'activeStore.public_id');
 
         try {
-            const customers = yield this.store.query('customer', {
-                storefront,
-                limit: 14,
-                ...params,
-            });
+            const { customers } = yield this.fetch.get(
+                'customers',
+                {
+                    storefront,
+                    limit: 14,
+                    ...params,
+                },
+                {
+                    namespace: 'storefront/int/v1',
+                }
+            );
+
             this.loaded = true;
             this.customers = customers;
 
             return customers;
         } catch (err) {
-            debug('Error loading customers for widget:', err);
+            debug('Error loading customers for widget:', err.message);
         }
     }
 }

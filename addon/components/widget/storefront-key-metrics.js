@@ -39,8 +39,8 @@ export default class WidgetStorefrontKeyMetricsComponent extends Component {
      *
      * @memberof WidgetKeyMetricsComponent
      */
-    @task *getDashboardMetrics() {
-        this.metrics = yield this.fetch.get('metrics', {}, { namespace: 'storefront/int/v1' }).then((response) => {
+    @task *getDashboardMetrics(params = {}) {
+        this.metrics = yield this.fetch.get('metrics', params, { namespace: 'storefront/int/v1' }).then((response) => {
             return this.createMetricsMapFromResponse(response);
         });
     }

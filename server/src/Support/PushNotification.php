@@ -17,10 +17,13 @@ use Pushok\Client as PushOkClient;
 
 class PushNotification
 {
-    public static function createApnMessage(Order $order, string $title, string $body, string $status, $notifiable = null): ApnMessage
+    public static function createApnMessage(Order $order, string $title, string $body, string $status, $notifiable = null): ?ApnMessage
     {
         $storefront = static::getStorefrontFromOrder($order);
         $client     = static::getApnClient($storefront, $order);
+        if (!$client) {
+            return null;
+        }
 
         return ApnMessage::create()
             ->badge(1)
@@ -33,10 +36,13 @@ class PushNotification
             ->via($client);
     }
 
-    public static function createFcmMessage(Order $order, string $title, string $body, string $status, $notifiable = null): FcmMessage
+    public static function createFcmMessage(Order $order, string $title, string $body, string $status, $notifiable = null): ?FcmMessage
     {
         $storefront          = static::getStorefrontFromOrder($order);
         $notificationChannel = static::getNotificationChannel('apn', $storefront, $order);
+        if (!$notificationChannel) {
+            return null;
+        }
 
         // Configure FCM
         static::configureFcm($notificationChannel);
@@ -97,7 +103,7 @@ class PushNotification
         return $firebaseConfig;
     }
 
-    public static function getNotificationChannel(string $scheme, Network|Store $storefront, ?Order $order = null): NotificationChannel
+    public static function getNotificationChannel(string $scheme, Network|Store $storefront, ?Order $order = null): ?NotificationChannel
     {
         if ($order && $order->hasMeta('storefront_notification_channel')) {
             return NotificationChannel::where([
@@ -113,9 +119,12 @@ class PushNotification
         ])->first();
     }
 
-    public static function getApnClient(Network|Store $storefront, ?Order $order = null): PushOkClient
+    public static function getApnClient(Network|Store $storefront, ?Order $order = null): ?PushOkClient
     {
         $notificationChannel = static::getNotificationChannel('apn', $storefront, $order);
+        if (!$notificationChannel) {
+            return null;
+        }
         $config              = (array) $notificationChannel->config;
 
         $isProductionEnv = Utils::castBoolean(data_get($config, 'production', app()->isProduction()));

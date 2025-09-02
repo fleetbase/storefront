@@ -3,7 +3,6 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
-import { debug } from '@ember/debug';
 import { timeout, task } from 'ember-concurrency';
 import createShareableLink from '../../../../utils/create-shareable-link';
 import isEmail from '@fleetbase/ember-core/utils/is-email';

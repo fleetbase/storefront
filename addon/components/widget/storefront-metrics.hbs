@@ -2,13 +2,23 @@
     <div class="flex items-center justify-between">
         <div class="flex items-center">
             <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mr-2">
-                {{t "storefront.component.widget.storefront-metrics.last-day"}}
+                Metrics
             </h3>
             {{#if this.loadMetrics.isRunning}}
                 <div>
                     <Spinner class="text-sky-400" />
                 </div>
             {{/if}}
+        </div>
+        <div class="storefront-datepicker">
+            <DatePicker
+                @value={{concat this.start "," this.end}}
+                @range={{true}}
+                @buttons={{this.datePickerButtons}}
+                @onSelect={{this.selectDates}}
+                placeholder="Select date range"
+                class="min-w-250px"
+            />
         </div>
     </div>
     <dl class="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-4">

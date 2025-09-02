@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\FleetOps\Models\Contact;
+use Fleetbase\FleetOps\Models\Order;
 use Illuminate\Support\Str;
 
 class Customer extends Contact
@@ -11,6 +12,22 @@ class Customer extends Contact
      * The key to use in the payload responses.
      */
     protected string $payloadKey = 'customer';
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->type = 'customer';
+        });
+
+        static::addGlobalScope('type', function ($builder) {
+            $builder->where('type', 'customer');
+        });
+    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -61,10 +78,9 @@ class Customer extends Contact
      */
     public function countStorefrontOrdersFrom($id)
     {
-        return \Fleetbase\FleetOps\Models\Order::where(
+        return Order::where(
             [
                 'customer_uuid'       => $this->uuid,
-                'type'                => 'storefront',
                 'meta->storefront_id' => $id,
             ]
         )->count();

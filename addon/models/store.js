@@ -11,6 +11,7 @@ export default class StoreModel extends Model {
     @attr('string') company_uuid;
     @attr('string') logo_uuid;
     @attr('string') backdrop_uuid;
+    @attr('string') order_config_uuid;
 
     /** @relationships */
     @hasMany('notification-channel') notification_channels;

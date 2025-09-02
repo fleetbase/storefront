@@ -66,7 +66,7 @@ export default class WidgetOrdersComponent extends Component {
 
             return orders;
         } catch (err) {
-            debug('Error loading orders for widget:', err);
+            debug('Error loading orders for widget:', err.message);
         }
     }
 
@@ -109,6 +109,12 @@ export default class WidgetOrdersComponent extends Component {
 
     @action markAsReady(order) {
         this.orderActions.markAsReady(order, () => {
+            this.loadOrders.perform();
+        });
+    }
+
+    @action markAsPreparing(order) {
+        this.orderActions.markAsPreparing(order, () => {
             this.loadOrders.perform();
         });
     }

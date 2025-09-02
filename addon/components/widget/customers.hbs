@@ -30,6 +30,9 @@
         @pad={{false}}
         @wrapperClass={{@wrapperClass}}
     >
+        <div class="flex justify-end px-4 py-2 space-x-2">
+            <Button @icon="refresh" @size="xs" @onClick={{perform this.loadCustomers}} />
+        </div>
         {{#if (media "isMobile")}}
             <div class="flex flex-col p-3 space-y-3">
                 {{#each this.customers as |customer|}}
@@ -63,11 +66,11 @@
                     <tbody>
                         {{#each this.customers as |customer|}}
                             <tr class="h-12">
-                                <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.customerId}}</a></td>
+                                <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.public_id}}</a></td>
                                 <td>{{n-a customer.name}}</td>
                                 <td>{{n-a customer.phone}}</td>
                                 <td>{{n-a customer.email}}</td>
-                                <td></td>
+                                <td>{{n-a customer.orders 0}}</td>
                                 <td></td>
                             </tr>
                         {{/each}}

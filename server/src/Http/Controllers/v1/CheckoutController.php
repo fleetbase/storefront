@@ -24,7 +24,6 @@ use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
-use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StripeUtils;
@@ -686,9 +685,7 @@ class CheckoutController extends Controller
 
         // if cart is null then cart has either been deleted or expired
         if (!$cart) {
-            return response()->json([
-                'error' => 'Cart expired',
-            ], 400);
+            return response()->apiError('Cart expired');
         }
 
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
@@ -815,9 +812,14 @@ class CheckoutController extends Controller
             ->unique()
             ->filter()
             ->map(function ($foodTruckId) {
-                return FoodTruck::where('public_id', $foodTruckId)->first();
+                return FoodTruck::where('public_id', $foodTruckId)->with(['zone', 'serviceArea'])->first();
             })
             ->first();
+
+        // Set food truck vehicle location as origin
+        if ($foodTruck && $foodTruck->vehicle) {
+            $origin = ['name' => $foodTruck->name, 'street1' => data_get($foodTruck, 'zone.name'), 'city' => data_get($foodTruck, 'serviceArea.name'), 'country' => data_get($foodTruck, 'serviceArea.country'), 'location' => $foodTruck->vehicle->location];
+        }
 
         // if there is no origin attempt to get from cart
         if (!$origin) {
@@ -888,7 +890,7 @@ class CheckoutController extends Controller
         $orderMeta = array_merge($orderMeta, [
             'checkout_id'  => $checkout->public_id,
             'subtotal'     => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee' => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'delivery_fee' => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'          => $checkout->getOption('tip'),
             'delivery_tip' => $checkout->getOption('delivery_tip'),
             'total'        => Utils::numbersOnly($amount),
@@ -906,16 +908,17 @@ class CheckoutController extends Controller
 
         // initialize order creation input
         $orderInput = [
-            'company_uuid'     => $store->company_uuid ?? session('company'),
-            'payload_uuid'     => $payload->uuid,
-            'customer_uuid'    => $customer->uuid,
-            'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
-            'transaction_uuid' => $transaction->uuid,
-            'adhoc'            => $about->isOption('auto_dispatch'),
-            'type'             => 'storefront',
-            'status'           => 'created',
-            'meta'             => $orderMeta,
-            'notes'            => $notes,
+            'company_uuid'      => $store->company_uuid ?? session('company'),
+            'payload_uuid'      => $payload->uuid,
+            'customer_uuid'     => $customer->uuid,
+            'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
+            'transaction_uuid'  => $transaction->uuid,
+            'order_config_uuid' => $about->getOrderConfigId(),
+            'adhoc'             => $about->isOption('auto_dispatch'),
+            'type'              => 'storefront',
+            'status'            => 'created',
+            'meta'              => $orderMeta,
+            'notes'             => $notes,
         ];
 
         // if it's integrated vendor order apply to meta
@@ -939,15 +942,11 @@ class CheckoutController extends Controller
         }
 
         // if order is auto accepted update status
-        if ($about->isOption('auto_accept_orders')) {
-            if ($about->isOption('auto_dispatch')) {
-                $order->updateStatus(['preparing', 'dispatched']);
-            } else {
-                $order->updateStatus('preparing');
+        if ($store->isOption('auto_accept_orders')) {
+            Storefront::autoAcceptOrder($order);
+            if ($store->isOption('auto_dispatch')) {
+                Storefront::autoDispatchOrder($order);
             }
-
-            // notify customer order is preparing
-            $customer->notify(new StorefrontOrderPreparing($order));
         }
 
         // update the cart with the checkout
@@ -1136,15 +1135,16 @@ class CheckoutController extends Controller
 
             // prepare order input
             $orderInput = [
-                'company_uuid'     => $store->company_uuid,
-                'payload_uuid'     => $payload->uuid,
-                'customer_uuid'    => $customer->uuid,
-                'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
-                'transaction_uuid' => $transaction->uuid,
-                'adhoc'            => $about->isOption('auto_dispatch'),
-                'type'             => 'storefront',
-                'status'           => 'created',
-                'notes'            => $notes,
+                'company_uuid'      => $store->company_uuid,
+                'payload_uuid'      => $payload->uuid,
+                'customer_uuid'     => $customer->uuid,
+                'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
+                'transaction_uuid'  => $transaction->uuid,
+                'order_config_uuid' => $store->getOrderConfigId(),
+                'adhoc'             => $about->isOption('auto_dispatch'),
+                'type'              => 'storefront',
+                'status'            => 'created',
+                'notes'             => $notes,
             ];
 
             // if it's integrated vendor order apply to meta
@@ -1173,14 +1173,10 @@ class CheckoutController extends Controller
 
             // if order is auto accepted update status
             if ($store->isOption('auto_accept_orders')) {
+                Storefront::autoAcceptOrder($order);
                 if ($store->isOption('auto_dispatch')) {
-                    $order->updateStatus(['preparing', 'dispatched']);
-                } else {
-                    $order->updateStatus('preparing');
+                    Storefront::autoDispatchOrder($order);
                 }
-
-                // notify customer order is preparing
-                $customer->notify(new StorefrontOrderPreparing($order));
             }
         }
 
@@ -1212,7 +1208,7 @@ class CheckoutController extends Controller
             'storefront_network_id' => $about->public_id,
             'checkout_id'           => $checkout->public_id,
             'subtotal'              => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee'          => $checkout->is_pickip ? 0 : Utils::numbersOnly($serviceQuote->amount),
+            'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'                   => $checkout->getOption('tip'),
             'delivery_tip'          => $checkout->getOption('delivery_tip'),
             'total'                 => Utils::numbersOnly($amount),
@@ -1225,14 +1221,15 @@ class CheckoutController extends Controller
 
         // prepare master order input
         $masterOrderInput = [
-            'company_uuid'     => session('company'),
-            'payload_uuid'     => $payload->uuid,
-            'customer_uuid'    => $customer->uuid,
-            'customer_type'    => Utils::getMutationType('fleet-ops:contact'),
-            'transaction_uuid' => $transaction->uuid,
-            'adhoc'            => $about->isOption('auto_dispatch'),
-            'type'             => 'storefront',
-            'status'           => 'created',
+            'company_uuid'      => session('company'),
+            'payload_uuid'      => $payload->uuid,
+            'customer_uuid'     => $customer->uuid,
+            'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
+            'transaction_uuid'  => $transaction->uuid,
+            'order_config_uuid' => $about->getOrderConfigId(),
+            'adhoc'             => $about->isOption('auto_dispatch'),
+            'type'              => 'storefront',
+            'status'            => 'created',
         ];
 
         // if it's integrated vendor order apply to meta

@@ -161,6 +161,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('accept', $controller('acceptOrder'));
                                 $router->post('ready', $controller('markOrderAsReady'));
+                                $router->post('preparing', $controller('markOrderAsPreparing'));
                                 $router->post('completed', $controller('markOrderAsCompleted'));
                             }
                         );

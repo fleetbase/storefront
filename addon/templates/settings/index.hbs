@@ -36,8 +36,21 @@
                     {{tag}}
                 </TagInput>
             </InputGroup>
+
             <InputGroup @name={{t "storefront.common.currency"}}>
                 <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+            </InputGroup>
+
+            <InputGroup @name="Default Order Config" @helpText="Select the order config which will apply to all orders created for this store">
+                <Select
+                    @value={{@model.order_config_uuid}}
+                    @options={{this.orderConfigs}}
+                    @optionValue="id"
+                    @optionLabel="name"
+                    @onSelect={{fn (mut @model.order_config_uuid)}}
+                    @placeholder="Select default order config"
+                    class="w-full"
+                />
             </InputGroup>
 
             <ContentPanel @title={{t "storefront.settings.index.contact-social"}} @open={{false}} @pad={{true}}>

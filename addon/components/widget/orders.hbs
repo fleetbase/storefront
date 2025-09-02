@@ -30,7 +30,8 @@
         @pad={{false}}
         @wrapperClass={{@wrapperClass}}
     >
-        <div class="flex justify-end px-4 py-2">
+        <div class="flex justify-end px-4 py-2 space-x-2">
+            <Button @icon="refresh" @size="xs" @onClick={{perform this.loadOrders}} />
             <Toggle @label="Active Orders Filter" @isToggled={{this.activeFilter}} @onToggle={{this.toggleActiveFilter}} />
         </div>
         {{#if (media "isMobile")}}
@@ -86,14 +87,25 @@
                                     @onClick={{fn this.acceptOrder order}}
                                 />
                             {{/if}}
-                            {{#if order.isPreparing}}
+                            {{#if (eq order.status "started")}}
                                 <Button
                                     @wrapperClass="w-full"
                                     class="btn-block w-full"
                                     @size="xs"
                                     @type="success"
                                     @icon="bell-concierge"
-                                    @text={{t "storefront.component.widget.orders.mark-as-ready"}}
+                                    @text={{t "storefront.component.widget.orders.mark-as-preparing"}}
+                                    @onClick={{fn this.markAsPreparing order}}
+                                />
+                            {{/if}}
+                            {{#if (eq order.status "accepted")}}
+                                <Button
+                                    @wrapperClass="w-full"
+                                    class="btn-block w-full"
+                                    @size="xs"
+                                    @type={{if order.meta.is_pickup "success" "magic"}}
+                                    @icon={{if order.meta.is_pickup "bell-concierge" "paper-plane"}}
+                                    @text={{if order.meta.is_pickup (t "storefront.component.widget.orders.mark-as-ready") (t "storefront.component.widget.orders.dispatch")}}
                                     @onClick={{fn this.markAsReady order}}
                                 />
                             {{/if}}
@@ -226,11 +238,11 @@
                         <tr class="h-12 text-left py-1">
                             <th style={{"width: 15%"}}>{{t "storefront.component.widget.orders.id-column"}}</th>
                             <th style={{"width: 10%"}}>{{t "storefront.common.amount"}}</th>
-                            <th style={{"width: 15%"}}>{{t "storefront.common.customer"}}</th>
-                            <th style={{"width: 15%"}}>{{t "storefront.common.driver"}}</th>
+                            <th style={{"width: 14%"}}>{{t "storefront.common.customer"}}</th>
+                            <th style={{"width: 14%"}}>{{t "storefront.common.driver"}}</th>
                             <th style={{"width: 10%"}}>{{t "storefront.common.created"}}</th>
                             <th style={{"width: 15%"}}>{{t "storefront.common.status"}}</th>
-                            <th style={{"width: 22%"}}></th>
+                            <th style={{"width: 24%"}}></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -264,12 +276,21 @@
                                                 @onClick={{fn this.acceptOrder order}}
                                             />
                                         {{/if}}
-                                        {{#if order.isPreparing}}
+                                        {{#if (eq order.status "started")}}
                                             <Button
                                                 @size="xs"
                                                 @type="success"
-                                                @icon="bell-concierge"
-                                                @text={{t "storefront.component.widget.orders.mark-as-ready"}}
+                                                @icon="hourglass-start"
+                                                @text={{t "storefront.component.widget.orders.mark-as-preparing"}}
+                                                @onClick={{fn this.markAsPreparing order}}
+                                            />
+                                        {{/if}}
+                                        {{#if (eq order.status "accepted")}}
+                                            <Button
+                                                @size="xs"
+                                                @type={{if order.meta.is_pickup "success" "magic"}}
+                                                @icon={{if order.meta.is_pickup "bell-concierge" "paper-plane"}}
+                                                @text={{if order.meta.is_pickup (t "storefront.component.widget.orders.mark-as-ready") (t "storefront.component.widget.orders.dispatch")}}
                                                 @onClick={{fn this.markAsReady order}}
                                             />
                                         {{/if}}

@@ -22,8 +22,21 @@
                 @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.description-placeholder"}}
                 @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.description-help-text"}}
             />
+
             <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.currency"}}>
                 <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+            </InputGroup>
+
+            <InputGroup @name="Default Order Config" @helpText="Select the order config which will apply to all orders created for this network.">
+                <Select
+                    @value={{@model.order_config_uuid}}
+                    @options={{this.orderConfigs}}
+                    @optionValue="id"
+                    @optionLabel="name"
+                    @onSelect={{fn (mut @model.order_config_uuid)}}
+                    @placeholder="Select default order config"
+                    class="w-full"
+                />
             </InputGroup>
 
             <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.panel-title"}} @open={{false}} @pad={{true}}>

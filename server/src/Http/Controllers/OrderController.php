@@ -4,9 +4,10 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
+use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends FleetbaseOrderController
 {
@@ -40,11 +41,29 @@ class OrderController extends FleetbaseOrderController
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $orderConfig = Storefront::patchOrderConfig($order);
+        $activity    = Storefront::createAcceptedActivity($orderConfig);
 
-        // update activity to prepating
-        $order->updateStatus('preparing');
-        $order->customer->notify(new StorefrontOrderPreparing($order));
+        // Dispatch already if order is a pickup
+        if ($order->isMeta('is_pickup')) {
+            $order->firstDispatchWithActivity();
+        }
+
+        // Set order as accepted
+        try {
+            $order->setStatus($activity->code);
+            $order->insertActivity($activity, $order->getLastLocation());
+        } catch (\Exception $e) {
+            Log::debug('[Storefront] was unable to accept an order.', ['order' => $order, 'activity' => $activity]);
+
+            return response()->error('Unable to accept order.');
+        }
+
+        // Notify customer order was accepted
+        try {
+            $order->customer->notify(new StorefrontOrderAccepted($order));
+        } catch (\Exception $e) {
+        }
 
         return response()->json([
             'status' => 'ok',
@@ -66,9 +85,7 @@ class OrderController extends FleetbaseOrderController
         $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
 
         if (!$order) {
-            return response()->json([
-                'error' => 'No order to update!',
-            ], 400);
+            return response()->error('No order to update!');
         }
 
         // Patch order config
@@ -95,7 +112,7 @@ class OrderController extends FleetbaseOrderController
         }
 
         // update activity to dispatched
-        $order->updateStatus('dispatched');
+        $order->dispatchWithActivity();
 
         return response()->json([
             'status' => 'ok',
@@ -106,6 +123,42 @@ class OrderController extends FleetbaseOrderController
 
     /**
      * Accept an order by incrementing status to preparing.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function markOrderAsPreparing(Request $request)
+    {
+        /** @var Order $order */
+        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+
+        if (!$order) {
+            return response()->error('No order to update!');
+        }
+
+        // Patch order config
+        $orderConfig = Storefront::patchOrderConfig($order);
+
+        // Get preparing activity
+        $activity = $orderConfig->getActivityByCode('preparing');
+
+        try {
+            $order->setStatus($activity->code);
+            $order->insertActivity($activity, $order->getLastLocation());
+        } catch (\Exception $e) {
+            Log::debug('[Storefront] was unable to trigger order preparing.', ['order' => $order, 'activity' => $activity]);
+
+            return response()->error('Unable to trigger order preparing.');
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'order'  => $order->public_id,
+            'status' => $order->status,
+        ]);
+    }
+
+    /**
+     * Accept an order by incrementing status to completed.
      *
      * @return \Illuminate\Http\Response
      */

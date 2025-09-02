@@ -41,7 +41,7 @@
                                         @onClick={{fn this.acceptOrder order}}
                                     />
                                 {{/if}}
-                                {{#if order.isPreparing}}
+                                {{#if (eq order.status "accepted")}}
                                     <Button
                                         @size="xs"
                                         @type="success"
@@ -102,7 +102,7 @@
                             @onClick={{fn this.acceptOrder order}}
                         />
                     {{/if}}
-                    {{#if order.isPreparing}}
+                    {{#if (eq order.status "accepted")}}
                         <Button @size="xs" @type="success" @icon="bell-concierge" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />
                     {{/if}}
                     {{#if order.isPickupReady}}

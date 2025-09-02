@@ -7,4 +7,9 @@ export default class NetworksIndexNetworkIndexRoute extends Route {
     model() {
         return this.modelFor('networks.index.network');
     }
+
+    async setupController(controller) {
+        super.setupController(...arguments);
+        controller.orderConfigs = await this.store.findAll('order-config');
+    }
 }

@@ -10,10 +10,12 @@ use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
+use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
 use Fleetbase\Storefront\Models\Cart;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
@@ -121,8 +123,8 @@ class ServiceQuoteController extends Controller
 
                 // set origin and destination in service quote meta
                 $serviceQuote->updateMeta([
-                    'origin'      => $origin->public_id,
-                    'destination' => $destination->public_id,
+                    'origin'      => $origin->public_id ?? $request->input('origin'),
+                    'destination' => $destination->public_id ?? $request->input('destination'),
                 ]);
 
                 return new ServiceQuoteResource($serviceQuote);
@@ -392,8 +394,22 @@ class ServiceQuoteController extends Controller
             return Place::where(['public_id' => $id, 'company_uuid' => session('company')])->first();
         }
 
+        // If vehicle
+        if (Str::startsWith($id, 'vehicle_')) {
+            $vehicle = Vehicle::where('public_id', $id)->first();
+
+            return Place::createFromCoordinates($vehicle->location);
+        }
+
+        // If food truck
+        if (Str::startsWith($id, 'food_truck_')) {
+            $foodTruck = FoodTruck::where('public_id', $id)->with('vehicle')->first();
+
+            return $foodTruck->vehicle ? Place::createFromCoordinates($foodTruck->vehicle->location) : null;
+        }
+
         // handle coordinates tooo!
-        if (!Str::startsWith($id, ['place_', 'store_location']) && Utils::isCoordinates($id)) {
+        if (Utils::isCoordinates($id)) {
             $point = Utils::getPointFromCoordinates($id);
             $place = Place::createFromCoordinates($point, ['company_uuid' => session('company')], true);
 
