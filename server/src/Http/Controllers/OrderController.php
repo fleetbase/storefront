@@ -54,7 +54,7 @@ class OrderController extends FleetbaseOrderController
             $order->setStatus($activity->code);
             $order->insertActivity($activity, $order->getLastLocation());
         } catch (\Exception $e) {
-            Log::debug('[Storefront] was able to accept an order.', ['order' => $order, 'activity' => $activity]);
+            Log::debug('[Storefront] was unable to accept an order.', ['order' => $order, 'activity' => $activity]);
 
             return response()->error('Unable to accept order.');
         }
@@ -113,6 +113,42 @@ class OrderController extends FleetbaseOrderController
 
         // update activity to dispatched
         $order->dispatchWithActivity();
+
+        return response()->json([
+            'status' => 'ok',
+            'order'  => $order->public_id,
+            'status' => $order->status,
+        ]);
+    }
+
+    /**
+     * Accept an order by incrementing status to preparing.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function markOrderAsPreparing(Request $request)
+    {
+        /** @var Order $order */
+        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+
+        if (!$order) {
+            return response()->error('No order to update!');
+        }
+
+        // Patch order config
+        $orderConfig = Storefront::patchOrderConfig($order);
+
+        // Get preparing activity
+        $activity = $orderConfig->getActivityByCode('preparing');
+
+        try {
+            $order->setStatus($activity->code);
+            $order->insertActivity($activity, $order->getLastLocation());
+        } catch (\Exception $e) {
+            Log::debug('[Storefront] was unable to trigger order preparing.', ['order' => $order, 'activity' => $activity]);
+
+            return response()->error('Unable to trigger order preparing.');
+        }
 
         return response()->json([
             'status' => 'ok',

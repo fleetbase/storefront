@@ -46,7 +46,7 @@ export default class WidgetCustomersComponent extends Component {
                     namespace: 'storefront/int/v1',
                 }
             );
-            console.log('[loaded customers]', customers);
+
             this.loaded = true;
             this.customers = customers;
 

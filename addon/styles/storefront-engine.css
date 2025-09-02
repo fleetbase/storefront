@@ -62,12 +62,16 @@
     color: #fca5a5;
 }
 
+.status-badge.driver-picked-up-status-badge > span,
+.status-badge.driver-enroute-to-store-status-badge > span,
 .status-badge.draft-status-badge > span {
     background-color: #a16207;
     border: 1px solid #a16207;
     color: #fef9c3;
 }
 
+.status-badge.driver-picked-up-status-badge > span svg,
+.status-badge.driver-enroute-to-store-status-badge > span svg,
 .status-badge.draft-status-badge > span svg {
     color: #fef9c3;
 }

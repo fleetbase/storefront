@@ -234,6 +234,8 @@ storefront:
         cancel-order: Cancel Order
         accept-order: Accept Order!
         mark-as-ready: Mark as Ready!
+        dispatch: Dispatch
+        mark-as-preparing: Mark as Preparing
         mark-as-completed: Mark as Completed
         more-details: More Details
         customer: Customer
@@ -258,6 +260,9 @@ storefront:
         mark-as-completed-modal-title: Are you sure you want to mark order as completed?
         mark-as-completed-modal-body: Marking the order as completed is a confirmation that the customer has picked up the order and the order is completed.
         mark-as-completed-accept-button-text: Order Completed!
+        mark-as-preparing-modal-title: Are you sure you want to mark order as preparing?
+        mark-as-preparing-modal-body: Marking the order as preparing is a confirmation that the order is being prepared.
+        mark-as-preparing-accept-button-text: Order Preparing
         assign-driver-modal-title: Assign Driver
         assign-driver-modal-accept-button-text: Assign Driver
       storefront-metrics:

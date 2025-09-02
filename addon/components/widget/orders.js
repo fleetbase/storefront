@@ -113,6 +113,12 @@ export default class WidgetOrdersComponent extends Component {
         });
     }
 
+    @action markAsPreparing(order) {
+        this.orderActions.markAsPreparing(order, () => {
+            this.loadOrders.perform();
+        });
+    }
+
     @action markAsCompleted(order) {
         this.orderActions.markAsCompleted(order, () => {
             this.loadOrders.perform();

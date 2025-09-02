@@ -215,6 +215,37 @@ export default class OrderActionsService extends Service {
         });
     }
 
+    markAsPreparing(order, callback) {
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.component.widget.orders.mark-as-preparing-modal-title'),
+            body: this.intl.t('storefront.component.widget.orders.mark-as-preparing-modal-body'),
+            acceptButtonText: this.intl.t('storefront.component.widget.orders.mark-as-preparing-accept-button-text'),
+            acceptButtonIcon: 'check',
+            acceptButtonScheme: 'success',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.post('orders/preparing', { order: order.id }, { namespace: 'storefront/int/v1' });
+                    modal.done();
+                    if (typeof callback === 'function') {
+                        callback(order);
+                    }
+                } catch (err) {
+                    this.notifications.serverError(err);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+            decline: async (modal) => {
+                if (typeof callback === 'function') {
+                    callback(order);
+                }
+                modal.done();
+            },
+        });
+    }
+
     markAsCompleted(order, callback) {
         this.modalsManager.confirm({
             title: this.intl.t('storefront.component.widget.orders.mark-as-completed-modal-title'),
