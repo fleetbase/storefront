@@ -52,7 +52,6 @@ export default class WidgetCustomersComponent extends Component {
 
             return customers;
         } catch (err) {
-            console.error(err);
             debug('Error loading customers for widget:', err.message);
         }
     }
