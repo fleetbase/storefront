@@ -74,7 +74,17 @@ class StorefrontOrderCanceled extends Notification
      */
     public function via($notifiable): array
     {
-        return ['mail', 'database', FcmChannel::class, ApnChannel::class];
+        $channels = ['mail', 'database'];
+
+        if (Storefront::hasNotificationChannelConfigured($this->storefront, 'apn')) {
+            $channels[] = ApnChannel::class;
+        }
+
+        if (Storefront::hasNotificationChannelConfigured($this->storefront, 'fcm')) {
+            $channels[] = FcmChannel::class;
+        }
+
+        return $channels;
     }
 
     /**

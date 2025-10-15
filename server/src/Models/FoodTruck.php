@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\FleetOps\Models\Driver;
 use Fleetbase\FleetOps\Models\ServiceArea;
 use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Models\Zone;
@@ -179,8 +180,8 @@ class FoodTruck extends StorefrontModel
                     'subject_type'  => get_class($this),
                 ],
                 [
-                    'company_uuid'   => $this->company_uuid,
-                    'created_by_uuid'=> session('user'),
+                    'company_uuid'    => $this->company_uuid,
+                    'created_by_uuid' => session('user'),
                 ]
             );
         }
@@ -193,5 +194,16 @@ class FoodTruck extends StorefrontModel
         $this->loadMissing('vehicle');
 
         return $this->vehicle->location;
+    }
+
+    /**
+     * Get the driver assigned via the food truck relation.
+     */
+    public function getDriverAssigned(): ?Driver
+    {
+        // Ensure both relations are present without re-querying if already loaded
+        $this->loadMissing('vehicle.driver');
+
+        return $this->vehicle?->driver;
     }
 }

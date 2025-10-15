@@ -6,12 +6,12 @@ use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Store;
 use Illuminate\Console\Command;
-use Stripe\Customer as StripeCustomer;
-use Stripe\Exception\InvalidRequestException;
-use Stripe\Stripe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
+use Stripe\Customer as StripeCustomer;
+use Stripe\Exception\InvalidRequestException;
+use Stripe\Stripe;
 
 class MigrateStripeSandboxCustomers extends Command
 {

@@ -1,0 +1,748 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: Adresse
+    alerts: Alertes
+    amount: Montant
+    api: API
+    back: Retour
+    backdrop: toile de fond
+    building: Bâtiment
+    bulk-action: Action groupée
+    cash: Espèces
+    city: Ville
+    config: Configuration
+    coordinates: Coordonnées
+    country: Pays
+    created: Créé
+    currency: Devise
+    customer: Client
+    customers: Clients
+    category: Catégorie
+    delivery-tip: Pourboire de livraison
+    delivery: Livraison
+    details: Détails
+    description: Description
+    driver: Conducteur
+    dropoff: Dépose
+    earning: Gains
+    email: Email
+    export: Exporter
+    id: ID
+    internal-id: ID interne
+    import: Importer
+    invalid: Invalide
+    loading: Chargement...
+    logo: logo
+    name: Nom
+    neighborhood: Quartier
+    online: En ligne
+    orders: Commandes
+    phone: Téléphone
+    photos: Photos
+    pickup: Ramassage
+    product: Produits
+    remove: Supprimer
+    state: État
+    status: Statut
+    store: Magasin
+    street-1: Rue 1
+    storefront: Vitrine
+    tag: Tags
+    tip: Pourboire
+    title: Titre
+    total: Total
+    type: Type
+    upload-new: Télécharger nouveau
+    uploading: Téléchargement...
+    view: Voir
+    website: Site web
+    edit: Modifier
+    delete: Supprimer
+    network: Réseaux
+    file: fichiers
+    general: Général
+    location: Emplacement
+    notification: Notification
+    gateways: Passerelles
+    settings: Paramètres
+    new: Nouveau
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: Food Trucks
+    catalog: Catalogue
+    catalogs: Catalogues
+  sidebar:
+    storefront: Vitrine
+    dashboard: Tableau de bord
+    products: Produits
+    catalogs: Catalogues
+    food-trucks: Food Trucks
+    customers: Clients
+    orders: Commandes
+    networks: Réseaux
+    settings: Paramètres
+    launch-app: Lancer l'application
+  component:
+    storefront-order-summary:
+      order-summary-title: Résumé de la commande de la vitrine
+    modals:
+      add-store-hours:
+        start-time: Heure de début
+        operation-start: Quand la disponibilité/le fonctionnement commence
+        end-time: Heure de fin
+        operation-end: Quand la disponibilité/les heures de fonctionnement se terminent
+      assign-driver:
+        message-driver: Sélectionnez un chauffeur à assigner à cette commande.
+        name-driver: Sélectionner un chauffeur
+        placeholder-driver: Sélectionner un chauffeur à assigner
+      create-first-store:
+        title: Bienvenue sur la vitrine !
+        message: La vitrine vous permet de configurer rapidement une boutique dynamique
+          et sans tête à la demande propulsée par Fleetbase.
+        submit-message: Soumettez le formulaire ci-dessous pour créer votre première
+          boutique.
+        storefront-name: Nom de la vitrine
+        enter-name: Entrez le nom de votre boutique
+        description: Description de la vitrine
+        brief-description: Donnez à votre boutique une brève description simple des
+          types de produits vendus
+        currency: Devise de la vitrine
+        select-currency: Sélectionnez la devise par défaut pour votre vitrine
+      create-getaway:
+        getaway: Type de passerelle
+        getaway-text: Sélectionnez le type de passerelle
+        getaway-name: Nom de la passerelle
+        name-text: Donnez un nom à votre passerelle de paiement, cela ne sera pertinent
+          qu'en interne
+        getaway-code: Code de la passerelle
+        code-text: Code d'identification utilisé pour identifier la passerelle dans
+          le SDK
+        callback-url: URL de rappel
+        callback-text: URL de rappel si applicable
+        return-url: URL de retour
+        return-text: URL de retour si applicable
+        sandbox-getaway: Ceci est une passerelle sandbox
+      create-network-category:
+        parent-category: Catégorie parente
+        select-parent: Sélectionnez une catégorie parente si applicable
+        category-name: Nom de la catégorie
+        name-text: Entrez un nom pour la catégorie
+        description: Description de la catégorie
+        description-text: Donnez une brève description à votre catégorie de réseau
+        category-icon: Type d'icône de catégorie
+      create-network:
+        title: Démarrer un réseau
+        message-line1: Storefront vous permet de créer rapidement des places de marché,
+          permettant à plusieurs vitrines de vendre sous un même parapluie.
+        message-line2: Lorsque vous créez le réseau, vous définissez vos règles et
+          vous pouvez étendre votre réseau via des invitations.
+        message-line3: Commencez en créant un réseau ci-dessous.
+        name: Nom du réseau
+        name-text: Entrez le nom de votre boutique
+        description: Description du réseau
+        description-text: Donnez une brève description simple de votre boutique sur
+          les types de produits vendus
+        currency: Devise du réseau
+        currency-text: Sélectionnez la devise par défaut pour votre vitrine
+      create-new-variant:
+        name: Nom de la variante
+        name-text: Donnez un nom à votre variante de produit
+        description: Description de la variante
+        description-text: Brève description de la variante
+        checkbox-1: Permettre à l'utilisateur de sélectionner plusieurs options de
+          variante à la fois
+        checkbox-2: La sélection de cette variante de produit est obligatoire
+      create-notification-channel:
+        title: Canal
+        title-text: Sélectionnez le canal de notification
+        name: Nom du canal
+        name-text: Donnez un nom à votre canal de notification, cela ne sera pertinent
+          qu'en interne
+        key: Clé du canal
+        key-text: Ceci est la clé de votre canal de notification, utilisez-la pour
+          spécifier quelles applications doivent utiliser ce canal de notification
+          via les configurations du SDK.
+      create-product-category:
+        name: Nom de la catégorie
+        name-text: Entrez un nom pour la catégorie
+        description: Description de la catégorie
+        description-text: Donnez une brève description à votre catégorie de produit
+        icon: Icône de la catégorie
+        uploading-new: Télécharger une nouvelle icône de catégorie
+      create-store:
+        name: Nom de la vitrine
+        name-text: Entrez le nom de votre boutique
+        description: Description de la vitrine
+        description-text: Donnez une brève description simple de votre boutique sur
+          les types de produits vendus
+        currency: Devise de la vitrine
+        currency-text: Sélectionnez la devise par défaut pour votre vitrine
+      import-products:
+        uploading-message: Traitement de l'importation...
+        drop-upload: Déposez pour télécharger
+        ready-upload: prêt pour le téléchargement.
+        upload-spreadsheets: Télécharger des feuilles de calcul
+        drag-drop: Faites glisser et déposez les fichiers de feuilles de calcul sur
+          cette zone de dépôt
+        select-spreadsheets: ou sélectionnez les feuilles de calcul à télécharger.
+        upload-queue: File d'attente de téléchargement
+        optionally-select-category: Sélectionnez éventuellement une catégorie pour
+          importer les produits
+        select-category: Sélectionner une catégorie
+      incoming-order:
+        assigned: Livreur assigné
+        not-assigned: Aucun livreur assigné
+        no-phone: Pas de téléphone
+        change-driver: Changer de livreur
+        assign-driver: Assigner un livreur
+        pickup-order: Le client doit récupérer la commande à
+        address: Adresse du client
+        tracking: Suivi
+        summary: Résumé de la commande
+        subtotal: Sous-total
+        fee: Frais de livraison
+        tip: Pourboire
+        delivery-tip: Pourboire de livraison
+      manage-addons:
+        title: Nouvelle catégorie
+        delete: Supprimer la catégorie
+        new-addon: Nouvel addon
+        addon-name: Nom de l'addon
+        description: Description de l'addon
+        delete-this-addon-category-assosiated-will-lost: Êtes-vous sûr de vouloir
+          supprimer cette catégorie d'addons ? Tous les addons associés seront perdus
+          !
+        untitled-addon-category: Catégorie d'addons sans titre
+      order-ready-assign-driver:
+        driver-dispatch: Vous êtes sur le point de définir cette commande comme prête
+          et de la dispatcher, utilisez le menu déroulant ci-dessous pour sélectionner
+          un livreur à qui l'assigner. <br><br>Ou vous pouvez éventuellement choisir
+          de dispatcher la commande en mode adhoc, ce qui enverra la commande à tous
+          les livreurs à proximité pour qu'ils puissent l'accepter.
+        adhoc-dispatch-nearby-drivers: Dispatch adhoc aux livreurs à proximité
+        select-driver: Sélectionner un livreur
+        select-driver-to-assign: Sélectionner un livreur à assigner
+      share-network:
+        invite-member: Inviter des membres à votre réseau
+        email-below: Prenez un lien d'invitation partageable ou envoyez des invitations
+          individuelles par email ci-dessous.
+        invite-network: Entrez les emails des personnes ou organisations que vous
+          souhaitez inviter à votre réseau.
+        add-email: Ajouter des emails
+        get-link: Obtenir le lien
+        enable-shareable-link: Activer le lien partageable
+        anyone-with-this-link-able-to-join-your-network: Toute personne disposant
+          de ce lien peut rejoindre votre réseau
+      store-form:
+        storefront-name: Nom de la vitrine
+        the-name-of-your-store: Le nom de votre magasin.
+        storefront-description-placeholder: Description de la vitrine
+        give-your-store-brief-description: Donnez une brève description de votre magasin
+          pour informer les utilisateurs de ce que vous vendez.
+        add-tags-placeholder: Ajouter des tags
+      store-location-form:
+        street-2: Rue 2
+        security-access-code: Code d'accès sécurisé
+        postal-code: Code postal
+    widget:
+      key-metrics:
+        title: Métriques de la vitrine
+      customers:
+        widget-title: Clients récents
+        phone: Téléphone
+        email: Email
+      orders:
+        widget-title: Commandes récentes
+        id-column: ID de commande
+        cancel-order: Annuler la commande
+        accept-order: Accepter la commande !
+        mark-as-ready: Marquer comme prêt !
+        dispatch: Expédier
+        mark-as-preparing: Marquer comme en préparation
+        mark-as-completed: Marquer comme terminé
+        more-details: Plus de détails
+        customer: Client
+        driver: Livreur
+        subtotal: Sous-total
+        delivery-fee: Frais de livraison
+        delivery-tip: Pourboire de livraison
+        tip: Pourboire
+        total: Total
+        change-driver: Changer de livreur
+        assign-driver: Attribuer un livreur
+        customer-pickup: Retrait client
+        pickup-order: Commande à retirer
+        mark-as-ready-modal-pickup-title: Marquer la commande prête pour le retrait
+          ?
+        mark-as-ready-modal-pickup-body: Marquer la commande comme prête notifiera
+          le client que sa commande est prête à être retirée !
+        mark-as-ready-modal-pickup-accept-button-text: Prêt pour le retrait !
+        mark-as-ready-modal-not-adhoc-title: Attribuer un livreur et expédier les
+          commandes
+        mark-as-ready-modal-not-adhoc-accept-button-text: Attribuer & Expédier !
+        mark-as-ready-modal-title: Voulez-vous marquer la commande comme prête ?
+        mark-as-ready-modal-body: Marquer la commande comme prête expédiera la commande
+          aux livreurs à proximité, ne marquez la commande comme prête que lorsqu'elle
+          peut être retirée.
+        mark-as-ready-modal-accept-button-text: Expédier !
+        mark-as-completed-modal-title: Êtes-vous sûr de vouloir marquer la commande
+          comme terminée ?
+        mark-as-completed-modal-body: Marquer la commande comme terminée confirme
+          que le client a retiré la commande et que celle-ci est terminée.
+        mark-as-completed-accept-button-text: Commande terminée !
+        mark-as-preparing-modal-title: Êtes-vous sûr de vouloir marquer la commande
+          comme en préparation ?
+        mark-as-preparing-modal-body: Marquer la commande comme en préparation confirme
+          que la commande est en cours de préparation.
+        mark-as-preparing-accept-button-text: Commande en préparation
+        assign-driver-modal-title: Attribuer un livreur
+        assign-driver-modal-accept-button-text: Attribuer un livreur
+      storefront-metrics:
+        last-day: 30 derniers jours
+    file-record:
+      delete-this-file: Êtes-vous sûr de vouloir supprimer ce fichier ?
+      delete-this-file-you-will-unable-recover: Une fois ce fichier supprimé, vous
+        ne pourrez pas le récupérer.
+    network-category-picker:
+      no-subcategory: Pas de sous-catégories pour
+      no-categories: Pas de catégories pour ce réseau
+      create-category: Créer une nouvelle catégorie
+    schedule-manager:
+      add-hours: Ajouter des heures
+      add-new-hours-for-day: Ajouter de nouvelles heures pour {day}
+      new-hours-added-for-day: Nouvelles heures ajoutées pour {day}
+      you-wish-to-remove-these-hour: Êtes-vous sûr de vouloir supprimer ces heures
+        ?
+      by-removing-these-operation: En supprimant ces heures d'opération/disponibilité,
+        votre magasin ou produit peut devenir inactif ou indisponible selon le calendrier
+        mis à jour...
+    store-selector:
+      no-stores: Aucun magasin à sélectionner
+      create-storefront: Créer un nouveau
+  home:
+    title: Tableau de bord de la vitrine
+  customers:
+    index:
+      internal-id: ID interne
+      create-at: Créé le
+      update-at: Mis à jour le
+      vendor-action: Actions du vendeur
+      view-customer-details: Voir les détails du client
+      edit-customer: Modifier le client
+      success-message: Votre nouveau réseau de vitrines a été créé !
+      delete-customer: Supprimer le client
+    customer-panel:
+      details:
+        web-url: URL du site web
+      edit-button: Modifier le client
+      cancel-edit-button: Annuler la modification du client
+      cancel-new-button: Annuler le nouveau client
+  networks:
+    index:
+      network-option: Options du réseau
+      manage-network: Gérer le réseau
+      send-invite: Envoyer des invitations
+      delete-network: Supprimer le réseau
+      create-new-network: Créer un nouveau réseau
+      success-message: Votre nouveau réseau de vitrines a été créé !
+      delete-this-network-all-assigned-stores-customer-order: Êtes-vous sûr de vouloir
+        supprimer ce réseau ({networkName}) ? Tous les magasins, clients et commandes
+        assignés ne seront plus accessibles.
+      network:
+        manage-network: Gérer le réseau
+        settings: Paramètres
+        customers: Clients
+        orders: Commandes
+        Network-changes-not-save: Modifications du réseau non enregistrées !
+        going-back-will-rollback-all-unsaved-changes: Revenir en arrière annulera
+          toutes les modifications non enregistrées, êtes-vous sûr de vouloir continuer
+          ?
+        index:
+          change-network-saved: Modifications du réseau enregistrées.
+          create-new-payment-gateway: Créer une nouvelle passerelle de paiement
+          save-gateway: Enregistrer la passerelle
+          new-gateway-add-network: Nouvelle passerelle ajoutée au réseau
+          payment-gateway-changes-success: Modifications de la passerelle de paiement
+            enregistrées !
+          create-new-notification-channel: Créer un nouveau canal de notification
+          create-notification-channel: Créer un canal de notification
+          notification-channel-add-network: Nouveau canal de notification ajouté au
+            réseau !
+          notification-channel-changes-save: Modifications du canal de notification
+            enregistrées !
+          general-network-settings-title: Paramètres généraux du réseau
+          general-network-settings-subtitle: Fournissez les paramètres généraux pour
+            votre réseau ou marché.
+          general-network-settings-form:
+            save-changes-button-text: Enregistrer les modifications
+            name: Nom
+            name-placeholder: Nom de la vitrine
+            name-help-text: Le nom de votre réseau ou marché.
+            description: Description
+            description-placeholder: Description de la vitrine
+            description-help-text: Donnez une brève description de votre magasin pour
+              informer les utilisateurs sur votre réseau.
+            currency: Devise
+            contact-social-panel:
+              panel-title: Contact & Réseaux sociaux
+              phone: Téléphone
+              email: Email
+              email-help-text: Votre email professionnel.
+              website: Site web
+              website-help-text: L'URL de votre site web professionnel.
+              facebook: Facebook
+              facebook-help-text: L'ID de la page Facebook de votre entreprise.
+              instagram: Instagram
+              instagram-help-text: Le nom d'utilisateur Instagram de votre entreprise.
+              twitter: Twitter
+              twitter-help-text: Le nom d'utilisateur Twitter de votre entreprise.
+            logo-backdrop-panel:
+              panel-title: Logo & Fond
+              logo-label: Logo
+              logo-help-text: Logo de votre boutique.
+              upload-logo-button-text: Télécharger un nouveau logo
+              backdrop-label: Fond
+              backdrop-help-text: Bannière ou image de fond optionnelle pour votre
+                boutique.
+              upload-backdrop-button-text: Télécharger un nouveau fond
+            alert-panel:
+              panel-title: Alertes
+              panel-description: Configurez qui doit être alerté pour certains événements
+              new-order-alert-label: Alerte nouvelle commande
+              new-order-alert-placeholder: Sélectionnez les utilisateurs à alerter
+                pour une nouvelle commande
+            config-switches:
+              online: En ligne
+              enable-tax: Activer la taxe
+              tax-percentage-input-label: Pourcentage de taxe
+              tax-percentage-input-help-text: Le pourcentage de taxe sur les ventes
+                à appliquer aux commandes.
+              auto-accept-incoming-orders: Accepter automatiquement les commandes
+                entrantes
+              auto-dispatch-orders: Expédier automatiquement les commandes
+              require-proof-of-delivery: Exiger une preuve de livraison
+              proof-of-delivery-method-label: Méthode de preuve de livraison
+              enable-cash-on-delivery: Activer le paiement à la livraison
+              enable-order-pickup: Activer le retrait de commande
+              enable-tips: Activer les pourboires
+              enable-delivery-tips: Activer les pourboires de livraison
+              enable-multi-cart-checkout: Activer le paiement multi-panier
+              enable-user-reviews: Activer les avis utilisateurs
+          api-panel:
+            panel-title: API
+            panel-header: Paramètres API
+            panel-description: Clé d'accès pour l'API Storefront & Intégrations
+            network-key-label: Clé réseau
+            network-key-help-text: Ceci est votre clé réseau, utilisez-la pour activer
+              les applications et intégrations pour votre réseau.
+          payment-gateways-panel:
+            panel-title: Paramètres de passerelle
+            panel-description: Ajoutez ou gérez vos paramètres de passerelle de paiement
+              ici.
+            new-gateway-button-text: Créer une nouvelle passerelle
+            gateway-form:
+              name: Nom de la passerelle
+              name-help-text: Donnez un nom à votre passerelle de paiement, cela ne
+                sera pertinent qu'en interne
+              code: Code de la passerelle
+              code-help-text: Code d'identification utilisé pour identifier la passerelle
+                dans le SDK
+              callback-url: URL de rappel
+              callback-url-help-text: URL de rappel si applicable
+              return-url: URL de retour
+              return-url-help-text: URL de retour si applicable
+              sandbox-toggle-label: Ceci est une passerelle sandbox
+              config-header-label: Configuration
+              delete-gateway-button-text: Supprimer la passerelle de paiement
+          notification-channels-panel:
+            panel-title: Canaux de notification
+            panel-header: Paramètres de notification
+            panel-description: Configurez les canaux de notification pour votre vitrine,
+              chaque canal de notification peut également avoir ses propres règles
+              et options.
+            new-channel-button-text: Créer un nouveau canal
+        stores:
+          store: Magasins
+          add-stores-button-text: Ajouter des magasins
+          invite-stores-button-text: Inviter des magasins
+          created-at: Créé le
+          view-store-details: Voir les détails du magasin
+          edit-store: Modifier le magasin
+          assign-category: Attribuer une catégorie
+          remove-category: Supprimer la catégorie
+          remove-store-from-network: Retirer le magasin du réseau
+          delete-network-category: Supprimer la catégorie de réseau ?
+          deleting-category-move-all-stores-inside-on-top-level: La suppression de
+            cette catégorie déplacera tous les magasins qu'elle contient au niveau
+            supérieur, êtes-vous sûr de vouloir supprimer cette catégorie ?
+          add-store-to-category: Ajouter un magasin à la catégorie
+          save-change: Enregistrer les modifications
+          add-new-network-category: Ajouter une nouvelle catégorie de réseau
+          create-new-category: Créer une nouvelle catégorie
+          new-category-created: Nouvelle catégorie créée.
+          network-category-create: Nouvelle catégorie de réseau créée.
+          edit-category: Modifier la catégorie ({categoryName})
+          add-stores-to-network: Ajouter des magasins au réseau
+          network-stores-update: Magasins du réseau mis à jour.
+          remove-this-store: Retirer ce magasin ({storeName}) de ce réseau ({networkName})
+            ?
+          done: Terminé
+          longer-findable-by-this-network: Êtes-vous sûr de vouloir retirer ce magasin
+            de ce réseau ? Il ne sera plus trouvable par ce réseau.
+          viewing-storefront: Affichage de la vitrine {storeName}
+          editing-storefront: Modification de la vitrine {storeName}
+          send-invitations: Envoyer des invitations
+          invitation-sent-recipients: Invitations envoyées aux destinataires !
+          invalid-emails-provided-error: Emails invalides fournis !
+          remove-store-category: Supprimer la catégorie du magasin
+          remove-store-category-body: Vous êtes sur le point de retirer {storeName}
+            de la catégorie {categoryName}, souhaitez-vous continuer ?
+  orders:
+    index:
+      internal-id: ID interne
+      customer: Client
+      select-order-customer: Sélectionner le client de la commande
+      select-order-pickup-location: Sélectionner le lieu de retrait de la commande
+      select-order-dropoff-location: Sélectionner le lieu de dépôt de la commande
+      scheduled-at: Planifié le
+      transaction-total: Total de la transaction
+      total: Total
+      tracking-number: Numéro de suivi
+      driver-assigned: Chauffeur assigné
+      select-driver-for-order: Sélectionner un chauffeur pour la commande
+      created-at: Créé le
+      updated-at: Mis à jour le
+      created-by: Créé par
+      updated-by: Mis à jour par
+      select-user: Sélectionner un utilisateur
+      view-order: Voir la commande
+      cancel-order: Annuler la commande
+      delete-order: Supprimer la commande
+      view:
+        route-panel-title: Itinéraire
+        comments-title: Commentaires
+        notes-title: Notes
+        dispatch: Expédier
+        unassign-driver: Désaffecter le chauffeur
+        assign-driver: Assigner un chauffeur
+        cancel-order: Annuler la commande
+        delete-order: Supprimer la commande
+        activity: Activité
+        unable-load-order-activity: Impossible de charger l'activité de la commande
+        ad-hoc: Ad-Hoc
+        customer: Client
+        facilitator: Facilitateur
+        driver-assigned: Chauffeur assigné
+        change-driver: Changer de chauffeur
+        tracking-number: Numéro de suivi
+        date-scheduled: Date prévue
+        date-dispatched: Date d'expédition
+        date-started: Date de début
+        order-details-title: Détails de la commande
+        route: Itinéraire
+        pickup: Ramassage
+        dropoff: Dépose
+        return: Retour
+        order-summary: Résumé de la commande
+        subtotal: Sous-total
+        delivery-fee: Frais de livraison
+        tip: Pourboire
+        delivery-tip: Pourboire de livraison
+        total: Total
+        payload: Charge utile
+        items-drop: Articles déposés à
+        tracking: Suivi
+        view-activity: Voir l'activité
+        order-metadata: Métadonnées de la commande
+        unassign-title: Êtes-vous sûr de vouloir désaffecter le chauffeur ({driverName})
+          de cette commande ?
+        unassign-body: Une fois le chauffeur désaffecté, il n'aura plus accès aux
+          détails de cette commande.
+        unassign-success: Le chauffeur a été désaffecté de cette commande.
+        route-error: L'optimisation de l'itinéraire a échoué, vérifiez l'entrée de
+          l'itinéraire et réessayez.
+        invalid-warning: Entrée de statut personnalisé invalide.
+        change-order: Changer le chauffeur de la commande
+        assign-order: Assigner un chauffeur à la commande
+        assign-success: Le chauffeur assigné à {orderId} a été mis à jour.
+        order-title: Étiquette de commande
+        waypoint-title: Étiquette de point de passage
+        proof-of-delivery: Preuve de livraison
+        notes-placeholder: Entrez les notes de commande ici....
+        save-order-note: Enregistrer la note de commande
+        order-notes-updated: Notes de commande mises à jour.
+  products:
+    index:
+      manage-addons: Gérer les modules complémentaires
+      manage-addons-dialog:
+        manage-addons-title: Gérer les catégories et options des modules complémentaires
+          du produit
+        manage-addons-accept-button: Enregistrer les modifications
+      done: Terminé
+      create-new-product-category: Créer une nouvelle catégorie de produit
+      product-category-created-success: Nouvelle catégorie de produit créée.
+      import-products-via-spreadsheets: Importer des produits via des feuilles de
+        calcul
+      start-upload: Commencer le téléchargement
+      warning-no-file-upload: Aucun fichier en file d'attente pour le téléchargement
+        !
+      products-success-message: Importation réussie de {resultsLength} produits...
+      delete-product: Êtes-vous sûr de vouloir supprimer ce produit ?
+      body-warning: Attention ! Une fois ce produit supprimé, il ne sera plus accessible.
+      aside-scroller:
+        title: Catégories de produits
+        custom-top-item-text: Tous les produits
+      import-products-success-message: Importation réussie de {resultsLength} produits...
+      edit:
+        title: Le produit n'est pas enregistré !
+        body: Vous perdrez toutes les modifications non enregistrées, êtes-vous sûr
+          de vouloir annuler ?
+        changes-saved: Modifications enregistrées !
+      new:
+        new-product-created-success: Nouveau produit créé avec succès !
+        warning-only-select-an-image-file-to-be-primary: Vous ne pouvez sélectionner
+          qu'un fichier image comme principal !
+        made-the-primary-success-image: '{fileName} a été défini comme image principale.'
+        title: Le produit n'est pas enregistré !
+        body: Revenir en arrière annulera la création de ce produit, si vous continuez
+          tous les champs seront effacés !
+        select-addon-categories: Sélectionner les catégories de modules complémentaires
+        add-new-product-variant: Ajouter une nouvelle variante de produit
+        edit-product-variant: Modifier la variante de produit
+        untitled-field: Champ sans titre
+      category:
+        category: catégorie
+        title: Le produit n'est pas enregistré !
+        body: Attention ! La suppression de cette catégorie supprimera également tous
+          les produits listés sous cette catégorie.
+        edit-category: Modifier la catégorie
+        save-changes: Enregistrer les modifications
+        category-changes-saved-success: Modifications de la catégorie enregistrées.
+        delete-product: Êtes-vous sûr de vouloir supprimer ce produit ?
+        body-warning: Attention ! Une fois ce produit supprimé, il ne sera plus accessible.
+  settings:
+    api:
+      api-settings: Paramètres API
+      access-key-for-storefront-api-integrations: Clé d'accès pour l'API Storefront
+        et les intégrations.
+      store-key: Clé du magasin
+      store-key-help-text: Ceci est votre clé de magasin, utilisez-la pour activer
+        les applications et intégrations pour votre vitrine.
+    gateways:
+      geteway-settings: Paramètres de passerelle
+      add-or-manage-your-paymeny-gateway-settings-here: Ajoutez ou gérez vos paramètres
+        de passerelle de paiement ici.
+      create-new-gateway: Créer une nouvelle passerelle
+      gateway-name: Nom de la passerelle
+      gateway-help-text: Donnez un nom à votre passerelle de paiement, cela ne sera
+        pertinent qu'en interne
+      gateway-code: Code de passerelle
+      gateway-code-help-text: Code d'identification utilisé pour identifier la passerelle
+        dans le SDK
+      callback-url: URL de rappel
+      callback-url-help-text: URL de rappel si applicable
+      return-url: URL de retour
+      return-url-help-text: URL de retour si applicable
+      this-is-a-sandbox-gateway: Ceci est une passerelle sandbox
+      delete-payment-gateway: Supprimer la passerelle de paiement
+      create-new-payment-gateway: Créer une nouvelle passerelle de paiement
+      save-gateway: Enregistrer la passerelle
+      edit-payment-gateway: Modifier la passerelle de paiement
+      save-changes: Enregistrer les modifications
+      title-remove: Êtes-vous sûr de vouloir supprimer cette passerelle ?
+      application-website-utilizing-gateway: Toutes les applications et sites web
+        utilisant cette passerelle dans la configuration pourraient être perturbés
+        si la passerelle n'est pas remplacée au préalable
+    index:
+      general-settings-header: Paramètres généraux
+      general-settings-message: Fournissez les paramètres généraux pour votre vitrine.
+      name-placeholder: Nom de la vitrine
+      name-help-text: Le nom de votre magasin.
+      description-placeholder: Description de la vitrine
+      description-help-text: Donnez une brève description de votre magasin pour informer
+        les utilisateurs de ce que vous vendez.
+      tags-placeholder: Ajouter des tags
+      contact-social: Contact & Réseaux sociaux
+      website-help-text: URL du site web de votre entreprise.
+      facebook-placeholder: ID Facebook
+      facebook-help-text: ID de la page Facebook de votre entreprise.
+      instagram-placeholder: Nom d'utilisateur Instagram
+      instagram-help-text: Nom d'utilisateur Instagram de votre entreprise.
+      twitter-placeholder: Nom d'utilisateur Twitter
+      twitter-help-text: Nom d'utilisateur Twitter de votre entreprise.
+      logo-backdrop: Logo & Fond
+      logo-help-text: Logo de votre magasin.
+      upload-new-logo: Télécharger un nouveau logo
+      backdrop-help-text: Bannière ou image de fond optionnelle pour votre magasin.
+      upload-new-backdrop: Télécharger un nouveau fond
+      images-videos: Images & Vidéos
+      drop-to-upload: Déposez pour télécharger
+      ready-to-upload: prêt à être téléchargé.
+      upload-image-video: Télécharger des images & vidéos
+      drag-and-drop-image: Glissez et déposez des fichiers image et vidéo dans cette
+        zone de dépôt
+      upload-queue: File d'attente de téléchargement
+      alerted-for-certain-event: Configurez qui doit être alerté pour certains événements.
+      new-order-alert: Alerte nouvelle commande
+      alert-placeholder: Sélectionnez les utilisateurs à alerter pour une nouvelle
+        commande
+      enable-tax: Activer la taxe
+      tax-percentage: Pourcentage de taxe
+      tax-percentage-help-text: Le pourcentage de taxe de vente à appliquer aux commandes.
+      auto-accept-incoming-order: Accepter automatiquement les commandes entrantes
+      auto-dispatch-order: Expédier automatiquement les commandes
+      require-proof-of-delivery: Exiger une preuve de livraison
+      proof-of-delivery-method: Méthode de preuve de livraison
+      enable-cash-on-delivery: Activer le paiement à la livraison
+      enable-order-pickup: Activer le retrait de commande
+      enable-tips: Activer les pourboires
+      enable-delivery-tips: Activer les pourboires de livraison
+      enable-integrated-vendors: Activer les fournisseurs intégrés
+      save-changes: Enregistrer les modifications
+    locations:
+      new-store-location: Nouvel emplacement de magasin
+      add-new-location: Ajouter un nouvel emplacement
+      edit-store-location: Modifier l'emplacement du magasin
+      save-changes: Enregistrer les modifications
+      remove-this-store-location: Êtes-vous sûr de vouloir supprimer cet emplacement
+        de magasin ?
+      solely-accosciated-location: Tous les produits uniquement associés à cet emplacement
+        ne seront plus accessibles.
+      new-store-hour: Ajouter de nouveaux horaires pour {day}
+      add-hours: Ajouter des horaires
+      store-hour-added: Nouveaux horaires ajoutés pour {day}
+      remove-these-hour: Êtes-vous sûr de vouloir supprimer ces horaires ?
+      update-schedule-location: En supprimant ces heures d'ouverture, votre magasin
+        pourrait devenir inactif selon le nouveau planning pour cet emplacement.
+      location-setting: Paramètres de l'emplacement
+      manage-store: Gérez les emplacements et horaires d'ouverture de vos magasins
+      text-location: Créer un nouvel emplacement
+      store-hour: Gérer les horaires du magasin
+    notification:
+      create-new-notification-channel: Créer un nouveau canal de notification
+      create-notification-channel: Créer un canal de notification
+      edit-notification-channel: Modifier le canal de notification
+      save-changes: Enregistrer les modifications
+      new-notification-channel-added: Nouveau canal de notification ajouté
+      remove-this-notification-channel: Êtes-vous sûr de vouloir supprimer ce canal
+        de notification ?
+      application-websites-utillizing-channel: Toutes les applications et sites web
+        utilisant ce canal dans leur configuration pourraient être perturbés si le
+        canal n'est pas remplacé au préalable
+      notification-settings: Paramètres de notification
+      notification-storefront: Configurez les canaux de notification pour votre vitrine,
+        chaque canal de notification peut également avoir ses propres règles et options.
+      new-channel: Nouveau canal
+  service:
+    storefront:
+      new-incoming-order: Vous avez une nouvelle commande entrante !
+      accept-order: Accepter la commande
+      decline-order: Refuser la commande
+      create-first-storefront: Créez votre première vitrine
+      storefront-has-been-create-success: Votre nouvelle vitrine a été créée !
+      create-new-storefront: Créer une nouvelle vitrine
+      storefront-create-success: Votre nouvelle vitrine a été créée !
+  application:
+    launch-app: Lancer l'application

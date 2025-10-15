@@ -1,0 +1,726 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: Адрес
+    alerts: Оповещения
+    amount: Сумма
+    api: API
+    back: Назад
+    backdrop: фон
+    building: Здание
+    bulk-action: Массовое действие
+    cash: Наличные
+    city: Город
+    config: Настройки
+    coordinates: Координаты
+    country: Страна
+    created: Создано
+    currency: Валюта
+    customer: Клиент
+    customers: Клиенты
+    category: Категория
+    delivery-tip: Чаевые за доставку
+    delivery: Доставка
+    details: Детали
+    description: Описание
+    driver: Водитель
+    dropoff: Выгрузка
+    earning: Доход
+    email: Электронная почта
+    export: Экспорт
+    id: ID
+    internal-id: Внутренний ID
+    import: Импорт
+    invalid: Недействительно
+    loading: Загрузка...
+    logo: логотип
+    name: Имя
+    neighborhood: Район
+    online: В сети
+    orders: Заказы
+    phone: Телефон
+    photos: Фотографии
+    pickup: Самовывоз
+    product: Товары
+    remove: Удалить
+    state: Штат
+    status: Статус
+    store: Магазин
+    street-1: Улица 1
+    storefront: Витрина
+    tag: Теги
+    tip: Чаевые
+    title: Заголовок
+    total: Итого
+    type: Тип
+    upload-new: Загрузить новый
+    uploading: Загрузка...
+    view: Просмотр
+    website: Веб-сайт
+    edit: Редактировать
+    delete: Удалить
+    network: Сети
+    file: файлы
+    general: Общее
+    location: Местоположение
+    notification: Уведомление
+    gateways: Платежные шлюзы
+    settings: Настройки
+    new: Новый
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: Фудтраки
+    catalog: Каталог
+    catalogs: Каталоги
+  sidebar:
+    storefront: Витрина
+    dashboard: Панель управления
+    products: Продукты
+    catalogs: Каталоги
+    food-trucks: Фудтраки
+    customers: Клиенты
+    orders: Заказы
+    networks: Сети
+    settings: Настройки
+    launch-app: Запустить приложение
+  component:
+    storefront-order-summary:
+      order-summary-title: Сводка заказов витрины
+    modals:
+      add-store-hours:
+        start-time: Время начала
+        operation-start: Когда начинается доступность/работа
+        end-time: Время окончания
+        operation-end: Когда заканчиваются часы доступности/работы
+      assign-driver:
+        message-driver: Выберите водителя для назначения на этот заказ.
+        name-driver: Выберите водителя
+        placeholder-driver: Выберите водителя для назначения
+      create-first-store:
+        title: Добро пожаловать в Витрину!
+        message: Витрина позволяет быстро настроить headless и динамичный магазин
+          по требованию на базе Fleetbase.
+        submit-message: Отправьте форму ниже, чтобы создать ваш первый магазин.
+        storefront-name: Название витрины
+        enter-name: Введите название вашего магазина
+        description: Описание витрины
+        brief-description: Дайте вашему магазину краткое описание типов продаваемых
+          товаров
+        currency: Валюта витрины
+        select-currency: Выберите валюту по умолчанию для вашей витрины
+      create-getaway:
+        getaway: Тип шлюза
+        getaway-text: Выберите тип шлюза
+        getaway-name: Название шлюза
+        name-text: Дайте вашему платежному шлюзу имя, оно будет использоваться только
+          внутри системы
+        getaway-code: Код шлюза
+        code-text: Идентификационный код, используемый для определения шлюза в SDK
+        callback-url: URL обратного вызова
+        callback-text: URL обратного вызова, если применимо
+        return-url: URL возврата
+        return-text: URL возврата, если применимо
+        sandbox-getaway: Это тестовый шлюз
+      create-network-category:
+        parent-category: Родительская категория
+        select-parent: Выберите родительскую категорию, если есть
+        category-name: Название категории
+        name-text: Введите название категории
+        description: Описание категории
+        description-text: Дайте краткое описание вашей сетевой категории
+        category-icon: Тип иконки категории
+      create-network:
+        title: Создать сеть
+        message-line1: Storefront позволяет быстро создавать маркетплейсы, позволяя
+          нескольким витринам продавать под одним зонтиком.
+        message-line2: Создавая сеть, вы определяете свои правила и можете расширять
+          сеть через приглашения.
+        message-line3: Начните, создав сеть ниже.
+        name: Название сети
+        name-text: Введите название вашего магазина
+        description: Описание сети
+        description-text: Дайте вашему магазину простое краткое описание типов продаваемых
+          товаров
+        currency: Валюта сети
+        currency-text: Выберите валюту по умолчанию для вашей витрины
+      create-new-variant:
+        name: Название варианта
+        name-text: Дайте вашему варианту продукта имя
+        description: Описание варианта
+        description-text: Краткое описание варианта
+        checkbox-1: Разрешить пользователю выбирать несколько вариантов одновременно
+        checkbox-2: Выбор этого варианта продукта обязателен
+      create-notification-channel:
+        title: Канал
+        title-text: Выберите канал уведомлений
+        name: Название канала
+        name-text: Дайте вашему каналу уведомлений имя, оно будет использоваться только
+          внутри системы
+        key: Ключ канала
+        key-text: Это ключ вашего канала уведомлений, используйте его для указания,
+          какие приложения должны использовать этот канал уведомлений через настройки
+          SDK.
+      create-product-category:
+        name: Название категории
+        name-text: Введите название категории
+        description: Описание категории
+        description-text: Дайте краткое описание вашей категории продуктов
+        icon: Иконка категории
+        uploading-new: Загрузить новую иконку категории
+      create-store:
+        name: Название витрины
+        name-text: Введите название вашего магазина
+        description: Описание витрины
+        description-text: Дайте вашему магазину простое краткое описание типов продаваемых
+          товаров
+        currency: Валюта витрины
+        currency-text: Выберите валюту по умолчанию для вашей витрины
+      import-products:
+        uploading-message: Обработка импорта...
+        drop-upload: Перетащите для загрузки
+        ready-upload: готово к загрузке.
+        upload-spreadsheets: Загрузить таблицы
+        drag-drop: Перетащите файлы таблиц в эту область
+        select-spreadsheets: или выберите таблицы для загрузки.
+        upload-queue: Очередь загрузки
+        optionally-select-category: При желании выберите категорию для импорта товаров
+        select-category: Выбрать категорию
+      incoming-order:
+        assigned: Водитель назначен
+        not-assigned: Водитель не назначен
+        no-phone: Телефон отсутствует
+        change-driver: Сменить водителя
+        assign-driver: Назначить водителя
+        pickup-order: Клиент должен забрать заказ из
+        address: Адрес клиента
+        tracking: Отслеживание
+        summary: Сводка заказа
+        subtotal: Промежуточный итог
+        fee: Стоимость доставки
+        tip: Чаевые
+        delivery-tip: Чаевые курьеру
+      manage-addons:
+        title: Новая категория
+        delete: Удалить категорию
+        new-addon: Новый дополнение
+        addon-name: Название дополнения
+        description: Описание дополнения
+        delete-this-addon-category-assosiated-will-lost: Вы уверены, что хотите удалить
+          эту категорию дополнений? Все связанные дополнения будут потеряны!
+        untitled-addon-category: Безымянная категория дополнений
+      order-ready-assign-driver:
+        driver-dispatch: Вы собираетесь отметить этот заказ как готовый и отправить,
+          используйте выпадающий список ниже, чтобы выбрать водителя для отправки.
+          <br><br>Или при желании вы можете отправить заказ как разовый, что оповестит
+          всех ближайших водителей для принятия заказа.
+        adhoc-dispatch-nearby-drivers: Разовая отправка ближайшим водителям
+        select-driver: Выбрать водителя
+        select-driver-to-assign: Выберите водителя для назначения
+      share-network:
+        invite-member: Пригласить участников в вашу сеть
+        email-below: Получите ссылку для приглашения или отправьте индивидуальные
+          приглашения по электронной почте ниже.
+        invite-network: Введите электронные адреса людей или организаций, которым
+          вы хотите отправить приглашение в вашу сеть.
+        add-email: Добавить email
+        get-link: Получить ссылку
+        enable-shareable-link: Включить ссылку для общего доступа
+        anyone-with-this-link-able-to-join-your-network: Любой, у кого есть эта ссылка,
+          может присоединиться к вашей сети
+      store-form:
+        storefront-name: Название витрины
+        the-name-of-your-store: Название вашего магазина.
+        storefront-description-placeholder: Описание витрины
+        give-your-store-brief-description: Дайте вашему магазину краткое описание,
+          чтобы пользователи знали, что вы продаете.
+        add-tags-placeholder: Добавить теги
+      store-location-form:
+        street-2: Улица 2
+        security-access-code: Код доступа безопасности
+        postal-code: Почтовый индекс
+    widget:
+      key-metrics:
+        title: Метрики витрины
+      customers:
+        widget-title: Недавние клиенты
+        phone: Телефон
+        email: Электронная почта
+      orders:
+        widget-title: Недавние заказы
+        id-column: ID заказа
+        cancel-order: Отменить заказ
+        accept-order: Принять заказ!
+        mark-as-ready: Отметить как готовый!
+        dispatch: Отправить
+        mark-as-preparing: Отметить как в подготовке
+        mark-as-completed: Отметить как завершённый
+        more-details: Подробнее
+        customer: Клиент
+        driver: Водитель
+        subtotal: Промежуточный итог
+        delivery-fee: Плата за доставку
+        delivery-tip: Чаевые за доставку
+        tip: Чаевые
+        total: Итого
+        change-driver: Сменить водителя
+        assign-driver: Назначить водителя
+        customer-pickup: Самовывоз клиентом
+        pickup-order: Заказ на самовывоз
+        mark-as-ready-modal-pickup-title: Отметить заказ как готовый к самовывозу?
+        mark-as-ready-modal-pickup-body: Отметив заказ как готовый, вы уведомите клиента,
+          что его заказ готов к самовывозу!
+        mark-as-ready-modal-pickup-accept-button-text: Готов к самовывозу!
+        mark-as-ready-modal-not-adhoc-title: Назначить водителя и отправить заказ
+        mark-as-ready-modal-not-adhoc-accept-button-text: Назначить и отправить!
+        mark-as-ready-modal-title: Вы хотите отметить заказ как готовый?
+        mark-as-ready-modal-body: Отметив заказ как готовый, вы отправите его ближайшим
+          водителям. Отмечайте заказ как готовый только когда он может быть забран.
+        mark-as-ready-modal-accept-button-text: Отправить!
+        mark-as-completed-modal-title: Вы уверены, что хотите отметить заказ как завершённый?
+        mark-as-completed-modal-body: Отметив заказ как завершённый, вы подтверждаете,
+          что клиент забрал заказ и он выполнен.
+        mark-as-completed-accept-button-text: Заказ завершён!
+        mark-as-preparing-modal-title: Вы уверены, что хотите отметить заказ как в
+          подготовке?
+        mark-as-preparing-modal-body: Отметив заказ как в подготовке, вы подтверждаете,
+          что заказ готовится.
+        mark-as-preparing-accept-button-text: Заказ в подготовке
+        assign-driver-modal-title: Назначить водителя
+        assign-driver-modal-accept-button-text: Назначить водителя
+      storefront-metrics:
+        last-day: Последние 30 дней
+    file-record:
+      delete-this-file: Вы уверены, что хотите удалить этот файл?
+      delete-this-file-you-will-unable-recover: После удаления этого файла вы не сможете
+        его восстановить.
+    network-category-picker:
+      no-subcategory: Нет подкатегорий для
+      no-categories: Нет категорий для этой сети
+      create-category: Создать новую категорию
+    schedule-manager:
+      add-hours: Добавить часы
+      add-new-hours-for-day: Добавить новые часы для {day}
+      new-hours-added-for-day: Новые часы добавлены для {day}
+      you-wish-to-remove-these-hour: Вы уверены, что хотите удалить эти часы?
+      by-removing-these-operation: Удаляя эти часы работы/доступности, ваш магазин
+        или продукт могут стать неактивными или недоступными согласно обновленному
+        расписанию...
+    store-selector:
+      no-stores: Нет магазинов для выбора
+      create-storefront: Создать новый
+  home:
+    title: Панель управления магазином
+  customers:
+    index:
+      internal-id: Внутренний ID
+      create-at: Создано
+      update-at: Обновлено
+      vendor-action: Действия поставщика
+      view-customer-details: Просмотреть детали клиента
+      edit-customer: Редактировать клиента
+      success-message: Ваша новая сеть магазинов была создана!
+      delete-customer: Удалить клиента
+    customer-panel:
+      details:
+        web-url: URL сайта
+      edit-button: Редактировать клиента
+      cancel-edit-button: Отменить редактирование клиента
+      cancel-new-button: Отменить создание нового клиента
+  networks:
+    index:
+      network-option: Опции сети
+      manage-network: Управлять сетью
+      send-invite: Отправить приглашения
+      delete-network: Удалить сеть
+      create-new-network: Создать новую сеть
+      success-message: Ваша новая сеть магазинов была создана!
+      delete-this-network-all-assigned-stores-customer-order: Вы уверены, что хотите
+        удалить эту сеть ({networkName})? Все назначенные магазины, клиенты и заказы
+        станут недоступны.
+      network:
+        manage-network: Управлять сетью
+        settings: Настройки
+        customers: Клиенты
+        orders: Заказы
+        Network-changes-not-save: Изменения сети не сохранены!
+        going-back-will-rollback-all-unsaved-changes: Возврат отменит все несохранённые
+          изменения, вы уверены, что хотите продолжить?
+        index:
+          change-network-saved: Изменения сети сохранены.
+          create-new-payment-gateway: Создать новый платежный шлюз
+          save-gateway: Сохранить шлюз
+          new-gateway-add-network: Новый шлюз добавлен в сеть
+          payment-gateway-changes-success: Изменения платежного шлюза сохранены!
+          create-new-notification-channel: Создать новый канал уведомлений
+          create-notification-channel: Создать канал уведомлений
+          notification-channel-add-network: Новый канал уведомлений добавлен в сеть!
+          notification-channel-changes-save: Изменения канала уведомлений сохранены!
+          general-network-settings-title: Общие настройки сети
+          general-network-settings-subtitle: Укажите общие настройки для вашей сети
+            или маркетплейса.
+          general-network-settings-form:
+            save-changes-button-text: Сохранить изменения
+            name: Название
+            name-placeholder: Название магазина
+            name-help-text: Название вашей сети или маркетплейса.
+            description: Описание
+            description-placeholder: Описание магазина
+            description-help-text: Дайте вашему магазину краткое описание, чтобы пользователи
+              знали, о чем ваша сеть.
+            currency: Валюта
+            contact-social-panel:
+              panel-title: Контакты и социальные сети
+              phone: Телефон
+              email: Электронная почта
+              email-help-text: Ваша служебная электронная почта.
+              website: Веб-сайт
+              website-help-text: URL вашего служебного веб-сайта.
+              facebook: Facebook
+              facebook-help-text: ID вашей служебной страницы Facebook.
+              instagram: Instagram
+              instagram-help-text: Имя пользователя вашего служебного Instagram.
+              twitter: Twitter
+              twitter-help-text: Имя пользователя вашего служебного Twitter.
+            logo-backdrop-panel:
+              panel-title: Логотип и фон
+              logo-label: Логотип
+              logo-help-text: Логотип вашего магазина.
+              upload-logo-button-text: Загрузить новый логотип
+              backdrop-label: Фон
+              backdrop-help-text: Дополнительный баннер или фоновое изображение для
+                вашего магазина.
+              upload-backdrop-button-text: Загрузить новый фон
+            alert-panel:
+              panel-title: Оповещения
+              panel-description: Настройте, кто должен получать оповещения о определённых
+                событиях
+              new-order-alert-label: Оповещение о новом заказе
+              new-order-alert-placeholder: Выберите пользователей для оповещения о
+                новом заказе
+            config-switches:
+              online: В сети
+              enable-tax: Включить налог
+              tax-percentage-input-label: Процент налога
+              tax-percentage-input-help-text: Процент налога с продаж, применяемый
+                к заказам.
+              auto-accept-incoming-orders: Автоматически принимать входящие заказы
+              auto-dispatch-orders: Автоматически отправлять заказы
+              require-proof-of-delivery: Требовать подтверждение доставки
+              proof-of-delivery-method-label: Метод подтверждения доставки
+              enable-cash-on-delivery: Включить оплату наличными при доставке
+              enable-order-pickup: Включить самовывоз заказов
+              enable-tips: Включить чаевые
+              enable-delivery-tips: Включить чаевые за доставку
+              enable-multi-cart-checkout: Включить оформление заказа из нескольких
+                корзин
+              enable-user-reviews: Включить отзывы пользователей
+          api-panel:
+            panel-title: API
+            panel-header: Настройки API
+            panel-description: Ключ доступа для Storefront API и интеграций
+            network-key-label: Ключ сети
+            network-key-help-text: Это ваш ключ сети, используйте его для включения
+              приложений и интеграций для вашей сети.
+          payment-gateways-panel:
+            panel-title: Настройки платежного шлюза
+            panel-description: Добавляйте или управляйте настройками платежных шлюзов
+              здесь.
+            new-gateway-button-text: Создать новый шлюз
+            gateway-form:
+              name: Название шлюза
+              name-help-text: Дайте вашему платежному шлюзу имя, это будет актуально
+                только внутри системы
+              code: Код шлюза
+              code-help-text: Идентификационный код, используемый для определения
+                шлюза в SDK
+              callback-url: URL обратного вызова
+              callback-url-help-text: URL обратного вызова, если применимо
+              return-url: URL возврата
+              return-url-help-text: URL возврата, если применимо
+              sandbox-toggle-label: Это тестовый шлюз
+              config-header-label: Настройки
+              delete-gateway-button-text: Удалить платежный шлюз
+          notification-channels-panel:
+            panel-title: Каналы уведомлений
+            panel-header: Настройки уведомлений
+            panel-description: Настройте каналы уведомлений для вашего витрины, каждый
+              канал уведомлений может иметь свои собственные правила и параметры.
+            new-channel-button-text: Создать новый канал
+        stores:
+          store: Магазины
+          add-stores-button-text: Добавить магазины
+          invite-stores-button-text: Пригласить магазины
+          created-at: Создано
+          view-store-details: Просмотреть детали магазина
+          edit-store: Редактировать магазин
+          assign-category: Назначить категорию
+          remove-category: Удалить категорию
+          remove-store-from-network: Удалить магазин из сети
+          delete-network-category: Удалить категорию сети?
+          deleting-category-move-all-stores-inside-on-top-level: Удаление этой категории
+            переместит все магазины внутри на верхний уровень, вы уверены, что хотите
+            удалить эту категорию?
+          add-store-to-category: Добавить магазин в категорию
+          save-change: Сохранить изменения
+          add-new-network-category: Добавить новую категорию сети
+          create-new-category: Создать новую категорию
+          new-category-created: Новая категория создана.
+          network-category-create: Создана новая категория сети.
+          edit-category: Редактировать категорию ({categoryName})
+          add-stores-to-network: Добавить магазины в сеть
+          network-stores-update: Магазины сети обновлены.
+          remove-this-store: Удалить этот магазин ({storeName}) из этой сети ({networkName})?
+          done: Готово
+          longer-findable-by-this-network: Вы уверены, что хотите удалить этот магазин
+            из этой сети? Он больше не будет доступен через эту сеть.
+          viewing-storefront: Просмотр витрины {storeName}
+          editing-storefront: Редактирование витрины {storeName}
+          send-invitations: Отправить приглашения
+          invitation-sent-recipients: Приглашения отправлены получателям!
+          invalid-emails-provided-error: Указаны недопустимые адреса электронной почты!
+          remove-store-category: Удалить категорию магазина
+          remove-store-category-body: Вы собираетесь удалить {storeName} из категории
+            {categoryName}, вы хотите продолжить?
+  orders:
+    index:
+      internal-id: Внутренний ID
+      customer: Клиент
+      select-order-customer: Выберите клиента заказа
+      select-order-pickup-location: Выберите место получения заказа
+      select-order-dropoff-location: Выберите место доставки заказа
+      scheduled-at: Запланировано на
+      transaction-total: Общая сумма транзакции
+      total: Итого
+      tracking-number: Номер отслеживания
+      driver-assigned: Водитель назначен
+      select-driver-for-order: Выберите водителя для заказа
+      created-at: Создано
+      updated-at: Обновлено в
+      created-by: Создано
+      updated-by: Обновлено
+      select-user: Выберите пользователя
+      view-order: Просмотреть заказ
+      cancel-order: Отменить заказ
+      delete-order: Удалить заказ
+      view:
+        route-panel-title: Маршрут
+        comments-title: Комментарии
+        notes-title: Заметки
+        dispatch: Отправка
+        unassign-driver: Отменить назначение водителя
+        assign-driver: Назначить водителя
+        cancel-order: Отменить заказ
+        delete-order: Удалить заказ
+        activity: Активность
+        unable-load-order-activity: Не удалось загрузить активность заказа
+        ad-hoc: Внеплановый
+        customer: Клиент
+        facilitator: Координатор
+        driver-assigned: Водитель назначен
+        change-driver: Сменить водителя
+        tracking-number: Номер отслеживания
+        date-scheduled: Дата запланирована
+        date-dispatched: Дата отправки
+        date-started: Дата начала
+        order-details-title: Детали заказа
+        route: Маршрут
+        pickup: Забор
+        dropoff: Доставка
+        return: Возврат
+        order-summary: Итог заказа
+        subtotal: Промежуточный итог
+        delivery-fee: Плата за доставку
+        tip: Чаевые
+        delivery-tip: Чаевые за доставку
+        total: Итого
+        payload: Груз
+        items-drop: Товары доставлены в
+        tracking: Отслеживание
+        view-activity: Просмотреть активность
+        order-metadata: Метаданные заказа
+        unassign-title: Вы уверены, что хотите отменить назначение водителя ({driverName})
+          для этого заказа?
+        unassign-body: После отмены назначения водитель больше не будет иметь доступа
+          к деталям этого заказа.
+        unassign-success: Водитель был отменен из этого заказа.
+        route-error: Оптимизация маршрута не удалась, проверьте ввод маршрута и попробуйте
+          снова.
+        invalid-warning: Неверный ввод пользовательского статуса.
+        change-order: Изменить водителя заказа
+        assign-order: Назначить водителя на заказ
+        assign-success: Водитель для заказа {orderId} успешно обновлен.
+        order-title: Метка заказа
+        waypoint-title: Метка контрольной точки
+        proof-of-delivery: Подтверждение доставки
+        notes-placeholder: Введите заметки к заказу здесь....
+        save-order-note: Сохранить заметку к заказу
+        order-notes-updated: Заметки к заказу обновлены.
+  products:
+    index:
+      manage-addons: Управление дополнениями
+      manage-addons-dialog:
+        manage-addons-title: Управление категориями и опциями дополнений продукта
+        manage-addons-accept-button: Сохранить изменения
+      done: Готово
+      create-new-product-category: Создать новую категорию продукта
+      product-category-created-success: Новая категория продукта создана.
+      import-products-via-spreadsheets: Импорт продуктов через таблицы
+      start-upload: Начать загрузку
+      warning-no-file-upload: Нет файлов в очереди для загрузки!
+      products-success-message: Успешно импортировано {resultsLength} продуктов...
+      delete-product: Вы уверены, что хотите удалить этот продукт?
+      body-warning: Внимание! После удаления этот продукт станет недоступен.
+      aside-scroller:
+        title: Категории продуктов
+        custom-top-item-text: Все продукты
+      import-products-success-message: Успешно импортировано {resultsLength} продуктов...
+      edit:
+        title: Продукт не сохранён!
+        body: Вы потеряете все несохранённые изменения, вы уверены, что хотите отменить?
+        changes-saved: Изменения сохранены!
+      new:
+        new-product-created-success: Новый продукт успешно создан!
+        warning-only-select-an-image-file-to-be-primary: Вы можете выбрать в качестве
+          основного только файл изображения!
+        made-the-primary-success-image: '{fileName} установлен(а) как основное изображение.'
+        title: Продукт не сохранён!
+        body: Возврат назад отменит создание продукта, если вы продолжите, все поля
+          ввода будут очищены!
+        select-addon-categories: Выберите категории дополнений
+        add-new-product-variant: Добавить новый вариант продукта
+        edit-product-variant: Редактировать вариант продукта
+        untitled-field: Без названия
+      category:
+        category: категория
+        title: Продукт не сохранён!
+        body: Внимание! Удаление этой категории также удалит все продукты, относящиеся
+          к ней.
+        edit-category: Редактировать категорию
+        save-changes: Сохранить изменения
+        category-changes-saved-success: Изменения категории сохранены.
+        delete-product: Вы уверены, что хотите удалить этот продукт?
+        body-warning: Внимание! После удаления этот продукт станет недоступен.
+  settings:
+    api:
+      api-settings: Настройки API
+      access-key-for-storefront-api-integrations: Ключ доступа для API витрины и интеграций.
+      store-key: Ключ магазина
+      store-key-help-text: Это ваш ключ магазина, используйте его для активации приложений
+        и интеграций для вашей витрины.
+    gateways:
+      geteway-settings: Настройки шлюза
+      add-or-manage-your-paymeny-gateway-settings-here: Добавьте или управляйте настройками
+        платежного шлюза здесь.
+      create-new-gateway: Создать новый шлюз
+      gateway-name: Название шлюза
+      gateway-help-text: Дайте вашему платежному шлюзу имя, это будет актуально только
+        внутри системы
+      gateway-code: Код шлюза
+      gateway-code-help-text: Идентификационный код, используемый для идентификации
+        шлюза в SDK
+      callback-url: URL обратного вызова
+      callback-url-help-text: URL обратного вызова, если применимо
+      return-url: URL возврата
+      return-url-help-text: URL возврата, если применимо
+      this-is-a-sandbox-gateway: Это тестовый шлюз
+      delete-payment-gateway: Удалить платежный шлюз
+      create-new-payment-gateway: Создать новый платежный шлюз
+      save-gateway: Сохранить шлюз
+      edit-payment-gateway: Редактировать платежный шлюз
+      save-changes: Сохранить изменения
+      title-remove: Вы уверены, что хотите удалить этот шлюз?
+      application-website-utilizing-gateway: Все приложения и сайты, использующие
+        этот шлюз в конфигурации, могут быть нарушены, если шлюз не будет заменён
+        заранее
+    index:
+      general-settings-header: Общие настройки
+      general-settings-message: Укажите общие настройки для вашего магазина.
+      name-placeholder: Название магазина
+      name-help-text: Название вашего магазина.
+      description-placeholder: Описание магазина
+      description-help-text: Дайте краткое описание вашего магазина, чтобы пользователи
+        знали, что вы продаёте.
+      tags-placeholder: Добавить теги
+      contact-social: Контакты и социальные сети
+      website-help-text: URL вашего бизнес-сайта.
+      facebook-placeholder: ID Facebook
+      facebook-help-text: ID вашей бизнес-страницы в Facebook.
+      instagram-placeholder: Имя пользователя Instagram
+      instagram-help-text: Имя пользователя вашего бизнеса в Instagram.
+      twitter-placeholder: Имя пользователя Twitter
+      twitter-help-text: Имя пользователя вашего бизнеса в Twitter.
+      logo-backdrop: Логотип и фон
+      logo-help-text: Логотип вашего магазина.
+      upload-new-logo: Загрузить новый логотип
+      backdrop-help-text: Дополнительный баннер или фоновое изображение для вашего
+        магазина.
+      upload-new-backdrop: Загрузить новый фон
+      images-videos: Изображения и видео
+      drop-to-upload: Перетащите для загрузки
+      ready-to-upload: готово к загрузке.
+      upload-image-video: Загрузить изображения и видео
+      drag-and-drop-image: Перетащите файлы изображений и видео в эту область
+      upload-queue: Очередь загрузки
+      alerted-for-certain-event: Настройте, кто должен получать уведомления о определённых
+        событиях.
+      new-order-alert: Уведомление о новом заказе
+      alert-placeholder: Выберите пользователей для уведомления о новом заказе
+      enable-tax: Включить налог
+      tax-percentage: Процент налога
+      tax-percentage-help-text: Процент налога с продаж, применяемый к заказам.
+      auto-accept-incoming-order: Автоматически принимать входящие заказы
+      auto-dispatch-order: Автоматически отправлять заказы
+      require-proof-of-delivery: Требовать подтверждение доставки
+      proof-of-delivery-method: Метод подтверждения доставки
+      enable-cash-on-delivery: Включить оплату при доставке
+      enable-order-pickup: Включить самовывоз заказа
+      enable-tips: Включить чаевые
+      enable-delivery-tips: Включить чаевые для доставки
+      enable-integrated-vendors: Включить интегрированных поставщиков
+      save-changes: Сохранить изменения
+    locations:
+      new-store-location: Новое местоположение магазина
+      add-new-location: Добавить новое местоположение
+      edit-store-location: Редактировать местоположение магазина
+      save-changes: Сохранить изменения
+      remove-this-store-location: Вы уверены, что хотите удалить это местоположение
+        магазина?
+      solely-accosciated-location: Все товары, которые связаны только с этим местоположением,
+        больше не будут доступны.
+      new-store-hour: Добавить новые часы работы магазина для {day}
+      add-hours: Добавить часы
+      store-hour-added: Новые часы работы магазина добавлены для {day}
+      remove-these-hour: Вы уверены, что хотите удалить эти часы?
+      update-schedule-location: При удалении этих часов работы ваш магазин может стать
+        неактивным в соответствии с обновленным расписанием для этого местоположения.
+      location-setting: Настройки местоположения
+      manage-store: Управляйте рабочими местоположениями и часами вашего магазина
+      text-location: Создать новое местоположение
+      store-hour: Управление часами работы магазина
+    notification:
+      create-new-notification-channel: Создать новый канал уведомлений
+      create-notification-channel: Создать канал уведомлений
+      edit-notification-channel: Редактировать канал уведомлений
+      save-changes: Сохранить изменения
+      new-notification-channel-added: Новый канал уведомлений добавлен
+      remove-this-notification-channel: Вы уверены, что хотите удалить этот канал
+        уведомлений?
+      application-websites-utillizing-channel: Все приложения и сайты, использующие
+        этот канал в настройках, могут быть нарушены, если канал не будет заменён
+        заранее
+      notification-settings: Настройки уведомлений
+      notification-storefront: Настройте каналы уведомлений для вашего витрины, каждый
+        канал уведомлений может иметь свои собственные правила и опции.
+      new-channel: Новый канал
+  service:
+    storefront:
+      new-incoming-order: У вас новый входящий заказ!
+      accept-order: Принять заказ
+      decline-order: Отклонить заказ
+      create-first-storefront: Создайте вашу первую витрину
+      storefront-has-been-create-success: Ваша новая витрина была создана!
+      create-new-storefront: Создать новую витрину
+      storefront-create-success: Ваша новая витрина была создана!
+  application:
+    launch-app: Запустить приложение

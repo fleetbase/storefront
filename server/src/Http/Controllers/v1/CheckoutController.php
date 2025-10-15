@@ -901,13 +901,22 @@ class CheckoutController extends Controller
             ...$transactionDetails,
         ]);
 
+        // Create order input here
+        $orderInput = [];
+
         // if there is a food truck include it in the order meta
         if ($foodTruck) {
             $orderMeta['food_truck_id'] = $foodTruck->public_id;
+            // assign the driver to the food truck driver
+            $driverAssigned = $foodTruck->getDriverAssigned();
+            if ($driverAssigned) {
+                $orderInput['driver_assigned_uuid'] = $driverAssigned->uuid;
+            }
         }
 
         // initialize order creation input
         $orderInput = [
+            ...$orderInput,
             'company_uuid'      => $store->company_uuid ?? session('company'),
             'payload_uuid'      => $payload->uuid,
             'customer_uuid'     => $customer->uuid,
@@ -932,6 +941,9 @@ class CheckoutController extends Controller
 
         // create order
         $order = Order::create($orderInput);
+
+        // notify driver if assigned
+        $order->notifyDriverAssigned();
 
         // notify order creation
         Storefront::alertNewOrder($order);

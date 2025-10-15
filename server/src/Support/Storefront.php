@@ -10,6 +10,7 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
+use Fleetbase\Storefront\Models\NotificationChannel;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
@@ -602,7 +603,7 @@ class Storefront
             $order->setStatus($activity->code);
             $order->insertActivity($activity, $order->getLastLocation());
         } catch (\Exception $e) {
-            Log::debug('[Storefront] was able to accept an order.', ['order' => $order, 'activity' => $activity]);
+            Log::debug('[Storefront] was unable to accept an order.', ['order' => $order, 'activity' => $activity]);
 
             return response()->error('Unable to accept order.');
         }
@@ -644,5 +645,88 @@ class Storefront
         $order->dispatchWithActivity();
 
         return $order;
+    }
+
+    /**
+     * Determine whether the given Store or Network has a configured notification channel.
+     *
+     * Accepts either a model instance (Store|Network) or an identifier string.
+     * When a string is provided, this method attempts to resolve it in the following order:
+     *   1) UUID        → `where('uuid', $id)`
+     *   2) public_id   → `where('public_id', $id)` (if your models use a public_id column)
+     *
+     * If resolution fails, the method returns false.
+     *
+     * @param Store|\Fleetbase\FleetOps\Models\Network|string|null $subject
+     *                                                                      Store/Network model instance or identifier (uuid/public_id)
+     * @param string                                               $channel Channel scheme/key (e.g., "email", "sms", "fcm").
+     *
+     * @return bool true if a NotificationChannel exists for the subject and scheme; otherwise false
+     *
+     * @example
+     *  YourClass::hasNotificationChannelConfigures($store, 'email');
+     *  YourClass::hasNotificationChannelConfigures($networkUuid, 'fcm');
+     *  YourClass::hasNotificationChannelConfigures('STO-12345', 'sms'); // public_id example
+     *
+     * @note The method name appears to have a typo; consider renaming to:
+     *       hasNotificationChannelConfigured() and keeping this as a BC alias.
+     */
+    public static function hasNotificationChannelConfigured(Store|Network|string|null $subject, string $channel): bool
+    {
+        $model = self::resolveSubjectToModel($subject);
+
+        if (!$model) {
+            return false;
+        }
+
+        return NotificationChannel::query()
+            ->where('owner_uuid', $model->uuid)
+            ->where('scheme', $channel)
+            ->exists();
+    }
+
+    /**
+     * Resolve the provided subject into a Store or Network model.
+     *
+     * Attempts resolution by uuid first, then by public_id (if present).
+     * Returns null if no matching model can be found.
+     *
+     * @param Store|\Fleetbase\FleetOps\Models\Network|string|null $subject
+     *
+     * @return Store|\Fleetbase\FleetOps\Models\Network|null
+     */
+    protected static function resolveSubjectToModel(Store|Network|string|null $subject): Store|Network|null
+    {
+        if ($subject instanceof Store || $subject instanceof Network) {
+            return $subject;
+        }
+
+        if (!is_string($subject) || $subject === '') {
+            return null;
+        }
+
+        // Try UUID
+        if (Str::isUuid($subject)) {
+            if ($found = Store::query()->where('uuid', $subject)->first()) {
+                return $found;
+            }
+            if ($found = Network::query()->where('uuid', $subject)->first()) {
+                return $found;
+            }
+        }
+
+        // Try public_id (optional; remove if you don't use it)
+        if (property_exists(Store::class, 'public_id') || Schema::hasColumn((new Store())->getTable(), 'public_id')) {
+            if ($found = Store::query()->where('public_id', $subject)->first()) {
+                return $found;
+            }
+        }
+        if (property_exists(Network::class, 'public_id') || Schema::hasColumn((new Network())->getTable(), 'public_id')) {
+            if ($found = Network::query()->where('public_id', $subject)->first()) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 }
