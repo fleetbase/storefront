@@ -31,6 +31,7 @@ class Product extends FleetbaseResource
             'primary_image_uuid' => $this->when(Http::isInternalRequest(), $this->primary_image_uuid),
             'name'               => $this->name,
             'description'        => $this->description,
+            'category'           => $this->when(Http::isInternalRequest(), $this->category),
             'sku'                => $this->sku,
             'primary_image_url'  => $this->primary_image_url,
             'price'              => $this->price,

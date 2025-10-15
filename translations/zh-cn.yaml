@@ -1,0 +1,659 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: 地址
+    alerts: 警报
+    amount: 金额
+    api: API
+    back: 返回
+    backdrop: 背景
+    building: 建筑
+    bulk-action: 批量操作
+    cash: 现金
+    city: 城市
+    config: 配置
+    coordinates: 坐标
+    country: 国家
+    created: 创建于
+    currency: 货币
+    customer: 客户
+    customers: 客户
+    category: 类别
+    delivery-tip: 配送小费
+    delivery: 配送
+    details: 详情
+    description: 描述
+    driver: 司机
+    dropoff: 送达
+    earning: 收入
+    email: 电子邮件
+    export: 导出
+    id: ID
+    internal-id: 内部ID
+    import: 导入
+    invalid: 无效
+    loading: 加载中...
+    logo: 标志
+    name: 名称
+    neighborhood: 社区
+    online: 在线
+    orders: 订单
+    phone: 电话
+    photos: 照片
+    pickup: 取货
+    product: 产品
+    remove: 移除
+    state: 州/省
+    status: 状态
+    store: 商店
+    street-1: 街道1
+    storefront: 店面
+    tag: 标签
+    tip: 小费
+    title: 标题
+    total: 总计
+    type: 类型
+    upload-new: 上传新文件
+    uploading: 上传中...
+    view: 查看
+    website: 网站
+    edit: 编辑
+    delete: 删除
+    network: 网络
+    file: 文件
+    general: 通用
+    location: 位置
+    notification: 通知
+    gateways: 网关
+    settings: 设置
+    new: 新建
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: 餐车
+    catalog: 目录
+    catalogs: 目录
+  sidebar:
+    storefront: 店面
+    dashboard: 仪表盘
+    products: 产品
+    catalogs: 目录
+    food-trucks: 餐车
+    customers: 客户
+    orders: 订单
+    networks: 网络
+    settings: 设置
+    launch-app: 启动应用
+  component:
+    storefront-order-summary:
+      order-summary-title: 店面订单摘要
+    modals:
+      add-store-hours:
+        start-time: 开始时间
+        operation-start: 可用/营业开始时间
+        end-time: 结束时间
+        operation-end: 可用/营业结束时间
+      assign-driver:
+        message-driver: 选择一个司机分配此订单。
+        name-driver: 选择司机
+        placeholder-driver: 选择要分配的司机
+      create-first-store:
+        title: 欢迎使用店面！
+        message: 店面允许您快速设置一个由Fleetbase驱动的无头动态按需商店。
+        submit-message: 提交以下表单以创建您的第一个店面。
+        storefront-name: 店面名称
+        enter-name: 输入您的店铺名称
+        description: 店面描述
+        brief-description: 简要描述您的店铺所售商品类型
+        currency: 店面货币
+        select-currency: 选择您的店面默认货币
+      create-getaway:
+        getaway: 网关类型
+        getaway-text: 选择网关类型
+        getaway-name: 网关名称
+        name-text: 为您的支付网关命名，此名称仅在内部使用
+        getaway-code: 网关代码
+        code-text: 用于在SDK中识别网关的标识代码
+        callback-url: 回调URL
+        callback-text: 如适用，填写回调URL
+        return-url: 返回URL
+        return-text: 如适用，填写返回URL
+        sandbox-getaway: 这是一个沙盒网关
+      create-network-category:
+        parent-category: 父类别
+        select-parent: 选择一个父类别（如有）
+        category-name: 类别名称
+        name-text: 输入类别名称
+        description: 类别描述
+        description-text: 为您的网络类别提供简短描述
+        category-icon: 类别图标类型
+      create-network:
+        title: 创建网络
+        message-line1: Storefront 允许您快速创建市场，支持多个店面在同一平台下销售。
+        message-line2: 创建网络时，您定义规则，并可通过邀请扩展您的网络。
+        message-line3: 请在下方开始创建网络。
+        name: 网络名称
+        name-text: 输入您的店铺名称
+        description: 网络描述
+        description-text: 简要描述您的店铺及销售的商品类型
+        currency: 网络货币
+        currency-text: 选择您的店铺默认货币
+      create-new-variant:
+        name: 变体名称
+        name-text: 为您的产品变体命名
+        description: 变体描述
+        description-text: 变体的简短描述
+        checkbox-1: 允许用户一次选择多个变体选项
+        checkbox-2: 此产品变体选择为必选项
+      create-notification-channel:
+        title: 渠道
+        title-text: 选择通知渠道
+        name: 渠道名称
+        name-text: 为您的通知渠道命名，此名称仅在内部使用
+        key: 渠道密钥
+        key-text: 这是您的通知渠道密钥，使用此密钥通过SDK配置指定哪些应用应使用该通知渠道。
+      create-product-category:
+        name: 类别名称
+        name-text: 输入类别名称
+        description: 类别描述
+        description-text: 为您的产品类别提供简短描述
+        icon: 类别图标
+        uploading-new: 上传新的类别图标
+      create-store:
+        name: 店铺名称
+        name-text: 输入您的店铺名称
+        description: 店铺描述
+        description-text: 简要描述您的店铺及销售的商品类型
+        currency: 店面货币
+        currency-text: 选择您的店面默认货币
+      import-products:
+        uploading-message: 正在处理导入...
+        drop-upload: 拖放上传
+        ready-upload: 准备上传。
+        upload-spreadsheets: 上传电子表格
+        drag-drop: 将电子表格文件拖放到此区域
+        select-spreadsheets: 或选择电子表格上传。
+        upload-queue: 上传队列
+        optionally-select-category: 可选择导入产品的类别
+        select-category: 选择类别
+      incoming-order:
+        assigned: 司机已分配
+        not-assigned: 未分配司机
+        no-phone: 无电话
+        change-driver: 更换司机
+        assign-driver: 分配司机
+        pickup-order: 客户必须从以下地点自取订单
+        address: 客户地址
+        tracking: 追踪
+        summary: 订单摘要
+        subtotal: 小计
+        fee: 配送费
+        tip: 小费
+        delivery-tip: 配送小费
+      manage-addons:
+        title: 新类别
+        delete: 删除类别
+        new-addon: 新附加项
+        addon-name: 附加项名称
+        description: 附加项描述
+        delete-this-addon-category-assosiated-will-lost: 您确定要删除此附加项类别吗？所有相关附加项将被删除！
+        untitled-addon-category: 未命名附加项类别
+      order-ready-assign-driver:
+        driver-dispatch: 您即将将此订单设置为准备好并派送，请使用下方下拉菜单选择要派送的司机。<br><br>或者，您也可以选择临时派送订单，这将向所有附近司机发送订单以供接受。
+        adhoc-dispatch-nearby-drivers: 临时派送给附近司机
+        select-driver: 选择司机
+        select-driver-to-assign: 选择要分配的司机
+      share-network:
+        invite-member: 邀请成员加入您的网络
+        email-below: 获取可分享的邀请链接或通过下方电子邮件发送单独邀请。
+        invite-network: 输入您想邀请加入网络的人员或组织的电子邮件。
+        add-email: 添加电子邮件
+        get-link: 获取链接
+        enable-shareable-link: 启用可分享链接
+        anyone-with-this-link-able-to-join-your-network: 拥有此链接的任何人都可以加入您的网络
+      store-form:
+        storefront-name: 店面名称
+        the-name-of-your-store: 您的店铺名称。
+        storefront-description-placeholder: 店面描述
+        give-your-store-brief-description: 简要描述您的店铺，让用户了解您销售的商品。
+        add-tags-placeholder: 添加标签
+      store-location-form:
+        street-2: 街道2
+        security-access-code: 安全访问码
+        postal-code: 邮政编码
+    widget:
+      key-metrics:
+        title: 店面指标
+      customers:
+        widget-title: 最近客户
+        phone: 电话
+        email: 电子邮件
+      orders:
+        widget-title: 最近订单
+        id-column: 订单编号
+        cancel-order: 取消订单
+        accept-order: 接受订单！
+        mark-as-ready: 标记为准备好！
+        dispatch: 派送
+        mark-as-preparing: 标记为准备中
+        mark-as-completed: 标记为已完成
+        more-details: 更多详情
+        customer: 客户
+        driver: 司机
+        subtotal: 小计
+        delivery-fee: 配送费
+        delivery-tip: 配送小费
+        tip: 小费
+        total: 总计
+        change-driver: 更换司机
+        assign-driver: 分配司机
+        customer-pickup: 客户自取
+        pickup-order: 取货订单
+        mark-as-ready-modal-pickup-title: 标记订单为可取货？
+        mark-as-ready-modal-pickup-body: 将订单标记为准备好将通知客户订单已可取货！
+        mark-as-ready-modal-pickup-accept-button-text: 准备取货！
+        mark-as-ready-modal-not-adhoc-title: 分配司机并派送订单
+        mark-as-ready-modal-not-adhoc-accept-button-text: 分配并派送！
+        mark-as-ready-modal-title: 您想将订单标记为准备好吗？
+        mark-as-ready-modal-body: 将订单标记为准备好将派送订单给附近的司机，只有当订单可以被取走时才标记为准备好。
+        mark-as-ready-modal-accept-button-text: 派送！
+        mark-as-completed-modal-title: 您确定要将订单标记为已完成吗？
+        mark-as-completed-modal-body: 将订单标记为已完成表示确认客户已取走订单且订单已完成。
+        mark-as-completed-accept-button-text: 订单已完成！
+        mark-as-preparing-modal-title: 您确定要将订单标记为准备中吗？
+        mark-as-preparing-modal-body: 将订单标记为准备中表示确认订单正在准备中。
+        mark-as-preparing-accept-button-text: 订单准备中
+        assign-driver-modal-title: 分配司机
+        assign-driver-modal-accept-button-text: 分配司机
+      storefront-metrics:
+        last-day: 最近30天
+    file-record:
+      delete-this-file: 您确定要删除此文件吗？
+      delete-this-file-you-will-unable-recover: 删除此文件后将无法恢复。
+    network-category-picker:
+      no-subcategory: 无子类别
+      no-categories: 该网络无类别
+      create-category: 创建新类别
+    schedule-manager:
+      add-hours: 添加时间
+      add-new-hours-for-day: 为{day}添加新时间
+      new-hours-added-for-day: 为{day}添加了新时间
+      you-wish-to-remove-these-hour: 您确定要删除这些时间吗？
+      by-removing-these-operation: 通过移除这些运营/可用时间，您的商店或产品可能会根据更新的时间表变为非活动或不可用...
+    store-selector:
+      no-stores: 没有可选择的商店
+      create-storefront: 创建新的
+  home:
+    title: 店面仪表盘
+  customers:
+    index:
+      internal-id: 内部ID
+      create-at: 创建时间
+      update-at: 更新时间
+      vendor-action: 供应商操作
+      view-customer-details: 查看客户详情
+      edit-customer: 编辑客户
+      success-message: 您的新店面网络已创建！
+      delete-customer: 删除客户
+    customer-panel:
+      details:
+        web-url: 网站URL
+      edit-button: 编辑客户
+      cancel-edit-button: 取消编辑客户
+      cancel-new-button: 取消新客户
+  networks:
+    index:
+      network-option: 网络选项
+      manage-network: 管理网络
+      send-invite: 发送邀请
+      delete-network: 删除网络
+      create-new-network: 创建新网络
+      success-message: 您的新店面网络已创建！
+      delete-this-network-all-assigned-stores-customer-order: 您确定要删除此网络（{networkName}）吗？所有分配的商店、客户、订单将无法访问。
+      network:
+        manage-network: 管理网络
+        settings: 设置
+        customers: 客户
+        orders: 订单
+        Network-changes-not-save: 网络更改未保存！
+        going-back-will-rollback-all-unsaved-changes: 返回将回滚所有未保存的更改，您确定要继续吗？
+        index:
+          change-network-saved: 网络更改已保存。
+          create-new-payment-gateway: 创建新的支付网关
+          save-gateway: 保存网关
+          new-gateway-add-network: 新网关已添加到网络
+          payment-gateway-changes-success: 支付网关更改已保存！
+          create-new-notification-channel: 创建新的通知渠道
+          create-notification-channel: 创建通知渠道
+          notification-channel-add-network: 新通知渠道已添加到网络！
+          notification-channel-changes-save: 通知渠道更改已保存！
+          general-network-settings-title: 通用网络设置
+          general-network-settings-subtitle: 为您的网络或市场提供通用设置。
+          general-network-settings-form:
+            save-changes-button-text: 保存更改
+            name: 名称
+            name-placeholder: 店面名称
+            name-help-text: 您的网络或市场的名称。
+            description: 描述
+            description-placeholder: 店面描述
+            description-help-text: 为您的商店提供简短描述，让用户了解您的网络内容。
+            currency: 货币
+            contact-social-panel:
+              panel-title: 联系方式与社交
+              phone: 电话
+              email: 电子邮件
+              email-help-text: 您的商务电子邮件。
+              website: 网站
+              website-help-text: 您的商务网站网址。
+              facebook: 脸书
+              facebook-help-text: 您的商务脸书页面ID。
+              instagram: Instagram
+              instagram-help-text: 您的商务Instagram用户名。
+              twitter: 推特
+              twitter-help-text: 您的商务推特用户名。
+            logo-backdrop-panel:
+              panel-title: 标志和背景
+              logo-label: 标志
+              logo-help-text: 您的商店标志。
+              upload-logo-button-text: 上传新标志
+              backdrop-label: 背景
+              backdrop-help-text: 您商店的可选横幅或背景图片。
+              upload-backdrop-button-text: 上传新背景
+            alert-panel:
+              panel-title: 提醒
+              panel-description: 配置应对某些事件接收提醒的人员
+              new-order-alert-label: 新订单提醒
+              new-order-alert-placeholder: 选择接收新订单提醒的用户
+            config-switches:
+              online: 在线
+              enable-tax: 启用税费
+              tax-percentage-input-label: 税率百分比
+              tax-percentage-input-help-text: 应用于订单的销售税百分比。
+              auto-accept-incoming-orders: 自动接受来单
+              auto-dispatch-orders: 自动派单
+              require-proof-of-delivery: 要求交付证明
+              proof-of-delivery-method-label: 交付证明方式
+              enable-cash-on-delivery: 启用货到付款
+              enable-order-pickup: 启用订单自取
+              enable-tips: 启用小费
+              enable-delivery-tips: 启用配送小费
+              enable-multi-cart-checkout: 启用多购物车结账
+              enable-user-reviews: 启用用户评价
+          api-panel:
+            panel-title: API
+            panel-header: API设置
+            panel-description: Storefront API和集成的访问密钥
+            network-key-label: 网络密钥
+            network-key-help-text: 这是您的网络密钥，用于启用您的网络的应用和集成。
+          payment-gateways-panel:
+            panel-title: 网关设置
+            panel-description: 在这里添加或管理您的支付网关设置。
+            new-gateway-button-text: 创建新网关
+            gateway-form:
+              name: 网关名称
+              name-help-text: 为您的支付网关命名，仅供内部使用
+              code: 网关代码
+              code-help-text: 用于向SDK识别网关的标识代码
+              callback-url: 回调URL
+              callback-url-help-text: 如适用，填写回调URL
+              return-url: 返回URL
+              return-url-help-text: 返回 URL（如适用）
+              sandbox-toggle-label: 这是一个沙盒网关
+              config-header-label: 配置
+              delete-gateway-button-text: 删除支付网关
+          notification-channels-panel:
+            panel-title: 通知渠道
+            panel-header: 通知设置
+            panel-description: 为您的店面配置通知渠道，每个通知渠道还可以有自己的规则和选项。
+            new-channel-button-text: 创建新渠道
+        stores:
+          store: 店铺
+          add-stores-button-text: 添加店铺
+          invite-stores-button-text: 邀请店铺
+          created-at: 创建时间
+          view-store-details: 查看店铺详情
+          edit-store: 编辑店铺
+          assign-category: 分配类别
+          remove-category: 移除类别
+          remove-store-from-network: 从网络中移除店铺
+          delete-network-category: 删除网络类别？
+          deleting-category-move-all-stores-inside-on-top-level: 删除此类别将把所有内部店铺移至顶层，您确定要删除此类别吗？
+          add-store-to-category: 将店铺添加到类别
+          save-change: 保存更改
+          add-new-network-category: 添加新的网络类别
+          create-new-category: 创建新类别
+          new-category-created: 新类别已创建。
+          network-category-create: 新的网络类别已创建。
+          edit-category: 编辑类别（{categoryName}）
+          add-stores-to-network: 将店铺添加到网络
+          network-stores-update: 网络店铺已更新。
+          remove-this-store: 是否从此网络（{networkName}）中移除此店铺（{storeName}）？
+          done: 完成
+          longer-findable-by-this-network: 您确定要从此网络中移除此店铺吗？它将不再能被此网络找到。
+          viewing-storefront: 正在查看 {storeName} 店面
+          editing-storefront: 正在编辑 {storeName} 店面
+          send-invitations: 发送邀请
+          invitation-sent-recipients: 邀请已发送给收件人！
+          invalid-emails-provided-error: 提供了无效的电子邮件！
+          remove-store-category: 移除店铺类别
+          remove-store-category-body: 您即将将 {storeName} 从类别 {categoryName} 中移除，是否继续？
+  orders:
+    index:
+      internal-id: 内部 ID
+      customer: 客户
+      select-order-customer: 选择订单客户
+      select-order-pickup-location: 选择订单取货地点
+      select-order-dropoff-location: 选择订单送达地点
+      scheduled-at: 计划时间
+      transaction-total: 交易总额
+      total: 总计
+      tracking-number: 追踪号码
+      driver-assigned: 已分配司机
+      select-driver-for-order: 为订单选择司机
+      created-at: 创建时间
+      updated-at: 更新时间
+      created-by: 创建者
+      updated-by: 更新者
+      select-user: 选择用户
+      view-order: 查看订单
+      cancel-order: 取消订单
+      delete-order: 删除订单
+      view:
+        route-panel-title: 路线
+        comments-title: 评论
+        notes-title: 备注
+        dispatch: 派遣
+        unassign-driver: 取消分配司机
+        assign-driver: 分配司机
+        cancel-order: 取消订单
+        delete-order: 删除订单
+        activity: 活动
+        unable-load-order-activity: 无法加载订单活动
+        ad-hoc: 临时
+        customer: 客户
+        facilitator: 协调员
+        driver-assigned: 司机已分配
+        change-driver: 更换司机
+        tracking-number: 追踪号码
+        date-scheduled: 计划日期
+        date-dispatched: 派遣日期
+        date-started: 开始日期
+        order-details-title: 订单详情
+        route: 路线
+        pickup: 取货
+        dropoff: 送达
+        return: 返回
+        order-summary: 订单摘要
+        subtotal: 小计
+        delivery-fee: 配送费
+        tip: 小费
+        delivery-tip: 配送小费
+        total: 总计
+        payload: 有效载荷
+        items-drop: 物品投放于
+        tracking: 追踪
+        view-activity: 查看活动
+        order-metadata: 订单元数据
+        unassign-title: 您确定要将司机（{driverName}）从此订单中取消分配吗？
+        unassign-body: 一旦司机被取消分配，该司机将无法访问此订单的详细信息。
+        unassign-success: 司机已从此订单中取消分配。
+        route-error: 路线优化失败，请检查路线输入并重试。
+        invalid-warning: 无效的自定义状态输入。
+        change-order: 更改订单司机
+        assign-order: 为订单分配司机
+        assign-success: '{orderId} 分配的司机已更新。'
+        order-title: 订单标签
+        waypoint-title: 途经点标签
+        proof-of-delivery: 交货证明
+        notes-placeholder: 在此输入订单备注....
+        save-order-note: 保存订单备注
+        order-notes-updated: 订单备注已更新。
+  products:
+    index:
+      manage-addons: 管理插件
+      manage-addons-dialog:
+        manage-addons-title: 管理产品插件类别和选项
+        manage-addons-accept-button: 保存更改
+      done: 完成
+      create-new-product-category: 创建新产品类别
+      product-category-created-success: 新产品类别已创建。
+      import-products-via-spreadsheets: 通过电子表格导入产品
+      start-upload: 开始上传
+      warning-no-file-upload: 队列中没有要上传的文件！
+      products-success-message: 成功导入了 {resultsLength} 个产品...
+      delete-product: 您确定要删除此产品吗？
+      body-warning: 警告！一旦此产品被删除，将无法再访问。
+      aside-scroller:
+        title: 产品类别
+        custom-top-item-text: 所有产品
+      import-products-success-message: 成功导入了 {resultsLength} 个产品...
+      edit:
+        title: 产品未保存！
+        body: 您将丢失所有未保存的更改，确定要取消吗？
+        changes-saved: 更改已保存！
+      new:
+        new-product-created-success: 新产品创建成功！
+        warning-only-select-an-image-file-to-be-primary: 您只能选择图像文件作为主图！
+        made-the-primary-success-image: '{fileName} 已设为主图。'
+        title: 产品未保存！
+        body: 返回将取消此产品创建，继续将清空所有输入字段！
+        select-addon-categories: 选择插件类别
+        add-new-product-variant: 添加新产品变体
+        edit-product-variant: 编辑产品变体
+        untitled-field: 无标题字段
+      category:
+        category: 类别
+        title: 产品未保存！
+        body: 警告！删除此类别将同时删除该类别下的所有产品。
+        edit-category: 编辑类别
+        save-changes: 保存更改
+        category-changes-saved-success: 类别更改已保存。
+        delete-product: 您确定要删除此产品吗？
+        body-warning: 警告！一旦此产品被删除，将无法再访问。
+  settings:
+    api:
+      api-settings: API 设置
+      access-key-for-storefront-api-integrations: Storefront API 和集成的访问密钥。
+      store-key: 商店密钥
+      store-key-help-text: 这是您的商店密钥，用于启用您的商店的应用和集成。
+    gateways:
+      geteway-settings: 网关设置
+      add-or-manage-your-paymeny-gateway-settings-here: 在此添加或管理您的支付网关设置。
+      create-new-gateway: 创建新网关
+      gateway-name: 网关名称
+      gateway-help-text: 为您的支付网关命名，此名称仅内部相关
+      gateway-code: 网关代码
+      gateway-code-help-text: 用于标识SDK中网关的标识代码
+      callback-url: 回调URL
+      callback-url-help-text: 回调URL（如适用）
+      return-url: 返回URL
+      return-url-help-text: 返回URL（如适用）
+      this-is-a-sandbox-gateway: 这是一个沙盒网关
+      delete-payment-gateway: 删除支付网关
+      create-new-payment-gateway: 创建新的支付网关
+      save-gateway: 保存网关
+      edit-payment-gateway: 编辑支付网关
+      save-changes: 保存更改
+      title-remove: 您确定要移除此网关吗？
+      application-website-utilizing-gateway: 所有在配置中使用此网关的应用程序和网站如果未提前更换网关，可能会受到影响
+    index:
+      general-settings-header: 通用设置
+      general-settings-message: 为您的店面提供通用设置。
+      name-placeholder: 店面名称
+      name-help-text: 您的商店名称。
+      description-placeholder: 店面描述
+      description-help-text: 为您的商店提供简短描述，让用户了解您销售的商品。
+      tags-placeholder: 添加标签
+      contact-social: 联系方式与社交
+      website-help-text: 您的企业网站URL。
+      facebook-placeholder: Facebook ID
+      facebook-help-text: 您的企业Facebook页面ID。
+      instagram-placeholder: Instagram用户名
+      instagram-help-text: 您的企业Instagram用户名。
+      twitter-placeholder: Twitter用户名
+      twitter-help-text: 您的企业Twitter用户名。
+      logo-backdrop: 标志与背景
+      logo-help-text: 您的商店标志。
+      upload-new-logo: 上传新标志
+      backdrop-help-text: 可选的横幅或背景图片。
+      upload-new-backdrop: 上传新背景
+      images-videos: 图片与视频
+      drop-to-upload: 拖拽上传
+      ready-to-upload: 准备上传。
+      upload-image-video: 上传图片与视频
+      drag-and-drop-image: 将图片和视频文件拖放到此区域
+      upload-queue: 上传队列
+      alerted-for-certain-event: 配置在特定事件时应通知的人员。
+      new-order-alert: 新订单提醒
+      alert-placeholder: 选择接收新订单提醒的用户
+      enable-tax: 启用税费
+      tax-percentage: 税率百分比
+      tax-percentage-help-text: 应用于订单的销售税百分比。
+      auto-accept-incoming-order: 自动接受新订单
+      auto-dispatch-order: 自动派单
+      require-proof-of-delivery: 要求交付证明
+      proof-of-delivery-method: 交付证明方式
+      enable-cash-on-delivery: 启用货到付款
+      enable-order-pickup: 启用订单自提
+      enable-tips: 启用小费
+      enable-delivery-tips: 启用配送小费
+      enable-integrated-vendors: 启用集成供应商
+      save-changes: 保存更改
+    locations:
+      new-store-location: 新店铺位置
+      add-new-location: 添加新位置
+      edit-store-location: 编辑店铺位置
+      save-changes: 保存更改
+      remove-this-store-location: 您确定要删除此店铺位置吗？
+      solely-accosciated-location: 所有仅与此位置关联的产品将不再可用。
+      new-store-hour: 为{day}添加新的营业时间
+      add-hours: 添加营业时间
+      store-hour-added: 已为{day}添加新的营业时间
+      remove-these-hour: 您确定要删除这些营业时间吗？
+      update-schedule-location: 通过删除这些营业时间，根据此位置的更新计划，您的店铺可能会变为非活动状态。
+      location-setting: 位置设置
+      manage-store: 管理您的店铺运营位置和营业时间
+      text-location: 创建新位置
+      store-hour: 管理营业时间
+    notification:
+      create-new-notification-channel: 创建新的通知渠道
+      create-notification-channel: 创建通知渠道
+      edit-notification-channel: 编辑通知渠道
+      save-changes: 保存更改
+      new-notification-channel-added: 已添加新的通知渠道
+      remove-this-notification-channel: 您确定要删除此通知渠道吗？
+      application-websites-utillizing-channel: 所有在配置中使用此渠道的应用程序和网站，如果未提前替换渠道，可能会受到影响
+      notification-settings: 通知设置
+      notification-storefront: 为您的店铺配置通知渠道，每个通知渠道还可以有自己的规则和选项。
+      new-channel: 新渠道
+  service:
+    storefront:
+      new-incoming-order: 您有一笔新的订单！
+      accept-order: 接受订单
+      decline-order: 拒绝订单
+      create-first-storefront: 创建您的第一个店铺
+      storefront-has-been-create-success: 您的新店铺已创建！
+      create-new-storefront: 创建新店铺
+      storefront-create-success: 您的新店铺已创建！
+  application:
+    launch-app: 启动应用

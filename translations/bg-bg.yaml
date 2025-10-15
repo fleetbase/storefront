@@ -1,0 +1,734 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: Адрес
+    alerts: Известия
+    amount: Сума
+    api: API
+    back: Назад
+    backdrop: фон
+    building: Сграда
+    bulk-action: Масово действие
+    cash: В брой
+    city: Град
+    config: Конфигурация
+    coordinates: Координати
+    country: Държава
+    created: Създадено
+    currency: Валута
+    customer: Клиент
+    customers: Клиенти
+    category: Категория
+    delivery-tip: Бакшиш за доставка
+    delivery: Доставка
+    details: Подробности
+    description: Описание
+    driver: Шофьор
+    dropoff: Качване
+    earning: Печалби
+    email: Имейл
+    export: Експорт
+    id: ID
+    internal-id: Вътрешен ID
+    import: Импорт
+    invalid: Невалидно
+    loading: Зареждане...
+    logo: лого
+    name: Име
+    neighborhood: Квартал
+    online: Онлайн
+    orders: Поръчки
+    phone: Телефон
+    photos: Снимки
+    pickup: Вземане
+    product: Продукти
+    remove: Премахни
+    state: Щат
+    status: Статус
+    store: Магазин
+    street-1: Улица 1
+    storefront: Магазин
+    tag: Етикети
+    tip: Бакшиш
+    title: Заглавие
+    total: Общо
+    type: Тип
+    upload-new: Качване на нов
+    uploading: Качване...
+    view: Преглед
+    website: Уебсайт
+    edit: Редактиране
+    delete: Изтриване
+    network: Мрежи
+    file: файлове
+    general: Общи
+    location: Местоположение
+    notification: Известие
+    gateways: Портали
+    settings: Настройки
+    new: Нов
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: Фудтракове
+    catalog: Каталог
+    catalogs: Каталози
+  sidebar:
+    storefront: Магазин
+    dashboard: Табло
+    products: Продукти
+    catalogs: Каталози
+    food-trucks: Фудтракове
+    customers: Клиенти
+    orders: Поръчки
+    networks: Мрежи
+    settings: Настройки
+    launch-app: Стартиране на приложението
+  component:
+    storefront-order-summary:
+      order-summary-title: Обобщение на поръчката в магазина
+    modals:
+      add-store-hours:
+        start-time: Начален час
+        operation-start: Кога започва наличността/работното време
+        end-time: Краен час
+        operation-end: Кога приключва наличността/работното време
+      assign-driver:
+        message-driver: Изберете шофьор, който да бъде назначен за тази поръчка.
+        name-driver: Изберете шофьор
+        placeholder-driver: Изберете шофьор за назначаване
+      create-first-store:
+        title: Добре дошли в Магазина!
+        message: Магазинът ви позволява бързо да настроите безглав и динамичен магазин
+          по заявка, захранван от Fleetbase.
+        submit-message: Попълнете формата по-долу, за да създадете първия си магазин.
+        storefront-name: Име на магазина
+        enter-name: Въведете името на вашия магазин
+        description: Описание на магазина
+        brief-description: Дайте кратко описание на вида стоки, които се продават
+        currency: Валута на магазина
+        select-currency: Изберете подразбиращата се валута за вашия магазин
+      create-getaway:
+        getaway: Тип на платежния шлюз
+        getaway-text: Изберете тип на шлюза
+        getaway-name: Име на шлюза
+        name-text: Дайте име на вашия платежен шлюз, това ще е релевантно само вътрешно
+        getaway-code: Код на шлюза
+        code-text: Идентификационен код, използван за идентифициране на шлюза към
+          SDK
+        callback-url: URL за обратен повикване
+        callback-text: URL за обратен повикване, ако е приложимо
+        return-url: URL за връщане
+        return-text: URL за връщане, ако е приложимо
+        sandbox-getaway: Това е тестов шлюз
+      create-network-category:
+        parent-category: Родителска категория
+        select-parent: Изберете родителска категория, ако има такава
+        category-name: Име на категорията
+        name-text: Въведете име за категорията
+        description: Описание на категорията
+        description-text: Дайте кратко описание на вашата мрежова категория
+        category-icon: Тип икона на категорията
+      create-network:
+        title: Стартиране на мрежа
+        message-line1: Storefront ви позволява бързо да създавате пазари, позволявайки
+          множество магазини да продават под един чадър.
+        message-line2: Когато създавате мрежата, вие дефинирате правилата и можете
+          да разширите мрежата чрез покани.
+        message-line3: Започнете, като създадете мрежа по-долу.
+        name: Име на мрежата
+        name-text: Въведете името на вашия магазин
+        description: Описание на мрежата
+        description-text: Дайте на вашия магазин просто кратко описание на типовете
+          продавани неща
+        currency: Валута на мрежата
+        currency-text: Изберете подразбиращата се валута за вашия магазин
+      create-new-variant:
+        name: Име на варианта
+        name-text: Дайте име на варианта на продукта
+        description: Описание на варианта
+        description-text: Кратко описание на варианта
+        checkbox-1: Позволете на потребителя да избира няколко варианта едновременно
+        checkbox-2: Изборът на този вариант на продукта е задължителен
+      create-notification-channel:
+        title: Канал
+        title-text: Изберете канал за уведомления
+        name: Име на канала
+        name-text: Дайте име на вашия канал за уведомления, това ще е релевантно само
+          вътрешно
+        key: Ключ на канала
+        key-text: Това е ключът на вашия канал за уведомления, използвайте го, за
+          да посочите кои приложения трябва да използват този канал чрез конфигурации
+          на sdk.
+      create-product-category:
+        name: Име на категорията
+        name-text: Въведете име за категорията
+        description: Описание на категорията
+        description-text: Дайте кратко описание на вашата продуктова категория
+        icon: Икона на категорията
+        uploading-new: Качване на нова икона за категория
+      create-store:
+        name: Име на магазина
+        name-text: Въведете името на вашия магазин
+        description: Описание на магазина
+        description-text: Дайте на вашия магазин просто кратко описание на типовете
+          продавани неща
+        currency: Валута на магазина
+        currency-text: Изберете основната валута за вашия магазин
+      import-products:
+        uploading-message: Обработка на импорта...
+        drop-upload: Пуснете за качване
+        ready-upload: готов за качване.
+        upload-spreadsheets: Качване на електронни таблици
+        drag-drop: Плъзнете и пуснете файлове с електронни таблици в тази зона
+        select-spreadsheets: или изберете електронни таблици за качване.
+        upload-queue: Опашка за качване
+        optionally-select-category: По избор изберете категория, в която да импортирате
+          продукти
+        select-category: Изберете категория
+      incoming-order:
+        assigned: Назначен шофьор
+        not-assigned: Няма назначен шофьор
+        no-phone: Няма телефон
+        change-driver: Смяна на шофьора
+        assign-driver: Назначаване на шофьор
+        pickup-order: Клиентът трябва да вземе поръчката от
+        address: Адрес на клиента
+        tracking: Проследяване
+        summary: Резюме на поръчката
+        subtotal: Междинна сума
+        fee: Такса за доставка
+        tip: Бакшиш
+        delivery-tip: Бакшиш за доставка
+      manage-addons:
+        title: Нова категория
+        delete: Изтриване на категория
+        new-addon: Нов добавка
+        addon-name: Име на добавката
+        description: Описание на добавката
+        delete-this-addon-category-assosiated-will-lost: Сигурни ли сте, че искате
+          да изтриете тази категория добавки? Всички свързани добавки ще бъдат загубени!
+        untitled-addon-category: Безименна категория добавки
+      order-ready-assign-driver:
+        driver-dispatch: Вие сте на път да зададете тази поръчка като готова и да
+          я изпратите, използвайте падащото меню по-долу, за да изберете шофьор за
+          изпращане. <br><br>Или по избор можете да изберете да изпратите поръчката
+          като ад хок, което ще изпрати поръчката на всички близки шофьори за приемане.
+        adhoc-dispatch-nearby-drivers: Ад хок изпращане до близки шофьори
+        select-driver: Изберете шофьор
+        select-driver-to-assign: Изберете шофьор за назначаване
+      share-network:
+        invite-member: Поканете членове във вашата мрежа
+        email-below: Вземете споделена покана или изпратете индивидуални покани по
+          имейл по-долу.
+        invite-network: Въведете имейлите на хора или организации, на които искате
+          да изпратите покана за вашата мрежа.
+        add-email: Добавяне на имейли
+        get-link: Вземете линк
+        enable-shareable-link: Активиране на споделян линк
+        anyone-with-this-link-able-to-join-your-network: Всеки с този линк може да
+          се присъедини към вашата мрежа
+      store-form:
+        storefront-name: Име на магазина
+        the-name-of-your-store: Името на вашия магазин.
+        storefront-description-placeholder: Описание на магазина
+        give-your-store-brief-description: Дайте кратко описание на вашия магазин,
+          за да информирате потребителите какво продавате.
+        add-tags-placeholder: Добавяне на тагове
+      store-location-form:
+        street-2: Улица 2
+        security-access-code: Код за достъп за сигурност
+        postal-code: Пощенски код
+    widget:
+      key-metrics:
+        title: Метрики на магазина
+      customers:
+        widget-title: Последни клиенти
+        phone: Телефон
+        email: Имейл
+      orders:
+        widget-title: Последни поръчки
+        id-column: ID на поръчката
+        cancel-order: Отмени поръчката
+        accept-order: Приеми поръчката!
+        mark-as-ready: Отбележи като готово!
+        dispatch: Изпрати
+        mark-as-preparing: Отбележи като в подготовка
+        mark-as-completed: Отбележи като завършено
+        more-details: Повече подробности
+        customer: Клиент
+        driver: Шофьор
+        subtotal: Междинна сума
+        delivery-fee: Такса за доставка
+        delivery-tip: Бакшиш за доставка
+        tip: Бакшиш
+        total: Общо
+        change-driver: Смени шофьора
+        assign-driver: Назначи шофьор
+        customer-pickup: Вземане от клиента
+        pickup-order: Вземане на поръчка
+        mark-as-ready-modal-pickup-title: Отбелязване на поръчката като готова за
+          вземане?
+        mark-as-ready-modal-pickup-body: Отбелязването на поръчката като готова ще
+          уведоми клиента, че поръчката му е готова за вземане!
+        mark-as-ready-modal-pickup-accept-button-text: Готова за вземане!
+        mark-as-ready-modal-not-adhoc-title: Назначаване на шофьор и изпращане на
+          поръчки
+        mark-as-ready-modal-not-adhoc-accept-button-text: Назначи и изпрати!
+        mark-as-ready-modal-title: Искате ли да отбележите поръчката като готова?
+        mark-as-ready-modal-body: Отбелязването на поръчката като готова ще я изпрати
+          на близките шофьори, отбелязвайте поръчката като готова само когато може
+          да бъде взета.
+        mark-as-ready-modal-accept-button-text: Изпрати!
+        mark-as-completed-modal-title: Сигурни ли сте, че искате да отбележите поръчката
+          като завършена?
+        mark-as-completed-modal-body: Отбелязването на поръчката като завършена е
+          потвърждение, че клиентът е взел поръчката и тя е приключена.
+        mark-as-completed-accept-button-text: Поръчката е завършена!
+        mark-as-preparing-modal-title: Сигурни ли сте, че искате да отбележите поръчката
+          като в подготовка?
+        mark-as-preparing-modal-body: Отбелязването на поръчката като в подготовка
+          е потвърждение, че поръчката се приготвя.
+        mark-as-preparing-accept-button-text: Поръчката се приготвя
+        assign-driver-modal-title: Назначи шофьор
+        assign-driver-modal-accept-button-text: Назначи шофьор
+      storefront-metrics:
+        last-day: Последните 30 дни
+    file-record:
+      delete-this-file: Сигурни ли сте, че искате да изтриете този файл?
+      delete-this-file-you-will-unable-recover: След като изтриете този файл, няма
+        да можете да го възстановите.
+    network-category-picker:
+      no-subcategory: Няма подкатегории за
+      no-categories: Няма категории за тази мрежа
+      create-category: Създайте нова категория
+    schedule-manager:
+      add-hours: Добави часове
+      add-new-hours-for-day: Добави нови часове за {day}
+      new-hours-added-for-day: Нови часове добавени за {day}
+      you-wish-to-remove-these-hour: Сигурни ли сте, че искате да премахнете тези
+        часове?
+      by-removing-these-operation: Чрез премахване на тези работни/достъпни часове,
+        вашият магазин или продукт може да стане неактивен или недостъпен според актуализирания
+        график...
+    store-selector:
+      no-stores: Няма магазини за избор
+      create-storefront: Създайте нов
+  home:
+    title: Табло за управление на магазина
+  customers:
+    index:
+      internal-id: Вътрешен ИД
+      create-at: Създаден на
+      update-at: Актуализиран на
+      vendor-action: Действия на доставчика
+      view-customer-details: Преглед на подробности за клиента
+      edit-customer: Редактиране на клиент
+      success-message: Вашата нова мрежа от магазини е създадена!
+      delete-customer: Изтриване на клиент
+    customer-panel:
+      details:
+        web-url: Уебсайт URL
+      edit-button: Редактиране на клиента
+      cancel-edit-button: Отказване на редакция на клиента
+      cancel-new-button: Отказване на нов клиент
+  networks:
+    index:
+      network-option: Опции на мрежата
+      manage-network: Управление на мрежата
+      send-invite: Изпращане на покани
+      delete-network: Изтриване на мрежата
+      create-new-network: Създаване на нова мрежа
+      success-message: Вашата нова мрежа от магазини е създадена!
+      delete-this-network-all-assigned-stores-customer-order: Сигурни ли сте, че искате
+        да изтриете тази мрежа ({networkName})? Всички присвоени магазини, клиенти
+        и поръчки вече няма да бъдат достъпни.
+      network:
+        manage-network: Управление на мрежата
+        settings: Настройки
+        customers: Клиенти
+        orders: Поръчки
+        Network-changes-not-save: Промените в мрежата не са запазени!
+        going-back-will-rollback-all-unsaved-changes: Връщането назад ще отмени всички
+          незапазени промени, сигурни ли сте, че искате да продължите?
+        index:
+          change-network-saved: Промените в мрежата са запазени.
+          create-new-payment-gateway: Създаване на нов платежен шлюз
+          save-gateway: Запазване на шлюза
+          new-gateway-add-network: Нов шлюз добавен към мрежата
+          payment-gateway-changes-success: Промените в платежния шлюз са запазени!
+          create-new-notification-channel: Създаване на нов канал за уведомления
+          create-notification-channel: Създаване на канал за уведомления
+          notification-channel-add-network: Нов канал за уведомления добавен към мрежата!
+          notification-channel-changes-save: Промените в канала за уведомления са
+            запазени!
+          general-network-settings-title: Общи настройки на мрежата
+          general-network-settings-subtitle: Посочете общите настройки за вашата мрежа
+            или пазар.
+          general-network-settings-form:
+            save-changes-button-text: Запазване на промените
+            name: Име
+            name-placeholder: Име на магазина
+            name-help-text: Името на вашата мрежа или пазар.
+            description: Описание
+            description-placeholder: Описание на магазина
+            description-help-text: Дайте кратко описание на вашия магазин, за да информирате
+              потребителите за вашата мрежа.
+            currency: Валута
+            contact-social-panel:
+              panel-title: Контакт и социални мрежи
+              phone: Телефон
+              email: Имейл
+              email-help-text: Вашият бизнес имейл.
+              website: Уебсайт
+              website-help-text: URL адрес на вашия бизнес уебсайт.
+              facebook: Facebook
+              facebook-help-text: ID на вашата бизнес страница във Facebook.
+              instagram: Instagram
+              instagram-help-text: Потребителско име на вашия бизнес в Instagram.
+              twitter: Twitter
+              twitter-help-text: Потребителско име на вашия бизнес в Twitter.
+            logo-backdrop-panel:
+              panel-title: Лого и фон
+              logo-label: Лого
+              logo-help-text: Лого за вашия магазин.
+              upload-logo-button-text: Качване на ново лого
+              backdrop-label: Фон
+              backdrop-help-text: По избор банер или фонова снимка за вашия магазин.
+              upload-backdrop-button-text: Качване на нов фон
+            alert-panel:
+              panel-title: Известия
+              panel-description: Конфигурирайте кой да бъде уведомяван при определени
+                събития
+              new-order-alert-label: Известие за нова поръчка
+              new-order-alert-placeholder: Изберете потребители за уведомяване при
+                нова поръчка
+            config-switches:
+              online: Онлайн
+              enable-tax: Активиране на данък
+              tax-percentage-input-label: Процент на данъка
+              tax-percentage-input-help-text: Процентът на данъка върху продажбите,
+                който да се прилага към поръчките.
+              auto-accept-incoming-orders: Автоматично приемане на входящи поръчки
+              auto-dispatch-orders: Автоматично изпращане на поръчки
+              require-proof-of-delivery: Изискване на доказателство за доставка
+              proof-of-delivery-method-label: Метод за доказателство за доставка
+              enable-cash-on-delivery: Активиране на плащане в брой при доставка
+              enable-order-pickup: Активиране на вземане на поръчка
+              enable-tips: Активиране на бакшиши
+              enable-delivery-tips: Активиране на бакшиши за доставка
+              enable-multi-cart-checkout: Активиране на плащане с няколко колички
+              enable-user-reviews: Активиране на потребителски отзиви
+          api-panel:
+            panel-title: API
+            panel-header: Настройки на API
+            panel-description: Ключ за достъп до Storefront API и интеграции
+            network-key-label: Мрежов ключ
+            network-key-help-text: Това е вашият мрежов ключ, използвайте го за активиране
+              на приложения и интеграции за вашата мрежа.
+          payment-gateways-panel:
+            panel-title: Настройки на платежния шлюз
+            panel-description: Добавете или управлявайте настройките на вашия платежен
+              шлюз тук.
+            new-gateway-button-text: Създаване на нов шлюз
+            gateway-form:
+              name: Име на шлюза
+              name-help-text: Дайте име на вашия платежен шлюз, това ще е релевантно
+                само вътрешно
+              code: Код на шлюза
+              code-help-text: Идентификационен код, използван за идентифициране на
+                шлюза в SDK
+              callback-url: URL за обратен повик
+              callback-url-help-text: URL за обратен повик, ако е приложимо
+              return-url: URL за връщане
+              return-url-help-text: URL за връщане, ако е приложимо
+              sandbox-toggle-label: Това е тестов шлюз
+              config-header-label: Конфигурация
+              delete-gateway-button-text: Изтрий платежен шлюз
+          notification-channels-panel:
+            panel-title: Канали за уведомления
+            panel-header: Настройки за уведомления
+            panel-description: Конфигурирайте каналите за уведомления за вашия магазин,
+              всеки канал за уведомления може допълнително да има свои собствени правила
+              и опции.
+            new-channel-button-text: Създайте нов канал
+        stores:
+          store: Магазини
+          add-stores-button-text: Добавяне на магазини
+          invite-stores-button-text: Поканете магазини
+          created-at: Създаден на
+          view-store-details: Преглед на детайли за магазина
+          edit-store: Редактиране на магазин
+          assign-category: Присвояване на категория
+          remove-category: Премахване на категория
+          remove-store-from-network: Премахване на магазина от мрежата
+          delete-network-category: Изтриване на категория от мрежата?
+          deleting-category-move-all-stores-inside-on-top-level: Изтриването на тази
+            категория ще премести всички магазини вътре на най-горно ниво, наистина
+            ли искате да изтриете тази категория?
+          add-store-to-category: Добавяне на магазин към категория
+          save-change: Запазване на промените
+          add-new-network-category: Добавяне на нова категория в мрежата
+          create-new-category: Създаване на нова категория
+          new-category-created: Нова категория е създадена.
+          network-category-create: Нова категория в мрежата е създадена.
+          edit-category: Редактиране на категория ({categoryName})
+          add-stores-to-network: Добавяне на магазини към мрежата
+          network-stores-update: Магазините в мрежата са актуализирани.
+          remove-this-store: Премахване на този магазин ({storeName}) от тази мрежа
+            ({networkName})?
+          done: Готово
+          longer-findable-by-this-network: Сигурни ли сте, че искате да премахнете
+            този магазин от тази мрежа? Той вече няма да бъде откриваем от тази мрежа.
+          viewing-storefront: Преглеждане на магазина {storeName}
+          editing-storefront: Редактиране на магазина {storeName}
+          send-invitations: Изпращане на покани
+          invitation-sent-recipients: Поканите са изпратени на получателите!
+          invalid-emails-provided-error: Въведени са невалидни имейли!
+          remove-store-category: Премахване на категория на магазина
+          remove-store-category-body: Вие сте на път да премахнете {storeName} от
+            категорията {categoryName}, желаете ли да продължите?
+  orders:
+    index:
+      internal-id: Вътрешен ID
+      customer: Клиент
+      select-order-customer: Изберете клиент за поръчката
+      select-order-pickup-location: Изберете място за вземане на поръчката
+      select-order-dropoff-location: Изберете място за оставяне на поръчката
+      scheduled-at: Планирано на
+      transaction-total: Обща сума на транзакцията
+      total: Общо
+      tracking-number: Номер за проследяване
+      driver-assigned: Назначен шофьор
+      select-driver-for-order: Изберете шофьор за поръчката
+      created-at: Създаден на
+      updated-at: Актуализирано на
+      created-by: Създадено от
+      updated-by: Актуализирано от
+      select-user: Изберете потребител
+      view-order: Преглед на поръчката
+      cancel-order: Отмени поръчката
+      delete-order: Изтрий поръчката
+      view:
+        route-panel-title: Маршрут
+        comments-title: Коментари
+        notes-title: Бележки
+        dispatch: Изпращане
+        unassign-driver: Премахни водача
+        assign-driver: Назначи водач
+        cancel-order: Отмени поръчката
+        delete-order: Изтрий поръчката
+        activity: Активност
+        unable-load-order-activity: Не може да се зареди активността на поръчката
+        ad-hoc: Спонтанно
+        customer: Клиент
+        facilitator: Фасилитатор
+        driver-assigned: Водач назначен
+        change-driver: Смени водача
+        tracking-number: Номер за проследяване
+        date-scheduled: Планирана дата
+        date-dispatched: Дата на изпращане
+        date-started: Дата на започване
+        order-details-title: Детайли на поръчката
+        route: Маршрут
+        pickup: Вземане
+        dropoff: Качване
+        return: Връщане
+        order-summary: Обобщение на поръчката
+        subtotal: Междинна сума
+        delivery-fee: Такса за доставка
+        tip: Бакшиш
+        delivery-tip: Бакшиш за доставка
+        total: Общо
+        payload: Товар
+        items-drop: Предаване на артикули на
+        tracking: Проследяване
+        view-activity: Преглед на активността
+        order-metadata: Метаданни на поръчката
+        unassign-title: Сигурни ли сте, че искате да премахнете водача ({driverName})
+          от тази поръчка?
+        unassign-body: След като водачът бъде премахнат, той вече няма да има достъп
+          до детайлите на тази поръчка.
+        unassign-success: Водачът беше премахнат от тази поръчка.
+        route-error: Оптимизацията на маршрута се провали, проверете въведението на
+          маршрута и опитайте отново.
+        invalid-warning: Невалиден запис на персонализиран статус.
+        change-order: Смени водача на поръчката
+        assign-order: Назначи водач на поръчката
+        assign-success: '{orderId} назначен водач беше актуализиран.'
+        order-title: Етикет на поръчката
+        waypoint-title: Етикет на точката
+        proof-of-delivery: Доказателство за доставка
+        notes-placeholder: Въведете бележки за поръчката тук....
+        save-order-note: Запази бележката за поръчката
+        order-notes-updated: Бележките за поръчката са обновени.
+  products:
+    index:
+      manage-addons: Управление на добавки
+      manage-addons-dialog:
+        manage-addons-title: Управление на категории и опции за добавки към продукта
+        manage-addons-accept-button: Запази промените
+      done: Готово
+      create-new-product-category: Създайте нова продуктова категория
+      product-category-created-success: Нова продуктова категория е създадена.
+      import-products-via-spreadsheets: Импортиране на продукти чрез електронни таблици
+      start-upload: Започни качването
+      warning-no-file-upload: Няма файлове в опашката за качване!
+      products-success-message: Успешно импортирани {resultsLength} продукта...
+      delete-product: Сигурни ли сте, че искате да изтриете този продукт?
+      body-warning: Внимание! След изтриването този продукт няма да бъде достъпен.
+      aside-scroller:
+        title: Продуктови категории
+        custom-top-item-text: Всички продукти
+      import-products-success-message: Успешно импортирани {resultsLength} продукта...
+      edit:
+        title: Продуктът не е запазен!
+        body: Ще загубите всички незапазени промени, сигурни ли сте, че искате да
+          отмените?
+        changes-saved: Промените са запазени!
+      new:
+        new-product-created-success: Нов продукт е създаден успешно!
+        warning-only-select-an-image-file-to-be-primary: Можете да изберете само изображение
+          като основно!
+        made-the-primary-success-image: '{fileName} беше зададено като основно изображение.'
+        title: Продуктът не е запазен!
+        body: Връщането назад ще отмени създаването на продукта, ако продължите, всички
+          полета ще бъдат изчистени!
+        select-addon-categories: Изберете категории добавки
+        add-new-product-variant: Добави нов вариант на продукта
+        edit-product-variant: Редактирай вариант на продукта
+        untitled-field: Без заглавие
+      category:
+        category: категория
+        title: Продуктът не е запазен!
+        body: Внимание! Изтриването на тази категория ще премахне и всички продукти
+          в нея.
+        edit-category: Редактирай категорията
+        save-changes: Запази промените
+        category-changes-saved-success: Промените в категорията са запазени.
+        delete-product: Сигурни ли сте, че искате да изтриете този продукт?
+        body-warning: Внимание! След изтриването този продукт няма да бъде достъпен.
+  settings:
+    api:
+      api-settings: Настройки на API
+      access-key-for-storefront-api-integrations: Ключ за достъп за Storefront API
+        и интеграции.
+      store-key: Ключ на магазина
+      store-key-help-text: Това е ключът на вашия магазин, използвайте го за активиране
+        на приложения и интеграции за вашия storefront.
+    gateways:
+      geteway-settings: Настройки на платежния шлюз
+      add-or-manage-your-paymeny-gateway-settings-here: Добавете или управлявайте
+        настройките на платежния шлюз тук.
+      create-new-gateway: Създаване на нов шлюз
+      gateway-name: Име на шлюза
+      gateway-help-text: Дайте име на вашия платежен шлюз, това ще е важно само вътрешно
+      gateway-code: Код на шлюза
+      gateway-code-help-text: Идентификационен код, използван за идентифициране на
+        шлюза към SDK
+      callback-url: URL за обратен повик
+      callback-url-help-text: URL за обратен повик, ако е приложимо
+      return-url: URL за връщане
+      return-url-help-text: URL за връщане, ако е приложимо
+      this-is-a-sandbox-gateway: Това е тестов шлюз
+      delete-payment-gateway: Изтрий платежен шлюз
+      create-new-payment-gateway: Създайте нов платежен шлюз
+      save-gateway: Запази шлюза
+      edit-payment-gateway: Редактирай платежен шлюз
+      save-changes: Запази промените
+      title-remove: Сигурни ли сте, че искате да премахнете този шлюз?
+      application-website-utilizing-gateway: Всички приложения и уебсайтове, използващи
+        този шлюз в конфигурацията, може да бъдат прекъснати, ако шлюзът не бъде заменен
+        предварително
+    index:
+      general-settings-header: Общи настройки
+      general-settings-message: Посочете общите настройки за вашия магазин.
+      name-placeholder: Име на магазина
+      name-help-text: Името на вашия магазин.
+      description-placeholder: Описание на магазина
+      description-help-text: Дайте кратко описание на магазина, за да информирате
+        потребителите какво продавате.
+      tags-placeholder: Добавете тагове
+      contact-social: Контакт и социални мрежи
+      website-help-text: URL на уебсайта на вашия бизнес.
+      facebook-placeholder: Facebook ID
+      facebook-help-text: ID на Facebook страницата на вашия бизнес.
+      instagram-placeholder: Потребителско име в Instagram
+      instagram-help-text: Потребителското име на вашия бизнес в Instagram.
+      twitter-placeholder: Потребителско име в Twitter
+      twitter-help-text: Потребителското име на вашия бизнес в Twitter.
+      logo-backdrop: Лого и фон
+      logo-help-text: Лого за вашия магазин.
+      upload-new-logo: Качете ново лого
+      backdrop-help-text: По избор банер или фонова снимка за вашия магазин.
+      upload-new-backdrop: Качете нов фон
+      images-videos: Снимки и видеа
+      drop-to-upload: Пуснете за качване
+      ready-to-upload: готови за качване.
+      upload-image-video: Качете снимки и видеа
+      drag-and-drop-image: Плъзнете и пуснете файлове със снимки и видеа в тази зона
+      upload-queue: Опашка за качване
+      alerted-for-certain-event: Конфигурирайте кой трябва да бъде уведомен за определени
+        събития.
+      new-order-alert: Известие за нова поръчка
+      alert-placeholder: Изберете потребители за уведомяване при нова поръчка
+      enable-tax: Активиране на данък
+      tax-percentage: Процент на данъка
+      tax-percentage-help-text: Процентът на данъка върху продажбите, който се прилага
+        към поръчките.
+      auto-accept-incoming-order: Автоматично приемане на входящи поръчки
+      auto-dispatch-order: Автоматично изпращане на поръчки
+      require-proof-of-delivery: Изискване на доказателство за доставка
+      proof-of-delivery-method: Метод за доказателство за доставка
+      enable-cash-on-delivery: Активиране на плащане при доставка
+      enable-order-pickup: Активиране на вземане на поръчка
+      enable-tips: Активиране на бакшиши
+      enable-delivery-tips: Активиране на бакшиши за доставка
+      enable-integrated-vendors: Активиране на интегрирани доставчици
+      save-changes: Запазване на промените
+    locations:
+      new-store-location: Ново местоположение на магазина
+      add-new-location: Добавяне на ново местоположение
+      edit-store-location: Редактиране на местоположение на магазина
+      save-changes: Запазване на промените
+      remove-this-store-location: Сигурни ли сте, че искате да премахнете това местоположение
+        на магазина?
+      solely-accosciated-location: Всички продукти, които са свързани само с това
+        местоположение, вече няма да са достъпни.
+      new-store-hour: Добавяне на ново работно време за {day}
+      add-hours: Добавяне на часове
+      store-hour-added: Новото работно време за {day} е добавено
+      remove-these-hour: Сигурни ли сте, че искате да премахнете тези часове?
+      update-schedule-location: Премахвайки тези работни часове, вашият магазин може
+        да стане неактивен според обновения график за това местоположение.
+      location-setting: Настройки на местоположението
+      manage-store: Управлявайте работните места и часове на вашите магазини
+      text-location: Създаване на ново местоположение
+      store-hour: Управление на работното време на магазина
+    notification:
+      create-new-notification-channel: Създаване на нов канал за уведомления
+      create-notification-channel: Създаване на канал за уведомления
+      edit-notification-channel: Редактиране на канал за уведомления
+      save-changes: Запазване на промените
+      new-notification-channel-added: Нов канал за уведомления е добавен
+      remove-this-notification-channel: Сигурни ли сте, че искате да премахнете този
+        канал за уведомления?
+      application-websites-utillizing-channel: Всички приложения и уебсайтове, използващи
+        този канал в конфигурацията, могат да бъдат прекъснати, ако каналът не бъде
+        заменен предварително
+      notification-settings: Настройки на уведомленията
+      notification-storefront: Конфигурирайте каналите за уведомления за вашия магазин,
+        като всеки канал за уведомления може допълнително да има свои собствени правила
+        и опции.
+      new-channel: Нов канал
+  service:
+    storefront:
+      new-incoming-order: Имате нова входяща поръчка!
+      accept-order: Приемане на поръчка
+      decline-order: Отказване на поръчка
+      create-first-storefront: Създайте първия си магазин
+      storefront-has-been-create-success: Вашият нов магазин е създаден!
+      create-new-storefront: Създаване на нов магазин
+      storefront-create-success: Вашият нов магазин е създаден!
+  application:
+    launch-app: Стартиране на приложението

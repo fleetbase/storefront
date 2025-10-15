@@ -6,6 +6,9 @@ use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Store;
 use Illuminate\Console\Command;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Session;
 use Stripe\Customer as StripeCustomer;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Stripe;
@@ -30,6 +33,7 @@ class MigrateStripeSandboxCustomers extends Command
         $dryRun     = $this->option('dry-run');
         $storeInput = $this->option('store');
 
+        $this->startSession();
         $this->info('Starting Stripe customer migration...');
 
         // If a single store is specified, load that store by UUID or public_id.
@@ -146,5 +150,16 @@ class MigrateStripeSandboxCustomers extends Command
         });
 
         return Command::SUCCESS;
+    }
+
+    private function startSession()
+    {
+        if (!App::bound('request')) {
+            App::instance('request', Request::create('/'));
+        }
+        if (!Session::isStarted()) {
+            Session::start();
+            request()->setLaravelSession(Session::getFacadeRoot());
+        }
     }
 }

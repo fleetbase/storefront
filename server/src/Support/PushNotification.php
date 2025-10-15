@@ -22,7 +22,8 @@ class PushNotification
         $storefront = static::getStorefrontFromOrder($order);
         $client     = static::getApnClient($storefront, $order);
         if (!$client) {
-            return null;
+            // create apn message anyway
+            return new ApnMessage($title, $body);
         }
 
         return ApnMessage::create()
@@ -41,7 +42,13 @@ class PushNotification
         $storefront          = static::getStorefrontFromOrder($order);
         $notificationChannel = static::getNotificationChannel('apn', $storefront, $order);
         if (!$notificationChannel) {
-            return null;
+            // create fcm message anyway
+            return new FcmMessage(
+                notification: new FcmNotification(
+                    title: $title,
+                    body: $body
+                )
+            );
         }
 
         // Configure FCM

@@ -1,0 +1,725 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: Хаяг
+    alerts: Анхааруулга
+    amount: Дүн
+    api: API
+    back: Буцах
+    backdrop: арын зураг
+    building: Барилга
+    bulk-action: Бөөнөөр үйлдэл
+    cash: Бэлэн мөнгө
+    city: Хот
+    config: Тохиргоо
+    coordinates: Координатууд
+    country: Улс
+    created: Үүсгэсэн
+    currency: Валют
+    customer: Хэрэглэгч
+    customers: Хэрэглэгчид
+    category: Ангилал
+    delivery-tip: Хүргэлтийн зөвлөгөө
+    delivery: Хүргэлт
+    details: Дэлгэрэнгүй
+    description: Тодорхойлолт
+    driver: Жолооч
+    dropoff: Хаях газар
+    earning: Орлого
+    email: И-мэйл
+    export: Экспорт
+    id: ID
+    internal-id: Дотоод ID
+    import: Импорт
+    invalid: Буруу
+    loading: Ачааллаж байна...
+    logo: лого
+    name: Нэр
+    neighborhood: Хороо
+    online: Онлайн
+    orders: Захиалгууд
+    phone: Утас
+    photos: Зураг
+    pickup: Хүлээн авах
+    product: Бүтээгдэхүүн
+    remove: Устгах
+    state: Төлөв
+    status: Статус
+    store: Дэлгүүр
+    street-1: Гудамж 1
+    storefront: Дэлгүүрийн нүүр
+    tag: Таг
+    tip: Зөвлөгөө
+    title: Гарчиг
+    total: Нийт
+    type: Төрөл
+    upload-new: Шинэ файл оруулах
+    uploading: Оруулж байна...
+    view: Үзэх
+    website: Вэбсайт
+    edit: Засах
+    delete: Устгах
+    network: Сүлжээ
+    file: файлууд
+    general: Ерөнхий
+    location: Байршил
+    notification: Мэдэгдэл
+    gateways: Гарц
+    settings: Тохиргоо
+    new: Шинэ
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: Хоолны ачааны машин
+    catalog: Каталог
+    catalogs: Каталогууд
+  sidebar:
+    storefront: Дэлгүүрийн нүүр
+    dashboard: Хяналтын самбар
+    products: Бүтээгдэхүүн
+    catalogs: Каталогууд
+    food-trucks: Хоолны ачааны машин
+    customers: Харилцагчид
+    orders: Захиалгууд
+    networks: Сүлжээ
+    settings: Тохиргоо
+    launch-app: Апп эхлүүлэх
+  component:
+    storefront-order-summary:
+      order-summary-title: Дэлгүүрийн нүүрний захиалгын тойм
+    modals:
+      add-store-hours:
+        start-time: Эхлэх цаг
+        operation-start: Боломжтой/ажиллах эхлэх цаг
+        end-time: Дуусах цаг
+        operation-end: Боломжтой/ажиллах дуусах цаг
+      assign-driver:
+        message-driver: Энэ захиалгад жолооч сонгоно уу.
+        name-driver: Жолооч сонгох
+        placeholder-driver: Хуваарилах жолоочийг сонгоно уу
+      create-first-store:
+        title: Дэлгүүрийн нүүрэнд тавтай морил!
+        message: Дэлгүүрийн нүүр нь Fleetbase-ийн хүчээр хурдан бөгөөд динамик захиалгат
+          дэлгүүрийг тохируулах боломжийг олгодог.
+        submit-message: Анхны дэлгүүрээ үүсгэхийн тулд доорх маягтыг бөглөнө үү.
+        storefront-name: Дэлгүүрийн нүүрний нэр
+        enter-name: Дэлгүүрийн нэрээ оруулна уу
+        description: Дэлгүүрийн нүүрний тайлбар
+        brief-description: Зарагдаж буй зүйлсийн төрлийг товчхон тайлбарлана уу
+        currency: Дэлгүүрийн нүүрний валют
+        select-currency: Дэлгүүрийн нүүрний үндсэн валютыг сонгоно уу
+      create-getaway:
+        getaway: Төлбөрийн гарцын төрөл
+        getaway-text: Төлбөрийн гарцын төрлийг сонгоно уу
+        getaway-name: Гарцын нэр
+        name-text: Төлбөрийн гарцад нэр өгөх, энэ нь зөвхөн дотоод хэрэглээнд хамаатай
+        getaway-code: Гарцын код
+        code-text: SDK-д гарцыг танихад ашиглагдах танигч код
+        callback-url: Буцах URL
+        callback-text: Хэрэв тохиромжтой бол буцах URL
+        return-url: Буцах URL
+        return-text: Хэрэв тохиромжтой бол буцах URL
+        sandbox-getaway: Энэ нь туршилтын гарц юм
+      create-network-category:
+        parent-category: Эцэг ангилал
+        select-parent: Хэрэв байгаа бол эцэг ангиллыг сонгоно уу
+        category-name: Ангиллын нэр
+        name-text: Ангиллын нэр оруулна уу
+        description: Ангиллын тайлбар
+        description-text: Сүлжээний ангилалдаа товч тайлбар өгнө үү
+        category-icon: Ангиллын дүрс төрлийн
+      create-network:
+        title: Сүлжээ эхлүүлэх
+        message-line1: Storefront нь танд олон дэлгүүрүүд нэг дор худалдаа хийх боломжтой
+          зах зээлүүдийг хурдан үүсгэх боломжийг олгодог.
+        message-line2: Сүлжээг үүсгэх үед та дүрмээ тодорхойлж, урилгаар сүлжээгээ
+          өргөжүүлэх боломжтой.
+        message-line3: Доор сүлжээ үүсгэж эхэлнэ үү.
+        name: Сүлжээний нэр
+        name-text: Дэлгүүрийн нэр оруулна уу
+        description: Сүлжээний тайлбар
+        description-text: Дэлгүүрийнхээ борлуулж буй зүйлсийн талаар товч тайлбар
+          өгнө үү
+        currency: Сүлжээний валют
+        currency-text: Дэлгүүрийнхээ үндсэн валютыг сонгоно уу
+      create-new-variant:
+        name: Вариантын нэр
+        name-text: Бүтээгдэхүүний хувилбартаа нэр өгнө үү
+        description: Вариантын тайлбар
+        description-text: Вариантын товч тайлбар
+        checkbox-1: Хэрэглэгчид нэгэн зэрэг олон хувилбар сонгохыг зөвшөөрөх
+        checkbox-2: Энэ бүтээгдэхүүний хувилбарын сонголт шаардлагатай
+      create-notification-channel:
+        title: Сувгийн нэр
+        title-text: Мэдэгдлийн сувгийг сонгоно уу
+        name: Сувгийн нэр
+        name-text: Мэдэгдлийн сувгийнхаа нэрийг өгнө үү, энэ нь зөвхөн дотоод хэрэглээнд
+          хамаатай
+        key: Сувгийн түлхүүр
+        key-text: Энэ бол таны мэдэгдлийн сувгийн түлхүүр бөгөөд sdk тохиргоогоор
+          аль аппууд энэ сувгийг ашиглахыг заахад хэрэглэгдэнэ.
+      create-product-category:
+        name: Ангиллын нэр
+        name-text: Ангиллын нэр оруулна уу
+        description: Ангиллын тайлбар
+        description-text: Бүтээгдэхүүний ангилалдаа товч тайлбар өгнө үү
+        icon: Ангиллын дүрс
+        uploading-new: Шинэ ангиллын дүрс оруулах
+      create-store:
+        name: Дэлгүүрийн нэр
+        name-text: Дэлгүүрийн нэр оруулна уу
+        description: Дэлгүүрийн тайлбар
+        description-text: Дэлгүүрийнхээ борлуулж буй зүйлсийн талаар товч тайлбар
+          өгнө үү
+        currency: Дэлгүүрийн валют
+        currency-text: Дэлгүүрийнхээ үндсэн валютыг сонгоно уу
+      import-products:
+        uploading-message: Импорт боловсруулж байна...
+        drop-upload: Өргөж оруулах
+        ready-upload: өргөхөд бэлэн.
+        upload-spreadsheets: Хуудаснуудыг өргөх
+        drag-drop: Хуудасны файлуудыг энэ талбарт чирж оруулна уу
+        select-spreadsheets: эсвэл өргөх хуудсуудыг сонгоно уу.
+        upload-queue: Өргөх дараалал
+        optionally-select-category: Бүтээгдэхүүн импортлох ангиллыг сонгож болно
+        select-category: Ангилал сонгох
+      incoming-order:
+        assigned: Жолооч томилогдсон
+        not-assigned: Жолооч томилогдоогүй
+        no-phone: Утас байхгүй
+        change-driver: Жолоочийг солих
+        assign-driver: Жолооч томилох
+        pickup-order: Хэрэглэгч захиалгыг эндээс авах ёстой
+        address: Хэрэглэгчийн хаяг
+        tracking: Хянах
+        summary: Захиалгын тойм
+        subtotal: Нийт дүн
+        fee: Хүргэлтийн төлбөр
+        tip: Зөвлөгөө
+        delivery-tip: Хүргэлтийн зөвлөгөө
+      manage-addons:
+        title: Шинэ ангилал
+        delete: Ангиллыг устгах
+        new-addon: Шинэ нэмэлт
+        addon-name: Нэмэлтийн нэр
+        description: Нэмэлтийн тайлбар
+        delete-this-addon-category-assosiated-will-lost: Та энэ нэмэлтийн ангиллыг
+          устгахдаа итгэлтэй байна уу? Холбогдсон бүх нэмэлтүүд устах болно!
+        untitled-addon-category: Гарчиггүй нэмэлтийн ангилал
+      order-ready-assign-driver:
+        driver-dispatch: Та энэ захиалгыг бэлэн гэж тэмдэглэж, жолооч томилох гэж
+          байна, доорх жагсаалтаас жолоочийг сонгоно уу. <br><br>Эсвэл сонголтоор
+          захиалгыг ойр байгаа бүх жолооч нарт илгээж, хүлээн авах боломжтой adhoc
+          хүргэлт хийх боломжтой.
+        adhoc-dispatch-nearby-drivers: Ойр байгаа жолооч нарт adhoc хүргэлт
+        select-driver: Жолооч сонгох
+        select-driver-to-assign: Томилох жолоочийг сонгох
+      share-network:
+        invite-member: Сүлжээндээ гишүүдийг урьж оролцуулах
+        email-below: Хуваалцах урилгын холбоос авах эсвэл доорх и-мэйлээр тус бүрт
+          нь урилга илгээнэ үү.
+        invite-network: Сүлжээндээ урилга илгээх хүний эсвэл байгууллагын и-мэйл хаягийг
+          оруулна уу.
+        add-email: И-мэйл нэмэх
+        get-link: Холбоос авах
+        enable-shareable-link: Хуваалцах боломжтой холбоосыг идэвхжүүлэх
+        anyone-with-this-link-able-to-join-your-network: Энэ холбоостой хүн бүр таны
+          сүлжээнд нэгдэх боломжтой
+      store-form:
+        storefront-name: Дэлгүүрийн нэр
+        the-name-of-your-store: Таны дэлгүүрийн нэр.
+        storefront-description-placeholder: Дэлгүүрийн тайлбар
+        give-your-store-brief-description: Хэрэглэгчдэд юу зарж байгаагаа мэдүүлэхийн
+          тулд дэлгүүрээ товчхон тайлбарлана уу.
+        add-tags-placeholder: Таг нэмэх
+      store-location-form:
+        street-2: Гудамж 2
+        security-access-code: Аюулгүй байдлын нэвтрэх код
+        postal-code: Шуудангийн код
+    widget:
+      key-metrics:
+        title: Дэлгүүрийн хэмжүүрүүд
+      customers:
+        widget-title: Сүүлийн үйлчлүүлэгчид
+        phone: Утас
+        email: И-мэйл
+      orders:
+        widget-title: Сүүлийн захиалгууд
+        id-column: Захиалгын дугаар
+        cancel-order: Захиалгыг цуцлах
+        accept-order: Захиалгыг хүлээн авах!
+        mark-as-ready: Бэлэн гэж тэмдэглэх!
+        dispatch: Илгээх
+        mark-as-preparing: Бэлтгэж байгаа гэж тэмдэглэх
+        mark-as-completed: Дууссан гэж тэмдэглэх
+        more-details: Дэлгэрэнгүй мэдээлэл
+        customer: Үйлчлүүлэгч
+        driver: Жолооч
+        subtotal: Нийлбэр дүн
+        delivery-fee: Хүргэлтийн төлбөр
+        delivery-tip: Хүргэлтийн бэлэглэл
+        tip: Бэлэглэл
+        total: Нийт дүн
+        change-driver: Жолоочийг солих
+        assign-driver: Жолоочийг томилох
+        customer-pickup: Үйлчлүүлэгч авах
+        pickup-order: Захиалгыг авах
+        mark-as-ready-modal-pickup-title: Захиалгыг авахад бэлэн гэж тэмдэглэх үү?
+        mark-as-ready-modal-pickup-body: Захиалгыг бэлэн гэж тэмдэглэх нь үйлчлүүлэгчд
+          захиалгаа авахад бэлэн болсон тухай мэдэгдэх болно!
+        mark-as-ready-modal-pickup-accept-button-text: Авахад бэлэн!
+        mark-as-ready-modal-not-adhoc-title: Жолоочийг томилж захиалгыг илгээх
+        mark-as-ready-modal-not-adhoc-accept-button-text: Томилж илгээх!
+        mark-as-ready-modal-title: Захиалгыг бэлэн гэж тэмдэглэх үү?
+        mark-as-ready-modal-body: Захиалгыг бэлэн гэж тэмдэглэх нь ойролцоох жолооч
+          нарт илгээх болно, зөвхөн авах боломжтой үед захиалгыг бэлэн гэж тэмдэглэ.
+        mark-as-ready-modal-accept-button-text: Илгээх!
+        mark-as-completed-modal-title: Захиалгыг дууссан гэж тэмдэглэхдээ итгэлтэй
+          байна уу?
+        mark-as-completed-modal-body: Захиалгыг дууссан гэж тэмдэглэх нь үйлчлүүлэгч
+          захиалгаа авсан бөгөөд захиалга дууссан гэдгийг баталгаажуулна.
+        mark-as-completed-accept-button-text: Захиалга дууссан!
+        mark-as-preparing-modal-title: Захиалгыг бэлтгэж байгаа гэж тэмдэглэхдээ итгэлтэй
+          байна уу?
+        mark-as-preparing-modal-body: Захиалгыг бэлтгэж байгаа гэж тэмдэглэх нь захиалга
+          бэлтгэгдэж байгааг баталгаажуулна.
+        mark-as-preparing-accept-button-text: Захиалга бэлтгэгдэж байна
+        assign-driver-modal-title: Жолоочийг томилох
+        assign-driver-modal-accept-button-text: Жолоочийг томилох
+      storefront-metrics:
+        last-day: Сүүлийн 30 хоног
+    file-record:
+      delete-this-file: Энэ файлыг устгахдаа итгэлтэй байна уу?
+      delete-this-file-you-will-unable-recover: Энэ файлыг устгасны дараа сэргээх
+        боломжгүй болно.
+    network-category-picker:
+      no-subcategory: '{name}-д дэд ангилал байхгүй'
+      no-categories: Энэ сүлжээнд ангилал байхгүй
+      create-category: Шинэ ангилал үүсгэх
+    schedule-manager:
+      add-hours: Цаг нэмэх
+      add-new-hours-for-day: '{day} өдөрт шинэ цаг нэмэх'
+      new-hours-added-for-day: '{day} өдөрт шинэ цаг нэмэгдсэн'
+      you-wish-to-remove-these-hour: Эдгээр цагийг устгахдаа итгэлтэй байна уу?
+      by-removing-these-operation: Эдгээр үйл ажиллагаа/боломжийн цагийг устгаснаар
+        таны дэлгүүр эсвэл бүтээгдэхүүн шинэчилсэн хуваарийн дагуу идэвхгүй эсвэл
+        ашиглах боломжгүй болох магадлалтай...
+    store-selector:
+      no-stores: Сонгох дэлгүүр байхгүй
+      create-storefront: Шинэ үүсгэх
+  home:
+    title: Дэлгүүрийн самбар
+  customers:
+    index:
+      internal-id: Дотоод ID
+      create-at: Үүсгэсэн огноо
+      update-at: Шинэчилсэн огноо
+      vendor-action: Нийлүүлэгчийн үйлдлүүд
+      view-customer-details: Хэрэглэгчийн дэлгэрэнгүйг харах
+      edit-customer: Хэрэглэгчийг засах
+      success-message: Таны шинэ дэлгүүрийн сүлжээ амжилттай үүсгэгдлээ!
+      delete-customer: Хэрэглэгчийг устгах
+    customer-panel:
+      details:
+        web-url: Вэбсайтын URL
+      edit-button: Хэрэглэгчийг засах
+      cancel-edit-button: Хэрэглэгчийн засварыг цуцлах
+      cancel-new-button: Шинэ хэрэглэгчийн үүсгэлтийг цуцлах
+  networks:
+    index:
+      network-option: Сүлжээний сонголтууд
+      manage-network: Сүлжээг удирдах
+      send-invite: Урих илгээх
+      delete-network: Сүлжээг устгах
+      create-new-network: Шинэ сүлжээ үүсгэх
+      success-message: Таны шинэ дэлгүүрийн сүлжээ амжилттай үүсгэгдлээ!
+      delete-this-network-all-assigned-stores-customer-order: Та энэ сүлжээг ({networkName})
+        устгахдаа итгэлтэй байна уу? Бүх холбогдсон дэлгүүрүүд, хэрэглэгчид, захиалгууд
+        дахин хандах боломжгүй болно.
+      network:
+        manage-network: Сүлжээг удирдах
+        settings: Тохиргоо
+        customers: Хэрэглэгчид
+        orders: Захиалгууд
+        Network-changes-not-save: Сүлжээний өөрчлөлтүүд хадгалагдаагүй!
+        going-back-will-rollback-all-unsaved-changes: Буцах нь хадгалагдаагүй бүх
+          өөрчлөлтийг буцаана, үргэлжлүүлэхдээ итгэлтэй байна уу?
+        index:
+          change-network-saved: Сүлжээний өөрчлөлтүүд хадгалагдлаа.
+          create-new-payment-gateway: Шинэ төлбөрийн гарц үүсгэх
+          save-gateway: Гарц хадгалах
+          new-gateway-add-network: Шинэ төлбөрийн гарц сүлжээнд нэмэгдлээ
+          payment-gateway-changes-success: Төлбөрийн гарцын өөрчлөлтүүд амжилттай
+            хадгалагдлаа!
+          create-new-notification-channel: Шинэ мэдэгдлийн суваг үүсгэх
+          create-notification-channel: Мэдэгдлийн суваг үүсгэх
+          notification-channel-add-network: Шинэ мэдэгдлийн суваг сүлжээнд нэмэгдлээ!
+          notification-channel-changes-save: Мэдэгдлийн сувгийн өөрчлөлтүүд хадгалагдлаа!
+          general-network-settings-title: Ерөнхий сүлжээний тохиргоо
+          general-network-settings-subtitle: Таны сүлжээ эсвэл зах зээлийн ерөнхий
+            тохиргоог оруулна уу.
+          general-network-settings-form:
+            save-changes-button-text: Өөрчлөлтүүдийг хадгалах
+            name: Нэр
+            name-placeholder: Дэлгүүрийн нэр
+            name-help-text: Таны сүлжээ эсвэл зах зээлийн нэр.
+            description: Тодорхойлолт
+            description-placeholder: Дэлгүүрийн тодорхойлолт
+            description-help-text: Хэрэглэгчдэд таны сүлжээний талаар товч мэдээлэл
+              өгөх тодорхойлолт өгнө үү.
+            currency: Валют
+            contact-social-panel:
+              panel-title: Холбоо барих & Нийгмийн сүлжээ
+              phone: Утас
+              email: И-мэйл
+              email-help-text: Таны бизнесийн и-мэйл.
+              website: Вэбсайт
+              website-help-text: Таны бизнесийн вэбсайтын URL.
+              facebook: Facebook
+              facebook-help-text: Таны бизнесийн Facebook хуудасны ID.
+              instagram: Instagram
+              instagram-help-text: Таны бизнесийн Instagram хэрэглэгчийн нэр.
+              twitter: Twitter
+              twitter-help-text: Таны бизнесийн Twitter хэрэглэгчийн нэр.
+            logo-backdrop-panel:
+              panel-title: Лого & Арын зураг
+              logo-label: Лого
+              logo-help-text: Таны дэлгүүрийн лого.
+              upload-logo-button-text: Шинэ лого оруулах
+              backdrop-label: Арын зураг
+              backdrop-help-text: Таны дэлгүүрийн нэмэлт баннер эсвэл арын зураг.
+              upload-backdrop-button-text: Шинэ арын зураг оруулах
+            alert-panel:
+              panel-title: Анхааруулга
+              panel-description: Тодорхой үйл явдлуудад хэн анхааруулахыг тохируулах
+              new-order-alert-label: Шинэ захиалгын анхааруулга
+              new-order-alert-placeholder: Шинэ захиалгын анхааруулах хэрэглэгчийг
+                сонгоно уу
+            config-switches:
+              online: Онлайн
+              enable-tax: Татвар идэвхжүүлэх
+              tax-percentage-input-label: Татварын хувь
+              tax-percentage-input-help-text: Захиалгад ногдох борлуулалтын татварын
+                хувь.
+              auto-accept-incoming-orders: Ирж буй захиалгыг автоматаар хүлээн авах
+              auto-dispatch-orders: Захиалгыг автоматаар илгээх
+              require-proof-of-delivery: Хүргэлтийн баталгаа шаардлагатай
+              proof-of-delivery-method-label: Хүргэлтийн баталгааны арга
+              enable-cash-on-delivery: Бэлэн мөнгөөр төлөхийг идэвхжүүлэх
+              enable-order-pickup: Захиалгыг авахыг идэвхжүүлэх
+              enable-tips: Зөвлөмжийг идэвхжүүлэх
+              enable-delivery-tips: Хүргэлтийн зөвлөмжийг идэвхжүүлэх
+              enable-multi-cart-checkout: Олон сагснаас төлбөр хийхийг идэвхжүүлэх
+              enable-user-reviews: Хэрэглэгчийн үнэлгээг идэвхжүүлэх
+          api-panel:
+            panel-title: API
+            panel-header: API тохиргоо
+            panel-description: Storefront API ба интеграцийн нэвтрэх түлхүүр
+            network-key-label: Сүлжээний түлхүүр
+            network-key-help-text: Энэ бол таны сүлжээний түлхүүр, үүнийг ашиглан
+              таны сүлжээнд зориулсан апп болон интеграцийг идэвхжүүлнэ.
+          payment-gateways-panel:
+            panel-title: Төлбөрийн гарцны тохиргоо
+            panel-description: Энд төлбөрийн гарцны тохиргоог нэмэх эсвэл удирдах
+              боломжтой.
+            new-gateway-button-text: Шинэ гарц үүсгэх
+            gateway-form:
+              name: Гарцын нэр
+              name-help-text: Төлбөрийн гарцдаа нэр өгнө үү, энэ нь зөвхөн дотоод
+                хэрэглээнд хамаатай.
+              code: Гарцын код
+              code-help-text: SDK-д зориулан гарцыг таних код.
+              callback-url: Буцах URL
+              callback-url-help-text: Хэрэв тохиромжтой бол буцах URL.
+              return-url: Буцах URL
+              return-url-help-text: Хэрэв тохиромжтой бол буцах URL
+              sandbox-toggle-label: Энэ нь туршилтын төлбөрийн гарц юм
+              config-header-label: Тохиргоо
+              delete-gateway-button-text: Төлбөрийн гарцыг устгах
+          notification-channels-panel:
+            panel-title: Мэдэгдлийн сувгууд
+            panel-header: Мэдэгдлийн тохиргоо
+            panel-description: Таны дэлгүүрийн мэдэгдлийн сувгуудыг тохируулна уу,
+              тус бүрийн мэдэгдлийн сувгууд өөрийн дүрэм, сонголтуудтай байж болно.
+            new-channel-button-text: Шинэ суваг үүсгэх
+        stores:
+          store: Дэлгүүрүүд
+          add-stores-button-text: Дэлгүүр нэмэх
+          invite-stores-button-text: Дэлгүүрүүдийг урь
+          created-at: Үүсгэсэн огноо
+          view-store-details: Дэлгүүрийн дэлгэрэнгүйг харах
+          edit-store: Дэлгүүр засах
+          assign-category: Ангилал оноох
+          remove-category: Ангилал устгах
+          remove-store-from-network: Сүлжээнээс дэлгүүр устгах
+          delete-network-category: Сүлжээний ангиллыг устгах уу?
+          deleting-category-move-all-stores-inside-on-top-level: Энэ ангиллыг устгах
+            нь доторх бүх дэлгүүрүүдийг дээд түвшинд шилжүүлнэ, та энэ ангиллыг устгахыг
+            хүсэж байна уу?
+          add-store-to-category: Дэлгүүрийг ангилалд нэмэх
+          save-change: Өөрчлөлтийг хадгалах
+          add-new-network-category: Шинэ сүлжээний ангилал нэмэх
+          create-new-category: Шинэ ангилал үүсгэх
+          new-category-created: Шинэ ангилал үүсгэгдлээ.
+          network-category-create: Шинэ сүлжээний ангилал үүсгэгдлээ.
+          edit-category: Ангилал засах ({categoryName})
+          add-stores-to-network: Дэлгүүрүүдийг сүлжээнд нэмэх
+          network-stores-update: Сүлжээний дэлгүүрүүд шинэчлэгдлээ.
+          remove-this-store: Энэ дэлгүүрийг ({storeName}) энэ сүлжээнээс ({networkName})
+            устгах уу?
+          done: Боллоо
+          longer-findable-by-this-network: Та энэ дэлгүүрийг энэ сүлжээнээс устгахыг
+            хүсэж байна уу? Энэ сүлжээгээр дахин олдохгүй болно.
+          viewing-storefront: '{storeName} дэлгүүрийн нүүр хуудас харах'
+          editing-storefront: '{storeName} дэлгүүрийн нүүр хуудсыг засварлах'
+          send-invitations: Урилгуудыг илгээх
+          invitation-sent-recipients: Урилгууд хүлээн авагчдад илгээгдлээ!
+          invalid-emails-provided-error: Буруу имэйл хаягууд өгөгдсөн!
+          remove-store-category: Дэлгүүрийн ангиллыг устгах
+          remove-store-category-body: Та {storeName} дэлгүүрийг {categoryName} ангиллаас
+            устгах гэж байна, үргэлжлүүлэхийг хүсэж байна уу?
+  orders:
+    index:
+      internal-id: Дотоод ID
+      customer: Хэрэглэгч
+      select-order-customer: Захиалгын хэрэглэгчийг сонгох
+      select-order-pickup-location: Захиалгын авах байрыг сонгох
+      select-order-dropoff-location: Захиалгын хүргэх байрыг сонгох
+      scheduled-at: Төлөвлөсөн огноо
+      transaction-total: Гүйлгээний нийт дүн
+      total: Нийт
+      tracking-number: Хянах дугаар
+      driver-assigned: Жолооч томилогдсон
+      select-driver-for-order: Захиалгын жолоочийг сонгох
+      created-at: Үүсгэсэн огноо
+      updated-at: Шинэчлэгдсэн огноо
+      created-by: Үүсгэсэн
+      updated-by: Шинэчилсэн
+      select-user: Хэрэглэгч сонгох
+      view-order: Захиалгыг харах
+      cancel-order: Захиалгыг цуцлах
+      delete-order: Захиалгыг устгах
+      view:
+        route-panel-title: Зам
+        comments-title: Сэтгэгдэл
+        notes-title: Тэмдэглэл
+        dispatch: Илгээх
+        unassign-driver: Жолоочийг хуваарилахаа болих
+        assign-driver: Жолоочийг хуваарилах
+        cancel-order: Захиалгыг цуцлах
+        delete-order: Захиалгыг устгах
+        activity: Үйл ажиллагаа
+        unable-load-order-activity: Захиалгын үйл ажиллагааг ачааллах боломжгүй байна
+        ad-hoc: Тусгай
+        customer: Хэрэглэгч
+        facilitator: Туслагч
+        driver-assigned: Жолооч хуваарилагдсан
+        change-driver: Жолоочийг солих
+        tracking-number: Хянах дугаар
+        date-scheduled: Төлөвлөсөн огноо
+        date-dispatched: Илгээсэн огноо
+        date-started: Эхэлсэн огноо
+        order-details-title: Захиалгын дэлгэрэнгүй
+        route: Зам
+        pickup: Хүлээн авах
+        dropoff: Хүргэх
+        return: Буцах
+        order-summary: Захиалгын тойм
+        subtotal: Нийт дүнгийн дүн
+        delivery-fee: Хүргэлтийн төлбөр
+        tip: Зөвлөгөө
+        delivery-tip: Хүргэлтийн зөвлөгөө
+        total: Нийт
+        payload: Ачаа
+        items-drop: Бараа буулгах газар
+        tracking: Хянах
+        view-activity: Үйл ажиллагааг харах
+        order-metadata: Захиалгын мета мэдээлэл
+        unassign-title: Та энэ захиалгын жолооч ({driverName})-ийг хуваарилахаа болихыг
+          хүсэж байна уу?
+        unassign-body: Жолоочийг хуваарилахаа больсноор жолооч энэ захиалгын дэлгэрэнгүй
+          мэдээлэлд хандах боломжгүй болно.
+        unassign-success: Жолооч энэ захиалгаас хуваарилахаа больсон.
+        route-error: Замын оновчлол амжилтгүй боллоо, замын оруулгыг шалгаж дахин
+          оролдоно уу.
+        invalid-warning: Буруу захиалгын төлөв оруулга.
+        change-order: Захиалгын жолоочийг солих
+        assign-order: Захиалгад жолоочийг хуваарилах
+        assign-success: '{orderId} захиалгад жолооч амжилттай хуваарилагдлаа.'
+        order-title: Захиалгын шошго
+        waypoint-title: Замын цэгийн шошго
+        proof-of-delivery: Хүргэлтийн баталгаа
+        notes-placeholder: Энд захиалгын тэмдэглэл оруулна уу....
+        save-order-note: Захиалгын тэмдэглэл хадгалах
+        order-notes-updated: Захиалгын тэмдэглэл шинэчлэгдлээ.
+  products:
+    index:
+      manage-addons: Нэмэлтүүдийг удирдах
+      manage-addons-dialog:
+        manage-addons-title: Бүтээгдэхүүний нэмэлт ангилал ба сонголтыг удирдах
+        manage-addons-accept-button: Өөрчлөлтийг хадгалах
+      done: Боллоо
+      create-new-product-category: Шинэ бүтээгдэхүүний ангилал үүсгэх
+      product-category-created-success: Шинэ бүтээгдэхүүний ангилал амжилттай үүслээ.
+      import-products-via-spreadsheets: Бүтээгдэхүүнийг хүснэгтээр импортлох
+      start-upload: Татаж эхлэх
+      warning-no-file-upload: Татах дараалалд файл байхгүй байна!
+      products-success-message: '{resultsLength} бүтээгдэхүүнийг амжилттай импортлолоо...'
+      delete-product: Та энэ бүтээгдэхүүнийг устгахдаа итгэлтэй байна уу?
+      body-warning: Анхаар! Энэ бүтээгдэхүүнийг устгаснаар дахин хандах боломжгүй
+        болно.
+      aside-scroller:
+        title: Бүтээгдэхүүний ангилалууд
+        custom-top-item-text: Бүх бүтээгдэхүүн
+      import-products-success-message: '{resultsLength} бүтээгдэхүүнийг амжилттай
+        импортлолоо...'
+      edit:
+        title: Бүтээгдэхүүн хадгалагдаагүй байна!
+        body: Та хадгалаагүй бүх өөрчлөлтөө алдах болно, цуцлахдаа итгэлтэй байна
+          уу?
+        changes-saved: Өөрчлөлтүүд хадгалагдлаа!
+      new:
+        new-product-created-success: Шинэ бүтээгдэхүүн амжилттай үүслээ!
+        warning-only-select-an-image-file-to-be-primary: Та зөвхөн үндсэн зураг болгон
+          зураг файл сонгож болно!
+        made-the-primary-success-image: '{fileName} үндсэн зураг боллоо.'
+        title: Бүтээгдэхүүн хадгалагдаагүй байна!
+        body: Буцах нь энэ бүтээгдэхүүнийг үүсгэхийг цуцлах бөгөөд үргэлжлүүлбэл бүх
+          оруулсан талбарууд арилна!
+        select-addon-categories: Нэмэлт ангилалуудыг сонгох
+        add-new-product-variant: Шинэ бүтээгдэхүүний хувилбар нэмэх
+        edit-product-variant: Бүтээгдэхүүний хувилбарыг засах
+        untitled-field: Гарчиггүй талбар
+      category:
+        category: ангилал
+        title: Бүтээгдэхүүн хадгалагдаагүй байна!
+        body: Анхаар! Энэ ангилалыг устгаснаар энэ ангилалд багтсан бүх бүтээгдэхүүн
+          устах болно.
+        edit-category: Ангиллыг засах
+        save-changes: Өөрчлөлтийг хадгалах
+        category-changes-saved-success: Ангиллын өөрчлөлтүүд хадгалагдлаа.
+        delete-product: Та энэ бүтээгдэхүүнийг устгахдаа итгэлтэй байна уу?
+        body-warning: Анхаар! Энэ бүтээгдэхүүнийг устгаснаар дахин хандах боломжгүй
+          болно.
+  settings:
+    api:
+      api-settings: API тохиргоо
+      access-key-for-storefront-api-integrations: Storefront API ба интеграцийн нэвтрэх
+        түлхүүр.
+      store-key: Дэлгүүрийн түлхүүр
+      store-key-help-text: Энэ бол таны дэлгүүрийн түлхүүр бөгөөд үүнийг ашиглан апп
+        болон интеграцүүдийг идэвхжүүлнэ.
+    gateways:
+      geteway-settings: Төлбөрийн гарцын тохиргоо
+      add-or-manage-your-paymeny-gateway-settings-here: Энд төлбөрийн гарцын тохиргоогоо
+        нэмэх эсвэл удирдах боломжтой.
+      create-new-gateway: Шинэ гарц үүсгэх
+      gateway-name: Гарцын нэр
+      gateway-help-text: Төлбөрийн гарцдаа нэр өгөх, энэ нь зөвхөн дотоод хэрэглээнд
+        хамаарна
+      gateway-code: Хаалганы код
+      gateway-code-help-text: SDK-д хаалгыг танихад ашиглагдах таних код
+      callback-url: Буцах URL
+      callback-url-help-text: Хэрэв тохиромжтой бол буцах URL
+      return-url: Буцах URL
+      return-url-help-text: Хэрэв тохиромжтой бол буцах URL
+      this-is-a-sandbox-gateway: Энэ нь туршилтын (sandbox) хаалга юм
+      delete-payment-gateway: Төлбөрийн хаалгыг устгах
+      create-new-payment-gateway: Шинэ төлбөрийн хаалга үүсгэх
+      save-gateway: Хаалгыг хадгалах
+      edit-payment-gateway: Төлбөрийн хаалгыг засах
+      save-changes: Өөрчлөлтийг хадгалах
+      title-remove: Та энэ хаалгыг устгахдаа итгэлтэй байна уу?
+      application-website-utilizing-gateway: Хаалгыг солихгүй бол энэ хаалгыг ашиглаж
+        буй бүх програм болон вэбсайт тохиргоонд саатал үүсч болзошгүй
+    index:
+      general-settings-header: Ерөнхий тохиргоо
+      general-settings-message: Таны дэлгүүрийн ерөнхий тохиргоог оруулна уу.
+      name-placeholder: Дэлгүүрийн нэр
+      name-help-text: Таны дэлгүүрийн нэр.
+      description-placeholder: Дэлгүүрийн тайлбар
+      description-help-text: Хэрэглэгчдэд юу зарж байгаагаа ойлгуулахын тулд дэлгүүрийнхээ
+        товч тайлбарыг өгнө үү.
+      tags-placeholder: Шошгууд нэмэх
+      contact-social: Холбоо барих & Нийгмийн сүлжээ
+      website-help-text: Таны бизнесийн вэбсайтын URL.
+      facebook-placeholder: Facebook ID
+      facebook-help-text: Таны бизнесийн Facebook хуудасны ID.
+      instagram-placeholder: Instagram хэрэглэгчийн нэр
+      instagram-help-text: Таны бизнесийн Instagram хэрэглэгчийн нэр.
+      twitter-placeholder: Twitter хэрэглэгчийн нэр
+      twitter-help-text: Таны бизнесийн Twitter хэрэглэгчийн нэр.
+      logo-backdrop: Лого & Арын зураг
+      logo-help-text: Таны дэлгүүрийн лого.
+      upload-new-logo: Шинэ лого оруулах
+      backdrop-help-text: Таны дэлгүүрийн нэмэлт баннер эсвэл арын зураг.
+      upload-new-backdrop: Шинэ арын зураг оруулах
+      images-videos: Зураг & Видео
+      drop-to-upload: Оруулахын тулд унагаана уу
+      ready-to-upload: оруулхад бэлэн.
+      upload-image-video: Зураг & Видео оруулах
+      drag-and-drop-image: Зураг болон видео файлуудыг энэ унагаах талбарт чирж оруулна
+        уу
+      upload-queue: Оруулах дараалал
+      alerted-for-certain-event: Тодорхой үйл явдалд хэн сэрэмжлүүлэхийг тохируулна
+        уу.
+      new-order-alert: Шинэ захиалгын сэрэмжлүүлэг
+      alert-placeholder: Шинэ захиалгын сэрэмжлүүлэг авах хэрэглэгчдийг сонгоно уу
+      enable-tax: Татварыг идэвхжүүлэх
+      tax-percentage: Татварын хувь
+      tax-percentage-help-text: Захиалгад ногдуулах худалдааны татварын хувь.
+      auto-accept-incoming-order: Ирж буй захиалгыг автоматаар хүлээн авах
+      auto-dispatch-order: Захиалгыг автоматаар илгээх
+      require-proof-of-delivery: Хүргэлтийн баталгаа шаардах
+      proof-of-delivery-method: Хүргэлтийн баталгааны арга
+      enable-cash-on-delivery: Хүргэлтийн үед бэлэн мөнгө авахыг идэвхжүүлэх
+      enable-order-pickup: Захиалгыг авахыг идэвхжүүлэх
+      enable-tips: Зөвлөмжүүдийг идэвхжүүлэх
+      enable-delivery-tips: Хүргэлтийн зөвлөмжүүдийг идэвхжүүлэх
+      enable-integrated-vendors: Нэгдсэн нийлүүлэгчдийг идэвхжүүлэх
+      save-changes: Өөрчлөлтүүдийг хадгалах
+    locations:
+      new-store-location: Шинэ дэлгүүрийн байршил
+      add-new-location: Шинэ байршил нэмэх
+      edit-store-location: Дэлгүүрийн байршлыг засах
+      save-changes: Өөрчлөлтүүдийг хадгалах
+      remove-this-store-location: Та энэ дэлгүүрийн байршлыг устгахдаа итгэлтэй байна
+        уу?
+      solely-accosciated-location: Зөвхөн энэ байршилтай холбогдсон бүх бүтээгдэхүүнүүдэд
+        дахин хандах боломжгүй болно.
+      new-store-hour: '{day} өдрийн шинэ дэлгүүрийн цаг нэмэх'
+      add-hours: Цаг нэмэх
+      store-hour-added: '{day} өдрийн шинэ дэлгүүрийн цаг нэмэгдсэн'
+      remove-these-hour: Та эдгээр цагийг устгахдаа итгэлтэй байна уу?
+      update-schedule-location: Эдгээр ажлын цагийг устгаснаар, таны дэлгүүр энэ байршлын
+        шинэчилсэн хуваарийн дагуу идэвхгүй болох боломжтой.
+      location-setting: Байршлын тохиргоо
+      manage-store: Дэлгүүрийнхээ ажиллах байршил, цагийг удирдах
+      text-location: Шинэ байршил үүсгэх
+      store-hour: Дэлгүүрийн цагийг удирдах
+    notification:
+      create-new-notification-channel: Шинэ мэдэгдлийн суваг үүсгэх
+      create-notification-channel: Мэдэгдлийн сувгийг үүсгэх
+      edit-notification-channel: Мэдэгдлийн сувгийг засах
+      save-changes: Өөрчлөлтүүдийг хадгалах
+      new-notification-channel-added: Шинэ мэдэгдлийн суваг нэмэгдсэн
+      remove-this-notification-channel: Та энэ мэдэгдлийн сувгийг устгахдаа итгэлтэй
+        байна уу?
+      application-websites-utillizing-channel: Энэ сувгийг ашиглаж буй бүх програм,
+        вэбсайтуудын тохиргоо тасалдвал сувгийг урьдчилан солихгүй бол саатал үүсэж
+        болзошгүй
+      notification-settings: Мэдэгдлийн тохиргоо
+      notification-storefront: Таны дэлгүүрийн мэдэгдлийн сувгуудыг тохируулах, тус
+        бүрийн мэдэгдлийн сувгийн өөрийн дүрэм, сонголтуудтай байж болно.
+      new-channel: Шинэ суваг
+  service:
+    storefront:
+      new-incoming-order: Танд шинэ захиалга ирлээ!
+      accept-order: Захиалгыг хүлээн авах
+      decline-order: Захиалгыг татгалзах
+      create-first-storefront: Анхны дэлгүүрээ үүсгээрэй
+      storefront-has-been-create-success: Таны шинэ дэлгүүр амжилттай үүссэн!
+      create-new-storefront: Шинэ дэлгүүр үүсгэх
+      storefront-create-success: Таны шинэ дэлгүүр амжилттай үүссэн!
+  application:
+    launch-app: Програмыг эхлүүлэх

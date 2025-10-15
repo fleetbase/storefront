@@ -12,6 +12,7 @@ export default class SettingsNotificationsController extends Controller {
     @service intl;
     @service crud;
     @service storefront;
+    @service hostRouter;
     @alias('storefront.activeStore') activeStore;
 
     @action createChannel() {
