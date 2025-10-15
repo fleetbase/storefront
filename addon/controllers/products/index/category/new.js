@@ -21,13 +21,24 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @service crud;
     @service hostRouter;
     @alias('storefront.activeStore') activeStore;
-    @tracked product = this.store.createRecord('product', { store_uuid: this.activeStore.id, currency: this.activeStore.currency, tags: [], meta_array: [], status: 'published' });
+    @tracked product = this.store.createRecord('product', {
+        store_uuid: this.activeStore.id,
+        currency: this.activeStore.currency,
+        tags: [],
+        meta_array: [],
+        category: this.category,
+        status: 'published',
+    });
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
     @tracked primaryFile = null;
     @tracked isSaving = false;
     @tracked statusOptions = ['published', 'draft'];
     abilityPermission = 'storefront create product';
+
+    get category() {
+        return this.productsIndexCategoryController?.category ?? null;
+    }
 
     /** overlay options */
     @tracked overlayTitle = 'New Product';
@@ -47,7 +58,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @tracked acceptedFileTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-flv', 'video/x-ms-wmv'];
 
     @action reset() {
-        this.product = this.store.createRecord('product', { store_uuid: this.activeStore.id, currency: this.activeStore.currency });
+        this.product = this.store.createRecord('product', { store_uuid: this.activeStore.id, category: this.category, currency: this.activeStore.currency });
         this.uploadQueue = [];
         this.uploadedFiles = [];
     }

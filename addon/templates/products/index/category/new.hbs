@@ -7,79 +7,100 @@
         @headerLeftInnerClass="w-full flex-1"
         @onPressCancel={{this.transitionBack}}
     >
-        <Button
-            @icon={{this.overlayActionButtonIcon}}
-            @type="primary"
-            @text={{this.overlayActionButtonTitle}}
-            @onClick={{perform this.saveProduct}}
-            @isLoading={{not this.saveProduct.isIdle}}
-            @permission={{this.abilityPermission}}
-        />
+        <:actions>
+            <Button
+                @icon={{this.overlayActionButtonIcon}}
+                @type="primary"
+                @text={{this.overlayActionButtonTitle}}
+                @onClick={{perform this.saveProduct}}
+                @isLoading={{not this.saveProduct.isIdle}}
+                @permission={{this.abilityPermission}}
+            />
+        </:actions>
     </Overlay::Header>
 
-    <Overlay::Body @increaseInnerBodyHeightBy="0" @wrapperClass="new-order-overlay-body px-4 space-y-4 pt-4">
+    <Overlay::Body>
         {{#let (cannot this.abilityPermission) as |unauthorized|}}
-            <InputGroup @name="Product Name" @value={{this.product.name}} @helpText="Enter your product's name" @disabled={{unauthorized}} />
-            <InputGroup @name="Product Description" @helpText="Enter a description of your product">
-                <Textarea @value={{this.product.description}} class="form-input w-full" placeholder="Enter a description of your product...." disabled={{unauthorized}} rows={{4}} />
-            </InputGroup>
-            <InputGroup @name="Product Status">
-                <Select
-                    class="w-full"
-                    @value={{this.product.status}}
-                    @placeholder="Select product status"
-                    @options={{this.statusOptions}}
-                    @onSelect={{fn (mut this.product.status)}}
-                    @humanize={{true}}
-                />
-            </InputGroup>
-            <InputGroup @name="Product Tags">
-                <TagInput
-                    class="form-input"
-                    @placeholder="Add tags"
-                    @allowSpacesInTags={{true}}
-                    @tags={{this.product.tags}}
-                    @addTag={{this.addTag}}
-                    @removeTagAtIndex={{this.removeTag}}
-                    @disabled={{unauthorized}}
-                    as |tag|
-                >
-                    {{tag}}
-                </TagInput>
-            </InputGroup>
-            <InputGroup @name="Product SKU" @value={{this.product.sku}} @helpText="Enter product SKU if applicable" @disabled={{unauthorized}} />
-            <div class="grid grid-cols-2 gap-2">
-                <InputGroup @name="Price" @helpText="Enter a price users will pay to purchase this product">
-                    <MoneyInput
+            <ContentPanel @title={{t "common.details"}} @open={{true}} @wrapperClass="bordered-top">
+                <InputGroup @name="Product Name" @value={{this.product.name}} @helpText="Enter your product's name" @disabled={{unauthorized}} />
+                <InputGroup @name="Product Description" @helpText="Enter a description of your product">
+                    <Textarea @value={{this.product.description}} class="form-input w-full" placeholder="Enter a description of your product...." disabled={{unauthorized}} rows={{4}} />
+                </InputGroup>
+                <InputGroup @name="Product Category">
+                    <ModelSelect
+                        @modelName="category"
+                        @selectedModel={{this.product.category}}
+                        @query={{hash for="storefront_product" owner_uuid=this.activeStore.id}}
+                        @placeholder="Select Product Category"
+                        @triggerClass="form-select form-input"
+                        @infiniteScroll={{false}}
+                        @renderInPlace={{true}}
+                        @allowClear={{true}}
+                        @onChange={{fn (mut this.product.category)}}
+                        @onChangeId={{fn (mut this.product.category_uuid)}}
+                        as |model|
+                    >
+                        <div class="flex items-center">
+                            <span class="uppercase">
+                                {{model.name}}
+                            </span>
+                        </div>
+                    </ModelSelect>
+                </InputGroup>
+                <InputGroup @name="Product Status">
+                    <Select
                         class="w-full"
-                        @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
-                        @value={{this.product.price}}
-                        @canSelectCurrency={{false}}
-                        @onCurrencyChange={{fn (mut this.product.currency)}}
-                        @disabled={{unauthorized}}
+                        @value={{this.product.status}}
+                        @placeholder="Select product status"
+                        @options={{this.statusOptions}}
+                        @onSelect={{fn (mut this.product.status)}}
+                        @humanize={{true}}
                     />
                 </InputGroup>
-                <InputGroup @name="Sale Price" @helpText="Optionally add a sale price for the product if the product is put on sale">
-                    <MoneyInput
-                        class="w-full"
-                        @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
-                        @value={{this.product.sale_price}}
-                        @canSelectCurrency={{false}}
-                        @onCurrencyChange={{fn (mut this.product.currency)}}
+                <InputGroup @name="Product Tags">
+                    <TagInput
+                        class="form-input"
+                        @placeholder="Add tags"
+                        @allowSpacesInTags={{true}}
+                        @tags={{this.product.tags}}
+                        @addTag={{this.addTag}}
+                        @removeTagAtIndex={{this.removeTag}}
                         @disabled={{unauthorized}}
-                    />
+                        as |tag|
+                    >
+                        {{tag}}
+                    </TagInput>
                 </InputGroup>
-            </div>
+                <InputGroup @name="Product SKU" @value={{this.product.sku}} @helpText="Enter product SKU if applicable" @disabled={{unauthorized}} />
+                <div class="grid grid-cols-2 gap-2">
+                    <InputGroup @name="Price" @helpText="Enter a price users will pay to purchase this product">
+                        <MoneyInput
+                            class="w-full"
+                            @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
+                            @value={{this.product.price}}
+                            @canSelectCurrency={{false}}
+                            @onCurrencyChange={{fn (mut this.product.currency)}}
+                            @disabled={{unauthorized}}
+                        />
+                    </InputGroup>
+                    <InputGroup @name="Sale Price" @helpText="Optionally add a sale price for the product if the product is put on sale">
+                        <MoneyInput
+                            class="w-full"
+                            @currency={{if this.product.currency this.product.currency this.activeStore.currency}}
+                            @value={{this.product.sale_price}}
+                            @canSelectCurrency={{false}}
+                            @onCurrencyChange={{fn (mut this.product.currency)}}
+                            @disabled={{unauthorized}}
+                        />
+                    </InputGroup>
+                </div>
+            </ContentPanel>
 
-            <ContentPanel
-                @title="Metadata"
-                @open={{this.product.meta_array.length}}
-                @actionButtons={{this.metadataButtons}}
-                @pad={{true}}
-                @panelBodyWrapperClass="px-0 py-4"
-                @panelBodyClass="bg-white dark:bg-gray-800"
-            >
-                {{#each this.product.meta_array as |metaField index|}}
+            <ContentPanel @title={{t "common.metadata"}} @open={{true}} @wrapperClass="bordered-top">
+                <div>
+                    <MetadataEditor @value={{this.product.meta}} @onChange={{fn (mut this.product.meta)}} />
+                </div>
+                {{!-- {{#each this.product.meta_array as |metaField index|}}
                     <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                         <div class="input-group">
                             <div class="flex justify-between items-center mb-1">
@@ -97,7 +118,7 @@
                             <Input class="w-full form-input" @value={{metaField.value}} placeholder={{metaField.label}} disabled={{unauthorized}} />
                         </div>
                     </div>
-                {{/each}}
+                {{/each}} --}}
             </ContentPanel>
 
             <InputGroup>
@@ -143,11 +164,9 @@
                 </div>
             </div>
 
-            <ContentPanel @title="Variants" @open={{true}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
-                <div class="content-panel-body p-4">
-                    <div class="flex items-center justify-end">
-                        <Button @text="New Variant" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} @permission="storefront create product-variant" />
-                    </div>
+            <ContentPanel @title="Variants" @open={{true}} @wrapperClass="bordered-top">
+                <div class="flex items-center justify-end">
+                    <Button @text="New Variant" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} @permission="storefront create product-variant" />
                 </div>
                 <Tabs class="overlay-content-panel" as |Tab|>
                     {{#each this.product.variants as |variant|}}
@@ -224,78 +243,74 @@
                 </Tabs>
             </ContentPanel>
 
-            <ContentPanel @title="Add-Ons" @open={{true}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
-                <div class="px-4">
-                    <div class="flex items-center justify-end mb-3">
-                        <Button
-                            @text="Select Addon Categories"
-                            @icon="plus"
-                            @iconPrefix="fas"
-                            @onClick={{perform this.promptSelectAddonCategories}}
-                            @permission="storefront list product-addon"
-                        />
-                    </div>
-                    <div class="space-y-2">
-                        {{#each this.product.addon_categories as |addonCategory index|}}
-                            <div>
-                                <div class="flex items-center rounded-md shadow-sm px-3 py-2 font-semibold bg-gray-200 dark:bg-gray-900 dark:text-gray-100 mb-2">
-                                    <div class="flex-1 flex items-center">
-                                        <FaIcon @icon="pencil" class="mr-1 dark:text-gray-100" />
-                                        <div class="w-full px-2 m-0 border-none bg-transparent dark:text-gray-100">
-                                            {{addonCategory.name}}
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <a
-                                            href="javascript:;"
-                                            class="destroy-action opacity-50 hover:opacity-100 text-sm"
-                                            {{on "click" (fn this.removeAddonCategory index)}}
-                                            disabled={{cannot "storefront delete product-addon"}}
-                                        >Remove</a>
-                                    </div>
-                                </div>
-                                <div class="space-y-2 mb-2">
-                                    {{#each addonCategory.category.addons as |addon|}}
-                                        <div class="grid grid-cols-10 gap-1 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-900 dark:text-gray-100 dark:bg-gray-800 bg-gray-200">
-                                            <div class="flex items-center">
-                                                <Checkbox
-                                                    @value={{not (in-array addon.id addonCategory.excluded_addons)}}
-                                                    @onToggle={{fn this.excludeAddon index addon}}
-                                                    disabled={{cannot "storefront update product-addon"}}
-                                                />
-                                            </div>
-                                            <div class="col-span-3 flex items-center">
-                                                {{addon.name}}
-                                            </div>
-                                            <div class="col-span-4">
-                                                {{addon.description}}
-                                            </div>
-                                            <div class="col-span-2">
-                                                {{format-currency addon.price this.product.currency}}
-                                            </div>
-                                        </div>
-                                    {{/each}}
-                                </div>
-                            </div>
-                        {{/each}}
-                    </div>
-                </div>
-            </ContentPanel>
-
-            <ContentPanel @title="Availability" @open={{this.product.hours.length}} @pad={{false}} @panelBodyClass="bg-white dark:bg-gray-800">
-                <div class="p-2">
-                    <ScheduleManager
-                        @subject={{this.product}}
-                        @subjectKey="product_uuid"
-                        @hourModelType="product-hour"
-                        @disabled={{unauthorized}}
-                        class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2"
+            <ContentPanel @title="Add-Ons" @open={{true}} @wrapperClass="bordered-top">
+                <div class="flex items-center justify-end mb-2">
+                    <Button
+                        @text="Select Addon Categories"
+                        @icon="plus"
+                        @iconPrefix="fas"
+                        @onClick={{perform this.promptSelectAddonCategories}}
+                        @permission="storefront list product-addon"
                     />
                 </div>
+                <div class="space-y-2">
+                    {{#each this.product.addon_categories as |addonCategory index|}}
+                        <div>
+                            <div class="flex items-center rounded-md shadow-sm px-3 py-2 font-semibold bg-gray-200 dark:bg-gray-900 dark:text-gray-100 mb-2">
+                                <div class="flex-1 flex items-center">
+                                    <FaIcon @icon="pencil" class="mr-1 dark:text-gray-100" />
+                                    <div class="w-full px-2 m-0 border-none bg-transparent dark:text-gray-100">
+                                        {{addonCategory.name}}
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <a
+                                        href="javascript:;"
+                                        class="destroy-action opacity-50 hover:opacity-100 text-sm"
+                                        {{on "click" (fn this.removeAddonCategory index)}}
+                                        disabled={{cannot "storefront delete product-addon"}}
+                                    >Remove</a>
+                                </div>
+                            </div>
+                            <div class="space-y-2 mb-2">
+                                {{#each addonCategory.category.addons as |addon|}}
+                                    <div class="grid grid-cols-10 gap-1 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-900 dark:text-gray-100 dark:bg-gray-800 bg-gray-200">
+                                        <div class="flex items-center">
+                                            <Checkbox
+                                                @value={{not (in-array addon.id addonCategory.excluded_addons)}}
+                                                @onToggle={{fn this.excludeAddon index addon}}
+                                                disabled={{cannot "storefront update product-addon"}}
+                                            />
+                                        </div>
+                                        <div class="col-span-3 flex items-center">
+                                            {{addon.name}}
+                                        </div>
+                                        <div class="col-span-4">
+                                            {{addon.description}}
+                                        </div>
+                                        <div class="col-span-2">
+                                            {{format-currency addon.price this.product.currency}}
+                                        </div>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
             </ContentPanel>
 
-            <ContentPanel @title="Images & Videos" @open={{this.product.files.length}} @pad={{false}} @panelBodyWrapperClass="px-0 py-4" @panelBodyClass="bg-white dark:bg-gray-800">
-                <div class="px-6 space-y-4">
+            <ContentPanel @title="Availability" @open={{true}} @wrapperClass="bordered-top">
+                <ScheduleManager
+                    @subject={{this.product}}
+                    @subjectKey="product_uuid"
+                    @hourModelType="product-hour"
+                    @disabled={{unauthorized}}
+                    class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2"
+                />
+            </ContentPanel>
+
+            <ContentPanel @title="Images & Videos" @open={{true}} @wrapperClass="bordered-top">
+                <div class="space-y-2">
                     {{#if this.isUploading}}
                         <div
                             class="min-h-56 dropzone w-full rounded-lg px-4 py-8 min-h bg-gray-50 dark:bg-gray-900 bg-opacity-25 text-gray-900 dark:text-white text-center flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-indigo-500"
@@ -382,7 +397,7 @@
                 </div>
             </ContentPanel>
 
-            <ContentPanel @title="Youtube Videos" @open={{this.product.youtube_urls.length}} @wrapperClass="mb-12" @panelBodyWrapperClass="p-4" @panelBodyClass="bg-white dark:bg-gray-800">
+            <ContentPanel @title="Youtube Videos" @open={{true}} @wrapperClass="bordered-top">
                 <p class="text-sm">Add YouTube video urls to assosciate with this product or service.</p>
                 <div class="input-group">
                     <ArrayInput @data={{this.product.youtube_urls}} @placeholder="Enter youtube video url" @onDataChanged={{fn (mut this.product.youtube_urls)}} @disabled={{unauthorized}}>
