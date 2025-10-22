@@ -2,6 +2,8 @@
 
 namespace Fleetbase\Storefront\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Builder;
+
 class FoodTruckController extends StorefrontController
 {
     /**
@@ -10,4 +12,12 @@ class FoodTruckController extends StorefrontController
      * @var string
      */
     public $resource = 'food_truck';
+
+    /**
+     * Additional query hook.
+     */
+    public function onQueryRecord(Builder $builder)
+    {
+        $builder->with(['vehicle']);
+    }
 }

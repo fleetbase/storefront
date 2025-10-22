@@ -71,8 +71,6 @@ class StorefrontOrderAccepted extends Notification
 
     /**
      * Get the notification's delivery channels.
-     *
-     * @return array
      */
     public function via($notifiable): array
     {
@@ -85,7 +83,7 @@ class StorefrontOrderAccepted extends Notification
         if (Storefront::hasNotificationChannelConfigured($this->storefront, 'fcm')) {
             $channels[] = FcmChannel::class;
         }
-        
+
         return $channels;
     }
 

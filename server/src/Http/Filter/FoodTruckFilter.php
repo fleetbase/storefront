@@ -12,6 +12,12 @@ class FoodTruckFilter extends FleetOpsOrderFilter
         $this->builder->where('company_uuid', $this->session->get('company'));
     }
 
+    public function queryForPublic()
+    {
+        $this->builder->where('company_uuid', $this->session->get('company'));
+        $this->builder->whereHas('vehicle');
+    }
+
     public function storefront($storefront)
     {
         $this->builder->whereHas(
@@ -33,5 +39,10 @@ class FoodTruckFilter extends FleetOpsOrderFilter
             ->toArray();
 
         $this->builder->whereIn('service_area_uuid', $matchingServiceAreaIds);
+    }
+
+    public function withDeleted()
+    {
+        $this->builder->withTrashed();
     }
 }
