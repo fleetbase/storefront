@@ -27,6 +27,7 @@ class CatalogCategory extends FleetbaseResource
             'owner_uuid'                         => $this->when(Http::isInternalRequest(), $this->owner_uuid),
             'name'                               => $this->name,
             'description'                        => $this->description,
+            'icon_url'                           => $this->icon_url,
             'tags'                               => data_get($this, 'tags', []),
             'meta'                               => data_get($this, 'meta', Utils::createObject()),
             'products'                           => CatalogProduct::collection($this->products ?? []),
