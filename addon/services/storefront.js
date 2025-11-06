@@ -94,11 +94,14 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.playAlert();
         this.trigger('order.incoming', order, store);
 
+        const alreadyAccepted = !['created', 'pending'].includes(order.status);
+
         this.modalsManager.show('modals/incoming-order', {
             title: this.intl.t('storefront.service.storefront.new-incoming-order'),
-            acceptButtonText: this.intl.t('storefront.service.storefront.accept-order'),
+            acceptButtonText: alreadyAccepted ? this.intl.t('common.ok') : this.intl.t('storefront.service.storefront.accept-order'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
+            hideDeclineButton: alreadyAccepted,
             declineButtonText: this.intl.t('storefront.service.storefront.decline-order'),
             declineButtonScheme: 'danger',
             closeButton: false,
@@ -108,6 +111,8 @@ export default class StorefrontService extends Service.extend(Evented) {
             store,
             confirm: async (modal) => {
                 modal.startLoading();
+
+                if (alreadyAccepted) return modal.done();
 
                 try {
                     await this.fetch.post('orders/accept', { order: order.id }, { namespace: 'storefront/int/v1' });

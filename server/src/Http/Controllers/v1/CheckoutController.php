@@ -435,7 +435,6 @@ class CheckoutController extends Controller
 
         // Create qpay instance
         $qpay = QPay::instance($gateway->config->username, $gateway->config->password, $gateway->callback_url);
-
         if ($gateway->sandbox) {
             $qpay = $qpay->useSandbox();
         }
@@ -471,15 +470,44 @@ class CheckoutController extends Controller
         $callbackUrl = Utils::apiUrl('storefront/v1/checkouts/capture-qpay', $callbackParams);
 
         // Create invoice description
-        // $invoiceAmount       = round($amount / 100);
+        $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
         $invoiceAmount       = $amount;
-        $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config->invoice_id;
+        $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->invoice_id ?? null;
         $invoiceDescription  = $about->name . ' cart checkout';
         $invoiceReceiverCode = $checkout->public_id;
         $senderInvoiceNo     = $checkout->public_id;
+        $districtCode        = $gateway->config?->district_code ?? null;
+        $invoiceReceiverData = Utils::filterArray([
+            'name'     => $customer->name,
+            'email'    => $customer->email ?? null,
+            'phone'    => $customer->phone ?? null,
+        ]);
+        $lines = [];
+        foreach ($cart->items as $item) {
+            $lines[] = [
+                'line_description'    => $item->name,
+                'line_quantity'       => $item->quantity ?? 1,
+                'line_unit_price'     => number_format($item->price, 2, '.', ''),
+                'note'                => $checkout->public_id,
+                'classification_code' => '0111100',
+                'taxes'               => [
+                    [
+                        // 'tax_code'    => 'VAT', // only works without this
+                        'description' => 'НӨАТ',
+                        'amount'      => QPay::calculateTax($item->subtotal),
+                        'note'        => $checkout->public_id,
+                    ],
+                ],
+            ];
+        }
 
         // Create qpay invoice
-        $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
+        $invoice = null;
+        if ($ebarimtInvoiceCode) {
+            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, '1', $districtCode, $lines);
+        } else {
+            $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
+        }
 
         // Update checkout with invoice id
         $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
@@ -895,6 +923,7 @@ class CheckoutController extends Controller
             'delivery_tip' => $checkout->getOption('delivery_tip'),
             'total'        => Utils::numbersOnly($amount),
             'currency'     => $currency,
+            'gateway'      => $gateway->type,
             'require_pod'  => $about->getOption('require_pod'),
             'pod_method'   => $about->pod_method,
             'is_pickup'    => $checkout->is_pickup,
@@ -945,9 +974,6 @@ class CheckoutController extends Controller
         // notify driver if assigned
         $order->notifyDriverAssigned();
 
-        // notify order creation
-        Storefront::alertNewOrder($order);
-
         // purchase service quote
         if ($serviceQuote) {
             $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
@@ -960,6 +986,9 @@ class CheckoutController extends Controller
                 Storefront::autoDispatchOrder($order);
             }
         }
+
+        // notify order creation
+        Storefront::alertNewOrder($order);
 
         // update the cart with the checkout
         $checkout->checkedout();
@@ -1139,6 +1168,7 @@ class CheckoutController extends Controller
                 'delivery_tip'          => 0,
                 'total'                 => $subtotal,
                 'currency'              => $currency,
+                'gateway'               => $gateway->type,
                 'require_pod'           => $about->getOption('require_pod'),
                 'pod_method'            => $about->pod_method,
                 'is_pickup'             => $checkout->is_pickup,
@@ -1180,9 +1210,6 @@ class CheckoutController extends Controller
             // purchase service quote
             $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
 
-            // notify order creation
-            Storefront::alertNewOrder($order);
-
             // if order is auto accepted update status
             if ($store->isOption('auto_accept_orders')) {
                 Storefront::autoAcceptOrder($order);
@@ -1190,6 +1217,9 @@ class CheckoutController extends Controller
                     Storefront::autoDispatchOrder($order);
                 }
             }
+
+            // notify order creation
+            Storefront::alertNewOrder($order);
         }
 
         // convert origin to Place
@@ -1225,6 +1255,7 @@ class CheckoutController extends Controller
             'delivery_tip'          => $checkout->getOption('delivery_tip'),
             'total'                 => Utils::numbersOnly($amount),
             'currency'              => $currency,
+            'gateway'               => $gateway->type,
             'require_pod'           => $about->getOption('require_pod'),
             'pod_method'            => $about->pod_method,
             'is_pickup'             => $checkout->is_pickup,

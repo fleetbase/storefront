@@ -336,7 +336,7 @@ class CustomerController extends Controller
     public function query(Request $request)
     {
         $results = Contact::queryWithRequest($request, function (&$query, $request) {
-            $query->where(['type' => 'customer']);
+            $query->where(['type' => 'customer', 'company_uuid' => session('company')]);
         });
 
         return Customer::collection($results);

@@ -17,6 +17,8 @@ export default function getGatewaySchemas() {
             username: '',
             password: '',
             invoice_id: '',
+            ebarimt_invoice_id: '',
+            district_code: '',
         },
         manual: {
             public_key: '',

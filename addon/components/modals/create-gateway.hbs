@@ -35,33 +35,19 @@
             <div class="input-group">
                 <Checkbox @value={{@options.gateway.sandbox}} @label={{t "storefront.component.modals.create-getaway.sandbox-getaway"}} @onToggle={{fn (mut @options.gateway.sandbox)}} />
             </div>
-            <div class="p-2 rounded-md my-2 border border-gray-200 dark:border-gray-800">
-                <h4 class="mb-2 font-semibold text-sm dark:text-white">Config</h4>
-                {{#if @options.gateway.isNew}}
-                    {{#each-in @options.schema as |key value|}}
-                        {{#if (is-bool-value value)}}
-                            <div class="input-group">
-                                <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
-                            </div>
-                        {{else}}
-                            <InputGroup @name={{humanize key}}>
-                                <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
-                            </InputGroup>
-                        {{/if}}
-                    {{/each-in}}
-                {{else}}
-                    {{#each-in @options.gateway.config as |key value|}}
-                        {{#if (is-bool-value value)}}
-                            <div class="input-group">
-                                <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
-                            </div>
-                        {{else}}
-                            <InputGroup @name={{humanize key}}>
-                                <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
-                            </InputGroup>
-                        {{/if}}
-                    {{/each-in}}
-                {{/if}}
+            <div class="p-2 rounded-md mb-2 mt-4 border border-gray-200 dark:border-gray-800">
+                <h4 class="mb-2 font-semibold text-xs tracking-wide uppercase text-gray-700 dark:text-gray-400">Config</h4>
+                {{#each-in @options.schema as |key value|}}
+                    {{#if (is-bool-value value)}}
+                        <div class="input-group">
+                            <Checkbox @value={{get @options.gateway.config key}} @label={{smart-humanize key}} @onToggle={{fn @options.setConfigKey key}} />
+                        </div>
+                    {{else}}
+                        <InputGroup @name={{humanize key}}>
+                            <Input class="form-input w-full" placeholder={{smart-humanize key}} @value={{get @options.gateway.config key}} {{on "blur" (fn @options.setConfigKey key)}} />
+                        </InputGroup>
+                    {{/if}}
+                {{/each-in}}
             </div>
         {{/if}}
     </div>

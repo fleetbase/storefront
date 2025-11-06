@@ -1,7 +1,8 @@
 <div class="overflow-y-scroll h-screen">
-    <div class="h-screen" {{increase-height-by 2000}}>
-        <main class="h-screen max-w-xl mx-auto pt-10 pb-12 lg:pb-16" ...attributes>
+    <div class="h-screen">
+        <main class="h-screen max-w-xl mx-auto pt-4" ...attributes>
             {{yield}}
+            <Spacer @height="400px" />
         </main>
     </div>
 </div>

@@ -1,30 +1,8 @@
-<Layout::Section::Header @title={{t "storefront.common.settings"}} class="align-items-unset" @actionsWrapperClass="align-items-end-i">
-    <div class="ui-tabs w-full border-b-0i">
-        <nav>
-            <LinkTo @route="settings.index" class="ui-tab">
-                <FaIcon @icon="cog" @prefix="fas" class="mr-1" />
-                <span>{{t "storefront.common.general"}}</span>
-            </LinkTo>
-            <LinkTo @route="settings.locations" class="ui-tab">
-                <FaIcon @icon="map-marker-alt" class="mr-1" />
-                <span>{{t "storefront.common.location"}}</span>
-            </LinkTo>
-            <LinkTo @route="settings.gateways" class="ui-tab">
-                <FaIcon @icon="cash-register" class="mr-1" />
-                <span>{{t "storefront.common.gateways"}}</span>
-            </LinkTo>
-            <LinkTo @route="settings.api" class="ui-tab">
-                <FaIcon @icon="code" class="mr-1" />
-                <span>{{t "storefront.common.api"}}</span>
-            </LinkTo>
-            <LinkTo @route="settings.notifications" class="ui-tab">
-                <FaIcon @icon="bell-concierge" class="mr-1" />
-                <span>{{t "storefront.common.notification"}}</span>
-            </LinkTo>
-        </nav>
-    </div>
-</Layout::Section::Header>
-
-<Layout::Section::Body>
-    {{outlet}}
-</Layout::Section::Body>
+<TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="px-4 flex-row-reverse">
+    <:actions>
+        <h3 class="uppercase text-xs tracking-wide text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.common.settings"}}</h3>
+    </:actions>
+    <:default>
+        {{outlet}}
+    </:default>
+</TabNavigation>
