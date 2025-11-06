@@ -1,28 +1,32 @@
 <div class="schedule-manager-wrapper" ...attributes>
     {{#each-in this.schedule as |day hours|}}
-        <div class="content-panel {{@contentPanelClass}} shadow-sm">
-            <div class="content-panel-header items-center {{@contentPanelHeaderClass}}">
-                <h4 class="font-semibold text-sm dark:text-gray-100">{{day}}</h4>
-                <div>
-                    <Button
-                        @icon="calendar-week"
-                        @text={{t "storefront.component.schedule-manager.add-hours"}}
-                        @textClass="truncate text-xs"
-                        @size="sm"
-                        @onClick={{fn this.addHours @subject day}}
-                        class="{{@addHoursButtonClass}}"
-                    />
-                </div>
-            </div>
-            <div class="content-panel-body {{@contentPanelBodyClass}}">
-                {{#each hours as |hour|}}
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="dark:text-gray-100">{{hour.humanReadableHours}}</div>
+        <div class="next-content-panel-wrapper bordered-classic is-open">
+            <div class="next-content-panel-container is-open">
+                <div class="next-content-panel {{@contentPanelClass}} shadow-sm">
+                    <div class="next-content-panel-header items-center {{@contentPanelHeaderClass}}">
+                        <h4 class="font-semibold text-sm dark:text-gray-100">{{day}}</h4>
                         <div>
-                            <Button @iconPrefix="fas" @type="danger" @size="xs" @icon="times" @onClick={{fn this.removeHours hour}} class="{{@removeHoursButtonClass}}" />
+                            <Button
+                                @icon="calendar-week"
+                                @text={{t "storefront.component.schedule-manager.add-hours"}}
+                                @textClass="truncate text-xs"
+                                @size="xs"
+                                @onClick={{fn this.addHours @subject day}}
+                                class="{{@addHoursButtonClass}}"
+                            />
                         </div>
                     </div>
-                {{/each}}
+                    <div class="next-content-panel-body {{@contentPanelBodyClass}}">
+                        {{#each hours as |hour|}}
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="dark:text-gray-100">{{hour.humanReadableHours}}</div>
+                                <div>
+                                    <Button @iconPrefix="fas" @type="danger" @size="xs" @icon="times" @onClick={{fn this.removeHours hour}} class="{{@removeHoursButtonClass}}" />
+                                </div>
+                            </div>
+                        {{/each}}
+                    </div>
+                </div>
             </div>
         </div>
     {{/each-in}}

@@ -114,7 +114,7 @@ class Cart extends StorefrontModel
      */
     public function setEventsAttribute($events)
     {
-        $this->attributes['items'] = json_encode($events);
+        $this->attributes['events'] = json_encode($events);
     }
 
     /**

@@ -38,7 +38,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
      */
     public $middleware = [
         'storefront.api' => [
-            'throttle:80,1',
+            \Fleetbase\Storefront\Http\Middleware\ThrottleRequests::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Fleetbase\Storefront\Http\Middleware\SetStorefrontSession::class,

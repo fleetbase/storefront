@@ -23,10 +23,10 @@
             </div>
 
             {{#each @model as |storeLocation|}}
-                <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{true}}>
+                <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h4 class="dark:text-gray-100 text-base font-semibold">{{t "storefront.settings.locations.store-hour"}}</h4>
+                            <h4 class="text-sm tracking-wide uppercase text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.settings.locations.store-hour"}}</h4>
                         </div>
                         <div class="flex items-center">
                             <Button @icon="edit" @text={{t "storefront.common.edit"}} @onClick={{fn this.editStoreLocation storeLocation}} @wrapperClass="mr-2" />

@@ -35,5 +35,15 @@ return [
     */
     'connection' => [
         'db' => env('STOREFRONT_DB_CONNECTION', 'storefront')
-    ]
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Throttle/Rate-Limiting
+    |--------------------------------------------------------------------------
+    */
+    'throttle' => [
+        'max_attempts' => env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', 500),
+        'decay_minutes' => env('STOREFRONT_THROTTLE_DECAY_MINUTES', 1),
+    ],
 ];

@@ -95,6 +95,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/orders
                 $router->group(['prefix' => 'orders'], function () use ($router) {
                     $router->put('picked-up', 'OrderController@completeOrderPickup');
+                    $router->post('receipt', 'OrderController@getReceipt');
                 });
 
                 // storefront/v1/customers
