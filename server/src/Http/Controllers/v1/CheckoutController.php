@@ -474,7 +474,7 @@ class CheckoutController extends Controller
         $invoiceAmount       = $amount;
         $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->invoice_id ?? null;
         $invoiceDescription  = $about->name . ' cart checkout';
-        $invoiceReceiverCode = $checkout->public_id;
+        $invoiceReceiverCode = 'CITIZEN';
         $senderInvoiceNo     = $checkout->public_id;
         $districtCode        = $gateway->config?->district_code ?? null;
         $invoiceReceiverData = Utils::filterArray([
@@ -486,14 +486,14 @@ class CheckoutController extends Controller
         foreach ($cart->items as $item) {
             $lines[] = [
                 'line_description'    => $item->name,
-                'line_quantity'       => $item->quantity ?? 1,
+                'line_quantity'       => number_format($item->quantity ?? 1, 2, '.', ''),
                 'line_unit_price'     => number_format($item->price, 2, '.', ''),
                 'note'                => $checkout->public_id,
                 'classification_code' => '0111100',
                 'taxes'               => [
                     [
-                        // 'tax_code'    => 'VAT', // only works without this
-                        'description' => 'НӨАТ',
+                        'tax_code'    => 'VAT',
+                        'description' => 'VAT',
                         'amount'      => QPay::calculateTax($item->subtotal),
                         'note'        => $checkout->public_id,
                     ],

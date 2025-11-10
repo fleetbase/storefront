@@ -312,11 +312,11 @@ class QPay
         ];
     }
 
-    public static function calculateTax($amount): string
+    public static function calculateTax($amount): float
     {
-        $result = ((float) $amount / 1.1) * 0.10;
-        $result = floor($result * 100) / 100;
+        $result    = ((float) $amount / 1.1) * 0.10;
+        $truncated = floor($result * 10000) / 10000;
 
-        return number_format($result, 2, '.', '');
+        return $truncated;
     }
 }
