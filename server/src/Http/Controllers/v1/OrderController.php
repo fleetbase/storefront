@@ -157,8 +157,16 @@ class OrderController extends Controller
             return $ebarimt; // Return error response if creation failed
         }
 
+        // get ebarimt qr data
+        $qrData = data_get($ebarimt, 'ebarimt_qr_data');
+        if (!empty($qrData)) {
+            $order->updateMeta('ebarimt_qr_data', $qrData);
+        }
+
         // Store receipt in order metadata
-        $order->updateMeta('ebarimt', $ebarimt);
+        if ($order->doesntHaveMeta('ebarimt')) {
+            $order->updateMeta('ebarimt', $ebarimt);
+        }
 
         return response()->json($ebarimt);
     }

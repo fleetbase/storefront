@@ -83,7 +83,7 @@ class FoodTruck extends StorefrontModel
      */
     public function vehicle(): BelongsTo
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Vehicle::class, 'vehicle_uuid', 'uuid');
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Vehicle::class, 'vehicle_uuid', 'uuid')->withTrashed();
     }
 
     /**
