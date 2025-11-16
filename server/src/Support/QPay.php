@@ -2,7 +2,10 @@
 
 namespace Fleetbase\Storefront\Support;
 
+use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
 use GuzzleHttp\Client;
 use Illuminate\Support\Str;
@@ -318,5 +321,78 @@ class QPay
         $truncated = floor($result * 10000) / 10000;
 
         return $truncated;
+    }
+
+    public static function createQpayInitialLines(Cart $cart, ?ServiceQuote $serviceQuote, $checkoutOptions): array
+    {
+        // Prepare dependencies
+        $checkoutOptions = (object) $checkoutOptions;
+        $subtotal        = (int) $cart->subtotal;
+        $total           = $subtotal;
+        $tip             = $checkoutOptions->tip ?? false;
+        $deliveryTip     = $checkoutOptions->delivery_tip ?? false;
+        $isPickup        = $checkoutOptions->is_pickup ?? false;
+
+        // Initialize lines
+        $lines = [];
+
+        if ($tip) {
+            $tipAmount = Storefront::calculateTipAmount($tip, $subtotal);
+            $lines[]   = [
+                'line_description'    => 'Tip',
+                'line_quantity'       => number_format(1, 2, '.', ''),
+                'line_unit_price'     => number_format($tipAmount, 2, '.', ''),
+                'note'                => 'Tip',
+                'classification_code' => '0111100',
+                'taxes'               => [
+                    [
+                        'tax_code'    => 'VAT',
+                        'description' => 'VAT',
+                        'amount'      => QPay::calculateTax($tipAmount),
+                        'note'        => 'Tip',
+                    ],
+                ],
+            ];
+        }
+
+        if ($deliveryTip && !$isPickup) {
+            $deliveryTipAmount = Storefront::calculateTipAmount($deliveryTip, $subtotal);
+            $lines[]           = [
+                'line_description'    => 'Delivery Tip',
+                'line_quantity'       => number_format(1, 2, '.', ''),
+                'line_unit_price'     => number_format($deliveryTipAmount, 2, '.', ''),
+                'note'                => 'Delivery Tip',
+                'classification_code' => '0111100',
+                'taxes'               => [
+                    [
+                        'tax_code'    => 'VAT',
+                        'description' => 'VAT',
+                        'amount'      => QPay::calculateTax($deliveryTipAmount),
+                        'note'        => 'Delivery Tip',
+                    ],
+                ],
+            ];
+        }
+
+        if (!$isPickup) {
+            $serviceQuoteAmount = Utils::numbersOnly($serviceQuote->amount);
+            $lines[]            = [
+                'line_description'    => 'Delivery Fee',
+                'line_quantity'       => number_format(1, 2, '.', ''),
+                'line_unit_price'     => number_format($serviceQuoteAmount, 2, '.', ''),
+                'note'                => 'Delivery Fee',
+                'classification_code' => '0111100',
+                'taxes'               => [
+                    [
+                        'tax_code'    => 'VAT',
+                        'description' => 'VAT',
+                        'amount'      => QPay::calculateTax($serviceQuoteAmount),
+                        'note'        => 'Delivery Fee',
+                    ],
+                ],
+            ];
+        }
+
+        return $lines;
     }
 }

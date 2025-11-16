@@ -482,7 +482,7 @@ class CheckoutController extends Controller
             'email'    => $customer->email ?? null,
             'phone'    => $customer->phone ?? null,
         ]);
-        $lines = [];
+        $lines = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
         foreach ($cart->items as $item) {
             $lines[] = [
                 'line_description'    => $item->name,
