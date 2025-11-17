@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -728,5 +729,18 @@ class Storefront
         }
 
         return null;
+    }
+
+    public static function calculateTipAmount($tip, $subtotal)
+    {
+        $tipAmount = 0;
+
+        if (is_string($tip) && Str::endsWith($tip, '%')) {
+            $tipAmount = Utils::calculatePercentage(Utils::numbersOnly($tip), $subtotal);
+        } else {
+            $tipAmount = Utils::numbersOnly($tip);
+        }
+
+        return $tipAmount;
     }
 }

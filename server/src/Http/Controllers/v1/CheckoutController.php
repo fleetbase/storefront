@@ -482,14 +482,14 @@ class CheckoutController extends Controller
             'email'    => $customer->email ?? null,
             'phone'    => $customer->phone ?? null,
         ]);
-        $lines = [];
+        $lines = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
         foreach ($cart->items as $item) {
             $lines[] = [
                 'line_description'    => $item->name,
                 'line_quantity'       => number_format($item->quantity ?? 1, 2, '.', ''),
                 'line_unit_price'     => number_format($item->price, 2, '.', ''),
                 'note'                => $checkout->public_id,
-                'classification_code' => '0111100',
+                'classification_code' => '6511100',
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',

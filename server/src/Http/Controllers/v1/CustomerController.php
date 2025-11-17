@@ -139,23 +139,29 @@ class CustomerController extends Controller
         $customer = new Contact($attributes);
         $meta     = ['identity' => $identity];
 
-        if ($isEmail) {
-            VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', [
-                'messageCallback' => function ($verification) use ($about) {
-                    return "Your {$about->name} verification code is {$verification->code}";
-                },
-                'meta' => $meta,
-            ]);
-        } else {
-            VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
-                'messageCallback' => function ($verification) use ($about) {
-                    return "Your {$about->name} verification code is {$verification->code}";
-                },
-                'meta' => $meta,
-            ]);
-        }
+        try {
+            if ($isEmail) {
+                VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', [
+                    'messageCallback' => function ($verification) use ($about) {
+                        return "Your {$about->name} verification code is {$verification->code}";
+                    },
+                    'meta' => $meta,
+                ]);
+            } else {
+                VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
+                    'messageCallback' => function ($verification) use ($about) {
+                        return "Your {$about->name} verification code is {$verification->code}";
+                    },
+                    'meta' => $meta,
+                ]);
+            }
 
-        return response()->json(['status' => 'ok']);
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            return response()->apiError(app()->hasDebugModeEnabled() ? $e->getMessage() : 'Error sending verification code.');
+        } catch (\Twilio\Exceptions\RestException $e) {
+            return response()->apiError($e->getMessage());
+        }
     }
 
     /**
