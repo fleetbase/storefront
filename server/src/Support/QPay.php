@@ -343,7 +343,7 @@ class QPay
                 'line_quantity'       => number_format(1, 2, '.', ''),
                 'line_unit_price'     => number_format($tipAmount, 2, '.', ''),
                 'note'                => 'Tip',
-                'classification_code' => '0111100',
+                'classification_code' => '6511100',
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',
@@ -362,7 +362,7 @@ class QPay
                 'line_quantity'       => number_format(1, 2, '.', ''),
                 'line_unit_price'     => number_format($deliveryTipAmount, 2, '.', ''),
                 'note'                => 'Delivery Tip',
-                'classification_code' => '0111100',
+                'classification_code' => '6511100',
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',
@@ -381,7 +381,7 @@ class QPay
                 'line_quantity'       => number_format(1, 2, '.', ''),
                 'line_unit_price'     => number_format($serviceQuoteAmount, 2, '.', ''),
                 'note'                => 'Delivery Fee',
-                'classification_code' => '0111100',
+                'classification_code' => '6511100',
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',

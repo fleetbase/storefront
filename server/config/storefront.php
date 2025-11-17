@@ -43,7 +43,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'throttle' => [
-        'max_attempts' => env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', 500),
+        'max_attempts' => env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', 600),
         'decay_minutes' => env('STOREFRONT_THROTTLE_DECAY_MINUTES', 1),
     ],
 ];
