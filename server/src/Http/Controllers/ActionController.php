@@ -95,4 +95,56 @@ class ActionController extends Controller
 
         return response()->json($metrics);
     }
+
+    /**
+     * Send promotional push notification to selected customers.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function sendPushNotification(Request $request)
+    {
+        $title       = $request->input('title');
+        $body        = $request->input('body');
+        $customerIds = $request->input('customers', []);
+        $storeId     = $request->input('store');
+
+        // Validate inputs
+        if (!$title || !$body) {
+            return response()->json(['error' => 'Title and body are required'], 400);
+        }
+
+        if (empty($customerIds)) {
+            return response()->json(['error' => 'At least one customer must be selected'], 400);
+        }
+
+        // Get the store
+        $store = Store::where('public_id', $storeId)->first();
+        if (!$store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        // Get customers
+        $customers = Contact::whereIn('uuid', $customerIds)
+            ->where('company_uuid', session('company'))
+            ->where('type', 'customer')
+            ->get();
+
+        // Send notifications
+        $sentCount = 0;
+        foreach ($customers as $customer) {
+            try {
+                $customer->notify(new \Fleetbase\Storefront\Notifications\PromotionalPushNotification($title, $body, $store));
+                $sentCount++;
+            } catch (\Exception $e) {
+                // Log error but continue with other customers
+                \Log::error('Failed to send push notification to customer: ' . $customer->uuid, ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'status'     => 'OK',
+            'sent_count' => $sentCount,
+            'total'      => count($customers),
+        ]);
+    }
 }

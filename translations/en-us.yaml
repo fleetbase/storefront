@@ -82,6 +82,7 @@ storefront:
     customers: Customers
     orders: Orders
     networks: Networks
+    promotions: Promotions
     settings: Settings
     launch-app: Launch App
   component:
@@ -658,3 +659,22 @@ storefront:
       storefront-create-success: Your new storefront has been created!
   application:
     launch-app: Launch App
+  promotions:
+    title: Promotions
+    push-notifications:
+      tab-title: Push Notifications
+      header: Send Push Notifications
+      description: Send promotional push notifications to your customers
+      title-label: Notification Title
+      title-placeholder: Enter notification title
+      title-help-text: The title that will appear in the push notification
+      body-label: Notification Body
+      body-placeholder: Enter notification message
+      body-help-text: The message content that will be sent to customers
+      customers-label: Select Customers
+      customers-placeholder: Select customers to send notification to
+      send-button: Send Notification
+      validation-title-body-required: Please enter both title and body for the notification
+      validation-customers-required: Please select at least one customer to send the notification to
+      notification-sent-success: Push notification sent successfully to selected customers
+      notification-sent-error: Failed to send push notification. Please try again.
