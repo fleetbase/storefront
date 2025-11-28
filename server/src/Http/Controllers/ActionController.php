@@ -107,13 +107,14 @@ class ActionController extends Controller
         $body        = $request->input('body');
         $customerIds = $request->input('customers', []);
         $storeId     = $request->input('store');
+        $selectAll   = $request->boolean('select_all', false);
 
         // Validate inputs
         if (!$title || !$body) {
             return response()->json(['error' => 'Title and body are required'], 400);
         }
 
-        if (empty($customerIds)) {
+        if (!$selectAll && empty($customerIds)) {
             return response()->json(['error' => 'At least one customer must be selected'], 400);
         }
 
@@ -124,10 +125,18 @@ class ActionController extends Controller
         }
 
         // Get customers
-        $customers = Contact::whereIn('uuid', $customerIds)
-            ->where('company_uuid', session('company'))
-            ->where('type', 'customer')
-            ->get();
+        if ($selectAll) {
+            // Get all customers for this store's company
+            $customers = Contact::where('company_uuid', session('company'))
+                ->where('type', 'customer')
+                ->get();
+        } else {
+            // Get only selected customers
+            $customers = Contact::whereIn('uuid', $customerIds)
+                ->where('company_uuid', session('company'))
+                ->where('type', 'customer')
+                ->get();
+        }
 
         // Send notifications
         $sentCount = 0;

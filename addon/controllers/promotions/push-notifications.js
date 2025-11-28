@@ -13,6 +13,7 @@ export default class PromotionsPushNotificationsController extends Controller {
     @tracked title = '';
     @tracked body = '';
     @tracked selectedCustomers = [];
+    @tracked selectAllCustomers = false;
     @tracked isLoading = false;
 
     @action
@@ -25,7 +26,7 @@ export default class PromotionsPushNotificationsController extends Controller {
             return;
         }
 
-        if (!this.selectedCustomers || this.selectedCustomers.length === 0) {
+        if (!this.selectAllCustomers && (!this.selectedCustomers || this.selectedCustomers.length === 0)) {
             this.notifications.warning(this.intl.t('storefront.promotions.push-notifications.validation-customers-required'));
             return;
         }
@@ -33,14 +34,19 @@ export default class PromotionsPushNotificationsController extends Controller {
         this.isLoading = true;
 
         try {
-            const customerIds = this.selectedCustomers.map((customer) => customer.id);
-
-            await this.fetch.post('storefront/int/v1/actions/send-push-notification', {
+            const payload = {
                 title: this.title,
                 body: this.body,
-                customers: customerIds,
                 store: this.storefront.getActiveStore('public_id'),
-            });
+                select_all: this.selectAllCustomers,
+            };
+
+            // Only include customer IDs if not selecting all
+            if (!this.selectAllCustomers) {
+                payload.customers = this.selectedCustomers.map((customer) => customer.id);
+            }
+
+            await this.fetch.post('storefront/int/v1/actions/send-push-notification', payload);
 
             this.notifications.success(this.intl.t('storefront.promotions.push-notifications.notification-sent-success'));
 
@@ -48,6 +54,7 @@ export default class PromotionsPushNotificationsController extends Controller {
             this.title = '';
             this.body = '';
             this.selectedCustomers = [];
+            this.selectAllCustomers = false;
         } catch (error) {
             this.notifications.error(this.intl.t('storefront.promotions.push-notifications.notification-sent-error'));
         } finally {

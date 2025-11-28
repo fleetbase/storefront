@@ -671,6 +671,8 @@ storefront:
       body-label: Notification Body
       body-placeholder: Enter notification message
       body-help-text: The message content that will be sent to customers
+      select-all-customers: Select All Customers
+      select-all-customers-help-text: Send notification to all customers of this store
       customers-label: Select Customers
       customers-placeholder: Select customers to send notification to
       send-button: Send Notification
