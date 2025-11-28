@@ -41,6 +41,13 @@
             disabled={{not this.activeStore.id}}
         >{{t "storefront.sidebar.food-trucks"}}</Layout::Sidebar::Item>
         <Layout::Sidebar::Item
+            @route="console.storefront.promotions"
+            @icon="bullhorn"
+            @permission="storefront view promotions"
+            @visible="storefront see promotions"
+            disabled={{not this.activeStore.id}}
+        >{{t "storefront.sidebar.promotions"}}</Layout::Sidebar::Item>
+        <Layout::Sidebar::Item
             @route="console.storefront.settings"
             @icon="cogs"
             @permission="storefront view settings"
