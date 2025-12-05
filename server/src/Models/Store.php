@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\Casts\Money;
 use Fleetbase\FleetOps\Models\OrderConfig;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\Models\Category;
@@ -290,6 +291,30 @@ class Store extends StorefrontModel
             ->using(NetworkStore::class)
             ->withPivot(['category_uuid', 'deleted_at'])
             ->wherePivotNull('deleted_at');
+    }
+
+    /**
+     * Mutator for the `options` attribute.
+     * Allows special handling for nested keys while keeping JSON casting intact.
+     */
+    public function setOptionsAttribute($value)
+    {
+        // Ensure we operate on a PHP array
+        if (is_string($value)) {
+            $value = json_decode($value, true) ?? [];
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        // Special handling for `required_checkout_min_amount`
+        if (array_key_exists('required_checkout_min_amount', $value)) {
+            $value['required_checkout_min_amount'] = Money::apply($value['required_checkout_min_amount']);
+        }
+
+        // Assign the array back — JSON cast handles encoding
+        $this->attributes['options'] = $value;
     }
 
     /**

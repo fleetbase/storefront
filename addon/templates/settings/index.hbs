@@ -255,7 +255,11 @@
                             {{/if}}
                         </div>
                         <div class="input-group">
-                            <Toggle @isToggled={{@model.options.required_checkout_min}} @onToggle={{fn (mut @model.options.required_checkout_min)}}>
+                            <Toggle
+                                @isToggled={{@model.options.required_checkout_min}}
+                                @onToggle={{fn (mut @model.options.required_checkout_min)}}
+                                @helpText={{t "storefront.settings.index.minimum-order-amount-help-text"}}
+                            >
                                 <FaIcon @icon="dollar-sign" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
                                         "storefront.settings.index.enable-minimum-order-amount"
                                     }}</span>
@@ -266,8 +270,6 @@
                                     @name={{t "storefront.settings.index.minimum-order-amount"}}
                                     @value={{@model.options.required_checkout_min_amount}}
                                     @currency={{@model.currency}}
-                                    @onChange={{fn (mut @model.options.required_checkout_min_amount)}}
-                                    @helpText={{t "storefront.settings.index.minimum-order-amount-help-text"}}
                                 />
                             {{/if}}
                         </div>

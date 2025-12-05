@@ -28,10 +28,13 @@
                     />
 
                     <div class="mb-4">
-                        <Toggle @isToggled={{this.selectAllCustomers}} @onToggle={{fn (mut this.selectAllCustomers)}} @wrapperClass="justify-start">
-                            <span class="text-sm font-semibold dark:text-gray-100">{{t "storefront.promotions.push-notifications.select-all-customers"}}</span>
-                            <span class="text-xs text-gray-500 block">{{t "storefront.promotions.push-notifications.select-all-customers-help-text"}}</span>
-                        </Toggle>
+                        <Toggle
+                            @isToggled={{this.selectAllCustomers}}
+                            @onToggle={{fn (mut this.selectAllCustomers)}}
+                            @wrapperClass="justify-start"
+                            @label={{t "storefront.promotions.push-notifications.select-all-customers"}}
+                            @helpText={{t "storefront.promotions.push-notifications.select-all-customers-help-text"}}
+                        />
                     </div>
 
                     {{#unless this.selectAllCustomers}}
@@ -41,13 +44,29 @@
                                 @query={{hash type="customer"}}
                                 @selectedModel={{this.selectedCustomers}}
                                 @placeholder={{t "storefront.promotions.push-notifications.customers-placeholder"}}
-                                @triggerClass="form-select form-input multiple"
                                 @infiniteScroll={{true}}
                                 @renderInPlace={{true}}
                                 @onChange={{fn (mut this.selectedCustomers)}}
+                                class="form-select form-input w-full min-h-[38px] min-h-38px"
                                 as |model|
                             >
-                                {{model.name}}
+                                <div class="flex flex-row space-x-2">
+                                    <div>
+                                        <Image
+                                            src={{model.photo_url}}
+                                            @fallbackSrc={{config "defaultValues.customerImage"}}
+                                            alt={{model.name}}
+                                            height="40"
+                                            width="40"
+                                            class="h-10 w-10 rounded-lg shadow-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold">{{model.name}}</div>
+                                        <div class="text-xs">{{n-a model.email}}</div>
+                                        <div class="text-xs">{{n-a model.phone}}</div>
+                                    </div>
+                                </div>
                             </ModelSelectMultiple>
                         </InputGroup>
                     {{/unless}}

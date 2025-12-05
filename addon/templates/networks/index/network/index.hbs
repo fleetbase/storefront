@@ -39,7 +39,11 @@
                 />
             </InputGroup>
 
-            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.panel-title"}} @open={{false}} @pad={{false}} @wrapperClass="bordered-top">
+            <ContentPanel
+                @title={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.panel-title"}}
+                @open={{false}}
+                @wrapperClass="bordered-classic"
+            >
                 <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.contact-social-panel.phone"}}>
                     <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
                 </InputGroup>
@@ -75,7 +79,11 @@
                 />
             </ContentPanel>
 
-            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.panel-title"}} @open={{false}} @pad={{false}} @wrapperClass="bordered-top">
+            <ContentPanel
+                @title={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.panel-title"}}
+                @open={{false}}
+                @wrapperClass="bordered-classic"
+            >
                 <InputGroup
                     @name={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.logo-label"}}
                     @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.logo-backdrop-panel.logo-help-text"}}
@@ -125,12 +133,7 @@
                 </InputGroup>
             </ContentPanel>
 
-            <ContentPanel
-                @title={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.panel-title"}}
-                @open={{false}}
-                @pad={{true}}
-                @panelBodyClass="bg-gray-800"
-            >
+            <ContentPanel @title={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.panel-title"}} @open={{false}} @wrapperClass="bordered-classic">
                 <div>
                     <p class="dark:text-gray-100 mb-4">{{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.panel-description"}}</p>
                     <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-label"}} @wrapperClass="mb-0">
@@ -176,7 +179,11 @@
                     {{/if}}
                 </div>
                 <div class="input-group">
-                    <Toggle @isToggled={{@model.options.required_checkout_min}} @onToggle={{fn (mut @model.options.required_checkout_min)}}>
+                    <Toggle
+                        @isToggled={{@model.options.required_checkout_min}}
+                        @onToggle={{fn (mut @model.options.required_checkout_min)}}
+                        @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.minimum-order-amount-input-help-text"}}
+                    >
                         <FaIcon @icon="dollar-sign" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
                                 "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-minimum-order-amount"
                             }}</span>
@@ -187,8 +194,6 @@
                             @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.minimum-order-amount-input-label"}}
                             @value={{@model.options.required_checkout_min_amount}}
                             @currency={{@model.currency}}
-                            @onChange={{fn (mut @model.options.required_checkout_min_amount)}}
-                            @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.minimum-order-amount-input-help-text"}}
                         />
                     {{/if}}
                 </div>

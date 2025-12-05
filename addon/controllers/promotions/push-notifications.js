@@ -46,7 +46,7 @@ export default class PromotionsPushNotificationsController extends Controller {
                 payload.customers = this.selectedCustomers.map((customer) => customer.id);
             }
 
-            await this.fetch.post('storefront/int/v1/actions/send-push-notification', payload);
+            await this.fetch.post('actions/send-push-notification', payload, { namespace: 'storefront/int/v1' });
 
             this.notifications.success(this.intl.t('storefront.promotions.push-notifications.notification-sent-success'));
 
