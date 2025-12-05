@@ -155,6 +155,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router) {
                                 $router->get('store-count', 'ActionController@getStoreCount');
                                 $router->get('metrics', 'ActionController@getMetrics');
+                                $router->post('send-push-notification', 'ActionController@sendPushNotification');
                             }
                         );
                         $router->fleetbaseRoutes(
