@@ -370,6 +370,9 @@ storefront:
               enable-tax: Enable tax
               tax-percentage-input-label: Tax Percentage
               tax-percentage-input-help-text: The sales tax percentage to apply to orders.
+              enable-minimum-order-amount: Enable minimum order amount
+              minimum-order-amount-input-label: Minimum Order Amount
+              minimum-order-amount-input-help-text: The minimum order amount required for checkout.
               auto-accept-incoming-orders: Auto accept incoming orders
               auto-dispatch-orders: Auto dispatch orders
               require-proof-of-delivery: Require proof of delivery
@@ -611,6 +614,9 @@ storefront:
       enable-tax: Enable tax
       tax-percentage: Tax Percentage
       tax-percentage-help-text: The sales tax percentage to apply to orders.
+      enable-minimum-order-amount: Enable minimum order amount
+      minimum-order-amount: Minimum Order Amount
+      minimum-order-amount-help-text: The minimum order amount required for checkout.
       auto-accept-incoming-order: Auto accept incoming orders
       auto-dispatch-order: Auto dispatch orders
       require-proof-of-delivery: Require proof of delivery

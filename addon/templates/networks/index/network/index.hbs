@@ -176,6 +176,23 @@
                     {{/if}}
                 </div>
                 <div class="input-group">
+                    <Toggle @isToggled={{@model.options.required_checkout_min}} @onToggle={{fn (mut @model.options.required_checkout_min)}}>
+                        <FaIcon @icon="dollar-sign" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                "storefront.networks.index.network.index.general-network-settings-form.config-switches.enable-minimum-order-amount"
+                            }}</span>
+                    </Toggle>
+                    {{#if @model.options.required_checkout_min}}
+                        <MoneyInput
+                            @wrapperClass="mb-0 mt-2"
+                            @name={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.minimum-order-amount-input-label"}}
+                            @value={{@model.options.required_checkout_min_amount}}
+                            @currency={{@model.currency}}
+                            @onChange={{fn (mut @model.options.required_checkout_min_amount)}}
+                            @helpText={{t "storefront.networks.index.network.index.general-network-settings-form.config-switches.minimum-order-amount-input-help-text"}}
+                        />
+                    {{/if}}
+                </div>
+                <div class="input-group">
                     <Toggle @isToggled={{@model.options.auto_accept_orders}} @onToggle={{fn (mut @model.options.auto_accept_orders)}}>
                         <FaIcon @icon="robot" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
                                 "storefront.networks.index.network.index.general-network-settings-form.config-switches.auto-accept-incoming-orders"
