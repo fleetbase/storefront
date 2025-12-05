@@ -41,7 +41,9 @@ export default buildRoutes(function () {
     this.route('food-trucks', function () {
         this.route('index', { path: '/' }, function () {});
     });
-    this.route('promotions');
+    this.route('promotions', function () {
+        this.route('push-notifications', { path: '/' });
+    });
     this.route('coupons');
     this.route('broadcast');
     this.route('pages');

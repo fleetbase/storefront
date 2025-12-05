@@ -1,80 +1,81 @@
-{{#if (eq @order.type "storefront")}}
-    <ContentPanel
-        @title={{t "storefront.component.storefront-order-summary.order-summary-title"}}
-        @prefixTitleRight={{if @order.payload.cod_amount "Cash" ""}}
-        @prefixTitleRightClass="text-green-400"
-        @open={{true}}
-        @pad={{true}}
-        @panelBodyClass="bg-white dark:bg-gray-800"
-    >
-        <div class="flex flex-col space-y-4 p-2 overflow-hidden">
-            {{#each @order.payload.entities as |entity|}}
-                <div class="flex flex-1">
-                    <div class="mr-2">
-                        <div class="flex items-center justify-center w-6 h-5 border border-gray-200 dark:border-blue-400 rounded-md">
-                            <span class="text-blue-400 text-xs">{{entity.meta.quantity}}x</span>
+{{#let @resource as |order|}}
+    {{#if order.meta.storefront}}
+        <ContentPanel
+            @title={{t "storefront.component.storefront-order-summary.order-summary-title"}}
+            @prefixTitleRight={{if order.payload.cod_amount "Cash" (n-a (titleize order.meta.gateway))}}
+            @prefixTitleRightClass={{if order.payload.cod_amount "text-green-400" "text-blue-400"}}
+            @open={{true}}
+            @wrapperClass="bordered-top"
+        >
+            <div class="flex flex-col space-y-4 p-2 overflow-hidden">
+                {{#each order.payload.entities as |entity|}}
+                    <div class="flex flex-1">
+                        <div class="mr-2">
+                            <div class="flex items-center justify-center w-6 h-5 border border-gray-200 dark:border-blue-400 rounded-md">
+                                <span class="text-blue-400 text-xs">{{entity.meta.quantity}}x</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex-1 flex">
-                        <div class="mr-4">
-                            <img src={{entity.photo_url}} class="w-12 h-12 rounded-md shadow-sm" alt={{entity.name}} />
+                        <div class="flex-1 flex">
+                            <div class="mr-4">
+                                <img src={{entity.photo_url}} class="w-12 h-12 rounded-md shadow-sm" alt={{entity.name}} />
+                            </div>
+                            <div>
+                                <h4 class="font-semibold dark:text-gray-100 mb-1 text-sm">{{entity.name}}</h4>
+                                <div class="flex flex-wrap truncate w-44">
+                                    <p class="dark:text-gray-50 text-xs truncate">{{entity.description}}</p>
+                                </div>
+                                <div>
+                                    {{#each entity.meta.variants as |variant|}}
+                                        <div>
+                                            <span class="text-xs dark:text-gray-50">{{variant.name}}</span>
+                                        </div>
+                                    {{/each}}
+                                </div>
+                                <div>
+                                    {{#each entity.meta.addons as |addon|}}
+                                        <div>
+                                            <span class="text-xs dark:text-gray-50">+ {{addon.name}}</span>
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <h4 class="font-semibold dark:text-gray-100 mb-1 text-sm">{{entity.name}}</h4>
-                            <div class="flex flex-wrap truncate w-44">
-                                <p class="dark:text-gray-50 text-xs truncate">{{entity.description}}</p>
-                            </div>
-                            <div>
-                                {{#each entity.meta.variants as |variant|}}
-                                    <div>
-                                        <span class="text-xs dark:text-gray-50">{{variant.name}}</span>
-                                    </div>
-                                {{/each}}
-                            </div>
-                            <div>
-                                {{#each entity.meta.addons as |addon|}}
-                                    <div>
-                                        <span class="text-xs dark:text-gray-50">+ {{addon.name}}</span>
-                                    </div>
-                                {{/each}}
-                            </div>
+                            <span class="dark:text-gray-50 text-sm">{{format-currency entity.meta.subtotal entity.currency}}</span>
                         </div>
                     </div>
-                    <div>
-                        <span class="dark:text-gray-50 text-sm">{{format-currency entity.meta.subtotal entity.currency}}</span>
+                {{/each}}
+            </div>
+            <div class="p-2 space-y-2 border-t border-b dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <span class="dark:text-gray-50 text-sm">{{t "storefront.orders.index.view.subtotal"}}</span>
+                    <span class="dark:text-gray-50 text-sm">{{format-currency order.meta.subtotal order.meta.currency}}</span>
+                </div>
+                {{#unless order.meta.is_pickup}}
+                    <div class="flex items-center justify-between">
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.orders.index.view.delivery-fee"}}</span>
+                        <span class="dark:text-gray-50 text-sm">{{format-currency order.meta.delivery_fee order.meta.currency}}</span>
                     </div>
-                </div>
-            {{/each}}
-        </div>
-        <div class="p-2 space-y-2 border-t border-b dark:border-gray-800">
-            <div class="flex items-center justify-between">
-                <span class="dark:text-gray-50 text-sm">{{t "fleet-ops.operations.orders.index.view.subtotal"}}</span>
-                <span class="dark:text-gray-50 text-sm">{{format-currency @order.meta.subtotal @order.meta.currency}}</span>
+                {{/unless}}
+                {{#if order.meta.tip}}
+                    <div class="flex items-center justify-between">
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.orders.index.view.tip"}}</span>
+                        <span class="dark:text-gray-50 text-sm">{{get-tip-amount order.meta.tip order.meta.subtotal order.meta.currency}}</span>
+                    </div>
+                {{/if}}
+                {{#if order.meta.delivery_tip}}
+                    <div class="flex items-center justify-between">
+                        <span class="dark:text-gray-50 text-sm">{{t "storefront.orders.index.view.delivery-tip"}}</span>
+                        <span class="dark:text-gray-50 text-sm">{{get-tip-amount order.meta.delivery_tip order.meta.subtotal order.meta.currency}}</span>
+                    </div>
+                {{/if}}
             </div>
-            {{#unless @order.meta.is_pickup}}
+            <div class="p-2">
                 <div class="flex items-center justify-between">
-                    <span class="dark:text-gray-50 text-sm">{{t "fleet-ops.operations.orders.index.view.delivery-fee"}}</span>
-                    <span class="dark:text-gray-50 text-sm">{{format-currency @order.meta.delivery_fee @order.meta.currency}}</span>
+                    <span class="dark:text-gray-50 font-bold text-sm">{{t "storefront.orders.index.view.total"}}</span>
+                    <span class="dark:text-gray-50 font-bold text-sm">{{format-currency order.meta.total order.meta.currency}}</span>
                 </div>
-            {{/unless}}
-            {{#if @order.meta.tip}}
-                <div class="flex items-center justify-between">
-                    <span class="dark:text-gray-50 text-sm">{{t "fleet-ops.operations.orders.index.view.tip"}}</span>
-                    <span class="dark:text-gray-50 text-sm">{{get-tip-amount @order.meta.tip @order.meta.subtotal @order.meta.currency}}</span>
-                </div>
-            {{/if}}
-            {{#if @order.meta.delivery_tip}}
-                <div class="flex items-center justify-between">
-                    <span class="dark:text-gray-50 text-sm">{{t "fleet-ops.operations.orders.index.view.delivery-tip"}}</span>
-                    <span class="dark:text-gray-50 text-sm">{{get-tip-amount @order.meta.delivery_tip @order.meta.subtotal @order.meta.currency}}</span>
-                </div>
-            {{/if}}
-        </div>
-        <div class="p-2">
-            <div class="flex items-center justify-between">
-                <span class="dark:text-gray-50 font-bold text-sm">{{t "fleet-ops.operations.orders.index.view.total"}}</span>
-                <span class="dark:text-gray-50 font-bold text-sm">{{format-currency @order.meta.total @order.meta.currency}}</span>
             </div>
-        </div>
-    </ContentPanel>
-{{/if}}
+        </ContentPanel>
+    {{/if}}
+{{/let}}

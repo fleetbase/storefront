@@ -1,0 +1,8 @@
+<TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="px-4 flex-row-reverse">
+    <:actions>
+        <h3 class="uppercase text-xs tracking-wide text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.promotions.title"}}</h3>
+    </:actions>
+    <:default>
+        {{outlet}}
+    </:default>
+</TabNavigation>

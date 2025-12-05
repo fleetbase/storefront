@@ -63,7 +63,7 @@ class CheckoutController extends Controller
 
         // handle cash orders
         if ($isCashOnDelivery) {
-            return static::initializeCashCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions);
+            return static::initializeCashCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions, $request);
         }
 
         if (!$gateway) {
@@ -72,18 +72,18 @@ class CheckoutController extends Controller
 
         // handle checkout initialization based on gateway
         if ($gateway->isStripeGateway) {
-            return static::initializeStripeCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions);
+            return static::initializeStripeCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions, $request);
         }
 
         // handle checkout initialization based on gateway
         if ($gateway->isQPayGateway) {
-            return static::initializeQPayCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions);
+            return static::initializeQPayCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions, $request);
         }
 
         return response()->apiError('Unable to initialize checkout!');
     }
 
-    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
     {
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
@@ -132,7 +132,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public static function initializeStripeCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public static function initializeStripeCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
     {
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
@@ -416,13 +416,19 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public static function initializeQPayCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions)
+    public static function initializeQPayCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
     {
         // Get store info
         $about = Storefront::about();
 
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
+
+        // Get ebarimt company registration number if any
+        $ebarimtRegistationNumber = $request->ebarimt_registration_no ?? '';
+        if ($ebarimtRegistationNumber) {
+            $customer->updateMeta('ebarimt_registration_no', $ebarimtRegistationNumber);
+        }
 
         // get amount/subtotal
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
@@ -470,6 +476,7 @@ class CheckoutController extends Controller
         $callbackUrl = Utils::apiUrl('storefront/v1/checkouts/capture-qpay', $callbackParams);
 
         // Create invoice description
+        $taxType             = '1'; // Start with VAT required
         $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
         $invoiceAmount       = $amount;
         $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->invoice_id ?? null;
@@ -478,18 +485,25 @@ class CheckoutController extends Controller
         $senderInvoiceNo     = $checkout->public_id;
         $districtCode        = $gateway->config?->district_code ?? null;
         $invoiceReceiverData = Utils::filterArray([
+            'register' => $ebarimtRegistationNumber,
             'name'     => $customer->name,
             'email'    => $customer->email ?? null,
             'phone'    => $customer->phone ?? null,
         ]);
+
+        // Create QPay line items
         $lines = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
         foreach ($cart->items as $item) {
-            $lines[] = [
+            $classificationCode = QPay::getCartItemClassificationCode($item);
+            $isVatExempt        = QPay::isTaxFreeClassificationCode($classificationCode);
+
+            $line = [
                 'line_description'    => $item->name,
                 'line_quantity'       => number_format($item->quantity ?? 1, 2, '.', ''),
                 'line_unit_price'     => number_format($item->price, 2, '.', ''),
                 'note'                => $checkout->public_id,
-                'classification_code' => '6511100',
+                'classification_code' => $classificationCode,
+                'tax_product_code'    => QPay::getCartItemTaxProductCode($item),
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',
@@ -499,12 +513,14 @@ class CheckoutController extends Controller
                     ],
                 ],
             ];
+
+            $lines[] = $line;
         }
 
         // Create qpay invoice
         $invoice = null;
         if ($ebarimtInvoiceCode) {
-            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, '1', $districtCode, $lines);
+            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
         } else {
             $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
         }

@@ -106,3 +106,7 @@ td.network-store-name-column > div > svg {
     align-items: center;
     width: 48%;
 }
+
+.min-h-38px {
+    min-height: 38px;
+}

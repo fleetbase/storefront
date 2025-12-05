@@ -332,6 +332,7 @@ class Cart extends StorefrontModel
             'subtotal'          => $subtotal,
             'variants'          => $variants,
             'addons'            => $addons,
+            'meta'              => $product->meta ?? [],
         ];
 
         // If item was added from a food truck
@@ -677,7 +678,7 @@ class Cart extends StorefrontModel
      */
     public static function findProduct(string $id): ?Product
     {
-        return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale'])->where(['public_id' => $id])->with([])->first();
+        return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale', 'meta'])->where(['public_id' => $id])->with([])->first();
     }
 
     public function getCurrency(?string $fallbackCurrency = null): ?string

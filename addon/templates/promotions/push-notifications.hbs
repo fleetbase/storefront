@@ -1,0 +1,85 @@
+<div class="overflow-y-scroll h-screen">
+    <div class="h-screen">
+        <main class="h-screen max-w-xl mx-auto pt-4">
+            <form class="h-screen" {{on "submit" this.sendPushNotification}}>
+                <div class="space-y-4 h-screen">
+                    <div>
+                        <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
+                            {{t "storefront.promotions.push-notifications.header"}}
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500">
+                            {{t "storefront.promotions.push-notifications.description"}}
+                        </p>
+                    </div>
+
+                    <InputGroup
+                        @name={{t "storefront.promotions.push-notifications.title-label"}}
+                        @value={{this.title}}
+                        @placeholder={{t "storefront.promotions.push-notifications.title-placeholder"}}
+                        @helpText={{t "storefront.promotions.push-notifications.title-help-text"}}
+                    />
+
+                    <InputGroup @name={{t "storefront.promotions.push-notifications.body-label"}} @helpText={{t "storefront.promotions.push-notifications.body-help-text"}}>
+                        <Textarea @value={{this.body}} placeholder={{t "storefront.promotions.push-notifications.body-placeholder"}} rows="4" class="form-input w-full" />
+                    </InputGroup>
+
+                    <div class="mb-4">
+                        <Toggle
+                            @isToggled={{this.selectAllCustomers}}
+                            @onToggle={{fn (mut this.selectAllCustomers)}}
+                            @wrapperClass="justify-start"
+                            @label={{t "storefront.promotions.push-notifications.select-all-customers"}}
+                            @helpText={{t "storefront.promotions.push-notifications.select-all-customers-help-text"}}
+                        />
+                    </div>
+
+                    {{#unless this.selectAllCustomers}}
+                        <InputGroup @name={{t "storefront.promotions.push-notifications.customers-label"}}>
+                            <ModelSelectMultiple
+                                @modelName="contact"
+                                @query={{hash type="customer"}}
+                                @selectedModel={{this.selectedCustomers}}
+                                @placeholder={{t "storefront.promotions.push-notifications.customers-placeholder"}}
+                                @infiniteScroll={{true}}
+                                @renderInPlace={{true}}
+                                @onChange={{fn (mut this.selectedCustomers)}}
+                                @triggerClass="form-select form-input w-full min-h-[38px] min-h-38px"
+                                as |model|
+                            >
+                                <div class="flex flex-row space-x-2">
+                                    <div>
+                                        <Image
+                                            src={{model.photo_url}}
+                                            @fallbackSrc={{config "defaultValues.customerImage"}}
+                                            alt={{model.name}}
+                                            height="40"
+                                            width="40"
+                                            class="h-10 w-10 rounded-lg shadow-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold">{{model.name}}</div>
+                                        <div class="text-xs">{{n-a model.email}}</div>
+                                        <div class="text-xs">{{n-a model.phone}}</div>
+                                    </div>
+                                </div>
+                            </ModelSelectMultiple>
+                        </InputGroup>
+                    {{/unless}}
+
+                    <div class="flex justify-end">
+                        <Button
+                            @type="primary"
+                            @icon={{if this.isLoading "spinner" "paper-plane"}}
+                            @iconPrefix={{if this.isLoading "fas fa-spin" "fas"}}
+                            @text={{t "storefront.promotions.push-notifications.send-button"}}
+                            @isLoading={{this.isLoading}}
+                            @disabled={{this.isLoading}}
+                            @onClick={{this.sendPushNotification}}
+                        />
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>

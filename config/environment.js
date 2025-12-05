@@ -29,7 +29,7 @@ function getMountedEngineRoutePrefix() {
         mountedEngineRoutePrefix = fleetbase.route;
     }
 
-    return `console.${mountedEngineRoutePrefix}.`;
+    return `console.${mountedEngineRoutePrefix}`;
 }
 
 function getenv(variable, defaultValue = null) {
