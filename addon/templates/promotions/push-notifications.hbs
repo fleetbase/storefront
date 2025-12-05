@@ -19,13 +19,9 @@
                         @helpText={{t "storefront.promotions.push-notifications.title-help-text"}}
                     />
 
-                    <InputGroup
-                        @name={{t "storefront.promotions.push-notifications.body-label"}}
-                        @type="textarea"
-                        @value={{this.body}}
-                        @placeholder={{t "storefront.promotions.push-notifications.body-placeholder"}}
-                        @helpText={{t "storefront.promotions.push-notifications.body-help-text"}}
-                    />
+                    <InputGroup @name={{t "storefront.promotions.push-notifications.body-label"}} @helpText={{t "storefront.promotions.push-notifications.body-help-text"}}>
+                        <Textarea @value={{this.body}} placeholder={{t "storefront.promotions.push-notifications.body-placeholder"}} rows="4" class="form-input w-full" />
+                    </InputGroup>
 
                     <div class="mb-4">
                         <Toggle
@@ -47,7 +43,7 @@
                                 @infiniteScroll={{true}}
                                 @renderInPlace={{true}}
                                 @onChange={{fn (mut this.selectedCustomers)}}
-                                class="form-select form-input w-full min-h-[38px] min-h-38px"
+                                @triggerClass="form-select form-input w-full min-h-[38px] min-h-38px"
                                 as |model|
                             >
                                 <div class="flex flex-row space-x-2">
