@@ -8,16 +8,6 @@ const path = require('path');
 module.exports = buildEngine({
     name,
 
-    postprocessTree(type, tree) {
-        if (type === 'css') {
-            tree = new Funnel(tree, {
-                exclude: ['**/@fleetbase/ember-ui/**/*.css'],
-            });
-        }
-
-        return tree;
-    },
-
     lazyLoading: {
         enabled: true,
     },
