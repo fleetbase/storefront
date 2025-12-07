@@ -257,6 +257,22 @@ class Storefront
     }
 
     /**
+     * Get the current store or networks order config.
+     *
+     * @return \Fleetbase\Storefront\Models\OrderConfig|null
+     */
+    public static function getSessionOrderConfig(): ?OrderConfig
+    {
+        if ($about = static::about()) {
+            $about->loadMissing('orderConfig');
+
+            return $about->orderConfig ?? static::getDefaultOrderConfig();
+        }
+
+        return static::getDefaultOrderConfig();
+    }
+
+    /**
      * Get the default Storefront OrderConfig for the "current" company context.
      *
      * @return \Fleetbase\Storefront\Models\OrderConfig|null
