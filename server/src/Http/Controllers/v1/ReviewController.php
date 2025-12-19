@@ -33,7 +33,7 @@ class ReviewController extends Controller
         }
 
         if (session('storefront_store')) {
-            $results = Review::queryWithRequest($request, function (&$query) use ($limit, $offset) {
+            $results = Review::queryWithRequestCached($request, function (&$query) use ($limit, $offset) {
                 $query->where('subject_uuid', session('storefront_store'));
 
                 if ($limit) {
@@ -59,7 +59,7 @@ class ReviewController extends Controller
                     return response()->json(['error' => 'Cannot find reviews for store'], 400);
                 }
 
-                $results = Review::queryWithRequest($request, function (&$query) use ($store, $limit, $offset) {
+                $results = Review::queryWithRequestCached($request, function (&$query) use ($store, $limit, $offset) {
                     $query->where('subject_uuid', $store->uuid);
 
                     if ($limit) {

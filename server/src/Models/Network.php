@@ -13,6 +13,7 @@ use Fleetbase\Models\Invite;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
@@ -26,6 +27,7 @@ class Network extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use HasApiModelCache;
     use HasOptionsAttributes;
     use HasSlug;
     use Searchable;

@@ -9,6 +9,7 @@ use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
@@ -30,6 +31,7 @@ class Product extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use HasApiModelCache;
     use HasMetaAttributes;
     use HasSlug;
     use Searchable;

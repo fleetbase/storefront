@@ -20,7 +20,7 @@ class CatalogController extends Controller
         $results = [];
 
         if (session('storefront_store')) {
-            $results = Catalog::queryWithRequest($request, function (&$query) use ($limit, $offset) {
+            $results = Catalog::queryWithRequestCached($request, function (&$query) use ($limit, $offset) {
                 $query->where('subject_uuid', session('storefront_store'));
 
                 if ($limit) {

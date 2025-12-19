@@ -40,6 +40,15 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         return this.productsIndexCategoryController?.category ?? null;
     }
 
+    get variantTabs() {
+        const variants = this.product.variants ?? [];
+        return variants.map((v) => ({
+            label: v.name,
+            id: v.public_id ?? v.name,
+            variant: v,
+        }));
+    }
+
     /** overlay options */
     @tracked overlayTitle = 'New Product';
     @tracked overlayActionButtonTitle = 'Create Product';
@@ -117,6 +126,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
                 subject_uuid: this.product.id,
                 subject_type: 'storefront:product',
                 type: 'storefront_product',
+                resize: 'md',
             },
             (uploadedFile) => {
                 this.product.files.pushObject(uploadedFile);

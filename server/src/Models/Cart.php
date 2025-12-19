@@ -8,6 +8,7 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\Expirable;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasPublicId;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Support\Arr;
@@ -19,6 +20,7 @@ class Cart extends StorefrontModel
     use HasUuid;
     use HasPublicId;
     use HasApiModelBehavior;
+    use HasApiModelCache;
     use Expirable;
 
     /**
