@@ -13,6 +13,7 @@ use Fleetbase\Models\User;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils as FleetbaseUtils;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
@@ -28,6 +29,7 @@ class Store extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use HasApiModelCache;
     use HasOptionsAttributes;
     use HasMetaAttributes;
     use HasSlug;

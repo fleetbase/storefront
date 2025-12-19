@@ -74,7 +74,7 @@ class CustomerController extends Controller
             return response()->apiError('Not authorized to view customers orders');
         }
 
-        $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
+        $results = Order::queryWithRequestCached($request, function (&$query) use ($customer) {
             $query->where('customer_uuid', $customer->uuid)->whereNull('deleted_at')->withoutGlobalScopes();
 
             // dont query any master orders if its a network
@@ -102,7 +102,7 @@ class CustomerController extends Controller
             return response()->apiError('Not authorized to view customers places');
         }
 
-        $results = Place::queryWithRequest($request, function (&$query) use ($customer) {
+        $results = Place::queryWithRequestCached($request, function (&$query) use ($customer) {
             $query->where('owner_uuid', $customer->uuid);
         });
 
@@ -341,7 +341,7 @@ class CustomerController extends Controller
      */
     public function query(Request $request)
     {
-        $results = Contact::queryWithRequest($request, function (&$query, $request) {
+        $results = Contact::queryWithRequestCached($request, function (&$query, $request) {
             $query->where(['type' => 'customer', 'company_uuid' => session('company')]);
         });
 

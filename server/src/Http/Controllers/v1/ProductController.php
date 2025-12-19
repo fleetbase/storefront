@@ -327,7 +327,7 @@ class ProductController extends Controller
      */
     public function query(Request $request)
     {
-        $results = Product::queryWithRequest($request, function (&$query, $request) {
+        $results = Product::queryWithRequestCached($request, function (&$query, $request) {
             // for stores
             if (session('storefront_store')) {
                 $query->where(['store_uuid' => session('storefront_store')]);

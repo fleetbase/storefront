@@ -9,6 +9,7 @@ use Fleetbase\FleetOps\Models\Zone;
 use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ class FoodTruck extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use HasApiModelCache;
     use SoftDeletes;
 
     /**

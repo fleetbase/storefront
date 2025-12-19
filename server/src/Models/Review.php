@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
+use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 
@@ -13,6 +14,7 @@ class Review extends StorefrontModel
     use HasUuid;
     use HasPublicid;
     use HasApiModelBehavior;
+    use HasApiModelCache;
 
     /**
      * The type of public Id to generate.

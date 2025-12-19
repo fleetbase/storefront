@@ -22,7 +22,7 @@ class FoodTruckController extends Controller
         $results = [];
 
         if (session('storefront_store')) {
-            $results = FoodTruck::queryWithRequest($request, function (&$query) use ($limit, $offset) {
+            $results = FoodTruck::queryWithRequestCached($request, function (&$query) use ($limit, $offset) {
                 $query->where('store_uuid', session('storefront_store'));
 
                 if ($limit) {

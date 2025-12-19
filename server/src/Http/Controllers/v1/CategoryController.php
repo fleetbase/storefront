@@ -23,7 +23,7 @@ class CategoryController extends Controller
         $results = [];
 
         if (session('storefront_store')) {
-            $results = Category::queryWithRequest($request, function (&$query) use ($request) {
+            $results = Category::queryWithRequestCached($request, function (&$query) use ($request) {
                 $query->select([DB::raw('public_id as id'), 'public_id', 'uuid', 'parent_uuid', 'icon_file_uuid', 'name', 'description', 'tags', 'translations', 'icon', 'slug', 'created_at'])->where(['owner_uuid' => session('storefront_store'), 'for' => 'storefront_product']);
 
                 // only parent categories
@@ -67,7 +67,7 @@ class CategoryController extends Controller
                 })->first();
 
                 if ($store) {
-                    $results = Category::queryWithRequest($request, function (&$query) use ($store, $request) {
+                    $results = Category::queryWithRequestCached($request, function (&$query) use ($store, $request) {
                         $query->select([DB::raw('public_id as id'), 'public_id', 'uuid', 'parent_uuid', 'icon_file_uuid', 'name', 'icon', 'description', 'tags', 'translations', 'slug', 'created_at'])->where(['owner_uuid' => $store->uuid, 'for' => 'storefront_product']);
 
                         // only parent categories
@@ -102,7 +102,7 @@ class CategoryController extends Controller
                     }
                 }
             } else {
-                $results = Category::queryWithRequest($request, function (&$query) use ($request) {
+                $results = Category::queryWithRequestCached($request, function (&$query) use ($request) {
                     $query->select([DB::raw('public_id as id'), 'public_id', 'uuid', 'parent_uuid', 'name', 'icon', 'description', 'tags', 'translations', 'slug', 'created_at'])->where(['owner_uuid' => session('storefront_network'), 'for' => 'storefront_network']);
 
                     // only parent categories

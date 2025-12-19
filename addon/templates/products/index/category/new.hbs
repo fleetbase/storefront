@@ -100,25 +100,6 @@
                 <div>
                     <MetadataEditor @value={{this.product.meta}} @onChange={{fn (mut this.product.meta)}} />
                 </div>
-                {{!-- {{#each this.product.meta_array as |metaField index|}}
-                    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <div class="input-group">
-                            <div class="flex justify-between items-center mb-1">
-                                <Input
-                                    class="form-input border-0 px-2 py-1 m-0 bg-white dark:bg-gray-900 shadow-none"
-                                    @value={{metaField.label}}
-                                    disabled={{unauthorized}}
-                                    placeholder={{metaField.label}}
-                                />
-                                <a href="javascript:;" class="text-xs" tabindex="-1" disabled={{unauthorized}} {{on "click" (fn this.removeMetaField index)}}>
-                                    <FaIcon @icon="trash" @size="sm" class="mr-1" />
-                                    Remove
-                                </a>
-                            </div>
-                            <Input class="w-full form-input" @value={{metaField.value}} placeholder={{metaField.label}} disabled={{unauthorized}} />
-                        </div>
-                    </div>
-                {{/each}} --}}
             </ContentPanel>
 
             <InputGroup>
@@ -130,7 +111,7 @@
                 />
             </InputGroup>
 
-            <div class="store-boolean-settings">
+            <div class="store-boolean-settings mb-4">
                 <div class="input-group mb-0">
                     <Checkbox @value={{this.product.is_service}} @onToggle={{fn (mut this.product.is_service)}} @disabled={{unauthorized}}>
                         <FaIcon @icon="house-leave" class="text-indigo-400 mx-2" /><span class="dark:text-gray-100 text-sm">This is a service</span>
@@ -164,18 +145,19 @@
                 </div>
             </div>
 
-            <ContentPanel @title="Variants" @open={{true}} @wrapperClass="bordered-top">
-                <div class="flex items-center justify-end">
-                    <Button @text="New Variant" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} @permission="storefront create product-variant" />
-                </div>
-                <Tabs class="overlay-content-panel" as |Tab|>
-                    {{#each this.product.variants as |variant|}}
-                        <Tab @title={{variant.name}}>
+            <ContentPanel @title="Variants" @open={{true}} @wrapperClass="bordered-top" @panelBodyWrapperClass="px-0i">
+                <TabNavigation @tabs={{this.variantTabs}}>
+                    <:actions>
+                        <Button @text="New Variant" @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{this.createProductVariant}} @permission="storefront create product-variant" />
+                    </:actions>
+                    <:default as |activeTab|>
+                        {{#let activeTab.variant as |variant|}}
                             <div class="px-4 py-3">
                                 <div class="flex items-center justify-end mb-3">
                                     <Button
                                         class="mr-2"
                                         @type="danger"
+                                        @size="xs"
                                         @text="Remove Variant"
                                         @icon="trash"
                                         @onClick={{fn this.removeProductVariant variant}}
@@ -184,6 +166,7 @@
                                     <Button
                                         class="mr-2"
                                         @type="warning"
+                                        @size="xs"
                                         @text="Edit Variant"
                                         @icon="pencil"
                                         @onClick={{fn this.editProductVariant variant}}
@@ -192,6 +175,7 @@
                                     <Button
                                         @text={{concat "New " (lowercase variant.name) " option"}}
                                         @icon="plus"
+                                        @size="xs"
                                         @iconPrefix="fas"
                                         @onClick={{fn this.addVariantOption variant}}
                                         @permission="storefront create product-variant-option"
@@ -238,9 +222,9 @@
                                     {{/each}}
                                 </div>
                             </div>
-                        </Tab>
-                    {{/each}}
-                </Tabs>
+                        {{/let}}
+                    </:default>
+                </TabNavigation>
             </ContentPanel>
 
             <ContentPanel @title="Add-Ons" @open={{true}} @wrapperClass="bordered-top">
@@ -248,6 +232,7 @@
                     <Button
                         @text="Select Addon Categories"
                         @icon="plus"
+                        @size="xs"
                         @iconPrefix="fas"
                         @onClick={{perform this.promptSelectAddonCategories}}
                         @permission="storefront list product-addon"
