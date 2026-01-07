@@ -316,7 +316,7 @@ class Store extends StorefrontModel
         }
 
         // Assign the array back — JSON cast handles encoding
-        $this->attributes['options'] = $value;
+        $this->attributes['options'] = json_encode($value);
     }
 
     /**
