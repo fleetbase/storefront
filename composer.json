@@ -1,6 +1,6 @@
 {
     "name": "fleetbase/storefront-api",
-    "version": "0.4.11",
+    "version": "0.4.12",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "keywords": [
         "fleetbase-extension",
@@ -31,7 +31,7 @@
         "milon/barcode": "^10.0",
         "php-http/guzzle7-adapter": "^1.0",
         "psr/http-factory-implementation": "*",
-        "stripe/stripe-php": "13.13.0",
+        "stripe/stripe-php": "^17.0",
         "toin0u/geocoder-laravel": "^4.4"
     },
     "require-dev": {
