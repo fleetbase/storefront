@@ -656,8 +656,7 @@ class CheckoutController extends Controller
                 if (!$checkout->order_uuid) {
                     // Create the order by calling captureOrder internally
                     try {
-                        $captureRequest = new \Illuminate\Http\Request();
-                        $captureRequest->merge([
+                        $captureRequest = CaptureOrderRequest::create('', 'POST', [
                             'token' => $checkout->token,
                             'transactionDetails' => [
                                 'transaction_id' => $payment->payment_id,
@@ -667,7 +666,7 @@ class CheckoutController extends Controller
                         ]);
                         
                         // Call captureOrder to create the order
-                        $orderResponse = $this->captureOrder($captureRequest);
+                        $this->captureOrder($captureRequest);
                         
                         // Reload checkout to get the created order
                         $checkout->refresh();
