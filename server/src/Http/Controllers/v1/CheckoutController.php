@@ -650,8 +650,35 @@ class CheckoutController extends Controller
             }
 
             $payment = data_get($paymentCheck, 'rows.0');
-            // @TODO If payment is made we create the order here and set it to the checkout session
+            
             if ($payment) {
+                // Check if order already exists for this checkout
+                if (!$checkout->order_uuid) {
+                    // Create the order by calling captureOrder internally
+                    try {
+                        $captureRequest = new \Illuminate\Http\Request();
+                        $captureRequest->merge([
+                            'token' => $checkout->token,
+                            'transactionDetails' => [
+                                'transaction_id' => $payment->payment_id,
+                                'payment_status' => 'PAID',
+                                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+                            ],
+                        ]);
+                        
+                        // Call captureOrder to create the order
+                        $orderResponse = $this->captureOrder($captureRequest);
+                        
+                        // Reload checkout to get the created order
+                        $checkout->refresh();
+                    } catch (\Exception $e) {
+                        Log::error('[QPAY ORDER CREATION ERROR]: ' . $e->getMessage(), [
+                            'checkout' => $checkout->toArray(),
+                            'payment' => (array) $payment,
+                        ]);
+                    }
+                }
+                
                 $data = [
                     'checkout' => $checkout->public_id,
                     'payment'  => (array) $payment,
