@@ -641,7 +641,6 @@ class CheckoutController extends Controller
             }
 
             $paymentCheck = $qpay->paymentCheck($invoiceId);
-
             if (!$paymentCheck || empty($paymentCheck->count) || $paymentCheck->count < 1) {
                 return response()->json([
                     'error'    => 'PAYMENT_NOTFOUND',
@@ -651,6 +650,7 @@ class CheckoutController extends Controller
             }
 
             $payment = data_get($paymentCheck, 'rows.0');
+            // @TODO If payment is made we create the order here and set it to the checkout session
             if ($payment) {
                 $data = [
                     'checkout' => $checkout->public_id,

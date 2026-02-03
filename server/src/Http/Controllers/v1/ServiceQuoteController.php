@@ -41,7 +41,6 @@ class ServiceQuoteController extends Controller
         $serviceType      = $request->input('service_type');
         $cart             = Cart::retrieve($request->input('cart'));
         $currency         = $cart->currency;
-        $config           = $request->input('config', 'storefront');
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
         $isNetwork        = Str::startsWith(session('storefront_key'), 'network_');
@@ -106,7 +105,13 @@ class ServiceQuoteController extends Controller
         $orderConfigKey = data_get($orderConfig, 'key', 'storefront');
 
         // get service rates for config type
-        $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
+        // $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
+        $serviceRates = ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($q) {
+            $q->where('company_uuid', session('company'));
+        });
+
+        // Convert to collection
+        $serviceRates = collect($serviceRates);
 
         // if no service rates send an empty quote
         if ($serviceRates->isEmpty()) {
@@ -200,7 +205,6 @@ class ServiceQuoteController extends Controller
         $serviceType      = $request->input('service_type');
         $cart             = Cart::retrieve($request->input('cart'));
         $currency         = $cart->currency;
-        $config           = $request->input('config', 'storefront');
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
 
@@ -294,7 +298,13 @@ class ServiceQuoteController extends Controller
         $orderConfigKey = data_get($orderConfig, 'key', 'storefront');
 
         // get service rates for config type
-        $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
+        // $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
+        $serviceRates = ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($q) {
+            $q->where('company_uuid', session('company'));
+        });
+
+        // Convert to collection
+        $serviceRates = collect($serviceRates);
 
         // if no service rates send an empty quote
         if ($serviceRates->isEmpty()) {
