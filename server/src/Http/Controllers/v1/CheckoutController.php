@@ -1466,10 +1466,18 @@ class CheckoutController extends Controller
                 $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
 
                 if ($gateway && $gateway->code === 'qpay') {
-                    // Verify payment status with QPay
-                    $qpay         = new QPay($gateway);
-                    $paymentCheck = $qpay->paymentCheck($checkout->meta['qpay_invoice_id']);
-                    $payment      = data_get($paymentCheck, 'rows.0');
+                    // Get QPay invoice ID from checkout meta
+                    $qpayInvoiceId = data_get($checkout, 'meta.qpay_invoice_id');
+                    
+                    // Only check payment if invoice ID exists
+                    if ($qpayInvoiceId) {
+                        // Verify payment status with QPay
+                        $qpay         = new QPay($gateway);
+                        $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
+                        $payment      = data_get($paymentCheck, 'rows.0');
+                    } else {
+                        $payment = null;
+                    }
 
                     if ($payment && $payment->payment_status === 'PAID') {
                         $response['status']  = 'paid';
