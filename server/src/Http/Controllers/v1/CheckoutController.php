@@ -1500,9 +1500,6 @@ class CheckoutController extends Controller
                         ];
 
                         // FALLBACK: If payment confirmed but order doesn't exist, create it
-                        // Lock checkout row to prevent race condition with simultaneous requests
-                        $checkout = Checkout::where('uuid', $checkout->uuid)->lockForUpdate()->first();
-                        
                         if (!$checkout->order_uuid) {
                             Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
                                 'checkout_id' => $checkout->public_id,
@@ -1515,12 +1512,28 @@ class CheckoutController extends Controller
                                 'payment_wallet' => $payment->payment_wallet ?? 'QPay',
                             ];
 
-                            // Use the reusable gateway-agnostic method to create order
-                            $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
+                            try {
+                                // Use the reusable gateway-agnostic method to create order
+                                // createOrderFromCheckout has built-in idempotency checks
+                                $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
 
-                            if ($order) {
-                                $response['status'] = 'completed';
-                                $response['order']  = new OrderResource($order);
+                                if ($order) {
+                                    $response['status'] = 'completed';
+                                    $response['order']  = new OrderResource($order);
+                                }
+                            } catch (\Exception $e) {
+                                // If order creation fails (e.g., race condition), refresh and check again
+                                Log::warning('[CHECKOUT STATUS FALLBACK]: Order creation failed, checking if order was created by another request', [
+                                    'checkout_id' => $checkout->public_id,
+                                    'error'       => $e->getMessage(),
+                                ]);
+                                
+                                $checkout->refresh();
+                                if ($checkout->order_uuid) {
+                                    // Order was created by another request
+                                    $response['status'] = 'completed';
+                                    $response['order']  = new OrderResource($checkout->order);
+                                }
                             }
                         } else {
                             // Order already exists
