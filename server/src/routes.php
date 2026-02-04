@@ -119,6 +119,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->post('stripe-setup-intent', 'CustomerController@getStripeSetupIntent');
                     $router->post('account-closure', 'CustomerController@startAccountClosure');
                     $router->post('confirm-account-closure', 'CustomerController@confirmAccountClosure');
+                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification');
+                    $router->post('verify-phone-number', 'CustomerController@verifyPhoneNumber');
                 });
 
                 // hotfix! storefront-app sending customer update to /contacts/ route

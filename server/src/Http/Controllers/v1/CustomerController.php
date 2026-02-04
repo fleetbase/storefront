@@ -951,4 +951,87 @@ class CustomerController extends Controller
 
         return response()->apiError('An uknown error occured attempting to close customer account.');
     }
+
+    /**
+     * Sends a verification code to the customer's phone for verification.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function requestPhoneVerification(Request $request)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        $phone = static::phone($request->input('phone'));
+
+        if (!$customer) {
+            return response()->apiError('Not authorized to request phone verification.');
+        }
+
+        // Use the user associated with the contact
+        $user = $customer->user;
+
+        if (!$user) {
+            return response()->apiError('No user associated with this customer.');
+        }
+
+        $about = Storefront::about();
+
+        try {
+            VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
+                'messageCallback' => function ($verification) use ($about) {
+                    return "Your {$about->name} verification code is {$verification->code}";
+                },
+                'meta' => ['phone' => $phone] // Store the phone number in meta
+            ]);
+
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            return response()->apiError($e->getMessage());
+        }
+    }
+
+    /**
+     * Verifies the phone number using the provided code.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Fleetbase\Storefront\Http\Resources\Customer
+     */
+    public function verifyPhoneNumber(Request $request)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        $code = $request->input('code');
+
+        if (!$customer) {
+            return response()->apiError('Not authorized to verify phone number.');
+        }
+
+        $user = $customer->user;
+
+        if (!$user) {
+            return response()->apiError('No user associated with this customer.');
+        }
+
+        // Find the verification code
+        $verificationCode = VerificationCode::where([
+            'subject_uuid' => $user->uuid,
+            'code' => $code,
+            'for' => 'storefront_verify_phone'
+        ])->first();
+
+        if (!$verificationCode) {
+            return response()->apiError('Invalid verification code!');
+        }
+
+        // Get the phone number from meta
+        $phone = $verificationCode->meta['phone'];
+
+        // Update user and contact
+        $user->update(['phone' => $phone, 'phone_verified_at' => now()]);
+        $customer->update(['phone' => $phone]);
+
+        // Invalidate the verification code
+        $verificationCode->delete();
+
+        return new Customer($customer->fresh());
+    }
 }
