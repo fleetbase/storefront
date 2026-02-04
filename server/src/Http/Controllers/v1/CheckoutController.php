@@ -1468,7 +1468,7 @@ class CheckoutController extends Controller
                 if ($gateway && $gateway->code === 'qpay') {
                     // Verify payment status with QPay
                     $qpay         = new QPay($gateway);
-                    $paymentCheck = $qpay->checkPayment($checkout->meta['qpay_invoice_id']);
+                    $paymentCheck = $qpay->paymentCheck($checkout->meta['qpay_invoice_id']);
                     $payment      = data_get($paymentCheck, 'rows.0');
 
                     if ($payment && $payment->payment_status === 'PAID') {
