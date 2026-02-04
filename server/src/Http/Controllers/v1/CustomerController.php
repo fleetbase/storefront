@@ -84,7 +84,7 @@ class CustomerController extends Controller
                     $q->orWhere('meta', 'not like', '%related_orders%');
                 });
             }
-        });
+        }, true);
 
         return OrderResource::collection($results);
     }
@@ -104,7 +104,7 @@ class CustomerController extends Controller
 
         $results = Place::queryWithRequest($request, function (&$query) use ($customer) {
             $query->where('owner_uuid', $customer->uuid);
-        });
+        }, true);
 
         return PlaceResource::collection($results);
     }
