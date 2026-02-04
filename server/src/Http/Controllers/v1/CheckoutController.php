@@ -652,14 +652,14 @@ class CheckoutController extends Controller
             $payment = data_get($paymentCheck, 'rows.0');
             
             if ($payment) {
-                // Create order from QPay payment using reusable method
+                // Create order from payment using reusable gateway-agnostic method
                 $transactionDetails = [
                     'transaction_id' => $payment->payment_id,
                     'payment_status' => 'PAID',
                     'payment_wallet' => $payment->payment_wallet ?? 'QPay',
                 ];
                 
-                $this->createOrderFromQPayPayment($checkout, $transactionDetails);
+                $this->createOrderFromCheckout($checkout, $transactionDetails);
                 $checkout->refresh();
                 
                 $data = [
@@ -683,21 +683,22 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Create order from QPay payment.
+     * Create order from checkout session.
      * 
-     * Reusable method to create an order from a checkout session with QPay payment details.
+     * Gateway-agnostic reusable method to create an order from a checkout session.
+     * Works with any payment gateway (QPay, Stripe, etc.) by delegating to captureOrder().
      * Handles idempotency by checking if order already exists.
      *
      * @param Checkout $checkout The checkout session
-     * @param array $transactionDetails QPay transaction details
+     * @param array $transactionDetails Payment gateway transaction details
      * @param string|null $notes Optional notes for the order
      * @return Order|null The created order or null if already exists/error
      */
-    private function createOrderFromQPayPayment($checkout, $transactionDetails, $notes = null)
+    private function createOrderFromCheckout($checkout, $transactionDetails, $notes = null)
     {
         // Check if order already exists for this checkout
         if ($checkout->order_uuid) {
-            Log::info('[QPAY ORDER CREATION]: Order already exists for checkout', [
+            Log::info('[ORDER CREATION]: Order already exists for checkout', [
                 'checkout_id' => $checkout->public_id,
                 'order_id' => $checkout->order_uuid,
             ]);
@@ -705,7 +706,7 @@ class CheckoutController extends Controller
         }
 
         try {
-            Log::info('[QPAY ORDER CREATION]: Creating order from QPay payment', [
+            Log::info('[ORDER CREATION]: Creating order from payment', [
                 'checkout_id' => $checkout->public_id,
                 'transaction_id' => $transactionDetails['transaction_id'] ?? null,
             ]);
@@ -724,19 +725,19 @@ class CheckoutController extends Controller
             $checkout->refresh();
 
             if ($checkout->order) {
-                Log::info('[QPAY ORDER CREATION]: Order created successfully', [
+                Log::info('[ORDER CREATION]: Order created successfully', [
                     'checkout_id' => $checkout->public_id,
                     'order_id' => $checkout->order->public_id,
                 ]);
                 return $checkout->order;
             }
 
-            Log::warning('[QPAY ORDER CREATION]: captureOrder completed but no order found on checkout', [
+            Log::warning('[ORDER CREATION]: captureOrder completed but no order found on checkout', [
                 'checkout_id' => $checkout->public_id,
             ]);
             return null;
         } catch (\Exception $e) {
-            Log::error('[QPAY ORDER CREATION ERROR]: ' . $e->getMessage(), [
+            Log::error('[ORDER CREATION ERROR]: ' . $e->getMessage(), [
                 'checkout_id' => $checkout->public_id,
                 'transaction_details' => $transactionDetails,
                 'exception' => $e->getTraceAsString(),
@@ -1489,8 +1490,8 @@ class CheckoutController extends Controller
                                 'payment_wallet' => $payment->payment_wallet ?? 'QPay',
                             ];
 
-                            // Use the reusable method to create order
-                            $order = $this->createOrderFromQPayPayment($checkout, $transactionDetails);
+                            // Use the reusable gateway-agnostic method to create order
+                            $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
                             
                             if ($order) {
                                 $response['status'] = 'completed';
