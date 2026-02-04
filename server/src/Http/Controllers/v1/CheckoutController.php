@@ -1500,6 +1500,9 @@ class CheckoutController extends Controller
                         ];
 
                         // FALLBACK: If payment confirmed but order doesn't exist, create it
+                        // Lock checkout row to prevent race condition with simultaneous requests
+                        $checkout = Checkout::where('uuid', $checkout->uuid)->lockForUpdate()->first();
+                        
                         if (!$checkout->order_uuid) {
                             Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
                                 'checkout_id' => $checkout->public_id,
