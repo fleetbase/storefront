@@ -845,6 +845,14 @@ class CheckoutController extends Controller
         $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
         $cart         = $checkout->cart;
 
+        // If the checkout already has an order created
+        if ($checkout->order_uuid) {
+            $completedOrder = Order::where('uuid', $checkout->order_uuid)->first();
+            if ($completedOrder) {
+                return new OrderResource($completedOrder);
+            }
+        }
+
         // if cart is null then cart has either been deleted or expired
         if (!$cart) {
             return response()->apiError('Cart expired');
@@ -1163,6 +1171,14 @@ class CheckoutController extends Controller
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? $cart->getCurrency();
+
+        // If the checkout already has an order created
+        if ($checkout->order_uuid) {
+            $completedOrder = Order::where('uuid', $checkout->order_uuid)->first();
+            if ($completedOrder) {
+                return new OrderResource($completedOrder);
+            }
+        }
 
         if (!$about) {
             return response()->apiError('No network in request to capture order!');
