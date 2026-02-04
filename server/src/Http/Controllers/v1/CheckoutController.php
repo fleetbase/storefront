@@ -1468,15 +1468,25 @@ class CheckoutController extends Controller
                 if ($gateway && $gateway->code === 'qpay') {
                     // Get QPay invoice ID from checkout options
                     $qpayInvoiceId = $checkout->getOption('qpay_invoice_id');
+                    $payment       = null;
                     
-                    // Only check payment if invoice ID exists
                     if ($qpayInvoiceId) {
+                        // Create QPay instance with correct credentials
+                        $qpay = QPay::instance(
+                            $gateway->config->username,
+                            $gateway->config->password,
+                            $gateway->callback_url
+                        );
+                        
+                        if ($gateway->sandbox) {
+                            $qpay->useSandbox();
+                        }
+                        
+                        $qpay->setAuthToken();
+                        
                         // Verify payment status with QPay
-                        $qpay         = new QPay($gateway);
                         $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
                         $payment      = data_get($paymentCheck, 'rows.0');
-                    } else {
-                        $payment = null;
                     }
 
                     if ($payment && $payment->payment_status === 'PAID') {
