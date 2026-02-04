@@ -54,6 +54,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/checkouts
                 $router->group(['prefix' => 'checkouts'], function () use ($router) {
                     $router->get('before', 'CheckoutController@beforeCheckout');
+                    $router->get('status', 'CheckoutController@getCheckoutStatus');
                     $router->post('capture', 'CheckoutController@captureOrder');
                     $router->post('stripe-setup-intent', 'CheckoutController@createStripeSetupIntentForCustomer');
                     $router->put('stripe-update-payment-intent', 'CheckoutController@updateStripePaymentIntent');
