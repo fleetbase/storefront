@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Json;
+use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\Models\Company;
 use Fleetbase\Support\Utils;
