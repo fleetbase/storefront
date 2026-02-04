@@ -1508,7 +1508,7 @@ class CheckoutController extends Controller
                     // Get QPay invoice ID from checkout options
                     $qpayInvoiceId = $checkout->getOption('qpay_invoice_id');
                     $payment       = null;
-                    
+
                     if ($qpayInvoiceId) {
                         // Create QPay instance with correct credentials
                         $qpay = QPay::instance(
@@ -1516,13 +1516,13 @@ class CheckoutController extends Controller
                             $gateway->config->password,
                             $gateway->callback_url
                         );
-                        
+
                         if ($gateway->sandbox) {
                             $qpay->useSandbox();
                         }
-                        
+
                         $qpay->setAuthToken();
-                        
+
                         // Verify payment status with QPay
                         $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
                         $payment      = data_get($paymentCheck, 'rows.0');
@@ -1566,7 +1566,7 @@ class CheckoutController extends Controller
                                     'checkout_id' => $checkout->public_id,
                                     'error'       => $e->getMessage(),
                                 ]);
-                                
+
                                 $checkout->refresh();
                                 if ($checkout->order_uuid) {
                                     // Order was created by another request
