@@ -1453,12 +1453,12 @@ class CheckoutController extends Controller
                 ], 404);
             }
 
-            // Initialize response
+            // Initialize response (gateway-agnostic)
             $response = [
-                'status'   => 'pending',
+                'status'   => $checkout->captured ? 'completed' : 'pending',
                 'checkout' => $checkout->public_id,
                 'payment'  => null,
-                'order'    => null,
+                'order'    => $checkout->order ? new OrderResource($checkout->order) : null,
             ];
 
             // Check if this is a QPay checkout
