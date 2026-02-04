@@ -30,6 +30,7 @@ use Fleetbase\Storefront\Support\StripeUtils;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Stripe\Exception\InvalidRequestException;
@@ -697,37 +698,83 @@ class CheckoutController extends Controller
      */
     private function createOrderFromCheckout($checkout, $transactionDetails, $notes = null)
     {
-        // Check if order already exists for this checkout
-        if ($checkout->order_uuid) {
-            Log::info('[ORDER CREATION]: Order already exists for checkout', [
+        // Define a unique lock key for this specific checkout
+        $lockKey = 'create-order-checkout-' . $checkout->uuid;
+
+        // Attempt to acquire a lock for 10 seconds
+        $lock = Cache::lock($lockKey, 10);
+
+        if ($lock->get()) {
+            try {
+                // Re-fetch checkout to ensure we have the latest data after acquiring lock
+                $checkout->refresh();
+
+                // Check if order already exists for this checkout
+                if ($checkout->order_uuid) {
+                    Log::info('[ORDER CREATION]: Order already exists for checkout after acquiring lock', [
+                        'checkout_id' => $checkout->public_id,
+                        'order_id'    => $checkout->order_uuid,
+                    ]);
+
+                    return $checkout->order;
+                }
+
+                Log::info('[ORDER CREATION]: Creating order from payment', [
+                    'checkout_id'    => $checkout->public_id,
+                    'transaction_id' => $transactionDetails['transaction_id'] ?? null,
+                ]);
+
+                // Create CaptureOrderRequest with payment details
+                $captureRequest = CaptureOrderRequest::create('', 'POST', [
+                    'token'              => $checkout->token,
+                    'transactionDetails' => $transactionDetails,
+                    'notes'              => $notes,
+                ]);
+
+                // Call captureOrder to create the order
+                $this->captureOrder($captureRequest);
+
+                // Reload checkout to get the created order
+                $checkout->refresh();
+
+                if ($checkout->order) {
+                    Log::info('[ORDER CREATION]: Order created successfully', [
+                        'checkout_id' => $checkout->public_id,
+                        'order_id'    => $checkout->order->public_id,
+                    ]);
+
+                    return $checkout->order;
+                }
+
+                Log::warning('[ORDER CREATION]: captureOrder completed but no order found on checkout', [
+                    'checkout_id' => $checkout->public_id,
+                ]);
+
+                return null;
+            } catch (\Exception $e) {
+                Log::error('[ORDER CREATION ERROR]: ' . $e->getMessage(), [
+                    'checkout_id'         => $checkout->public_id,
+                    'transaction_details' => $transactionDetails,
+                    'exception'           => $e->getTraceAsString(),
+                ]);
+
+                return null;
+            } finally {
+                // Always release the lock
+                $lock->release();
+            }
+        } else {
+            // Could not acquire lock - another process is creating the order
+            Log::info('[ORDER CREATION]: Could not acquire lock, another process is creating order', [
                 'checkout_id' => $checkout->public_id,
-                'order_id'    => $checkout->order_uuid,
             ]);
 
-            return $checkout->order;
-        }
-
-        try {
-            Log::info('[ORDER CREATION]: Creating order from payment', [
-                'checkout_id'    => $checkout->public_id,
-                'transaction_id' => $transactionDetails['transaction_id'] ?? null,
-            ]);
-
-            // Create CaptureOrderRequest with payment details
-            $captureRequest = CaptureOrderRequest::create('', 'POST', [
-                'token'              => $checkout->token,
-                'transactionDetails' => $transactionDetails,
-                'notes'              => $notes,
-            ]);
-
-            // Call captureOrder to create the order
-            $this->captureOrder($captureRequest);
-
-            // Reload checkout to get the created order
+            // Wait briefly and return the order that should be created by the other process
+            sleep(2);
             $checkout->refresh();
 
             if ($checkout->order) {
-                Log::info('[ORDER CREATION]: Order created successfully', [
+                Log::info('[ORDER CREATION]: Order found after waiting for lock', [
                     'checkout_id' => $checkout->public_id,
                     'order_id'    => $checkout->order->public_id,
                 ]);
@@ -735,16 +782,8 @@ class CheckoutController extends Controller
                 return $checkout->order;
             }
 
-            Log::warning('[ORDER CREATION]: captureOrder completed but no order found on checkout', [
+            Log::warning('[ORDER CREATION]: Lock wait completed but no order found', [
                 'checkout_id' => $checkout->public_id,
-            ]);
-
-            return null;
-        } catch (\Exception $e) {
-            Log::error('[ORDER CREATION ERROR]: ' . $e->getMessage(), [
-                'checkout_id'         => $checkout->public_id,
-                'transaction_details' => $transactionDetails,
-                'exception'           => $e->getTraceAsString(),
             ]);
 
             return null;
