@@ -974,6 +974,17 @@ class CustomerController extends Controller
             return response()->apiError('No user associated with this customer.');
         }
 
+        // Check if phone number is already used by another user
+        $existingUser = User::where('phone', $phone)
+            ->where('uuid', '!=', $user->uuid)
+            ->whereNull('deleted_at')
+            ->withoutGlobalScopes()
+            ->first();
+
+        if ($existingUser) {
+            return response()->apiError('This phone number is already associated with another account.');
+        }
+
         $about = Storefront::about();
 
         try {
