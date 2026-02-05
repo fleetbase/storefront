@@ -54,6 +54,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/checkouts
                 $router->group(['prefix' => 'checkouts'], function () use ($router) {
                     $router->get('before', 'CheckoutController@beforeCheckout');
+                    $router->get('status', 'CheckoutController@getCheckoutStatus');
                     $router->post('capture', 'CheckoutController@captureOrder');
                     $router->post('stripe-setup-intent', 'CheckoutController@createStripeSetupIntentForCustomer');
                     $router->put('stripe-update-payment-intent', 'CheckoutController@updateStripePaymentIntent');
@@ -118,6 +119,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->post('stripe-setup-intent', 'CustomerController@getStripeSetupIntent');
                     $router->post('account-closure', 'CustomerController@startAccountClosure');
                     $router->post('confirm-account-closure', 'CustomerController@confirmAccountClosure');
+                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification');
+                    $router->post('verify-phone-number', 'CustomerController@verifyPhoneNumber');
                 });
 
                 // hotfix! storefront-app sending customer update to /contacts/ route

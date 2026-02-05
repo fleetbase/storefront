@@ -30,6 +30,7 @@ use Fleetbase\Storefront\Support\StripeUtils;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Stripe\Exception\InvalidRequestException;
@@ -641,7 +642,6 @@ class CheckoutController extends Controller
             }
 
             $paymentCheck = $qpay->paymentCheck($invoiceId);
-
             if (!$paymentCheck || empty($paymentCheck->count) || $paymentCheck->count < 1) {
                 return response()->json([
                     'error'    => 'PAYMENT_NOTFOUND',
@@ -651,7 +651,18 @@ class CheckoutController extends Controller
             }
 
             $payment = data_get($paymentCheck, 'rows.0');
+
             if ($payment) {
+                // Create order from payment using reusable gateway-agnostic method
+                $transactionDetails = [
+                    'transaction_id' => $payment->payment_id,
+                    'payment_status' => 'PAID',
+                    'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+                ];
+
+                $this->createOrderFromCheckout($checkout, $transactionDetails);
+                $checkout->refresh();
+
                 $data = [
                     'checkout' => $checkout->public_id,
                     'payment'  => (array) $payment,
@@ -673,9 +684,116 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Process a cart item and create/save an entity.
+     * Create order from checkout session.
      *
-     * @param mixed $cartItem the cart item to process
+     * Gateway-agnostic reusable method to create an order from a checkout session.
+     * Works with any payment gateway (QPay, Stripe, etc.) by delegating to captureOrder().
+     * Handles idempotency by checking if order already exists.
+     *
+     * @param Checkout    $checkout           The checkout session
+     * @param array       $transactionDetails Payment gateway transaction details
+     * @param string|null $notes              Optional notes for the order
+     *
+     * @return Order|null The created order or null if already exists/error
+     */
+    private function createOrderFromCheckout($checkout, $transactionDetails, $notes = null)
+    {
+        // Define a unique lock key for this specific checkout
+        $lockKey = 'create-order-checkout-' . $checkout->uuid;
+
+        // Attempt to acquire a lock for 10 seconds
+        $lock = Cache::lock($lockKey, 10);
+
+        if ($lock->get()) {
+            try {
+                // Re-fetch checkout to ensure we have the latest data after acquiring lock
+                $checkout->refresh();
+
+                // Check if order already exists for this checkout
+                if ($checkout->order_uuid) {
+                    Log::info('[ORDER CREATION]: Order already exists for checkout after acquiring lock', [
+                        'checkout_id' => $checkout->public_id,
+                        'order_id'    => $checkout->order_uuid,
+                    ]);
+
+                    return $checkout->order;
+                }
+
+                Log::info('[ORDER CREATION]: Creating order from payment', [
+                    'checkout_id'    => $checkout->public_id,
+                    'transaction_id' => $transactionDetails['transaction_id'] ?? null,
+                ]);
+
+                // Create CaptureOrderRequest with payment details
+                $captureRequest = CaptureOrderRequest::create('', 'POST', [
+                    'token'              => $checkout->token,
+                    'transactionDetails' => $transactionDetails,
+                    'notes'              => $notes,
+                ]);
+
+                // Call captureOrder to create the order
+                $this->captureOrder($captureRequest);
+
+                // Reload checkout to get the created order
+                $checkout->refresh();
+
+                if ($checkout->order) {
+                    Log::info('[ORDER CREATION]: Order created successfully', [
+                        'checkout_id' => $checkout->public_id,
+                        'order_id'    => $checkout->order->public_id,
+                    ]);
+
+                    return $checkout->order;
+                }
+
+                Log::warning('[ORDER CREATION]: captureOrder completed but no order found on checkout', [
+                    'checkout_id' => $checkout->public_id,
+                ]);
+
+                return null;
+            } catch (\Exception $e) {
+                Log::error('[ORDER CREATION ERROR]: ' . $e->getMessage(), [
+                    'checkout_id'         => $checkout->public_id,
+                    'transaction_details' => $transactionDetails,
+                    'exception'           => $e->getTraceAsString(),
+                ]);
+
+                return null;
+            } finally {
+                // Always release the lock
+                $lock->release();
+            }
+        } else {
+            // Could not acquire lock - another process is creating the order
+            Log::info('[ORDER CREATION]: Could not acquire lock, another process is creating order', [
+                'checkout_id' => $checkout->public_id,
+            ]);
+
+            // Wait briefly and return the order that should be created by the other process
+            sleep(2);
+            $checkout->refresh();
+
+            if ($checkout->order) {
+                Log::info('[ORDER CREATION]: Order found after waiting for lock', [
+                    'checkout_id' => $checkout->public_id,
+                    'order_id'    => $checkout->order->public_id,
+                ]);
+
+                return $checkout->order;
+            }
+
+            Log::warning('[ORDER CREATION]: Lock wait completed but no order found', [
+                'checkout_id' => $checkout->public_id,
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Process a cart item.
+     *
+     * @param mixed $cartItem the cart item
      * @param mixed $payload  the payload
      * @param mixed $customer the customer
      *
@@ -726,6 +844,14 @@ class CheckoutController extends Controller
         $origin       = $serviceQuote ? $serviceQuote->getMeta('origin', []) : null;
         $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
         $cart         = $checkout->cart;
+
+        // If the checkout already has an order created
+        if ($checkout->order_uuid) {
+            $completedOrder = Order::where('uuid', $checkout->order_uuid)->first();
+            if ($completedOrder) {
+                return new OrderResource($completedOrder);
+            }
+        }
 
         // if cart is null then cart has either been deleted or expired
         if (!$cart) {
@@ -1046,6 +1172,14 @@ class CheckoutController extends Controller
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? $cart->getCurrency();
 
+        // If the checkout already has an order created
+        if ($checkout->order_uuid) {
+            $completedOrder = Order::where('uuid', $checkout->order_uuid)->first();
+            if ($completedOrder) {
+                return new OrderResource($completedOrder);
+            }
+        }
+
         if (!$about) {
             return response()->apiError('No network in request to capture order!');
         }
@@ -1338,6 +1472,145 @@ class CheckoutController extends Controller
 
     public function afterCheckout(Request $request)
     {
+    }
+
+    /**
+     * Get checkout status including payment and order details.
+     *
+     * This endpoint allows the app to query the current status of a checkout session,
+     * including payment confirmation and order details. If payment is confirmed but
+     * order doesn't exist (callback failed), it will create the order as a fallback.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCheckoutStatus(Request $request)
+    {
+        $checkoutId = $request->input('checkout');
+        $token      = $request->input('token');
+
+        // Validate required parameters
+        if (!$checkoutId || !$token) {
+            return response()->json([
+                'error' => 'Missing required parameters: checkout and token',
+            ], 400);
+        }
+
+        try {
+            // Find checkout by ID and token
+            $checkout = Checkout::where('public_id', $checkoutId)
+                ->where('token', $token)
+                ->with(['order'])
+                ->first();
+
+            if (!$checkout) {
+                return response()->json([
+                    'error' => 'Checkout not found',
+                ], 404);
+            }
+
+            // Initialize response (gateway-agnostic)
+            $response = [
+                'status'   => $checkout->captured ? 'completed' : 'pending',
+                'checkout' => $checkout->public_id,
+                'payment'  => null,
+                'order'    => $checkout->order ? new OrderResource($checkout->order) : null,
+            ];
+
+            // Check if this is a QPay checkout
+            if ($checkout->gateway_uuid) {
+                $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
+
+                if ($gateway && $gateway->code === 'qpay') {
+                    // Get QPay invoice ID from checkout options
+                    $qpayInvoiceId = $checkout->getOption('qpay_invoice_id');
+                    $payment       = null;
+
+                    if ($qpayInvoiceId) {
+                        // Create QPay instance with correct credentials
+                        $qpay = QPay::instance(
+                            $gateway->config->username,
+                            $gateway->config->password,
+                            $gateway->callback_url
+                        );
+
+                        if ($gateway->sandbox) {
+                            $qpay->useSandbox();
+                        }
+
+                        $qpay->setAuthToken();
+
+                        // Verify payment status with QPay
+                        $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
+                        $payment      = data_get($paymentCheck, 'rows.0');
+                    }
+
+                    if ($payment && $payment->payment_status === 'PAID') {
+                        $response['status']  = 'paid';
+                        $response['payment'] = [
+                            'payment_id'     => $payment->payment_id,
+                            'payment_status' => $payment->payment_status,
+                            'payment_amount' => $payment->payment_amount,
+                            'payment_date'   => $payment->payment_date ?? null,
+                            'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+                        ];
+
+                        // FALLBACK: If payment confirmed but order doesn't exist, create it
+                        if (!$checkout->order_uuid) {
+                            Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
+                                'checkout_id' => $checkout->public_id,
+                                'payment_id'  => $payment->payment_id,
+                            ]);
+
+                            $transactionDetails = [
+                                'transaction_id' => $payment->payment_id,
+                                'payment_status' => 'PAID',
+                                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+                            ];
+
+                            try {
+                                // Use the reusable gateway-agnostic method to create order
+                                // createOrderFromCheckout has built-in idempotency checks
+                                $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
+
+                                if ($order) {
+                                    $response['status'] = 'completed';
+                                    $response['order']  = new OrderResource($order);
+                                }
+                            } catch (\Exception $e) {
+                                // If order creation fails (e.g., race condition), refresh and check again
+                                Log::warning('[CHECKOUT STATUS FALLBACK]: Order creation failed, checking if order was created by another request', [
+                                    'checkout_id' => $checkout->public_id,
+                                    'error'       => $e->getMessage(),
+                                ]);
+
+                                $checkout->refresh();
+                                if ($checkout->order_uuid) {
+                                    // Order was created by another request
+                                    $response['status'] = 'completed';
+                                    $response['order']  = new OrderResource($checkout->order);
+                                }
+                            }
+                        } else {
+                            // Order already exists
+                            $response['status'] = 'completed';
+                            $response['order']  = new OrderResource($checkout->order);
+                        }
+                    }
+                }
+            }
+
+            return response()->json($response);
+        } catch (\Exception $e) {
+            Log::error('[CHECKOUT STATUS ERROR]: ' . $e->getMessage(), [
+                'checkout_id' => $checkoutId,
+                'exception'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error'   => 'Failed to retrieve checkout status',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

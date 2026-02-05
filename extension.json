@@ -1,6 +1,6 @@
 {
     "name": "Storefront",
-    "version": "0.4.12",
+    "version": "0.4.13",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "repository": "https://github.com/fleetbase/storefront",
     "license": "AGPL-3.0-or-later",
