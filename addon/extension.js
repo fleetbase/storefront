@@ -48,12 +48,6 @@ export default {
                     icon: 'bullhorn',
                     route: 'console.storefront.promotions',
                 },
-                {
-                    title: 'Coupons',
-                    description: 'Generate and manage discount coupons for your store.',
-                    icon: 'ticket',
-                    route: 'console.storefront.coupons',
-                },
             ],
         });
 
