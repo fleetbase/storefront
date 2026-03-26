@@ -4,7 +4,7 @@
 </Layout::Section::Header>
 
 <Layout::Section::Body>
-    <div class="p-4">
+    <div class="p-4 overflow-y-scroll">
         <div class="grid grid-cols-3 gap-4">
             {{#each @model as |catalog|}}
                 <div class="px-2 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 border-gray-200 bg-gray-100">
@@ -41,6 +41,7 @@
             {{/each}}
         </div>
     </div>
+    <Spacer @height="200px" />
 </Layout::Section::Body>
 
 {{outlet}}
