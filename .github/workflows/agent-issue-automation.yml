@@ -117,7 +117,7 @@ jobs:
                   if printf '%s' "$ISSUE_LABELS" | grep -q '"type:feature"'; then
                     prefix="feature"
                   elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:bug"'; then
-                    prefix="bugfix"
+                    prefix="fix"
                   elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:docs"'; then
                     prefix="docs"
                   elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:refactor"'; then

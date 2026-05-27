@@ -25,7 +25,7 @@ Branch naming is handled by the workflow. Use the workflow-created branch and do
 Branch prefix rules:
 
 - `type:feature` -> `feature/`
-- `type:bug` -> `bugfix/`
+- `type:bug` -> `fix/`
 - `type:docs` -> `docs/`
 - `type:refactor` -> `refactor/`
 - `type:chore` -> `chore/`
