@@ -1,0 +1,231 @@
+name: Agent Issue Automation
+
+on:
+    issues:
+        types:
+            - labeled
+
+jobs:
+    triage:
+        if: github.event.label.name == 'agent:ready'
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+            issues: write
+
+        steps:
+            - name: Checkout storefront
+              uses: actions/checkout@v5
+              with:
+                  path: storefront
+
+            - name: Checkout ember-ui
+              uses: actions/checkout@v5
+              with:
+                  repository: fleetbase/ember-ui
+                  path: ember-ui
+
+            - name: Checkout ember-core
+              uses: actions/checkout@v5
+              with:
+                  repository: fleetbase/ember-core
+                  path: ember-core
+
+            - name: Checkout core-api
+              uses: actions/checkout@v5
+              with:
+                  repository: fleetbase/core-api
+                  path: core-api
+
+            - name: Write issue context
+              working-directory: storefront
+              env:
+                  ISSUE_URL: ${{ github.event.issue.html_url }}
+                  ISSUE_TITLE: ${{ github.event.issue.title }}
+                  ISSUE_BODY: ${{ github.event.issue.body }}
+              run: |
+                  mkdir -p .github/codex
+                  {
+                    printf 'Issue URL:\n%s\n\n' "$ISSUE_URL"
+                    printf 'Issue title:\n%s\n\n' "$ISSUE_TITLE"
+                    printf 'Issue body:\n%s\n' "$ISSUE_BODY"
+                  } > .github/codex/issue-context.md
+
+            - name: Run Agent triage
+              id: codex
+              uses: openai/codex-action@v1
+              with:
+                  openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+                  working-directory: storefront
+                  prompt-file: storefront/.github/codex/prompts/issue-triage.md
+                  sandbox: read-only
+                  effort: medium
+
+            - name: Comment with Agent triage
+              uses: actions/github-script@v7
+              env:
+                  CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+              with:
+                  github-token: ${{ github.token }}
+                  script: |
+                      const body = process.env.CODEX_FINAL_MESSAGE?.trim();
+                      if (!body) {
+                        core.warning('Agent returned an empty triage message.');
+                        return;
+                      }
+
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.payload.issue.number,
+                        body,
+                      });
+
+    implement:
+        if: github.event.label.name == 'agent:approved' && contains(github.event.issue.labels.*.name, 'agent:ready')
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: write
+            issues: write
+            pull-requests: write
+
+        steps:
+            - name: Checkout storefront
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+                  path: storefront
+
+            - name: Create working branch
+              id: branch
+              working-directory: storefront
+              env:
+                  ISSUE_TITLE: ${{ github.event.issue.title }}
+                  ISSUE_LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
+              run: |
+                  title_slug="$(printf '%s' "$ISSUE_TITLE" \
+                    | tr '[:upper:]' '[:lower:]' \
+                    | sed -E 's/^\[(bug|feature|chore|docs|refactor|hotfix)\]:[[:space:]]*//' \
+                    | sed -E 's/[^a-z0-9]+/-/g' \
+                    | sed -E 's/^-+|-+$//g' \
+                    | cut -c1-60)"
+
+                  prefix="chore"
+
+                  if printf '%s' "$ISSUE_LABELS" | grep -q '"type:feature"'; then
+                    prefix="feature"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:bug"'; then
+                    prefix="fix"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:docs"'; then
+                    prefix="docs"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:refactor"'; then
+                    prefix="refactor"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:chore"'; then
+                    prefix="chore"
+                  fi
+
+                  if printf '%s' "$ISSUE_LABELS" | grep -q '"priority:p0"' && printf '%s' "$ISSUE_LABELS" | grep -q '"type:bug"'; then
+                    prefix="hotfix"
+                  fi
+
+                  if [ -z "$title_slug" ]; then
+                    title_slug="issue-${{ github.event.issue.number }}"
+                  fi
+
+                  branch="${prefix}/issue-${{ github.event.issue.number }}-${title_slug}-${{ github.run_id }}"
+                  git switch -c "$branch"
+                  echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+            - name: Write issue context
+              working-directory: storefront
+              env:
+                  ISSUE_URL: ${{ github.event.issue.html_url }}
+                  ISSUE_TITLE: ${{ github.event.issue.title }}
+                  ISSUE_BODY: ${{ github.event.issue.body }}
+              run: |
+                  mkdir -p .github/codex
+                  {
+                    printf 'Issue URL:\n%s\n\n' "$ISSUE_URL"
+                    printf 'Issue title:\n%s\n\n' "$ISSUE_TITLE"
+                    printf 'Issue body:\n%s\n' "$ISSUE_BODY"
+                  } > .github/codex/issue-context.md
+
+            - name: Run Agent implementation
+              id: codex
+              uses: openai/codex-action@v1
+              with:
+                  openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+                  working-directory: storefront
+                  prompt-file: storefront/.github/codex/prompts/issue-implement.md
+                  sandbox: workspace-write
+                  effort: medium
+
+            - name: Remove generated issue context
+              working-directory: storefront
+              run: rm -f .github/codex/issue-context.md
+
+            - name: Detect changes
+              id: changes
+              working-directory: storefront
+              run: |
+                  if git diff --quiet && git diff --cached --quiet; then
+                    echo "changed=false" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "changed=true" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Commit changes
+              if: steps.changes.outputs.changed == 'true'
+              working-directory: storefront
+              run: |
+                  git config user.name "fleetbase-agent"
+                  git config user.email "actions@github.com"
+                  git add -A
+                  git commit -m "fix: address issue #${{ github.event.issue.number }}"
+
+            - name: Push branch
+              if: steps.changes.outputs.changed == 'true'
+              working-directory: storefront
+              run: git push origin "${{ steps.branch.outputs.branch }}"
+
+            - name: Open pull request
+              if: steps.changes.outputs.changed == 'true'
+              working-directory: storefront
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+              run: |
+                  body_file="$(mktemp)"
+                  {
+                    printf '%s\n\n' "$CODEX_FINAL_MESSAGE"
+                    printf 'Closes #%s\n' "${{ github.event.issue.number }}"
+                  } > "$body_file"
+
+                  gh pr create \
+                    --base main \
+                    --head "${{ steps.branch.outputs.branch }}" \
+                    --title "fix: address issue #${{ github.event.issue.number }}" \
+                    --body-file "$body_file"
+
+            - name: Comment when no changes were produced
+              if: steps.changes.outputs.changed != 'true'
+              uses: actions/github-script@v7
+              env:
+                  CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+              with:
+                  github-token: ${{ github.token }}
+                  script: |
+                      const message = process.env.CODEX_FINAL_MESSAGE?.trim();
+                      const body = [
+                        'Agent completed the approved implementation run, but no file changes were produced.',
+                        message ? `\n${message}` : '',
+                      ].join('\n');
+
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.payload.issue.number,
+                        body,
+                      });
