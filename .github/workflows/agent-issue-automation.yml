@@ -196,18 +196,45 @@ jobs:
               env:
                   GH_TOKEN: ${{ github.token }}
                   CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+                  ISSUE_TITLE: ${{ github.event.issue.title }}
+                  ISSUE_LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
               run: |
+                  pr_type="chore"
+
+                  if printf '%s' "$ISSUE_LABELS" | grep -q '"type:feature"'; then
+                      pr_type="feat"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:bug"'; then
+                      pr_type="fix"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:docs"'; then
+                      pr_type="docs"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:refactor"'; then
+                      pr_type="refactor"
+                  elif printf '%s' "$ISSUE_LABELS" | grep -q '"type:chore"'; then
+                      pr_type="chore"
+                  fi
+
+                  title_text="$(printf '%s' "$ISSUE_TITLE" \
+                      | sed -E 's/^\[(Bug|Feature|Chore|Docs|Refactor|Hotfix)\]:[[:space:]]*//I' \
+                      | sed -E 's/[[:space:]]+/ /g' \
+                      | sed -E 's/^ //; s/ $//')"
+
+                  if [ -z "$title_text" ]; then
+                      title_text="PR: Issue #${{ github.event.issue.number }}"
+                  fi
+
+                  pr_title="${pr_type}: ${title_text} (#${{ github.event.issue.number }})"
+
                   body_file="$(mktemp)"
                   {
-                    printf '%s\n\n' "$CODEX_FINAL_MESSAGE"
-                    printf 'Closes #%s\n' "${{ github.event.issue.number }}"
+                      printf '%s\n\n' "$CODEX_FINAL_MESSAGE"
+                      printf 'Closes #%s\n' "${{ github.event.issue.number }}"
                   } > "$body_file"
 
                   gh pr create \
-                    --base main \
-                    --head "${{ steps.branch.outputs.branch }}" \
-                    --title "fix: address issue #${{ github.event.issue.number }}" \
-                    --body-file "$body_file"
+                      --base main \
+                      --head "${{ steps.branch.outputs.branch }}" \
+                      --title "$pr_title" \
+                      --body-file "$body_file"
 
             - name: Comment when no changes were produced
               if: steps.changes.outputs.changed != 'true'
