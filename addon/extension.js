@@ -1,5 +1,56 @@
 import { Widget, ExtensionComponent } from '@fleetbase/ember-core/contracts';
 
+function createStorefrontKeyMetricsWidget() {
+    return new Widget({
+        id: 'storefront-key-metrics-widget',
+        name: 'Storefront Metrics',
+        description: 'Key metrics from Storefront.',
+        icon: 'store',
+        component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/storefront-key-metrics'),
+        grid_options: { w: 12, h: 7, minW: 8, minH: 7 },
+        options: { title: 'Storefront Metrics' },
+        default: true,
+    });
+}
+
+export function registerWidgets(widgetService) {
+    widgetService.registerDashboard('storefront');
+
+    widgetService.registerWidgets('storefront', [
+        new Widget({
+            id: 'storefront-metrics-widget',
+            name: 'Storefront Metrics',
+            description: 'Storefront order, customer, store, and earnings metrics.',
+            icon: 'chart-line',
+            component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/storefront-metrics'),
+            grid_options: { w: 12, h: 4, minW: 8, minH: 4 },
+            default: true,
+        }),
+        new Widget({
+            id: 'storefront-orders-widget',
+            name: 'Storefront Orders',
+            description: 'Recent Storefront orders.',
+            icon: 'bag-shopping',
+            component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/orders'),
+            grid_options: { w: 12, h: 10, minW: 8, minH: 8 },
+            options: { wrapperClass: 'bordered-classic' },
+            default: true,
+        }),
+        new Widget({
+            id: 'storefront-customers-widget',
+            name: 'Storefront Customers',
+            description: 'Recent Storefront customers.',
+            icon: 'users',
+            component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/customers'),
+            grid_options: { w: 12, h: 10, minW: 8, minH: 8 },
+            options: { wrapperClass: 'bordered-classic' },
+            default: true,
+        }),
+    ]);
+
+    widgetService.registerWidgets('dashboard', [createStorefrontKeyMetricsWidget()]);
+}
+
 export default {
     setupExtension(app, universe) {
         const menuService = universe.getService('menu');
@@ -51,21 +102,7 @@ export default {
             ],
         });
 
-        // widgets for registry
-        const widgets = [
-            new Widget({
-                id: 'storefront-key-metrics-widget',
-                name: 'Storefront Metrics',
-                description: 'Key metrics from Storefront.',
-                icon: 'store',
-                component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/storefront-key-metrics'),
-                grid_options: { w: 12, h: 7, minW: 8, minH: 7 },
-                options: { title: 'Storefront Metrics' },
-                default: true,
-            }),
-        ];
-
-        widgetService.registerWidgets('dashboard', widgets);
+        registerWidgets(widgetService);
 
         // register component to views
         registryService.registerRenderableComponent('fleet-ops:component:order:details', new ExtensionComponent('@fleetbase/storefront-engine', 'storefront-order-summary'));
