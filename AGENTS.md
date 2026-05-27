@@ -128,6 +128,7 @@ Use these labels when they are available:
 - `type:refactor`
 - `type:chore`
 - `agent:ready`
+- `agent:approved`
 - `agent:blocked`
 - `agent:in-progress`
 - `needs-docs`
@@ -138,4 +139,4 @@ Use these labels when they are available:
 - `priority:p1`
 - `priority:p2`
 - `priority:p3`
-+- `module:storefront`
+- `module:storefront`
