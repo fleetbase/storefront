@@ -76,7 +76,19 @@ trait SeedsTestingData
 
     protected function timestamp(int $hoursOffset = 0): Carbon
     {
-        return Carbon::parse('2026-01-15 08:00:00', 'Asia/Singapore')->addHours($hoursOffset);
+        $now       = Carbon::now($this->seedTimezone());
+        $timestamp = $now->copy()->startOfMonth()->addHours(8 + $hoursOffset);
+
+        if ($timestamp->greaterThan($now)) {
+            return $now;
+        }
+
+        return $timestamp;
+    }
+
+    protected function seedTimezone(): string
+    {
+        return config('app.timezone') ?: 'UTC';
     }
 
     protected function createRecord(string $modelClass, array $attributes, bool $withoutEvents = false): Model
