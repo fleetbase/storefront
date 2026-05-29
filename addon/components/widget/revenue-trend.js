@@ -60,13 +60,32 @@ export default class WidgetRevenueTrendComponent extends Component {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 6,
+                        boxHeight: 6,
+                        padding: 10,
+                        font: { size: 10, weight: '600' },
+                    },
+                },
                 tooltip: { mode: 'index', intersect: false },
             },
             scales: {
-                x: { grid: { display: false } },
-                y: { beginAtZero: true, ticks: { precision: 0 } },
-                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 } },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        maxRotation: 0,
+                        minRotation: 0,
+                        font: { size: 10 },
+                    },
+                },
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { size: 10 } } },
             },
             elements: { point: { radius: 0, hoverRadius: 4 } },
         };

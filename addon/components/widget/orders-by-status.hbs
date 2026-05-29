@@ -7,13 +7,15 @@
         <Button @icon="refresh" @size="xs" @onClick={{perform this.load}} />
     </div>
 
-    <div class="min-h-0 flex-1 p-3">
+    <div class="storefront-chart-body">
         {{#if this.error}}
             <div class="storefront-widget-empty">{{this.error}}</div>
         {{else if this.load.isRunning}}
             <div class="storefront-widget-empty"><Spinner /></div>
         {{else if this.hasData}}
-            <Chart @type="bar" @labels={{this.data.labels}} @datasets={{this.data.datasets}} @options={{this.chartOptions}} />
+            <div class="storefront-chart-frame">
+                <Chart @type="bar" @labels={{this.data.labels}} @datasets={{this.data.datasets}} @options={{this.chartOptions}} />
+            </div>
         {{else}}
             <div class="storefront-widget-empty">No order activity yet.</div>
         {{/if}}

@@ -56,4 +56,30 @@ module('Integration | Component | widget/kpi-tile', function (hooks) {
 
         assert.dom('.storefront-kpi-tile').includesText('Metrics unavailable');
     });
+
+    test('it renders inverse trend styling for cancellation rate', async function (assert) {
+        class FetchStubService extends Service {
+            get() {
+                return {
+                    metrics: {
+                        cancellation_rate: {
+                            value: 8,
+                            previous: 4,
+                            delta_percent: 100,
+                            format: 'percent',
+                            inverse: true,
+                        },
+                    },
+                };
+            }
+        }
+
+        this.owner.register('service:fetch', FetchStubService);
+
+        await render(hbs`<Widget::KpiTile @metric="cancellation_rate" @title="Cancellation Rate" @icon="ban" @accent="rose" />`);
+
+        assert.dom('.storefront-kpi-tile').hasClass('storefront-kpi-accent-rose');
+        assert.dom('.storefront-kpi-tile').hasClass('storefront-kpi-trend-bad');
+        assert.dom('.storefront-kpi-delta').hasText('+100%');
+    });
 });

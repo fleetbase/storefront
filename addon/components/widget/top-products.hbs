@@ -7,7 +7,7 @@
         <Button @icon="refresh" @size="xs" @onClick={{perform this.load}} />
     </div>
 
-    <div class="storefront-widget-scroll">
+    <div class="storefront-widget-scroll storefront-product-list">
         {{#if this.error}}
             <div class="storefront-widget-empty">{{this.error}}</div>
         {{else if this.load.isRunning}}
