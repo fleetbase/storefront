@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Http\Resources\v1\Index\Order as StorefrontOrderIndexResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
@@ -17,6 +18,13 @@ class OrderController extends FleetbaseOrderController
      * @var string
      */
     public $resource = 'order';
+
+    /**
+     * The resource to use for index queries.
+     *
+     * @var string
+     */
+    public $indexResource = StorefrontOrderIndexResource::class;
 
     /**
      * The filter to use.
