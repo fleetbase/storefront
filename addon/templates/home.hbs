@@ -1,8 +1,13 @@
-<Layout::Section::Header @title={{t "storefront.home.title"}} @hideActions={{true}} />
-
-<Layout::Section::Body class="space-y-4 h-full overflow-y-scroll" @padded={{true}}>
-    <Widget::StorefrontMetrics />
-    <Widget::Orders @wrapperClass="bordered-classic" />
-    <Widget::Customers @wrapperClass="bordered-classic" />
+<Layout::Section::Body class="overflow-y-scroll h-full">
+    <Dashboard
+        @defaultDashboardId="storefront"
+        @defaultDashboardName="Storefront Dashboard"
+        @extension="storefront"
+        @leftHeaderWrapperClass="storefront-dashboard-title"
+        @rightHeaderWrapperClass="storefront-dashboard-actions"
+        @createWrapperClass="storefront-dashboard-create-wrapper"
+        class="storefront-dashboard-page"
+    />
     <Spacer @height="300px" />
+    {{outlet}}
 </Layout::Section::Body>

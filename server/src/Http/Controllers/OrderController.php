@@ -4,9 +4,14 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
+<<<<<<< feature/issue-71-replace-storefront-static-home-dashboard-with-registered-das-26507610461
+use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
+=======
 use Fleetbase\Storefront\Http\Resources\v1\Index\Order as StorefrontOrderIndexResource;
+>>>>>>> dev-v0.4.15
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +25,11 @@ class OrderController extends FleetbaseOrderController
     public $resource = 'order';
 
     /**
+<<<<<<< feature/issue-71-replace-storefront-static-home-dashboard-with-registered-das-26507610461
+     * Storefront order lists need checkout totals and customer context.
+=======
      * The resource to use for index queries.
+>>>>>>> dev-v0.4.15
      *
      * @var string
      */
@@ -32,6 +41,11 @@ class OrderController extends FleetbaseOrderController
      * @var \Fleetbase\Http\Filter\Filter
      */
     public $filter = \Fleetbase\Storefront\Http\Filter\OrderFilter::class;
+
+    public function onQueryRecord(Builder $query): void
+    {
+        $query->with(['customer', 'transaction', 'payload']);
+    }
 
     /**
      * Accept an order by incrementing status to preparing.
