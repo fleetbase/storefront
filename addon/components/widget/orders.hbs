@@ -1,15 +1,15 @@
 <ContentPanel
     @title={{this.title}}
     @titleStatusRight={{this.orders.length}}
-    @titleStatuRightClass="info-status-badge"
+    @titleStatusRightClass="info-status-badge"
     @hideStatusDot={{true}}
     @open={{this.loaded}}
     @isLoading={{this.loadOrders.isRunning}}
     @pad={{false}}
-    @wrapperClass={{@wrapperClass}}
-    @panelBodyClass="p-0i"
+    @wrapperClass={{concat @wrapperClass " storefront-dashboard-widget storefront-orders-widget h-full"}}
+    @panelBodyClass="p-0i storefront-widget-panel-body"
 >
-    <div class="flex justify-end px-4 pt-2 space-x-2">
+    <div class="storefront-table-toolbar">
         <Button @icon="refresh" @size="xs" @onClick={{perform this.loadOrders}} />
         <Toggle @label="Active Orders Filter" @isToggled={{this.activeFilter}} @onToggle={{this.toggleActiveFilter}} />
     </div>
@@ -208,10 +208,12 @@
                         </div>
                     </ContentPanel>
                 </div>
+            {{else}}
+                <div class="storefront-widget-empty">No recent orders yet.</div>
             {{/each}}
         </div>
     {{else}}
-        <div class="table-wrapper table-fluid">
+        <div class="table-wrapper table-fluid storefront-table-wrapper">
             <table class="storefront-widget-table">
                 <thead>
                     <tr class="h-12 text-left py-1">
@@ -294,12 +296,18 @@
                                 </div>
                             </td>
                         </tr>
+                    {{else}}
+                        <tr>
+                            <td colspan="7"><div class="storefront-widget-empty">No recent orders yet.</div></td>
+                        </tr>
                     {{/each}}
 
-                    <tr class="h-12">
-                        <td><div class="font-semibold text-green-500">TOTAL</div></td>
-                        <td colspan="6"><div class="flex justify-start text-green-500 font-semibold">{{format-currency this.total this.currency}}</div></td>
-                    </tr>
+                    {{#if this.orders.length}}
+                        <tr class="h-12">
+                            <td><div class="font-semibold text-green-500">TOTAL</div></td>
+                            <td colspan="6"><div class="flex justify-start text-green-500 font-semibold">{{format-currency this.total this.currency}}</div></td>
+                        </tr>
+                    {{/if}}
                 </tbody>
             </table>
         </div>

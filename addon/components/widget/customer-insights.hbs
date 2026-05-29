@@ -1,0 +1,44 @@
+<div class="storefront-dashboard-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="storefront-widget-header">
+        <div>
+            <div class="storefront-widget-title">Customer Insights</div>
+            <div class="storefront-widget-subtitle">New vs returning buyers</div>
+        </div>
+        <Button @icon="refresh" @size="xs" @onClick={{perform this.load}} />
+    </div>
+
+    <div class="flex min-h-0 flex-1 flex-col justify-between p-4">
+        {{#if this.error}}
+            <div class="storefront-widget-empty">{{this.error}}</div>
+        {{else if this.load.isRunning}}
+            <div class="storefront-widget-empty"><Spinner /></div>
+        {{else if this.data}}
+            <div class="grid grid-cols-2 gap-3">
+                <div class="storefront-mini-stat">
+                    <span>New</span>
+                    <strong>{{this.data.new_customers}}</strong>
+                </div>
+                <div class="storefront-mini-stat">
+                    <span>Returning</span>
+                    <strong>{{this.data.returning_customers}}</strong>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <div class="mb-2 flex items-center justify-between text-xs">
+                    <span class="font-semibold text-gray-600 dark:text-gray-300">Repeat purchase rate</span>
+                    <span class="font-bold text-gray-900 dark:text-white">{{this.data.repeat_rate}}%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                    <div class="h-full rounded-full bg-emerald-500" style={{this.returningPercentStyle}}></div>
+                </div>
+            </div>
+
+            <div class="mt-5 rounded-md border border-gray-100 bg-gray-50 p-3 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                {{this.data.total_customers}} buyers ordered during this period.
+            </div>
+        {{else}}
+            <div class="storefront-widget-empty">No customer activity yet.</div>
+        {{/if}}
+    </div>
+</div>

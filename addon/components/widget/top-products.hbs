@@ -1,0 +1,30 @@
+<div class="storefront-dashboard-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="storefront-widget-header">
+        <div>
+            <div class="storefront-widget-title">Top Products</div>
+            <div class="storefront-widget-subtitle">Best sellers by revenue</div>
+        </div>
+        <Button @icon="refresh" @size="xs" @onClick={{perform this.load}} />
+    </div>
+
+    <div class="storefront-widget-scroll">
+        {{#if this.error}}
+            <div class="storefront-widget-empty">{{this.error}}</div>
+        {{else if this.load.isRunning}}
+            <div class="storefront-widget-empty"><Spinner /></div>
+        {{else if this.products.length}}
+            {{#each this.products as |product index|}}
+                <div class="storefront-list-row">
+                    <div class="storefront-rank">{{add index 1}}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="storefront-row-title">{{product.name}}</div>
+                        <div class="storefront-row-subtitle">{{product.quantity}} sold</div>
+                    </div>
+                    <div class="storefront-row-value">{{format-currency product.revenue product.currency}}</div>
+                </div>
+            {{/each}}
+        {{else}}
+            <div class="storefront-widget-empty">No product sales yet.</div>
+        {{/if}}
+    </div>
+</div>

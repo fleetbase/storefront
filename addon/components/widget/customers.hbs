@@ -6,10 +6,10 @@
     @open={{this.loaded}}
     @isLoading={{this.loadCustomers.isRunning}}
     @pad={{false}}
-    @wrapperClass={{@wrapperClass}}
-    @panelBodyClass="p-0i"
+    @wrapperClass={{concat @wrapperClass " storefront-dashboard-widget storefront-customers-widget h-full"}}
+    @panelBodyClass="p-0i storefront-widget-panel-body"
 >
-    <div class="flex justify-end px-4 pt-2 space-x-2">
+    <div class="storefront-table-toolbar">
         <Button @icon="refresh" @size="xs" @onClick={{perform this.loadCustomers}} />
     </div>
     {{#if (media "isMobile")}}
@@ -27,10 +27,12 @@
                         </div>
                     </div>
                 </div>
+            {{else}}
+                <div class="storefront-widget-empty">No recent customers yet.</div>
             {{/each}}
         </div>
     {{else}}
-        <div class="table-wrapper table-fluid">
+        <div class="table-wrapper table-fluid storefront-table-wrapper">
             <table class="storefront-widget-table">
                 <thead>
                     <tr class="h-12 text-left py-1">
@@ -51,6 +53,10 @@
                             <td>{{n-a customer.email}}</td>
                             <td>{{n-a customer.orders 0}}</td>
                             <td></td>
+                        </tr>
+                    {{else}}
+                        <tr>
+                            <td colspan="6"><div class="storefront-widget-empty">No recent customers yet.</div></td>
                         </tr>
                     {{/each}}
                 </tbody>

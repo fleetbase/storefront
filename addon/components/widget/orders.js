@@ -73,7 +73,7 @@ export default class WidgetOrdersComponent extends Component {
     calculateTotal(orders = []) {
         let total = 0;
         orders.forEach((order) => {
-            total += get(order, 'meta.total');
+            total += Number(get(order, 'meta.total') ?? 0);
         });
 
         return total;
