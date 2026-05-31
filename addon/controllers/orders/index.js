@@ -335,7 +335,7 @@ export default class OrdersIndexController extends BaseController {
                 modal.startLoading();
 
                 try {
-                    await this.fetch.patch('orders/cancel', { order: order.id });
+                    await this.fetch.patch('orders/cancel', { order: order.id }, { namespace: 'storefront/int/v1' });
                     order.set('status', 'canceled');
                     this.notifications.success(this.intl.t('fleet-ops.operations.orders.index.cancel-success', { orderId: order.public_id }));
                     modal.done();

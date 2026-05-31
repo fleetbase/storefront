@@ -25,12 +25,6 @@ export default class ContextPanelService extends Service {
                 componentArguments: [{ isResizable: true }, { width: '500px' }],
             },
         },
-        order: {
-            viewing: {
-                component: 'order-panel',
-                componentArguments: [{ isResizable: true }, { width: '500px' }],
-            },
-        },
     };
 
     /**

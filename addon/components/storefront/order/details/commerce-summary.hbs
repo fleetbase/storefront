@@ -1,0 +1,71 @@
+<ContentPanel
+    @title="Order"
+    @prefixTitleRight={{if @resource.payload.cod_amount "Cash" (n-a (titleize @resource.meta.gateway))}}
+    @prefixTitleRightClass={{if @resource.payload.cod_amount "text-green-400" "text-blue-400"}}
+    @open={{true}}
+    @isLoading={{@isLoading}}
+    @actionButtons={{@actionButtons}}
+    @wrapperClass="bordered-top"
+    ...attributes
+>
+    <div class="storefront-order-commerce">
+        {{#if @resource.payload.entities}}
+            <div class="storefront-order-items">
+                {{#each @resource.payload.entities as |entity|}}
+                    <div class="storefront-order-item">
+                        <div class="storefront-order-item__qty">{{n-a entity.meta.quantity 1}}x</div>
+                        <Image src={{or entity.photo_url entity.image_url entity.meta.photo_url entity.meta.image_url entity.meta.product_image_url}} @fallbackSrc={{config "defaultValues.entityImage"}} class="storefront-order-item__image" alt={{entity.name}} />
+                        <div class="storefront-order-item__body">
+                            <div class="storefront-order-item__name">{{n-a entity.name "Unnamed item"}}</div>
+                            <div class="storefront-order-item__description">{{n-a entity.description "No description"}}</div>
+                            {{#if entity.meta.scheduled_at}}
+                                <div class="storefront-order-item__options">
+                                    <span>Scheduled {{format-date-fns entity.meta.scheduled_at "d MMM yyyy HH:mm"}}</span>
+                                </div>
+                            {{/if}}
+                            {{#if entity.meta.variants}}
+                                <div class="storefront-order-item__options">
+                                    {{#each entity.meta.variants as |variant|}}
+                                        <span>{{or variant.name variant.label variant.option}}</span>
+                                    {{/each}}
+                                </div>
+                            {{/if}}
+                            {{#if entity.meta.addons}}
+                                <div class="storefront-order-item__options">
+                                    {{#each entity.meta.addons as |addon|}}
+                                        <span>+ {{or addon.name addon.label}}</span>
+                                    {{/each}}
+                                </div>
+                            {{/if}}
+                        </div>
+                        <div class="storefront-order-item__price">
+                            {{format-currency entity.meta.subtotal (or entity.currency @resource.meta.currency)}}
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="storefront-order-empty-state">
+                <FaIcon @icon="receipt" />
+                <span>No order items were found.</span>
+            </div>
+        {{/if}}
+
+        <div class="storefront-order-totals mt-1">
+            <div><span>Subtotal</span><strong>{{format-currency @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+            {{#unless @resource.meta.is_pickup}}
+                <div><span>Delivery fee</span><strong>{{format-currency @resource.meta.delivery_fee @resource.meta.currency}}</strong></div>
+            {{/unless}}
+            {{#if @resource.meta.tip}}
+                <div><span>Tip</span><strong>{{get-tip-amount @resource.meta.tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+            {{/if}}
+            {{#if @resource.meta.delivery_tip}}
+                <div><span>Delivery tip</span><strong>{{get-tip-amount @resource.meta.delivery_tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+            {{/if}}
+            <div class="storefront-order-totals__total">
+                <span>Total</span>
+                <strong>{{format-currency (or @resource.meta.total @resource.transaction_amount 0) @resource.meta.currency}}</strong>
+            </div>
+        </div>
+    </div>
+</ContentPanel>

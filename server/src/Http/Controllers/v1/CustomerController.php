@@ -199,12 +199,14 @@ class CustomerController extends Controller
             // create the user
             $user = User::create(array_merge(
                 [
-                    'type'         => 'customer',
                     'company_uuid' => session('company'),
                     'phone'        => static::phone($request->input('phone')),
                 ],
-                $request->only(['name', 'type', 'email', 'phone', 'meta'])
+                $request->only(['name', 'email', 'phone', 'meta'])
             ));
+            $user->setUserType('customer');
+        } elseif (!$user->type) {
+            $user->setUserType('customer');
         }
 
         // always customer type
@@ -239,14 +241,20 @@ class CustomerController extends Controller
         }
 
         // create the customer/contact
-        try {
-            $customer = Contact::create($input);
-        } catch (UserAlreadyExistsException $e) {
-            // If the exception is thrown because user already exists and
-            // that user is the same user already assigned continue
-            $customer = Contact::where(['company_uuid' => session('company'), 'phone' => $input['phone']])->first();
-        } catch (\Exception $e) {
-            return response()->apiError($e->getMessage());
+        $customer = Contact::where(['company_uuid' => session('company'), 'user_uuid' => $user->uuid, 'type' => 'customer'])->first();
+        if (!$customer) {
+            try {
+                $customer = Contact::create($input);
+            } catch (UserAlreadyExistsException $e) {
+                // If the exception is thrown because user already exists and
+                // that user is the same user already assigned continue
+                $customer = Contact::where(['company_uuid' => session('company'), 'user_uuid' => $user->uuid, 'type' => 'customer'])->first();
+                if (!$customer) {
+                    return response()->apiError($e->getMessage());
+                }
+            } catch (\Exception $e) {
+                return response()->apiError($e->getMessage());
+            }
         }
 
         // generate auth token

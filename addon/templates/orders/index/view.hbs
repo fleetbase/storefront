@@ -1,1 +1,15 @@
-<OrderPanel @context={{@model}} @onPressCancel={{this.transitionBack}} />
+<Layout::Resource::Panel
+    @resource={{@model}}
+    @controller={{this}}
+    @headerComponent={{component "storefront/order/panel-header" resource=@model}}
+    @actionButtons={{this.actionButtons}}
+    @onPressCancel={{this.transitionBack}}
+    @headerClass="storefront-order-panel-header no-bottom-border"
+    @bodyClass="no-scroll"
+    @width="560px"
+    @isResizable={{true}}
+>
+    <TabNavigation @tabs={{this.tabs}} @contentClass="scrollable storefront-order-panel-tab-content" @tablistClass="pl-2 storefront-order-panel-tablist">
+        {{outlet}}
+    </TabNavigation>
+</Layout::Resource::Panel>

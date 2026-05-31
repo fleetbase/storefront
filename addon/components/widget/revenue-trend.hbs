@@ -1,0 +1,27 @@
+<div class="storefront-dashboard-widget storefront-chart-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800" ...attributes>
+    <div class="storefront-widget-header">
+        <div class="min-w-0">
+            <div class="storefront-widget-title">Revenue Trend</div>
+            <div class="storefront-widget-subtitle">{{this.formattedRevenue}} across {{this.data.summary.orders}} orders</div>
+        </div>
+        <div class="storefront-period-switcher">
+            {{#each this.periods as |period|}}
+                <button type="button" class={{if (eq this.period.label period.label) "active"}} {{on "click" (fn this.setPeriod period)}}>{{period.label}}</button>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="storefront-chart-body">
+        {{#if this.error}}
+            <div class="storefront-widget-empty">{{this.error}}</div>
+        {{else if this.load.isRunning}}
+            <div class="storefront-widget-empty"><Spinner /></div>
+        {{else if this.data}}
+            <div class="storefront-chart-frame">
+                <Chart @type="line" @labels={{this.data.labels}} @datasets={{this.data.datasets}} @options={{this.chartOptions}} />
+            </div>
+        {{else}}
+            <div class="storefront-widget-empty">No revenue data yet.</div>
+        {{/if}}
+    </div>
+</div>

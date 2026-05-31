@@ -1,60 +1,69 @@
-<ContentPanel
-    @title={{this.title}}
-    @titleStatusRight={{this.customers.length}}
-    @titleStatusRightClass="info-status-badge"
-    @hideStatusDot={{true}}
-    @open={{this.loaded}}
-    @isLoading={{this.loadCustomers.isRunning}}
-    @pad={{false}}
-    @wrapperClass={{@wrapperClass}}
-    @panelBodyClass="p-0i"
->
-    <div class="flex justify-end px-4 pt-2 space-x-2">
-        <Button @icon="refresh" @size="xs" @onClick={{perform this.loadCustomers}} />
+<div class={{concat @wrapperClass " storefront-dashboard-widget storefront-customers-widget flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800"}} ...attributes>
+    <div class="storefront-customers-header">
+        <div class="min-w-0">
+            <h3 class="storefront-widget-title">{{this.title}}</h3>
+            <div class="storefront-widget-subtitle">{{this.customers.length}} recent customers</div>
+        </div>
+        <div class="storefront-customers-actions">
+            <span class="storefront-widget-count">{{this.customers.length}}</span>
+            <Button @icon="refresh" @size="xs" @onClick={{perform this.loadCustomers}} />
+        </div>
     </div>
+
     {{#if (media "isMobile")}}
-        <div class="flex flex-col p-3 space-y-3">
+        <div class="storefront-customers-mobile-list">
             {{#each this.customers as |customer|}}
-                <div class="py-2 px-3 rounded-md border border-gray-400 dark:border-gray-700">
-                    <div class="flex flex-row">
-                        <div>
-                            <Image src={{avatar-url customer.photo_url}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{customer.name}} />
+                <article class="storefront-customer-card">
+                    <div class="flex items-center gap-3">
+                        <Image src={{avatar-url customer.photo_url}} class="storefront-customer-avatar" alt={{customer.name}} />
+                        <div class="min-w-0 flex-1">
+                            <a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-name">{{n-a customer.name}}</a>
+                            <div class="storefront-table-muted">{{customer.public_id}}</div>
                         </div>
-                        <div>
-                            <div class="text-xs font-bold dark:text-gray-100">{{customer.name}}</div>
-                            <div class="text-xs dark:text-gray-100">{{customer.email}}</div>
-                            <div class="text-xs dark:text-gray-100">{{customer.phone}}</div>
-                        </div>
+                        <div class="storefront-customer-order-count">{{n-a customer.orders 0}}</div>
                     </div>
-                </div>
+                    <div class="storefront-customer-card-details">
+                        <span>{{n-a customer.phone}}</span>
+                        <span>{{n-a customer.email}}</span>
+                    </div>
+                </article>
+            {{else}}
+                <div class="storefront-widget-empty">No recent customers yet.</div>
             {{/each}}
         </div>
     {{else}}
-        <div class="table-wrapper table-fluid">
-            <table class="storefront-widget-table">
+        <div class="storefront-customers-table-wrap">
+            <table class="storefront-customers-table">
                 <thead>
-                    <tr class="h-12 text-left py-1">
-                        <th style={{"width: 20%"}}>{{t "storefront.common.id"}}</th>
-                        <th style={{"width: 15%"}}>{{t "storefront.common.name"}}</th>
-                        <th style={{"width: 20%"}}>{{t "storefront.common.phone"}}</th>
-                        <th style={{"width: 35%"}}>{{t "storefront.common.email"}}</th>
-                        <th style={{"width: 10%"}}>{{t "storefront.common.orders"}}</th>
-                        <th></th>
+                    <tr>
+                        <th>{{t "storefront.common.id"}}</th>
+                        <th>{{t "storefront.common.name"}}</th>
+                        <th>{{t "storefront.common.phone"}}</th>
+                        <th>{{t "storefront.common.email"}}</th>
+                        <th>{{t "storefront.common.orders"}}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{#each this.customers as |customer|}}
-                        <tr class="h-12">
-                            <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}}>{{customer.public_id}}</a></td>
-                            <td>{{n-a customer.name}}</td>
-                            <td>{{n-a customer.phone}}</td>
-                            <td>{{n-a customer.email}}</td>
-                            <td>{{n-a customer.orders 0}}</td>
-                            <td></td>
+                        <tr>
+                            <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-id">{{customer.public_id}}</a></td>
+                            <td>
+                                <div class="storefront-customer-cell">
+                                    <Image src={{avatar-url customer.photo_url}} class="storefront-customer-avatar" alt={{customer.name}} />
+                                    <span class="storefront-table-text">{{n-a customer.name}}</span>
+                                </div>
+                            </td>
+                            <td><span class="storefront-table-text">{{n-a customer.phone}}</span></td>
+                            <td><span class="storefront-table-text">{{n-a customer.email}}</span></td>
+                            <td><span class="storefront-customer-order-count">{{n-a customer.orders 0}}</span></td>
+                        </tr>
+                    {{else}}
+                        <tr>
+                            <td colspan="5"><div class="storefront-widget-empty">No recent customers yet.</div></td>
                         </tr>
                     {{/each}}
                 </tbody>
             </table>
         </div>
     {{/if}}
-</ContentPanel>
+</div>

@@ -1,0 +1,51 @@
+<ContentPanel @title="Store" @open={{true}} @isLoading={{or @isLoading this.isLoadingStorefront}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+    <div class="storefront-order-store">
+        <Image src={{this.storeLogoUrl}} @fallbackSrc={{config "defaultValues.placeImage"}} class="storefront-order-person__avatar storefront-order-store__image" alt={{this.storeName}} />
+        <div class="storefront-order-store__content">
+            <div class="storefront-order-person__name font-bold">{{n-a this.storeName "Store"}}</div>
+            <div class="storefront-order-store__rows">
+                <div class="storefront-order-store__row">
+                    <span class="storefront-order-store__row-label">Phone</span>
+                    <div class="storefront-order-store__row-value">
+                        {{#if this.storePhone}}
+                            <a href="tel:{{this.storePhone}}">{{this.storePhone}}</a>
+                        {{else}}
+                            <span>No phone</span>
+                        {{/if}}
+                    </div>
+                </div>
+                <div class="storefront-order-store__row">
+                    <span class="storefront-order-store__row-label">Email</span>
+                    <div class="storefront-order-store__row-value">
+                        {{#if this.storeEmail}}
+                            <a href="mailto:{{this.storeEmail}}">{{this.storeEmail}}</a>
+                        {{else}}
+                            <span>No email</span>
+                        {{/if}}
+                    </div>
+                </div>
+                <div class="storefront-order-store__row">
+                    <span class="storefront-order-store__row-label">Website</span>
+                    <div class="storefront-order-store__row-value">
+                        {{#if this.storeWebsite}}
+                            <a href={{this.storeWebsite}} target="_blank" rel="noopener noreferrer">{{this.storeWebsite}}</a>
+                        {{else}}
+                            <span>No website</span>
+                        {{/if}}
+                    </div>
+                </div>
+                <div class="storefront-order-store__row">
+                    <span class="storefront-order-store__row-label">Address</span>
+                    <div class="storefront-order-store__row-value storefront-order-store__address">
+                        {{#if @resource.payload.pickup}}
+                            {{place-address @resource.payload.pickup showTitle=false}}
+                        {{else}}
+                            <span class="text-red-500">No pickup address</span>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div {{did-insert this.setupComponent}} {{did-update this.setupComponent this.storefrontId}}></div>
+</ContentPanel>

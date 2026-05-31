@@ -48,7 +48,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
      */
     @service filters;
 
-    @service contextPanel;
+    @service storefrontOrderActions;
 
     /**
      * Queryable parameters for this controller's model
@@ -320,6 +320,6 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
     }
 
     @action viewOrder(order) {
-        this.contextPanel.focus(order, 'viewing');
+        return this.storefrontOrderActions.viewOrder(order);
     }
 }
