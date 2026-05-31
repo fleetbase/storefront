@@ -142,7 +142,7 @@ class AnalyticsController extends Controller
         $products      = [];
 
         $this->checkouts($companyUuid, $start, $end, $store)->get()->each(function ($checkout) use (&$products, $store) {
-            $items = data_get($checkout, 'cart_state.items', []);
+            $items = $this->cartStateItems($checkout->cart_state);
             foreach ($items as $item) {
                 if ($store && data_get($item, 'store_id') !== $store->public_id) {
                     continue;
@@ -177,6 +177,36 @@ class AnalyticsController extends Controller
                 return $product;
             })->sortByDesc('revenue')->take(8)->values(),
         ]);
+    }
+
+    public function cartStateItems($cartState): array
+    {
+        if ($cartState instanceof Collection) {
+            $cartState = $cartState->all();
+        }
+
+        if (is_object($cartState)) {
+            $cartState = (array) $cartState;
+        }
+
+        if (!is_array($cartState)) {
+            return [];
+        }
+
+        $items = data_get($cartState, 'items');
+        if ($items instanceof Collection) {
+            return $items->all();
+        }
+
+        if (is_array($items)) {
+            return $items;
+        }
+
+        if (is_object($items)) {
+            return (array) $items;
+        }
+
+        return array_is_list($cartState) ? $cartState : [];
     }
 
     public function customerInsights(Request $request)

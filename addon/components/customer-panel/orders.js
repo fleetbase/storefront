@@ -12,8 +12,7 @@ export default class CustomerPanelOrdersComponent extends Component {
     @service intl;
     @service appCache;
     @service modalsManager;
-    @service contextPanel;
-    @service orderActions;
+    @service storefrontOrderActions;
     @tracked loaded = false;
     @tracked orders = [];
     @tracked customer;
@@ -50,35 +49,39 @@ export default class CustomerPanelOrdersComponent extends Component {
     }
 
     @action async viewOrder(order) {
-        this.contextPanel.focus(order, 'viewing');
+        return this.storefrontOrderActions.viewOrder(order, {
+            onChange: () => {
+                this.loadOrders.perform();
+            },
+        });
     }
 
     @action async acceptOrder(order) {
-        await this.orderActions.acceptOrder(order, () => {
+        await this.storefrontOrderActions.acceptOrder(order, () => {
             this.loadOrders.perform();
         });
     }
 
     @action markAsReady(order) {
-        this.orderActions.markAsReady(order, () => {
+        this.storefrontOrderActions.markAsReady(order, () => {
             this.loadOrders.perform();
         });
     }
 
     @action markAsCompleted(order) {
-        this.orderActions.markAsCompleted(order, () => {
+        this.storefrontOrderActions.markAsCompleted(order, () => {
             this.loadOrders.perform();
         });
     }
 
     @action assignDriver(order) {
-        this.orderActions.assignDriver(order, () => {
+        this.storefrontOrderActions.assignDriver(order, () => {
             this.loadOrders.perform();
         });
     }
 
     @action cancelOrder(order) {
-        this.orderActions.cancelOrder(order, () => {
+        this.storefrontOrderActions.cancelOrder(order, () => {
             this.loadOrders.perform();
         });
     }

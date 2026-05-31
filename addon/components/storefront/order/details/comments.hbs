@@ -1,0 +1,10 @@
+<ContentPanel
+    @title="Comments"
+    @open={{true}}
+    @isLoading={{@isLoading}}
+    @actionButtons={{@actionButtons}}
+    @wrapperClass="bordered-top"
+    ...attributes
+>
+    <CommentThread @subject={{@resource}} @subjectType="storefront:order" />
+</ContentPanel>

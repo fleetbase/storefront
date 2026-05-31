@@ -5,9 +5,11 @@ namespace Fleetbase\Storefront\Http\Controllers;
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
+use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -37,6 +39,42 @@ class OrderController extends FleetbaseOrderController
     public function onQueryRecord(Builder $query): void
     {
         $query->with(['customer', 'transaction', 'payload', 'driverAssigned', 'trackingNumber', 'trackingStatuses']);
+    }
+
+    public function findRecord(Request $request, $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, $this->detailRelations());
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return [
+            'order' => new StorefrontOrderResource($order),
+        ];
+    }
+
+    private function detailRelations(): array
+    {
+        return [
+            'customer',
+            'transaction',
+            'payload',
+            'payload.pickup',
+            'payload.dropoff',
+            'payload.return',
+            'payload.waypoints',
+            'payload.entities',
+            'driverAssigned',
+            'orderConfig',
+            'trackingNumber',
+            'trackingStatuses',
+            'purchaseRate',
+            'purchaseRate.serviceQuote',
+            'purchaseRate.serviceQuote.items',
+            'comments',
+            'files',
+        ];
     }
 
     /**

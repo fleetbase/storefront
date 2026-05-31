@@ -1,0 +1,14 @@
+<ContentPanel
+    @title="Activity"
+    @open={{true}}
+    @actionButtons={{this.actionButtons}}
+    @isLoading={{or @isLoadingActivity this.loadActivity.isRunning @isLoading}}
+    @wrapperClass="bordered-top"
+    ...attributes
+>
+    {{#if (eq this.layout "timeline")}}
+        <Storefront::Order::ActivityTimeline @resource={{@resource}} @activity={{this.activity}} />
+    {{else}}
+        <Storefront::Order::ActivityList @resource={{@resource}} @activity={{this.activity}} />
+    {{/if}}
+</ContentPanel>

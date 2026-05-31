@@ -1,0 +1,41 @@
+<div class="storefront-order-panel-heading">
+    <div class="storefront-order-panel-heading__main">
+        <div class="storefront-order-panel-heading__icon">
+            <FaIcon @icon={{if @resource.meta.is_pickup "store" "truck"}} />
+        </div>
+        <div class="min-w-0">
+            <div class="storefront-order-panel-heading__eyebrow">
+                {{if @resource.meta.is_pickup "Pickup order" "Delivery order"}}
+            </div>
+            <div class="storefront-order-panel-heading__title">
+                {{n-a @resource.public_id "Order"}}
+            </div>
+            <div class="storefront-order-panel-heading__meta">
+                <span>{{n-a @resource.createdAt "No created date"}}</span>
+                <span>{{format-currency (or @resource.meta.total @resource.transaction_amount 0) @resource.meta.currency}}</span>
+            </div>
+        </div>
+    </div>
+    <div class="storefront-order-panel-heading__actions">
+        <div class="storefront-order-panel-heading__badges">
+            <Badge @status={{@resource.status}} />
+            {{#if @resource.meta.is_pickup}}
+                <Badge @hideStatusDot={{true}} @status="info" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
+                    <FaIcon @icon="hand-holding-dollar" class="mr-1" />
+                    {{t "storefront.component.widget.orders.pickup-order"}}
+                </Badge>
+            {{else}}
+                <Badge @hideStatusDot={{true}} @status="info" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
+                    <FaIcon @icon="truck" class="mr-1" />
+                    Delivery Order
+                </Badge>
+            {{/if}}
+        </div>
+        <Layout::Resource::Panel::HeaderActions
+            @resource={{@resource}}
+            @actionButtons={{@actionButtons}}
+            @onPressCancel={{@onPressCancel}}
+            @authSchema={{@authSchema}}
+        />
+    </div>
+</div>

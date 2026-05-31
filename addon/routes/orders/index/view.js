@@ -3,10 +3,9 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
 export default class OrdersIndexViewRoute extends Route {
-    @service currentUser;
     @service notifications;
-    @service store;
-    @service socket;
+    @service storefront;
+    @service fetch;
     @service intl;
     @service abilities;
     @service hostRouter;
@@ -23,11 +22,17 @@ export default class OrdersIndexViewRoute extends Route {
     }
 
     model({ public_id }) {
-        const order = this.store.queryRecord('order', {
-            public_id,
-            single: true,
-            with: ['payload', 'driverAssigned', 'orderConfig', 'customer', 'facilitator', 'trackingStatuses', 'trackingNumber', 'purchaseRate', 'comments', 'files'],
-        });
+        const order = this.fetch.get(
+            `orders/${public_id}`,
+            {
+                storefront: this.storefront.getActiveStore('public_id'),
+            },
+            {
+                namespace: 'storefront/int/v1',
+                normalizeToEmberData: true,
+                normalizeModelType: 'order',
+            }
+        );
 
         return order;
     }
