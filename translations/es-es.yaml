@@ -253,6 +253,10 @@ storefront:
         widget-title: Pedidos recientes
         id-column: ID de pedido
         cancel-order: Cancelar pedido
+        cancel-orders: Cancelar pedidos
+        cancel-order-modal-title: ¿Cancelar este pedido?
+        cancel-order-modal-body: Esto cancelará el pedido de Storefront y detendrá cualquier actividad de cumplimiento restante.
+        cancel-order-success: "El pedido {orderId} ha sido cancelado."
         accept-order: ¡Aceptar pedido!
         mark-as-ready: ¡Marcar como listo!
         dispatch: Enviar

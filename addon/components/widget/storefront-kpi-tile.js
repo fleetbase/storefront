@@ -4,9 +4,10 @@ import { inject as service } from '@ember/service';
 import { task } from 'ember-concurrency';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
-export default class WidgetKpiTileComponent extends Component {
+export default class WidgetStorefrontKpiTileComponent extends Component {
     @service fetch;
     @service storefront;
+    @service storefrontDashboard;
 
     @tracked data = null;
     @tracked error = null;
@@ -18,6 +19,9 @@ export default class WidgetKpiTileComponent extends Component {
             this.load.perform();
         });
         this.storefront.on('storefront.changed', () => {
+            this.load.perform();
+        });
+        this.storefrontDashboard.on('periodChanged', () => {
             this.load.perform();
         });
     }
@@ -82,7 +86,7 @@ export default class WidgetKpiTileComponent extends Component {
 
     @task *load() {
         try {
-            this.data = yield this.fetch.get('analytics/overview', { store: this.storeId }, { namespace: 'storefront/int/v1' });
+            this.data = yield this.fetch.get('analytics/overview', this.storefrontDashboard.withStore(this.storeId), { namespace: 'storefront/int/v1' });
             this.error = null;
         } catch (error) {
             this.error = error?.message ?? 'Unable to load metric';

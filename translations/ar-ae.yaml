@@ -243,6 +243,10 @@ storefront:
         widget-title: الطلبات الأخيرة
         id-column: رقم الطلب
         cancel-order: إلغاء الطلب
+        cancel-orders: إلغاء الطلبات
+        cancel-order-modal-title: إلغاء هذا الطلب؟
+        cancel-order-modal-body: سيؤدي هذا إلى إلغاء طلب Storefront وإيقاف أي نشاط تنفيذ متبقٍ.
+        cancel-order-success: "تم إلغاء الطلب {orderId}."
         accept-order: قبول الطلب!
         mark-as-ready: وضع علامة جاهز!
         dispatch: إرسال

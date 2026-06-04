@@ -22,6 +22,7 @@ use Spatie\Sluggable\SlugOptions;
 
 class ProductStatus
 {
+    public const PUBLISHED = 'published';
     public const AVAILABLE = 'available';
     public const DRAFT     = 'draft';
 }

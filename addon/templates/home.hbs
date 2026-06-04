@@ -6,8 +6,20 @@
         @leftHeaderWrapperClass="storefront-dashboard-title"
         @rightHeaderWrapperClass="storefront-dashboard-actions"
         @createWrapperClass="storefront-dashboard-create-wrapper"
+        @stickyHeader={{true}}
         class="storefront-dashboard-page"
-    />
+    >
+        <div class="storefront-dashboard-date-control storefront-datepicker">
+            <DatePicker
+                @value={{this.storefrontDashboard.datePickerValue}}
+                @range={{true}}
+                @buttons={{this.storefrontDashboard.datePickerButtons}}
+                @onSelect={{this.storefrontDashboard.selectDates}}
+                placeholder={{this.storefrontDashboard.formattedRange}}
+                class="form-input form-input-sm"
+            />
+        </div>
+    </Dashboard>
     <Spacer @height="300px" />
     {{outlet}}
 </Layout::Section::Body>

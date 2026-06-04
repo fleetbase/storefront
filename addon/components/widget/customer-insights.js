@@ -8,6 +8,7 @@ export default class WidgetCustomerInsightsComponent extends Component {
 
     @service fetch;
     @service storefront;
+    @service storefrontDashboard;
 
     @tracked data = null;
     @tracked error = null;
@@ -19,6 +20,9 @@ export default class WidgetCustomerInsightsComponent extends Component {
             this.load.perform();
         });
         this.storefront.on('storefront.changed', () => {
+            this.load.perform();
+        });
+        this.storefrontDashboard.on('periodChanged', () => {
             this.load.perform();
         });
     }
@@ -33,7 +37,7 @@ export default class WidgetCustomerInsightsComponent extends Component {
 
     @task *load() {
         try {
-            this.data = yield this.fetch.get('analytics/customer-insights', { store: this.storeId }, { namespace: 'storefront/int/v1' });
+            this.data = yield this.fetch.get('analytics/customer-insights', this.storefrontDashboard.withStore(this.storeId), { namespace: 'storefront/int/v1' });
             this.error = null;
         } catch (error) {
             this.error = error?.message ?? 'Unable to load customer insights';

@@ -8,6 +8,7 @@ export default class WidgetTopProductsComponent extends Component {
 
     @service fetch;
     @service storefront;
+    @service storefrontDashboard;
 
     @tracked products = [];
     @tracked error = null;
@@ -21,6 +22,9 @@ export default class WidgetTopProductsComponent extends Component {
         this.storefront.on('storefront.changed', () => {
             this.load.perform();
         });
+        this.storefrontDashboard.on('periodChanged', () => {
+            this.load.perform();
+        });
     }
 
     get storeId() {
@@ -29,7 +33,7 @@ export default class WidgetTopProductsComponent extends Component {
 
     @task *load() {
         try {
-            const response = yield this.fetch.get('analytics/top-products', { store: this.storeId }, { namespace: 'storefront/int/v1' });
+            const response = yield this.fetch.get('analytics/top-products', this.storefrontDashboard.withStore(this.storeId), { namespace: 'storefront/int/v1' });
             this.products = response.products ?? [];
             this.error = null;
         } catch (error) {

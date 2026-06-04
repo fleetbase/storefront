@@ -47,7 +47,7 @@ export default class WidgetOrdersComponent extends Component {
         const storefront = get(this.storefront, 'activeStore.public_id');
         const queryParams = {
             storefront,
-            limit: 14,
+            limit: 20,
             sort: '-created_at',
             ...params,
         };
@@ -65,7 +65,7 @@ export default class WidgetOrdersComponent extends Component {
 
             return orders;
         } catch (err) {
-            debug('Error loading orders for widget:', err.message);
+            debug('Error loading orders for widget: ' + err.message);
         }
     }
 
@@ -102,6 +102,10 @@ export default class WidgetOrdersComponent extends Component {
                 this.loadOrders.perform();
             },
         });
+    }
+
+    @action handleOrderChange() {
+        this.loadOrders.perform();
     }
 
     @action async acceptOrder(order) {

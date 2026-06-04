@@ -1,0 +1,24 @@
+<ContentPanel @title="Pricing" @open={{true}} @wrapperClass="bordered-top">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <InputGroup @name="Price" @helpText="Enter a price users will pay to purchase this product">
+            <MoneyInput
+                class="w-full"
+                @currency={{if @product.currency @product.currency @activeStore.currency}}
+                @value={{@product.price}}
+                @canSelectCurrency={{false}}
+                @onCurrencyChange={{fn (mut @product.currency)}}
+                @disabled={{@disabled}}
+            />
+        </InputGroup>
+        <InputGroup @name="Sale Price" @helpText="Optionally add a sale price for the product if the product is put on sale">
+            <MoneyInput
+                class="w-full"
+                @currency={{if @product.currency @product.currency @activeStore.currency}}
+                @value={{@product.sale_price}}
+                @canSelectCurrency={{false}}
+                @onCurrencyChange={{fn (mut @product.currency)}}
+                @disabled={{@disabled}}
+            />
+        </InputGroup>
+    </div>
+</ContentPanel>

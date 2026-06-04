@@ -38,7 +38,7 @@ class OrderController extends FleetbaseOrderController
 
     public function onQueryRecord(Builder $query): void
     {
-        $query->with(['customer', 'transaction', 'payload', 'driverAssigned', 'trackingNumber', 'trackingStatuses']);
+        $query->with(['customer', 'transaction', 'payload', 'driverAssigned', 'orderConfig', 'trackingNumber', 'trackingStatuses']);
     }
 
     public function findRecord(Request $request, $id)
@@ -74,6 +74,14 @@ class OrderController extends FleetbaseOrderController
             'purchaseRate.serviceQuote.items',
             'comments',
             'files',
+        ];
+    }
+
+    private function orderResponse(Order $order): array
+    {
+        return [
+            'status' => $order->status,
+            'order'  => new StorefrontOrderResource($order->fresh($this->detailRelations())),
         ];
     }
 
@@ -117,11 +125,7 @@ class OrderController extends FleetbaseOrderController
         } catch (\Exception $e) {
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -146,11 +150,7 @@ class OrderController extends FleetbaseOrderController
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');
 
-            return response()->json([
-                'status' => 'ok',
-                'order'  => $order->public_id,
-                'status' => $order->status,
-            ]);
+            return $this->orderResponse($order);
         }
 
         // toggle order to adhoc
@@ -163,14 +163,11 @@ class OrderController extends FleetbaseOrderController
             $order->assignDriver($driver);
         }
 
-        // update activity to dispatched
+        // Dispatch the order and move Storefront delivery orders into preparation.
         $order->dispatchWithActivity();
+        $order->updateStatus('preparing');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -202,11 +199,7 @@ class OrderController extends FleetbaseOrderController
             return response()->error('Unable to trigger order preparing.');
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -228,14 +221,32 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         Storefront::patchOrderConfig($order);
 
-        // update activity to completed
-        $order->updateStatus('completed');
+        $order->updateStatus($order->isMeta('is_pickup') ? 'picked_up' : 'completed');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
+    }
+
+    public function unassignDriver(Request $request)
+    {
+        /** @var Order */
+        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['driverAssigned'])->first();
+
+        if (!$order) {
+            return response()->json([
+                'error' => 'No order to update!',
+            ], 400);
+        }
+
+        if ($order->driverAssigned) {
+            $order->driverAssigned->unassignCurrentOrder();
+        }
+
+        $order->forceFill([
+            'driver_assigned_uuid'  => null,
+            'vehicle_assigned_uuid' => null,
+        ])->save();
+
+        return $this->orderResponse($order);
     }
 
     /**
@@ -256,13 +267,8 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         Storefront::patchOrderConfig($order);
 
-        // update activity to dispatched
-        $order->updateStatus('cancel');
+        $order->updateStatus('canceled');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 }

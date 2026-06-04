@@ -168,11 +168,14 @@ class AnalyticsController extends Controller
             }
         });
 
-        $names = Product::whereIn('public_id', array_keys($products))->pluck('name', 'public_id');
+        $productRecords = Product::with(['primaryImage', 'files'])->whereIn('public_id', array_keys($products))->get()->keyBy('public_id');
 
         return response()->json([
-            'products' => collect($products)->map(function ($product) use ($names) {
-                $product['name'] = $names[$product['id']] ?? $product['name'];
+            'products' => collect($products)->map(function ($product) use ($productRecords) {
+                $productRecord = $productRecords->get($product['id']);
+
+                $product['name']              = $productRecord->name ?? $product['name'];
+                $product['primary_image_url'] = $productRecord->primary_image_url ?? null;
 
                 return $product;
             })->sortByDesc('revenue')->take(8)->values(),

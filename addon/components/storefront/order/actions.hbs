@@ -1,0 +1,13 @@
+<div class={{or @wrapperClass "storefront-order-inline-actions"}} ...attributes>
+    {{#each this.items as |item|}}
+        <Button
+            @size={{this.buttonSize}}
+            @type={{or item.type "default"}}
+            @icon={{item.icon}}
+            @text={{if this.showText item.text}}
+            @helpText={{unless this.showText item.text}}
+            @disabled={{item.disabled}}
+            @onClick={{or item.fn item.onClick}}
+        />
+    {{/each}}
+</div>

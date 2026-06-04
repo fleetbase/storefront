@@ -1,0 +1,8 @@
+<InputGroup>
+    <TranslationsEditor
+        @value={{@product.translations}}
+        @defaultKeys={{array "name" "description"}}
+        @onChange={{fn (mut @product.translations)}}
+        @disabled={{@disabled}}
+    />
+</InputGroup>

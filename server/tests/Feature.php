@@ -136,3 +136,15 @@ test('storefront order detail resource includes checkout totals and transaction 
         ])
         ->and($data['meta']['storefront'])->not->toHaveKey('extra');
 });
+
+test('testing seeder purges seeded ledger storefront sale journals before orders', function () {
+    $seeder = file_get_contents(__DIR__ . '/../seeders/Testing/CheckoutOrdersSeeder.php');
+
+    expect($seeder)
+        ->toContain('$orderUuids       = $this->seededUuids(Order::class)')
+        ->toContain('$this->purgeSeededLedgerJournals($orderUuids)')
+        ->toContain("->table('ledger_journals')")
+        ->toContain("->where('type', 'storefront_sale')")
+        ->toContain("->where('meta->seed', static::SEED_NAME)")
+        ->toContain("->whereIn('meta->order_uuid', $orderUuids)");
+});

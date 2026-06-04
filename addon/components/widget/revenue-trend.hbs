@@ -4,11 +4,6 @@
             <div class="storefront-widget-title">Revenue Trend</div>
             <div class="storefront-widget-subtitle">{{this.formattedRevenue}} across {{this.data.summary.orders}} orders</div>
         </div>
-        <div class="storefront-period-switcher">
-            {{#each this.periods as |period|}}
-                <button type="button" class={{if (eq this.period.label period.label) "active"}} {{on "click" (fn this.setPeriod period)}}>{{period.label}}</button>
-            {{/each}}
-        </div>
     </div>
 
     <div class="storefront-chart-body">
@@ -18,7 +13,7 @@
             <div class="storefront-widget-empty"><Spinner /></div>
         {{else if this.data}}
             <div class="storefront-chart-frame">
-                <Chart @type="line" @labels={{this.data.labels}} @datasets={{this.data.datasets}} @options={{this.chartOptions}} />
+                <Chart @type="line" @labels={{this.data.labels}} @datasets={{this.chartDatasets}} @options={{this.chartOptions}} />
             </div>
         {{else}}
             <div class="storefront-widget-empty">No revenue data yet.</div>

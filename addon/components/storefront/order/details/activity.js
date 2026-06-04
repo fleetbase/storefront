@@ -6,7 +6,10 @@ import { task } from 'ember-concurrency';
 export default class StorefrontOrderDetailsActivityComponent extends Component {
     @service appCache;
     @service notifications;
-    @tracked layout = this.appCache.get('storefront:order:activity:layout', 'timeline');
+    @service storefrontOrderActions;
+    @service storefrontOrderWorkflow;
+    activityLayoutCacheKey = 'storefront:order:activity:layout:v2';
+    @tracked layout = this.appCache.get(this.activityLayoutCacheKey, 'list');
 
     constructor() {
         super(...arguments);
@@ -24,11 +27,26 @@ export default class StorefrontOrderDetailsActivityComponent extends Component {
         return activity.filter((item) => item.tracking_number_uuid === trackingNumberUuid);
     }
 
+    get updateActivityItems() {
+        const order = this.args.resource;
+
+        if (!order || this.storefrontOrderWorkflow.isDefaultStorefrontConfig(order)) {
+            return [];
+        }
+
+        return this.storefrontOrderWorkflow.nextActivitiesFor(order).map((activity) => ({
+            text: activity._resolved_status ?? activity.status ?? activity.code,
+            icon: 'signal',
+            onClick: () => this.storefrontOrderActions.updateActivity(order, activity, this.args.onChange),
+        }));
+    }
+
     /* eslint-disable ember/no-side-effects */
     get actionButtons() {
         return [
             {
                 items: [
+                    ...this.updateActivityItems,
                     {
                         text: 'Reload activity',
                         icon: 'refresh',
@@ -41,7 +59,7 @@ export default class StorefrontOrderDetailsActivityComponent extends Component {
                         icon: this.layout === 'timeline' ? 'list' : 'timeline',
                         onClick: () => {
                             this.layout = this.layout === 'timeline' ? 'list' : 'timeline';
-                            this.appCache.set('storefront:order:activity:layout', this.layout);
+                            this.appCache.set(this.activityLayoutCacheKey, this.layout);
                         },
                     },
                 ],

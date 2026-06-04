@@ -1,0 +1,81 @@
+<div class="storefront-product-addon-management" data-test-storefront-product-addon-management>
+    <div class="storefront-product-addon-management__header">
+        <div>
+            <h3>Checkout Add-ons</h3>
+            <p>Reusable modifier groups customers can select during checkout.</p>
+        </div>
+        <div class="flex items-center">
+            {{#unless (and this.getAddonCategories.isIdle this.saveAddonCategory.isIdle)}}
+                <Spinner class="text-sky-400 mr-2" />
+            {{/unless}}
+            <Button
+                @type="magic"
+                @text={{t "storefront.component.modals.manage-addons.title"}}
+                @icon="plus"
+                @iconPrefix="fas"
+                @onClick={{perform this.createAddonCategory}}
+                @disabled={{not this.createAddonCategory.isIdle}}
+            />
+        </div>
+    </div>
+
+    <div class="storefront-product-addon-groups">
+        {{#each this.categories as |category index|}}
+            <div class="storefront-product-addon-group">
+                <div class="storefront-product-addon-group__header">
+                    <div class="storefront-product-addon-group__title">
+                        <FaIcon @icon="tags" />
+                        <Input
+                            @type="text"
+                            @value={{category.name}}
+                            {{on "blur" (perform this.saveAddonCategory category)}}
+                            class="form-input"
+                        />
+                    </div>
+                    <div class="storefront-product-addon-group__actions">
+                        <Button
+                            @text={{t "storefront.component.modals.manage-addons.new-addon"}}
+                            @icon="plus"
+                            @iconPrefix="fas"
+                            @onClick={{fn this.createNewAddon category}}
+                            @size="xs"
+                        />
+                        <Button
+                            @type="danger"
+                            @text={{t "storefront.component.modals.manage-addons.delete"}}
+                            @icon="trash"
+                            @onClick={{perform this.deleteAddonCategory index}}
+                            @size="xs"
+                        />
+                    </div>
+                </div>
+
+                <div class="storefront-product-addon-rows">
+                    {{#each category.addons as |addon i|}}
+                        <div class="storefront-product-addon-row">
+                            <Input @type="text" @value={{addon.name}} class="form-input" placeholder={{t "storefront.component.modals.manage-addons.addon-name"}} />
+                            <Input @type="text" @value={{addon.description}} class="form-input" placeholder={{t "storefront.component.modals.manage-addons.description"}} />
+                            <MoneyInput class="w-full" @currency={{this.activeStore.currency}} @canSelectCurrency={{false}} @value={{addon.price}} />
+                            <MoneyInput class="w-full" @currency={{this.activeStore.currency}} @canSelectCurrency={{false}} @value={{addon.sale_price}} />
+                            <Button
+                                @type="danger"
+                                @size="xs"
+                                @icon="trash"
+                                @text={{t "storefront.common.remove"}}
+                                @onClick={{perform this.removeAddon category i}}
+                            />
+                        </div>
+                    {{else}}
+                        <div class="storefront-product-addon-empty">No add-ons in this group.</div>
+                    {{/each}}
+                </div>
+            </div>
+        {{else}}
+            <div class="storefront-product-empty storefront-product-empty--compact">
+                <FaIcon @icon="tags" />
+                <h3>No add-on groups</h3>
+                <p>Create reusable checkout modifiers like toppings, sides, or preparation choices.</p>
+            </div>
+        {{/each}}
+    </div>
+</div>

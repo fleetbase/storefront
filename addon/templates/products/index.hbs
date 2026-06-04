@@ -1,63 +1,77 @@
-<Layout::Section::Header @title={{t "storefront.common.product"}}>
-    <Button
-        @type="magic"
-        @icon="tags"
-        @text={{t "storefront.products.index.manage-addons"}}
-        class="mr-2 flex-shrink-0"
-        @permission="storefront list product-addon"
-        @onClick={{this.manageAddons}}
-    />
-    <Button
-        @type="primary"
-        @icon="plus"
-        @iconPrefix="fas"
-        @text={{t "storefront.common.new"}}
-        @onClick={{this.createNewProduct}}
-        @disabled={{not this.category}}
-        @helpText={{unless this.category "Select a category to create a product within"}}
-        @permission="storefront create product"
-        class="mr-2 flex-shrink-0"
-    />
-    <Button
-        @icon="file-import"
-        @text={{t "storefront.common.import"}}
-        class="mr-2"
-        @wrapperClass="hidden lg:flex flex-shrink-0"
-        @permission="storefront import product"
-        @onClick={{this.importProducts}}
-    />
-    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @wrapperClass="hidden lg:flex flex-shrink-0" @permission="storefront export product" @text={{t "storefront.common.export"}} />
+<Layout::Section::Header
+    @title={{t "storefront.common.product"}}
+    @searchQuery={{this.query}}
+    @onSearch={{perform this.search}}
+    @actionsWrapperClass="storefront-product-subheader-actions"
+    @searchInputClass="storefront-product-search-input"
+>
+    <div class="storefront-product-header-actions">
+        <div class="storefront-product-view-toggle">
+            <button type="button" class={{if (eq this.viewMode "grid") "is-active"}} {{on "click" (fn this.setViewMode "grid")}}>
+                <FaIcon @icon="th-large" />
+            </button>
+            <button type="button" class={{if (eq this.viewMode "list") "is-active"}} {{on "click" (fn this.setViewMode "list")}}>
+                <FaIcon @icon="list" />
+            </button>
+        </div>
+        {{#if this.category}}
+            <DropdownButton @icon="gear" @text="Category" @type="default" @size="sm" @contentClass="dropdown-menu" @renderInPlace={{true}} as |dd|>
+                <div class="next-dd-menu mt-1 mx-0" aria-labelledby="user-menu">
+                    <div class="px-1">
+                        <a href="#" class="next-dd-item" disabled={{cannot "storefront update product-category"}} {{on "click" (dropdown-fn dd this.activeProductsController.editCategory this.category)}}>
+                            Edit this category...
+                        </a>
+                    </div>
+                    <div class="px-1">
+                        <a href="#" class="text-red-500 next-dd-item" disabled={{cannot "storefront delete product-category"}} {{on "click" (dropdown-fn dd this.activeProductsController.deleteCategory)}}>
+                            Delete this category...
+                        </a>
+                    </div>
+                </div>
+            </DropdownButton>
+        {{/if}}
+        <Button
+            @type="magic"
+            @icon="tags"
+            @text={{t "storefront.products.index.manage-addons"}}
+            @permission="storefront list product-addon"
+            @onClick={{this.manageAddons}}
+        />
+        <Button
+            @type="primary"
+            @icon="plus"
+            @iconPrefix="fas"
+            @text={{t "storefront.common.new"}}
+            @onClick={{this.createNewProduct}}
+            @disabled={{not this.category}}
+            @helpText={{unless this.category "Select a category to create a product within"}}
+            @permission="storefront create product"
+        />
+        <Button
+            @icon="file-import"
+            @text={{t "storefront.common.import"}}
+            @permission="storefront import product"
+            @onClick={{this.importProducts}}
+        />
+        <Button
+            @icon="long-arrow-up"
+            @iconClass="rotate-icon-45"
+            @permission="storefront export product"
+            @text={{t "storefront.common.export"}}
+        />
+    </div>
 </Layout::Section::Header>
 
-<Layout::Section::Body class="section-content flex flex-col lg:flex-row">
-    <AsideItemScroller
-        @title={{t "storefront.products.index.aside-scroller.title"}}
-        @resource="category"
-        @items={{@model}}
-        @titleKey="name"
+<Layout::Section::Body class="section-content storefront-products-page">
+    <Storefront::Product::CategorySidebar
+        @categories={{@model}}
+        @activeCategory={{this.category}}
         @onCreate={{this.createNewProductCategory}}
-        @onInit={{this.setAsideScroller}}
-        @customTopItemComponent="aside-item-scroller/item"
-        @customTopItemText={{t "storefront.products.index.aside-scroller.custom-top-item-text"}}
-        @customTopItemOnClick={{this.viewAllProducts}}
-        @customTopItemClass="border-t border-gray-200 dark:border-gray-700"
-        as |category|
-    >
-        <a
-            href="javascript:;"
-            class="aside-item-link cursor-pointer flex w-full md:px-6 md:py-5"
-            disabled={{cannot "storefront list product"}}
-            {{on "click" (fn this.switchCategory category)}}
-        >
-            <div class="flex items-center justify-between">
-                <div>
-                    <h4>{{category.name}}</h4>
-                </div>
-            </div>
-        </a>
-    </AsideItemScroller>
+        @onViewAll={{this.viewAllProducts}}
+        @onSelect={{this.switchCategory}}
+    />
 
-    <div id="productsViewPort" class="w-full h-full">
+    <div id="productsViewPort" class="storefront-products-viewport">
         {{outlet}}
     </div>
 </Layout::Section::Body>

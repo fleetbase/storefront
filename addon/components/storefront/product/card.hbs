@@ -1,0 +1,117 @@
+{{#if (eq @viewMode "list")}}
+    <div class="storefront-product-row" data-test-storefront-product-card>
+        <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-row__product">
+            <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-row__image" />
+            <span class="storefront-product-row__copy">
+                <strong>{{n-a @product.name "Untitled product"}}</strong>
+                <small>{{n-a @product.description "No description"}}</small>
+                <span class="storefront-product-row__sku">{{n-a @product.sku "No SKU"}}</span>
+            </span>
+        </LinkTo>
+        <span class="storefront-product-row__price">
+            {{#if this.hasSalePrice}}
+                {{format-currency @product.sale_price @product.currency}}
+            {{else}}
+                {{format-currency @product.price @product.currency}}
+            {{/if}}
+        </span>
+        <span><Badge @status={{this.displayStatus}} /></span>
+        <span class="storefront-product-row__muted">{{this.variantCount}} variants · {{this.addonGroupCount}} add-ons</span>
+        <span class="storefront-product-row__actions">
+            <LinkTo
+                @route={{@editRoute}}
+                @model={{@product}}
+                disabled={{cannot "storefront update product"}}
+                class="btn btn-xs btn-default"
+                aria-label={{concat "Edit " @product.name}}
+            >
+                <FaIcon @icon="pencil" />
+            </LinkTo>
+            <Button
+                @type="danger"
+                @size="xs"
+                @icon="trash"
+                @onClick={{fn @onDelete @product}}
+                @permission="storefront delete product"
+            />
+        </span>
+    </div>
+{{else}}
+    <div class="storefront-product-card" data-test-storefront-product-card>
+        <div class="storefront-product-card__media">
+            <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__image-link" aria-label={{concat "Edit " @product.name}}>
+                <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-card__image" />
+            </LinkTo>
+            <div class="storefront-product-card__status">
+                <Badge @status={{this.displayStatus}} />
+            </div>
+            <button type="button" class="storefront-product-card__image-action" aria-label={{concat "Preview image for " @product.name}} {{on "click" this.previewImage}}>
+                <FaIcon @icon="expand" />
+            </button>
+        </div>
+
+        <div class="storefront-product-card__body">
+            <div class="storefront-product-card__headline">
+                <div class="storefront-product-card__identity">
+                    <div class="storefront-product-card__category">{{n-a this.categoryName "Uncategorized"}}</div>
+                    <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__title">
+                        {{n-a @product.name "Untitled product"}}
+                    </LinkTo>
+                </div>
+                <div class="storefront-product-card__price">
+                    {{#if this.hasSalePrice}}
+                        <span class="storefront-product-card__sale">{{format-currency @product.sale_price @product.currency}}</span>
+                        <span class="storefront-product-card__compare">{{format-currency @product.price @product.currency}}</span>
+                    {{else}}
+                        <span>{{format-currency @product.price @product.currency}}</span>
+                    {{/if}}
+                </div>
+            </div>
+
+            <p class="storefront-product-card__description">{{n-a @product.description "No description"}}</p>
+            <div class="storefront-product-card__sku">{{n-a @product.sku "No SKU"}}</div>
+
+            <div class="storefront-product-card__meta">
+                <span><FaIcon @icon="layer-group" /> {{this.variantCount}} variants</span>
+                <span><FaIcon @icon="tags" /> {{this.addonGroupCount}} add-ons</span>
+            </div>
+
+            <div class="storefront-product-card__flags">
+                {{#if @product.is_service}}
+                    <span><FaIcon @icon="house-leave" /> Service</span>
+                {{/if}}
+                {{#if @product.is_bookable}}
+                    <span><FaIcon @icon="calendar-star" /> Bookable</span>
+                {{/if}}
+                {{#if @product.is_recommended}}
+                    <span><FaIcon @icon="star" /> Recommended</span>
+                {{/if}}
+                {{#if @product.is_on_sale}}
+                    <span><FaIcon @icon="badge-percent" /> On sale</span>
+                {{/if}}
+            </div>
+        </div>
+
+        <div class="storefront-product-card__footer">
+            <span>{{n-a @product.updatedAgo "Not updated"}}</span>
+            <div class="storefront-product-card__quick-actions">
+                <LinkTo
+                    @route={{@editRoute}}
+                    @model={{@product}}
+                    disabled={{cannot "storefront update product"}}
+                    class="btn btn-xs btn-default"
+                    aria-label={{concat "Edit " @product.name}}
+                >
+                    <FaIcon @icon="pencil" />
+                </LinkTo>
+                <Button
+                    @type="danger"
+                    @size="xs"
+                    @icon="trash"
+                    @onClick={{fn @onDelete @product}}
+                    @permission="storefront delete product"
+                />
+            </div>
+        </div>
+    </div>
+{{/if}}

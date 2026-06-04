@@ -233,6 +233,10 @@ storefront:
         widget-title: Recent Orders
         id-column: Order ID
         cancel-order: Cancel Order
+        cancel-orders: Cancel Orders
+        cancel-order-modal-title: Cancel this order?
+        cancel-order-modal-body: This will cancel the Storefront order and stop any remaining fulfillment activity.
+        cancel-order-success: "Order {orderId} has been canceled."
         accept-order: Accept Order!
         mark-as-ready: Mark as Ready!
         dispatch: Dispatch

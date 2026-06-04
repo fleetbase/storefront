@@ -1,0 +1,33 @@
+<InputGroup
+    @name={{t "storefront.component.modals.create-product-category.name"}}
+    @value={{@category.name}}
+    @helpText={{t "storefront.component.modals.create-product-category.name-text"}}
+/>
+<InputGroup
+    @name={{t "storefront.component.modals.create-product-category.description"}}
+    @value={{@category.description}}
+    @helpText={{t "storefront.component.modals.create-product-category.description-text"}}
+/>
+<InputGroup @name={{t "storefront.component.modals.create-product-category.icon"}}>
+    <div class="storefront-product-category-form__media">
+        <Image
+            src={{@category.icon_url}}
+            @fallbackSrc={{config "defaultValues.categoryImage"}}
+            alt={{@category.name}}
+            class="storefront-product-category-form__image"
+        />
+        <div class="flex-1">
+            <FileUpload @name={{t "storefront.common.photos"}} @accept="image/*" @onFileAdded={{@uploadNewPhoto}} as |queue|>
+                <a tabindex={{0}} class="flex items-center px-0 mt-2 text-xs no-underline truncate btn btn-sm btn-default">
+                    {{#if queue.files.length}}
+                        <Spinner class="mr-1" />
+                        <span>{{t "storefront.common.uploading"}}</span>
+                    {{else}}
+                        <FaIcon @icon="image" class="mr-1" />
+                        <span>{{t "storefront.component.modals.create-product-category.uploading-new"}}</span>
+                    {{/if}}
+                </a>
+            </FileUpload>
+        </div>
+    </div>
+</InputGroup>

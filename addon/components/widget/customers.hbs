@@ -13,7 +13,7 @@
     {{#if (media "isMobile")}}
         <div class="storefront-customers-mobile-list">
             {{#each this.customers as |customer|}}
-                <article class="storefront-customer-card">
+                <article class="storefront-customer-card storefront-animate-card">
                     <div class="flex items-center gap-3">
                         <Image src={{avatar-url customer.photo_url}} class="storefront-customer-avatar" alt={{customer.name}} />
                         <div class="min-w-0 flex-1">
@@ -32,7 +32,7 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-customers-table-wrap">
+        <div class="storefront-customers-table-wrap {{if (not this.customer) 'empty-state'}}">
             <table class="storefront-customers-table">
                 <thead>
                     <tr>
@@ -45,7 +45,7 @@
                 </thead>
                 <tbody>
                     {{#each this.customers as |customer|}}
-                        <tr>
+                        <tr class="storefront-animate-row">
                             <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-id">{{customer.public_id}}</a></td>
                             <td>
                                 <div class="storefront-customer-cell">

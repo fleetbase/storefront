@@ -20,7 +20,7 @@ module('Integration | Component | widget/top-products', function (hooks) {
         class FetchStubService extends Service {
             get() {
                 return {
-                    products: [{ id: 'product_1', name: 'Signature Bento', quantity: 7, revenue: 4900, currency: 'USD' }],
+                    products: [{ id: 'product_1', name: 'Signature Bento', quantity: 7, revenue: 4900, currency: 'USD', primary_image_url: 'https://example.com/bento.png' }],
                 };
             }
         }
@@ -32,6 +32,7 @@ module('Integration | Component | widget/top-products', function (hooks) {
         assert.dom('.storefront-list-row').exists({ count: 1 });
         assert.dom('.storefront-list-row').includesText('Signature Bento');
         assert.dom('.storefront-list-row').includesText('7 sold');
+        assert.dom('.storefront-product-list-image').hasAttribute('src', 'https://example.com/bento.png');
     });
 
     test('it renders an empty state', async function (assert) {

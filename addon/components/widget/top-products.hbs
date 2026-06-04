@@ -14,8 +14,14 @@
             <div class="storefront-widget-empty"><Spinner /></div>
         {{else if this.products.length}}
             {{#each this.products as |product index|}}
-                <div class="storefront-list-row">
+                <div class="storefront-list-row storefront-animate-row">
                     <div class="storefront-rank">{{add index 1}}</div>
+                    <Image
+                        src={{or product.primary_image_url product.product_image_url}}
+                        @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png"
+                        alt={{product.name}}
+                        class="storefront-product-list-image"
+                    />
                     <div class="min-w-0 flex-1">
                         <div class="storefront-row-title">{{product.name}}</div>
                         <div class="storefront-row-subtitle">{{product.quantity}} sold</div>
