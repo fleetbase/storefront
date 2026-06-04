@@ -1,26 +1,33 @@
+import Service from '@ember/service';
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'dummy/tests/helpers';
 import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 
+class StoreStubService extends Service {
+    query() {
+        return [];
+    }
+}
+
 module('Integration | Component | modals/manage-addons', function (hooks) {
     setupRenderingTest(hooks);
 
-    test('it renders', async function (assert) {
-        // Set any properties with this.set('myProperty', 'value');
-        // Handle any actions with this.set('myAction', function(val) { ... });
+    hooks.beforeEach(function () {
+        this.owner.register('service:store', StoreStubService);
+    });
 
-        await render(hbs`<Modals::ManageAddons />`);
+    test('it renders addon management', async function (assert) {
+        this.set('options', {
+            store: {
+                id: 'store_1',
+                currency: 'USD',
+            },
+        });
 
-        assert.dom(this.element).hasText('');
+        await render(hbs`<Modals::ManageAddons @modalIsOpened={{true}} @options={{this.options}} />`);
 
-        // Template block usage:
-        await render(hbs`
-      <Modals::ManageAddons>
-        template block text
-      </Modals::ManageAddons>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        assert.dom('[data-test-storefront-product-addon-management]').exists();
+        assert.dom('[data-test-storefront-product-addon-management]').includesText('Checkout Add-ons');
     });
 });

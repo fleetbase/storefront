@@ -13,7 +13,7 @@
     {{#if (media "isMobile")}}
         <div class="storefront-orders-mobile-list">
             {{#each this.orders as |order|}}
-                <article class="storefront-order-card">
+                <article class="storefront-order-card storefront-animate-card">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <a href="javascript:;" {{on "click" (fn this.viewOrder order)}} class="storefront-order-id">{{order.public_id}}</a>
@@ -38,55 +38,7 @@
 
                     <div class="storefront-order-card-actions">
                         <Button @size="xs" @type="default" @icon="eye" @helpText={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
-                        {{#unless order.meta.is_pickup}}
-                            <Button
-                                @size="xs"
-                                @type="default"
-                                @icon="id-card"
-                                @helpText={{if order.has_driver_assigned (t "storefront.component.widget.orders.change-driver") (t "storefront.component.widget.orders.assign-driver")}}
-                                @onClick={{fn this.assignDriver order}}
-                            />
-                        {{/unless}}
-                        {{#if order.isFresh}}
-                            <Button
-                                @size="xs"
-                                @type="success"
-                                @iconPrefix="fas"
-                                @icon="check"
-                                @helpText={{t "storefront.component.widget.orders.accept-order"}}
-                                @onClick={{fn this.acceptOrder order}}
-                            />
-                        {{/if}}
-                        {{#if (eq order.status "started")}}
-                            <Button
-                                @size="xs"
-                                @type="success"
-                                @icon="bell-concierge"
-                                @helpText={{t "storefront.component.widget.orders.mark-as-preparing"}}
-                                @onClick={{fn this.markAsPreparing order}}
-                            />
-                        {{/if}}
-                        {{#if (eq order.status "accepted")}}
-                            <Button
-                                @size="xs"
-                                @type={{if order.meta.is_pickup "success" "magic"}}
-                                @icon={{if order.meta.is_pickup "bell-concierge" "paper-plane"}}
-                                @helpText={{if order.meta.is_pickup (t "storefront.component.widget.orders.mark-as-ready") (t "storefront.component.widget.orders.dispatch")}}
-                                @onClick={{fn this.markAsReady order}}
-                            />
-                        {{/if}}
-                        {{#if order.isPickupReady}}
-                            <Button
-                                @size="xs"
-                                @type="success"
-                                @icon="check"
-                                @helpText={{t "storefront.component.widget.orders.mark-as-completed"}}
-                                @onClick={{fn this.markAsCompleted order}}
-                            />
-                        {{/if}}
-                        {{#if (not (or order.isCanceled (eq order.status "order_canceled")))}}
-                            <Button @size="xs" @type="danger" @icon="ban" @helpText={{t "storefront.component.widget.orders.cancel-order"}} @onClick={{fn this.cancelOrder order}} />
-                        {{/if}}
+                        <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} />
                     </div>
                 </article>
             {{else}}
@@ -94,7 +46,7 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-orders-table-wrap">
+        <div class="storefront-orders-table-wrap {{if (not this.orders) 'empty-state'}}">
             <table class="storefront-orders-table">
                 <thead>
                     <tr>
@@ -102,16 +54,18 @@
                         <th>Amount</th>
                         <th>Customer</th>
                         <th>Fulfillment</th>
-                        <th>Created</th>
                         <th>Status</th>
                         <th><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     {{#each this.orders as |order|}}
-                        <tr>
+                        <tr class="storefront-animate-row">
                             <td>
-                                <a href="javascript:;" {{on "click" (fn this.viewOrder order)}} class="storefront-order-id">{{order.public_id}}</a>
+                                <a href="javascript:;" {{on "click" (fn this.viewOrder order)}} class="storefront-order-id">
+                                    <div>{{order.public_id}}</div>
+                                    <span class="storefront-table-muted">{{order.createdAgo}}</span>
+                                </a>
                             </td>
                             <td><span class="storefront-order-total">{{format-currency order.meta.total order.meta.currency}}</span></td>
                             <td><span class="storefront-table-text">{{n-a order.customer.name}}</span></td>
@@ -124,60 +78,11 @@
                                     <span class="storefront-table-text">{{n-a order.driver_assigned.name}}</span>
                                 {{/if}}
                             </td>
-                            <td><span class="storefront-table-muted">{{order.createdAgo}}</span></td>
                             <td><Badge @status={{order.status}} /></td>
                             <td>
                                 <div class="storefront-table-actions">
                                     <Button @size="xs" @type="default" @icon="eye" @helpText={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
-                                    {{#if order.isFresh}}
-                                        <Button
-                                            @size="xs"
-                                            @type="success"
-                                            @iconPrefix="fas"
-                                            @icon="check"
-                                            @helpText={{t "storefront.component.widget.orders.accept-order"}}
-                                            @onClick={{fn this.acceptOrder order}}
-                                        />
-                                    {{/if}}
-                                    {{#if (eq order.status "started")}}
-                                        <Button
-                                            @size="xs"
-                                            @type="success"
-                                            @icon="hourglass-start"
-                                            @helpText={{t "storefront.component.widget.orders.mark-as-preparing"}}
-                                            @onClick={{fn this.markAsPreparing order}}
-                                        />
-                                    {{/if}}
-                                    {{#if (eq order.status "accepted")}}
-                                        <Button
-                                            @size="xs"
-                                            @type={{if order.meta.is_pickup "success" "magic"}}
-                                            @icon={{if order.meta.is_pickup "bell-concierge" "paper-plane"}}
-                                            @helpText={{if order.meta.is_pickup (t "storefront.component.widget.orders.mark-as-ready") (t "storefront.component.widget.orders.dispatch")}}
-                                            @onClick={{fn this.markAsReady order}}
-                                        />
-                                    {{/if}}
-                                    {{#if order.isPickupReady}}
-                                        <Button
-                                            @size="xs"
-                                            @type="success"
-                                            @icon="check"
-                                            @helpText={{t "storefront.component.widget.orders.mark-as-completed"}}
-                                            @onClick={{fn this.markAsCompleted order}}
-                                        />
-                                    {{/if}}
-                                    {{#unless order.meta.is_pickup}}
-                                        <Button
-                                            @size="xs"
-                                            @type="default"
-                                            @icon="id-card"
-                                            @helpText={{if order.has_driver_assigned (t "storefront.component.widget.orders.change-driver") (t "storefront.component.widget.orders.assign-driver")}}
-                                            @onClick={{fn this.assignDriver order}}
-                                        />
-                                    {{/unless}}
-                                    {{#if (not (or order.isCanceled (eq order.status "order_canceled")))}}
-                                        <Button @size="xs" @type="danger" @icon="ban" @helpText={{t "storefront.component.widget.orders.cancel-order"}} @onClick={{fn this.cancelOrder order}} />
-                                    {{/if}}
+                                    <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} />
                                 </div>
                             </td>
                         </tr>

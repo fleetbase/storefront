@@ -9,7 +9,7 @@ class StorefrontStubService extends Service {
     on() {}
 }
 
-module('Integration | Component | widget/kpi-tile', function (hooks) {
+module('Integration | Component | widget/storefront-kpi-tile', function (hooks) {
     setupRenderingTest(hooks);
 
     hooks.beforeEach(function () {
@@ -36,7 +36,7 @@ module('Integration | Component | widget/kpi-tile', function (hooks) {
 
         this.owner.register('service:fetch', FetchStubService);
 
-        await render(hbs`<Widget::KpiTile @metric="revenue" @title="Revenue" @icon="sack-dollar" />`);
+        await render(hbs`<Widget::StorefrontKpiTile @metric="revenue" @title="Revenue" @icon="sack-dollar" />`);
 
         assert.dom('.storefront-kpi-tile').exists();
         assert.dom('.storefront-kpi-tile').includesText('Revenue');
@@ -52,7 +52,7 @@ module('Integration | Component | widget/kpi-tile', function (hooks) {
 
         this.owner.register('service:fetch', FetchStubService);
 
-        await render(hbs`<Widget::KpiTile @metric="revenue" @title="Revenue" @icon="sack-dollar" />`);
+        await render(hbs`<Widget::StorefrontKpiTile @metric="revenue" @title="Revenue" @icon="sack-dollar" />`);
 
         assert.dom('.storefront-kpi-tile').includesText('Metrics unavailable');
     });
@@ -76,7 +76,7 @@ module('Integration | Component | widget/kpi-tile', function (hooks) {
 
         this.owner.register('service:fetch', FetchStubService);
 
-        await render(hbs`<Widget::KpiTile @metric="cancellation_rate" @title="Cancellation Rate" @icon="ban" @accent="rose" />`);
+        await render(hbs`<Widget::StorefrontKpiTile @metric="cancellation_rate" @title="Cancellation Rate" @icon="ban" @accent="rose" />`);
 
         assert.dom('.storefront-kpi-tile').hasClass('storefront-kpi-accent-rose');
         assert.dom('.storefront-kpi-tile').hasClass('storefront-kpi-trend-bad');

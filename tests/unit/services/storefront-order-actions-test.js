@@ -62,4 +62,117 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
         await service.viewOrder({ public_id: 'order_test' });
     });
+
+    test('it progresses action buttons for accepted and pickup ready orders', function (assert) {
+        class MenuServiceStub extends Service {
+            getMenuItems() {
+                return [];
+            }
+        }
+
+        this.owner.register('service:universe/menu-service', MenuServiceStub);
+
+        const service = this.owner.lookup('service:storefront-order-actions');
+
+        let actions = service.actionButtonsFor({ id: 'order_1', status: 'created', meta: {} })[0].items;
+        assert.strictEqual(actions[0].text, 'Accept order');
+
+        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: false } })[0].items;
+        assert.strictEqual(actions[0].text, 'Mark as Ready');
+
+        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', dispatched: true, meta: { is_pickup: false } })[0].items;
+        assert.strictEqual(actions[0].text, 'Mark as Ready');
+
+        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: true } })[0].items;
+        assert.strictEqual(actions[0].text, 'Mark as Ready');
+
+        actions = service.actionButtonsFor({ id: 'order_1', status: 'pickup_ready', meta: { is_pickup: true } })[0].items;
+        assert.strictEqual(actions[0].text, 'Mark Picked Up');
+    });
+
+    test('it applies mutation status before invoking callbacks', function (assert) {
+        assert.expect(3);
+
+        class ResourceContextPanelStub extends Service {
+            overlays = [
+                {
+                    id: 'storefront-order:order_1',
+                },
+            ];
+
+            update(id, definition) {
+                assert.strictEqual(id, 'storefront-order:order_1');
+                assert.strictEqual(definition.actionButtons[0].items[0].text, 'Mark as Ready');
+            }
+        }
+
+        class MenuServiceStub extends Service {
+            getMenuItems() {
+                return [];
+            }
+        }
+
+        this.owner.register('service:resource-context-panel', ResourceContextPanelStub);
+        this.owner.register('service:universe/menu-service', MenuServiceStub);
+
+        const service = this.owner.lookup('service:storefront-order-actions');
+        const order = { id: 'order_1', status: 'created', meta: {} };
+
+        service.didMutateOrder(order, 'accepted', (mutatedOrder) => {
+            assert.strictEqual(mutatedOrder.status, 'accepted');
+        });
+    });
+
+    test('it detects assigned drivers before dispatch', function (assert) {
+        const service = this.owner.lookup('service:storefront-order-actions');
+
+        assert.true(service.hasAssignedDriver({ has_driver_assigned: true }));
+        assert.true(service.hasAssignedDriver({ driver_assigned: { id: 'driver_1' } }));
+        assert.true(service.hasAssignedDriver({ driver_assigned_uuid: 'driver_1' }));
+        assert.false(service.hasAssignedDriver({ has_driver_assigned: false, driver_assigned: null }));
+    });
+
+    test('it changes driver action label when a driver is assigned', function (assert) {
+        const service = this.owner.lookup('service:storefront-order-actions');
+
+        let actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned: null })[0].items;
+        assert.strictEqual(actions.find((action) => action.icon === 'id-card').text, 'Assign Driver');
+
+        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned_uuid: 'driver_1' })[0].items;
+        assert.strictEqual(actions.find((action) => action.icon === 'user-minus').text, 'Unassign Driver');
+    });
+
+    test('it marks orders dispatched even when dispatch response keeps a pre-dispatch status', function (assert) {
+        assert.expect(4);
+
+        class ResourceContextPanelStub extends Service {
+            overlays = [
+                {
+                    id: 'storefront-order:order_1',
+                },
+            ];
+
+            update(id, definition) {
+                assert.strictEqual(id, 'storefront-order:order_1');
+                assert.notStrictEqual(definition.actionButtons[0].items[0].text, 'Mark as Ready');
+            }
+        }
+
+        class MenuServiceStub extends Service {
+            getMenuItems() {
+                return [];
+            }
+        }
+
+        this.owner.register('service:resource-context-panel', ResourceContextPanelStub);
+        this.owner.register('service:universe/menu-service', MenuServiceStub);
+
+        const service = this.owner.lookup('service:storefront-order-actions');
+        const order = { id: 'order_1', status: 'accepted', dispatched: false, meta: {} };
+
+        service.didDispatchOrder(order, 'accepted', (mutatedOrder) => {
+            assert.strictEqual(mutatedOrder.status, 'dispatched');
+            assert.true(mutatedOrder.dispatched);
+        });
+    });
 });

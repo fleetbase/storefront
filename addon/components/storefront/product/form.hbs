@@ -1,0 +1,50 @@
+<div class="storefront-product-form" data-test-storefront-product-form>
+    {{#let (cannot @permission) as |unauthorized|}}
+        <Storefront::Product::Form::Basics
+            @product={{@product}}
+            @activeStore={{@activeStore}}
+            @statusOptions={{@statusOptions}}
+            @addTag={{@addTag}}
+            @removeTag={{@removeTag}}
+            @disabled={{unauthorized}}
+        />
+        <Storefront::Product::Form::Pricing
+            @product={{@product}}
+            @activeStore={{@activeStore}}
+            @disabled={{unauthorized}}
+        />
+        <Storefront::Product::Form::Flags
+            @product={{@product}}
+            @disabled={{unauthorized}}
+        />
+        <Storefront::Product::Form::Variants
+            @product={{@product}}
+            @activeStore={{@activeStore}}
+            @variantTabs={{@variantTabs}}
+            @createProductVariant={{@createProductVariant}}
+            @removeProductVariant={{@removeProductVariant}}
+            @editProductVariant={{@editProductVariant}}
+            @addVariantOption={{@addVariantOption}}
+            @removeVariantOption={{@removeVariantOption}}
+        />
+        <Storefront::Product::Form::Addons
+            @product={{@product}}
+            @promptSelectAddonCategories={{@promptSelectAddonCategories}}
+            @removeAddonCategory={{@removeAddonCategory}}
+            @excludeAddon={{@excludeAddon}}
+        />
+        <Storefront::Product::Form::Availability @product={{@product}} @disabled={{unauthorized}} />
+        <Storefront::Product::Form::Media
+            @product={{@product}}
+            @acceptedFileTypes={{@acceptedFileTypes}}
+            @uploadQueue={{@uploadQueue}}
+            @queueFile={{@queueFile}}
+            @removeFile={{@removeFile}}
+            @makePrimaryFile={{@makePrimaryFile}}
+            @disabled={{unauthorized}}
+        />
+        <Storefront::Product::Form::Videos @product={{@product}} @disabled={{unauthorized}} />
+        <Storefront::Product::Form::Translations @product={{@product}} @disabled={{unauthorized}} />
+        <Storefront::Product::Form::Metadata @product={{@product}} />
+    {{/let}}
+</div>

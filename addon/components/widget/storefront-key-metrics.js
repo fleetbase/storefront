@@ -17,6 +17,7 @@ export default class WidgetStorefrontKeyMetricsComponent extends Component {
      * @memberof WidgetKeyMetricsComponent
      */
     @service fetch;
+    @service storefrontDashboard;
 
     /**
      * Property for loading metrics to.
@@ -32,6 +33,9 @@ export default class WidgetStorefrontKeyMetricsComponent extends Component {
     constructor() {
         super(...arguments);
         this.getDashboardMetrics.perform();
+        this.storefrontDashboard.on('periodChanged', () => {
+            this.getDashboardMetrics.perform();
+        });
     }
 
     /**
@@ -39,8 +43,8 @@ export default class WidgetStorefrontKeyMetricsComponent extends Component {
      *
      * @memberof WidgetKeyMetricsComponent
      */
-    @task *getDashboardMetrics(params = {}) {
-        this.metrics = yield this.fetch.get('metrics', params, { namespace: 'storefront/int/v1' }).then((response) => {
+    @task *getDashboardMetrics() {
+        this.metrics = yield this.fetch.get('metrics', this.storefrontDashboard.queryParams, { namespace: 'storefront/int/v1' }).then((response) => {
             return this.createMetricsMapFromResponse(response);
         });
     }

@@ -249,6 +249,10 @@ storefront:
         widget-title: Đơn hàng gần đây
         id-column: Mã đơn hàng
         cancel-order: Hủy đơn hàng
+        cancel-orders: Hủy đơn hàng
+        cancel-order-modal-title: Hủy đơn hàng này?
+        cancel-order-modal-body: Thao tác này sẽ hủy đơn hàng Storefront và dừng mọi hoạt động xử lý còn lại.
+        cancel-order-success: "Đơn hàng {orderId} đã bị hủy."
         accept-order: Chấp nhận đơn hàng!
         mark-as-ready: Đánh dấu là sẵn sàng!
         dispatch: Giao hàng

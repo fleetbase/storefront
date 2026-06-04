@@ -1,11 +1,16 @@
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { inject as controller } from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { alias } from '@ember/object/computed';
 import { dasherize } from '@ember/string';
+import { isBlank } from '@ember/utils';
+import { timeout, task } from 'ember-concurrency';
 
 export default class ProductsIndexController extends BaseController {
+    @controller('products.index.index') productsIndexIndexController;
+    @controller('products.index.category') productsIndexCategoryController;
     @service store;
     @service modalsManager;
     @service currentUser;
@@ -28,6 +33,40 @@ export default class ProductsIndexController extends BaseController {
      * @var {CategoryModel}
      */
     @tracked category;
+    @tracked viewMode = 'grid';
+
+    get activeProductsController() {
+        return this.category ? this.productsIndexCategoryController : this.productsIndexIndexController;
+    }
+
+    get query() {
+        return this.activeProductsController?.query;
+    }
+
+    @task({ restartable: true }) *search({ target: { value } }) {
+        const controller = this.activeProductsController;
+
+        if (!controller) {
+            return;
+        }
+
+        if (isBlank(value)) {
+            controller.query = null;
+            return;
+        }
+
+        yield timeout(250);
+
+        if (controller.page > 1) {
+            controller.page = 1;
+        }
+
+        controller.query = value;
+    }
+
+    @action setViewMode(viewMode) {
+        this.viewMode = viewMode;
+    }
 
     @action createNewProduct() {
         return this.transitionToRoute('products.index.category.new');

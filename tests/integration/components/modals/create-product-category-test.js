@@ -6,21 +6,19 @@ import { hbs } from 'ember-cli-htmlbars';
 module('Integration | Component | modals/create-product-category', function (hooks) {
     setupRenderingTest(hooks);
 
-    test('it renders', async function (assert) {
-        // Set any properties with this.set('myProperty', 'value');
-        // Handle any actions with this.set('myAction', function(val) { ... });
+    test('it renders the category form', async function (assert) {
+        this.set('options', {
+            category: {
+                name: 'Lunch',
+                description: 'Lunch menu',
+                icon_url: 'https://example.com/lunch.png',
+            },
+            uploadNewPhoto() {},
+        });
 
-        await render(hbs`<Modals::CreateProductCategory />`);
+        await render(hbs`<Modals::CreateProductCategory @modalIsOpened={{true}} @options={{this.options}} />`);
 
-        assert.dom(this.element).hasText('');
-
-        // Template block usage:
-        await render(hbs`
-      <Modals::CreateProductCategory>
-        template block text
-      </Modals::CreateProductCategory>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        assert.dom('.storefront-product-category-form__media').exists();
+        assert.dom(this.element).includesText('Lunch');
     });
 });

@@ -1,56 +1,42 @@
-import {
-    startOfDay,
-    endOfDay,
-    startOfWeek,
-    endOfWeek,
-    startOfMonth,
-    endOfMonth,
-    startOfQuarter,
-    endOfQuarter,
-    startOfYear,
-    endOfYear,
-    subDays,
-    subWeeks,
-    subMonths,
-    subQuarters,
-    subYears,
-    format,
-} from 'date-fns';
+import { startOfDay, endOfDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, addDays, subDays, subMonths, subQuarters, subYears, format } from 'date-fns';
+
+const currentYear = new Date().getFullYear();
+
+function getCurrentYearQuarterRange(quarter) {
+    const start = new Date(currentYear, (quarter - 1) * 3, 1);
+
+    return [startOfQuarter(start), endOfQuarter(start)];
+}
+
+function getBlackFriday(year = currentYear) {
+    let fridayCount = 0;
+    let date = new Date(year, 10, 1);
+
+    while (date.getMonth() === 10) {
+        if (date.getDay() === 5) {
+            fridayCount++;
+
+            if (fridayCount === 4) {
+                return date;
+            }
+        }
+
+        date = addDays(date, 1);
+    }
+}
 
 /**
  * Predefined date range buttons for ecommerce analytics dashboard
  * Each button contains a label and a function that returns [startDate, endDate]
  */
 export const predefinedDateRanges = [
-    // Recent periods - most commonly used for daily monitoring
-    {
-        label: 'Today',
-        getValue: () => {
-            const today = new Date();
-            return [startOfDay(today), endOfDay(today)];
-        },
-    },
-    {
-        label: 'Yesterday',
-        getValue: () => {
-            const yesterday = subDays(new Date(), 1);
-            return [startOfDay(yesterday), endOfDay(yesterday)];
-        },
-    },
+    // Rolling periods used most often for commerce dashboards.
     {
         label: 'Last 7 Days',
         getValue: () => {
             const today = new Date();
             const sevenDaysAgo = subDays(today, 6); // 6 days ago + today = 7 days
             return [startOfDay(sevenDaysAgo), endOfDay(today)];
-        },
-    },
-    {
-        label: 'Last 14 Days',
-        getValue: () => {
-            const today = new Date();
-            const fourteenDaysAgo = subDays(today, 13);
-            return [startOfDay(fourteenDaysAgo), endOfDay(today)];
         },
     },
     {
@@ -61,24 +47,16 @@ export const predefinedDateRanges = [
             return [startOfDay(thirtyDaysAgo), endOfDay(today)];
         },
     },
-
-    // Weekly periods
     {
-        label: 'This Week',
+        label: 'Last 90 Days',
         getValue: () => {
             const today = new Date();
-            return [startOfWeek(today, { weekStartsOn: 1 }), endOfWeek(today, { weekStartsOn: 1 })]; // Monday start
-        },
-    },
-    {
-        label: 'Last Week',
-        getValue: () => {
-            const lastWeek = subWeeks(new Date(), 1);
-            return [startOfWeek(lastWeek, { weekStartsOn: 1 }), endOfWeek(lastWeek, { weekStartsOn: 1 })];
+            const ninetyDaysAgo = subDays(today, 89);
+            return [startOfDay(ninetyDaysAgo), endOfDay(today)];
         },
     },
 
-    // Monthly periods - crucial for monthly reporting
+    // Month and quarter reporting.
     {
         label: 'This Month',
         getValue: () => {
@@ -94,24 +72,6 @@ export const predefinedDateRanges = [
         },
     },
     {
-        label: 'Last 3 Months',
-        getValue: () => {
-            const today = new Date();
-            const threeMonthsAgo = subMonths(today, 3);
-            return [startOfMonth(threeMonthsAgo), endOfMonth(today)];
-        },
-    },
-    {
-        label: 'Last 6 Months',
-        getValue: () => {
-            const today = new Date();
-            const sixMonthsAgo = subMonths(today, 6);
-            return [startOfMonth(sixMonthsAgo), endOfMonth(today)];
-        },
-    },
-
-    // Quarterly periods - important for business reporting
-    {
         label: 'This Quarter',
         getValue: () => {
             const today = new Date();
@@ -126,35 +86,23 @@ export const predefinedDateRanges = [
         },
     },
     {
-        label: 'Q1 2024',
-        getValue: () => {
-            const q1Start = new Date(2024, 0, 1); // January 1, 2024
-            return [startOfQuarter(q1Start), endOfQuarter(q1Start)];
-        },
+        label: `Q1 ${currentYear}`,
+        getValue: () => getCurrentYearQuarterRange(1),
     },
     {
-        label: 'Q2 2024',
-        getValue: () => {
-            const q2Start = new Date(2024, 3, 1); // April 1, 2024
-            return [startOfQuarter(q2Start), endOfQuarter(q2Start)];
-        },
+        label: `Q2 ${currentYear}`,
+        getValue: () => getCurrentYearQuarterRange(2),
     },
     {
-        label: 'Q3 2024',
-        getValue: () => {
-            const q3Start = new Date(2024, 6, 1); // July 1, 2024
-            return [startOfQuarter(q3Start), endOfQuarter(q3Start)];
-        },
+        label: `Q3 ${currentYear}`,
+        getValue: () => getCurrentYearQuarterRange(3),
     },
     {
-        label: 'Q4 2024',
-        getValue: () => {
-            const q4Start = new Date(2024, 9, 1); // October 1, 2024
-            return [startOfQuarter(q4Start), endOfQuarter(q4Start)];
-        },
+        label: `Q4 ${currentYear}`,
+        getValue: () => getCurrentYearQuarterRange(4),
     },
 
-    // Yearly periods - essential for annual analysis
+    // Annual reporting.
     {
         label: 'This Year',
         getValue: () => {
@@ -169,47 +117,22 @@ export const predefinedDateRanges = [
             return [startOfYear(lastYear), endOfYear(lastYear)];
         },
     },
-    {
-        label: '2024',
-        getValue: () => {
-            const year2024 = new Date(2024, 0, 1);
-            return [startOfYear(year2024), endOfYear(year2024)];
-        },
-    },
-    {
-        label: '2023',
-        getValue: () => {
-            const year2023 = new Date(2023, 0, 1);
-            return [startOfYear(year2023), endOfYear(year2023)];
-        },
-    },
 
-    // Special ecommerce periods
+    // Current-year ecommerce seasons.
     {
         label: 'Black Friday Week',
         getValue: () => {
-            // Assuming Black Friday 2024 is November 29th
-            const blackFriday = new Date(2024, 10, 29); // November 29, 2024
-            const weekStart = subDays(blackFriday, 3); // Tuesday before
-            const weekEnd = subDays(blackFriday, -3); // Monday after
+            const blackFriday = getBlackFriday();
+            const weekStart = subDays(blackFriday, 3);
+            const weekEnd = addDays(blackFriday, 3);
             return [startOfDay(weekStart), endOfDay(weekEnd)];
         },
     },
     {
-        label: 'Holiday Season 2024',
+        label: 'Holiday Season',
         getValue: () => {
-            // November 1st to December 31st
-            const seasonStart = new Date(2024, 10, 1); // November 1, 2024
-            const seasonEnd = new Date(2024, 11, 31); // December 31, 2024
-            return [startOfDay(seasonStart), endOfDay(seasonEnd)];
-        },
-    },
-    {
-        label: 'Back to School 2024',
-        getValue: () => {
-            // August 1st to September 15th
-            const seasonStart = new Date(2024, 7, 1); // August 1, 2024
-            const seasonEnd = new Date(2024, 8, 15); // September 15, 2024
+            const seasonStart = new Date(currentYear, 10, 1);
+            const seasonEnd = new Date(currentYear, 11, 31);
             return [startOfDay(seasonStart), endOfDay(seasonEnd)];
         },
     },

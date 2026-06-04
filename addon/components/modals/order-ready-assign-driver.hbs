@@ -21,7 +21,7 @@
                 <div class="input-group">
                     <Toggle
                         @isToggled={{@options.adhoc}}
-                        @onToggle={{fn (mut @options.adhoc)}}
+                        @onToggle={{this.toggleAdhoc}}
                         @label={{t "storefront.component.modals.order-ready-assign-driver.adhoc-dispatch-nearby-drivers"}}
                     />
                 </div>

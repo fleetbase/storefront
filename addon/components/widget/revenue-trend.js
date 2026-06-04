@@ -1,27 +1,20 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
-
-const PERIODS = [
-    { label: '7d', days: 7 },
-    { label: '30d', days: 30 },
-    { label: '90d', days: 90 },
-];
+import getCurrency from '@fleetbase/ember-ui/utils/get-currency';
+import formatMoney from '@fleetbase/ember-accounting/utils/format-money';
 
 export default class WidgetRevenueTrendComponent extends Component {
     static widgetId = 'storefront-revenue-trend-widget';
 
     @service fetch;
     @service storefront;
+    @service storefrontDashboard;
 
     @tracked data = null;
     @tracked error = null;
-    @tracked period = PERIODS[1];
-
-    periods = PERIODS;
 
     constructor() {
         super(...arguments);
@@ -32,6 +25,9 @@ export default class WidgetRevenueTrendComponent extends Component {
         this.storefront.on('storefront.changed', () => {
             this.load.perform();
         });
+        this.storefrontDashboard.on('periodChanged', () => {
+            this.load.perform();
+        });
     }
 
     get storeId() {
@@ -39,19 +35,64 @@ export default class WidgetRevenueTrendComponent extends Component {
     }
 
     get queryParams() {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - (this.period.days - 1));
-
-        return {
-            store: this.storeId,
-            start: start.toISOString().slice(0, 10),
-            end: end.toISOString().slice(0, 10),
-        };
+        return this.storefrontDashboard.withStore(this.storeId);
     }
 
     get formattedRevenue() {
         return formatCurrency(this.data?.summary?.revenue ?? 0, this.data?.summary?.currency ?? 'USD');
+    }
+
+    get currencyCode() {
+        return this.data?.summary?.currency ?? this.storefront.activeStore?.currency ?? 'USD';
+    }
+
+    get currency() {
+        return getCurrency(this.currencyCode) ?? getCurrency('USD');
+    }
+
+    get currencyDivisor() {
+        const precision = Number(this.currency?.precision ?? 2);
+
+        return precision > 0 ? 10 ** precision : 1;
+    }
+
+    get chartDatasets() {
+        return (
+            this.data?.datasets?.map((dataset) => {
+                if (!this.isRevenueDataset(dataset)) {
+                    return dataset;
+                }
+
+                return {
+                    ...dataset,
+                    data: dataset.data?.map((value) => this.normalizeRevenueValue(value)) ?? [],
+                };
+            }) ?? []
+        );
+    }
+
+    isRevenueDataset(dataset) {
+        return dataset?.label === 'Revenue' || dataset?.yAxisID === 'y';
+    }
+
+    normalizeRevenueValue(value) {
+        const numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+            return value;
+        }
+
+        return numericValue / this.currencyDivisor;
+    }
+
+    formatChartCurrency(value) {
+        const numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+            return value;
+        }
+
+        return formatMoney(numericValue, this.currency.symbol, this.currency.precision, this.currency.thousandSeparator, this.currency.decimalSeparator);
     }
 
     get chartOptions() {
@@ -71,7 +112,19 @@ export default class WidgetRevenueTrendComponent extends Component {
                         font: { size: 10, weight: '600' },
                     },
                 },
-                tooltip: { mode: 'index', intersect: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: (context) => {
+                            if (this.isRevenueDataset(context.dataset)) {
+                                return `Revenue: ${this.formatChartCurrency(context.parsed?.y ?? context.raw)}`;
+                            }
+
+                            return `${context.dataset?.label ?? 'Value'}: ${context.parsed?.y ?? context.raw}`;
+                        },
+                    },
+                },
             },
             scales: {
                 x: {
@@ -84,7 +137,14 @@ export default class WidgetRevenueTrendComponent extends Component {
                         font: { size: 10 },
                     },
                 },
-                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: this.currency.precision,
+                        font: { size: 10 },
+                        callback: (value) => this.formatChartCurrency(value),
+                    },
+                },
                 y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0, font: { size: 10 } } },
             },
             elements: { point: { radius: 0, hoverRadius: 4 } },
@@ -98,10 +158,5 @@ export default class WidgetRevenueTrendComponent extends Component {
         } catch (error) {
             this.error = error?.message ?? 'Unable to load revenue trend';
         }
-    }
-
-    @action setPeriod(period) {
-        this.period = period;
-        this.load.perform();
     }
 }

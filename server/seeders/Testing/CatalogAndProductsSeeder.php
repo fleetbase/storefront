@@ -166,7 +166,7 @@ class CatalogAndProductsSeeder extends Seeder
             'is_on_sale'      => false,
             'is_recommended'  => $recommended,
             'can_pickup'      => true,
-            'status'          => ProductStatus::AVAILABLE,
+            'status'          => ProductStatus::PUBLISHED,
         ]);
     }
 

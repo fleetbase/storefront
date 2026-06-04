@@ -56,6 +56,10 @@ export default class CustomerPanelOrdersComponent extends Component {
         });
     }
 
+    @action handleOrderChange() {
+        this.loadOrders.perform();
+    }
+
     @action async acceptOrder(order) {
         await this.storefrontOrderActions.acceptOrder(order, () => {
             this.loadOrders.perform();

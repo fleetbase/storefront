@@ -21,6 +21,7 @@ use Fleetbase\Storefront\Seeders\Testing\Concerns\SeedsTestingData;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CheckoutOrdersSeeder extends Seeder
 {
@@ -86,8 +87,10 @@ class CheckoutOrdersSeeder extends Seeder
     {
         $checkoutUuids    = $this->seededUuids(Checkout::class);
         $cartUuids        = $this->seededUuids(Cart::class);
+        $orderUuids       = $this->seededUuids(Order::class);
         $transactionUuids = $this->seededUuids(Transaction::class);
 
+        $this->purgeSeededLedgerJournals($orderUuids);
         $this->deleteFrom($this->fleetbaseConnection(), 'transaction_items', fn ($query) => $query->whereIn('transaction_uuid', $transactionUuids)->orWhere('meta->seed', static::SEED_NAME));
         $this->purgeModel(Entity::class);
         $this->purgeModel(Order::class);
@@ -108,6 +111,25 @@ class CheckoutOrdersSeeder extends Seeder
         $this->deleteFrom($this->storefrontConnection(), 'carts', fn ($query) => $query->whereIn('uuid', $cartUuids));
         $this->deleteFrom($this->storefrontConnection(), 'checkouts', fn ($query) => $query->whereIn('uuid', $checkoutUuids));
         $this->purgeModel(Contact::class);
+    }
+
+    protected function purgeSeededLedgerJournals(array $orderUuids): void
+    {
+        if (!Schema::connection($this->fleetbaseConnection())->hasTable('ledger_journals')) {
+            return;
+        }
+
+        DB::connection($this->fleetbaseConnection())
+            ->table('ledger_journals')
+            ->where('type', 'storefront_sale')
+            ->where(function ($query) use ($orderUuids) {
+                $query->where('meta->seed', static::SEED_NAME);
+
+                if (!empty($orderUuids)) {
+                    $query->orWhereIn('meta->order_uuid', $orderUuids);
+                }
+            })
+            ->delete();
     }
 
     protected function customerFixtures(): array

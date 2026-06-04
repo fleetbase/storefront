@@ -8,7 +8,7 @@
                 {{else if this.load.isRunning}}
                     <div class="mt-3"><Spinner /></div>
                 {{else}}
-                    <div class="storefront-kpi-value mt-2 truncate">{{this.formattedValue}}</div>
+                    <div class="storefront-kpi-value storefront-animate-value mt-2 truncate">{{this.formattedValue}}</div>
                 {{/if}}
             </div>
             <div class="storefront-kpi-icon flex items-center justify-center rounded-md">
@@ -18,7 +18,7 @@
 
         <div class="mt-3 flex items-center justify-between gap-2 text-[11px]">
             <span class="text-gray-500 dark:text-gray-400 truncate">{{or @period "vs previous period"}}</span>
-            <span class="storefront-kpi-delta inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold">
+            <span class="storefront-kpi-delta storefront-animate-value inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold">
                 <FaIcon @icon={{this.deltaIcon}} />
                 {{this.deltaText}}
             </span>

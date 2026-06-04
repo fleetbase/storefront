@@ -1,6 +1,10 @@
 import Component from '@glimmer/component';
 
 export default class StorefrontOrderDetailsDetailComponent extends Component {
+    get orderType() {
+        return this.args.resource?.type ?? this.args.resource?.order_config?.name ?? this.args.resource?.order_config?.key;
+    }
+
     get isCashPayment() {
         return Boolean(this.args.resource?.payload?.cod_amount);
     }

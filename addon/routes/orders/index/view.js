@@ -26,6 +26,25 @@ export default class OrdersIndexViewRoute extends Route {
             `orders/${public_id}`,
             {
                 storefront: this.storefront.getActiveStore('public_id'),
+                with: [
+                    'payload',
+                    'payload.pickup',
+                    'payload.dropoff',
+                    'payload.return',
+                    'payload.waypoints',
+                    'payload.entities',
+                    'driverAssigned',
+                    'orderConfig',
+                    'customer',
+                    'transaction',
+                    'trackingStatuses',
+                    'trackingNumber',
+                    'purchaseRate',
+                    'purchaseRate.serviceQuote',
+                    'purchaseRate.serviceQuote.items',
+                    'comments',
+                    'files',
+                ],
             },
             {
                 namespace: 'storefront/int/v1',
@@ -35,5 +54,21 @@ export default class OrdersIndexViewRoute extends Route {
         );
 
         return order;
+    }
+
+    async setupController(controller, model) {
+        super.setupController(...arguments);
+
+        await Promise.allSettled([
+            model.loadPayload?.(),
+            model.loadCustomer?.(),
+            model.loadDriver?.(),
+            model.loadOrderConfig?.(),
+            model.loadTrackingNumber?.(),
+            model.loadComments?.(),
+            model.loadFiles?.(),
+        ]);
+
+        await model.loadTrackingActivity?.();
     }
 }

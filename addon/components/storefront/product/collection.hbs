@@ -1,0 +1,44 @@
+<div class="storefront-product-workspace has-floating-pagination" data-test-storefront-product-collection>
+    <div class="storefront-product-collection {{if this.isListView "is-list"}}">
+        {{#if this.hasProducts}}
+            {{#if this.isListView}}
+                <div class="storefront-product-table">
+                    <div class="storefront-product-row storefront-product-row--header">
+                        <span>Product</span>
+                        <span>Price</span>
+                        <span>Status</span>
+                        <span>Options</span>
+                        <span></span>
+                    </div>
+                    {{#each this.products as |product|}}
+                        <Storefront::Product::Card
+                            @product={{product}}
+                            @editRoute={{@editRoute}}
+                            @viewMode={{@viewMode}}
+                            @onDelete={{@onDeleteProduct}}
+                        />
+                    {{/each}}
+                </div>
+            {{else}}
+                {{#each this.products as |product|}}
+                    <Storefront::Product::Card
+                        @product={{product}}
+                        @editRoute={{@editRoute}}
+                        @viewMode={{@viewMode}}
+                        @onDelete={{@onDeleteProduct}}
+                    />
+                {{/each}}
+            {{/if}}
+        {{else}}
+            <div class="storefront-product-empty" data-test-storefront-product-empty>
+                <FaIcon @icon="box-open" />
+                <h3>No products found</h3>
+                <p>{{if @category "Create the first product in this category." "Create a category, then add products to your catalog."}}</p>
+            </div>
+        {{/if}}
+    </div>
+
+    <div class="floating-pagination">
+        <Pagination @meta={{@products.meta}} @currentPage={{@page}} @onPageChange={{@onPageChange}} />
+    </div>
+</div>

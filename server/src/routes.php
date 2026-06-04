@@ -178,6 +178,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('ready', $controller('markOrderAsReady'));
                                 $router->post('preparing', $controller('markOrderAsPreparing'));
                                 $router->post('completed', $controller('markOrderAsCompleted'));
+                                $router->patch('cancel', $controller('rejectOrder'));
+                                $router->post('unassign-driver', $controller('unassignDriver'));
                             }
                         );
                         $router->fleetbaseRoutes(

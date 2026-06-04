@@ -1,4 +1,5 @@
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { inject as controller } from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
@@ -7,10 +8,13 @@ import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
 
 export default class ProductsIndexCategoryController extends BaseController {
+    @controller('products.index') productsIndexController;
     @service intl;
     @service modalsManager;
     @service fetch;
     @service hostRouter;
+    @service currentUser;
+    @service notifications;
     @tracked category;
 
     /**
@@ -159,5 +163,21 @@ export default class ProductsIndexCategoryController extends BaseController {
                 });
             },
         });
+    }
+
+    @action viewProduct(product) {
+        return this.transitionToRoute('products.index.category.edit', product);
+    }
+
+    @action createNewProduct() {
+        return this.productsIndexController.createNewProduct();
+    }
+
+    @action manageAddons() {
+        return this.productsIndexController.manageAddons();
+    }
+
+    @action importProducts() {
+        return this.productsIndexController.importProducts();
     }
 }

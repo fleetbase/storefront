@@ -250,6 +250,10 @@ storefront:
         widget-title: Последни поръчки
         id-column: ID на поръчката
         cancel-order: Отмени поръчката
+        cancel-orders: Отмени поръчките
+        cancel-order-modal-title: Да отмените ли тази поръчка?
+        cancel-order-modal-body: Това ще отмени Storefront поръчката и ще спре оставащите действия по изпълнение.
+        cancel-order-success: "Поръчка {orderId} беше отменена."
         accept-order: Приеми поръчката!
         mark-as-ready: Отбележи като готово!
         dispatch: Изпрати

@@ -1,0 +1,78 @@
+<ContentPanel @title="Variants" @open={{true}} @wrapperClass="bordered-top" @panelBodyWrapperClass="px-0i">
+    <TabNavigation @tabs={{@variantTabs}}>
+        <:actions>
+            <Button @text="New Variant" @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{@createProductVariant}} @permission="storefront create product-variant" />
+        </:actions>
+        <:default as |activeTab|>
+            {{#let activeTab.variant as |variant|}}
+                <div class="storefront-product-variant-panel">
+                    <div class="storefront-product-variant-panel__actions">
+                        <Button
+                            class="mr-2"
+                            @type="danger"
+                            @size="xs"
+                            @text="Remove Variant"
+                            @icon="trash"
+                            @onClick={{fn @removeProductVariant variant}}
+                            @permission="storefront delete product-variant"
+                        />
+                        <Button
+                            class="mr-2"
+                            @type="warning"
+                            @size="xs"
+                            @text="Edit Variant"
+                            @icon="pencil"
+                            @onClick={{fn @editProductVariant variant}}
+                            @permission="storefront update product-variant"
+                        />
+                        <Button
+                            @text={{concat "New " (lowercase variant.name) " option"}}
+                            @icon="plus"
+                            @size="xs"
+                            @iconPrefix="fas"
+                            @onClick={{fn @addVariantOption variant}}
+                            @permission="storefront create product-variant-option"
+                        />
+                    </div>
+                    <div class="storefront-product-variant-options">
+                        {{#each variant.options as |variantOption index|}}
+                            <div class="storefront-product-variant-option-row">
+                                <Input
+                                    @type="text"
+                                    @value={{variantOption.name}}
+                                    class="form-input w-full"
+                                    placeholder="Option Name"
+                                    disabled={{cannot "storefront update product-variant-option"}}
+                                />
+                                <Input
+                                    @type="text"
+                                    @value={{variantOption.description}}
+                                    class="form-input w-full"
+                                    placeholder="Option Description"
+                                    disabled={{cannot "storefront update product-variant-option"}}
+                                />
+                                <MoneyInput
+                                    class="w-full"
+                                    @currency={{if @product.currency @product.currency @activeStore.currency}}
+                                    @canSelectCurrency={{false}}
+                                    @value={{variantOption.additional_cost}}
+                                    @disabled={{cannot "storefront update product-variant-option"}}
+                                />
+                                <Button
+                                    @type="danger"
+                                    @size="xs"
+                                    @text="Remove"
+                                    @icon="trash"
+                                    @onClick={{fn @removeVariantOption variant index}}
+                                    @permission="storefront delete product-variant-option"
+                                />
+                            </div>
+                        {{else}}
+                            <div class="storefront-product-addon-empty">No options in this variant.</div>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/let}}
+        </:default>
+    </TabNavigation>
+</ContentPanel>

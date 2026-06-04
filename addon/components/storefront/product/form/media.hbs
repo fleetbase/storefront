@@ -1,0 +1,75 @@
+<ContentPanel @title="Images & Videos" @open={{true}} @wrapperClass="bordered-top">
+    <div class="space-y-2">
+        {{#let (file-queue name="files" onFileAdded=@queueFile accept=(join "," @acceptedFileTypes)) as |queue|}}
+            <FileDropzone @queue={{queue}} @disabled={{@disabled}} class="dropzone file-dropzone" as |dropzone|>
+                {{#if dropzone.active}}
+                    {{#if dropzone.valid}}
+                        {{t "component.dropzone.drop-to-upload"}}
+                    {{else}}
+                        {{t "component.dropzone.invalid"}}
+                    {{/if}}
+                {{else if queue.files.length}}
+                    <div class="my-2">
+                        <FaIcon @icon="photo-video" class="text-indigo-500 mr-2" />
+                        {{t "component.dropzone.files-ready-for-upload" numOfFiles=(pluralize queue.files.length (t "component.dropzone.file"))}}
+                    </div>
+                    <div class="my-2">({{queue.progress}}%)</div>
+                {{else}}
+                    <h4 class="font-semibold mb-8">
+                        <FaIcon @icon="photo-video" @size="2x" class="text-indigo-500 mr-2" />
+                        {{t "component.dropzone.upload-images-videos"}}
+                    </h4>
+                    <div>
+                        {{#if dropzone.supported}}
+                            <p class="text-base font-semibold my-5">{{t "component.dropzone.dropzone-supported-images-videos"}}</p>
+                        {{/if}}
+                        <FileUpload
+                            @name="files"
+                            @for="files"
+                            @accept={{join "," @acceptedFileTypes}}
+                            @multiple={{true}}
+                            @onFileAdded={{@queueFile}}
+                            @disabled={{@disabled}}
+                        >
+                            <a tabindex={{0}} class="btn btn-magic cursor-pointer ml-1">{{t "component.dropzone.or-select-button-text"}}</a>
+                        </FileUpload>
+                    </div>
+                {{/if}}
+            </FileDropzone>
+        {{/let}}
+        {{#if @uploadQueue}}
+            <div class="mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="leading-6 dark:text-gray-100">{{t "component.dropzone.upload-queue"}}</span>
+                </div>
+                <div class="space-y-2 mb-4">
+                    {{#each @uploadQueue as |file|}}
+                        <div class="flex items-center justify-between bg-blue-100 border border-blue-800 dark:border-blue-800 py-1.5 shadow-sm rounded-lg px-4">
+                            <div class="text-xs text-blue-900 truncate">{{truncate-filename file.name 50}}</div>
+                            <div class="flex items-center text-sm">
+                                <Spinner class="text-blue-900 mr-2" />
+                                <span class="font-bold text-blue-900">{{round file.progress}}%</span>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </div>
+        {{/if}}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+            {{#each @product.files as |file|}}
+                <FileRecord @file={{file}} @fileIconClass={{if (eq @product.primary_image_uuid file.id) "border-blue-400"}} @onDelete={{@removeFile}}>
+                    <div class="flex items-center justify-evenly">
+                        <Button
+                            @icon="magic"
+                            @text="Make Primary"
+                            @size="xs"
+                            @textClass="text-xs truncate"
+                            @onClick={{fn @makePrimaryFile file}}
+                            @disabled={{or @disabled (eq @product.primary_image_uuid file.id)}}
+                        />
+                    </div>
+                </FileRecord>
+            {{/each}}
+        </div>
+    </div>
+</ContentPanel>

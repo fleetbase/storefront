@@ -31,37 +31,7 @@
                         </td>
                         <td>
                             <div>
-                                {{#if order.isFresh}}
-                                    <Button
-                                        @size="xs"
-                                        @type="success"
-                                        @iconPrefix="fas"
-                                        @icon="check"
-                                        @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
-                                        @onClick={{fn this.acceptOrder order}}
-                                    />
-                                {{/if}}
-                                {{#if (eq order.status "accepted")}}
-                                    <Button
-                                        @size="xs"
-                                        @type="success"
-                                        @icon="bell-concierge"
-                                        @text={{t "storefront.component.widget.orders.mark-as-ready"}}
-                                        @onClick={{fn this.markAsReady order}}
-                                    />
-                                {{/if}}
-                                {{#if order.isPickupReady}}
-                                    <Button
-                                        @size="xs"
-                                        @type="success"
-                                        @icon="check"
-                                        @text={{t "storefront.component.widget.orders.mark-as-completed"}}
-                                        @onClick={{fn this.markAsCompleted order}}
-                                    />
-                                {{/if}}
-                            </div>
-                            <div>
-                                <Button @size="xs" @type="danger" @icon="ban" @text="Cancel" @onClick={{fn this.cancelOrder order}} />
+                                <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{true}} />
                             </div>
                         </td>
                     </tr>
@@ -85,29 +55,7 @@
                 </div>
                 <div class="flex flex-row space-x-2 flex-wrap">
                     <Button @size="xs" @type="primary" @icon="eye" @text={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
-                    <Button
-                        @size="xs"
-                        @type="default"
-                        @icon="id-card"
-                        @text={{if order.has_driver_assigned (t "storefront.component.widget.order.change-driver") (t "storefront.component.widget.order.assign-driver")}}
-                        @onClick={{fn this.assignDriver order}}
-                    />
-                    {{#if order.isFresh}}
-                        <Button
-                            @size="xs"
-                            @type="success"
-                            @iconPrefix="fas"
-                            @icon="check"
-                            @text={{concat (t "storefront.component.widget.orders.accept-order") "!"}}
-                            @onClick={{fn this.acceptOrder order}}
-                        />
-                    {{/if}}
-                    {{#if (eq order.status "accepted")}}
-                        <Button @size="xs" @type="success" @icon="bell-concierge" @text={{t "storefront.component.widget.orders.mark-as-mark"}} @onClick={{fn this.markAsReady order}} />
-                    {{/if}}
-                    {{#if order.isPickupReady}}
-                        <Button @size="xs" @type="success" @icon="check" @text={{t "storefront.component.widget.orders.mark-as-completed"}} @onClick={{fn this.markAsCompleted order}} />
-                    {{/if}}
+                    <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{true}} />
                 </div>
                 <ContentPanel @title={{t "storefront.component.widget.orders.title"}} class="mt-2">
                     <div class="flex flex-col py-2 border-t dark:border-gray-800">

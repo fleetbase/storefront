@@ -2,6 +2,7 @@ import Service from '@ember/service';
 import Evented from '@ember/object/evented';
 import { inject as service } from '@ember/service';
 import { get } from '@ember/object';
+import { getOwner } from '@ember/application';
 
 /**
  * Service to manage storefront operations.
@@ -13,9 +14,14 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service notifications;
     @service currentUser;
     @service modalsManager;
-    @service hostRouter;
     @service abilities;
     @service socket;
+
+    get hostRouter() {
+        const owner = getOwner(this);
+
+        return owner.hasRegistration('service:hostRouter') ? owner.lookup('service:hostRouter') : null;
+    }
 
     /**
      * Gets the active store.
@@ -155,7 +161,7 @@ export default class StorefrontService extends Service.extend(Evented) {
         }
 
         // disconnect when transitioning
-        this.hostRouter.on('routeWillChange', channel.close);
+        this.hostRouter?.on('routeWillChange', channel.close);
     }
 
     /**
@@ -197,7 +203,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 }
             },
             decline: () => {
-                this.hostRouter.transitionTo('console');
+                this.hostRouter?.transitionTo('console');
             },
             ...options,
         });
