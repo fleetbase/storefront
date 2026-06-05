@@ -1,0 +1,58 @@
+<ContentPanel @title="Add-ons" @open={{true}} @wrapperClass="bordered-top">
+    <div class="storefront-product-form-section-header">
+        <div>
+            <h4>Checkout modifiers</h4>
+            <p>Attach reusable add-on groups and hide options that should not apply to this product.</p>
+        </div>
+        <Button
+            @text="Select Addon Categories"
+            @icon="plus"
+            @size="xs"
+            @iconPrefix="fas"
+            @onClick={{perform @promptSelectAddonCategories}}
+            @permission="storefront list product-addon"
+        />
+    </div>
+    <div class="space-y-2">
+        {{#each @product.addon_categories as |addonCategory index|}}
+            <div class="storefront-product-addon-group storefront-product-addon-group--attached">
+                <div class="storefront-product-addon-group__header">
+                    <div class="storefront-product-addon-group__name">
+                        <FaIcon @icon="tags" />
+                        <strong>{{addonCategory.name}}</strong>
+                    </div>
+                    <Button
+                        @type="danger"
+                        @size="xs"
+                        @icon="trash"
+                        @text="Remove"
+                        @onClick={{fn @removeAddonCategory index}}
+                        @permission="storefront delete product-addon"
+                    />
+                </div>
+                <div class="storefront-product-addon-rows storefront-product-addon-rows--attached">
+                    {{#each addonCategory.category.addons as |addon|}}
+                        <div class="storefront-product-addon-row storefront-product-addon-row--attached">
+                            <Checkbox
+                                @value={{not (in-array addon.id addonCategory.excluded_addons)}}
+                                @onToggle={{fn @excludeAddon index addon}}
+                                disabled={{cannot "storefront update product-addon"}}
+                            />
+                            <div>
+                                <strong>{{addon.name}}</strong>
+                                <span>{{n-a addon.description "No description"}}</span>
+                            </div>
+                            <div class="storefront-product-addon-row__price">
+                                {{format-currency addon.price @product.currency}}
+                            </div>
+                        </div>
+                    {{else}}
+                        <div class="storefront-product-addon-empty">No add-ons available in this group.</div>
+                    {{/each}}
+                </div>
+            </div>
+        {{else}}
+            <div class="storefront-product-addon-empty">No add-on groups selected.</div>
+        {{/each}}
+    </div>
+</ContentPanel>

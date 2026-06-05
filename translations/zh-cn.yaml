@@ -232,6 +232,10 @@ storefront:
         widget-title: 最近订单
         id-column: 订单编号
         cancel-order: 取消订单
+        cancel-orders: 取消订单
+        cancel-order-modal-title: 取消此订单？
+        cancel-order-modal-body: 这将取消 Storefront 订单并停止所有剩余履约活动。
+        cancel-order-success: "订单 {orderId} 已取消。"
         accept-order: 接受订单！
         mark-as-ready: 标记为准备好！
         dispatch: 派送

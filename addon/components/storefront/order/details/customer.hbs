@@ -1,0 +1,24 @@
+<ContentPanel @title="Customer" @open={{true}} @isLoading={{@isLoading}} @wrapperClass="bordered-top" ...attributes>
+    <div class="storefront-order-customer">
+        <div class="storefront-order-person">
+            <Image
+                src={{avatar-url @resource.customer.photo_url}}
+                @fallbackSrc={{config "defaultValues.contactImage"}}
+                class="storefront-order-person__avatar"
+                alt={{@resource.customer.name}}
+            />
+            <div class="min-w-0">
+                <div class="storefront-order-person__name">{{n-a @resource.customer.name "No customer"}}</div>
+                <div class="storefront-order-person__meta">{{n-a @resource.customer.email "No email"}}</div>
+                <div class="storefront-order-person__meta">{{n-a @resource.customer.phone "No phone"}}</div>
+            </div>
+        </div>
+
+        {{#unless @resource.meta.is_pickup}}
+            <div class="storefront-order-detail-block">
+                <div class="storefront-order-detail-block__label">Delivery address</div>
+                <DisplayPlace @place={{@resource.payload.dropoff}} @type="dropoff" @addressClass="text-sm dark:text-gray-100" @noAddressClass="text-sm" />
+            </div>
+        {{/unless}}
+    </div>
+</ContentPanel>

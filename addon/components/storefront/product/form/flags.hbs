@@ -1,0 +1,35 @@
+<ContentPanel @title="Storefront Settings" @open={{true}} @wrapperClass="bordered-top">
+    <div class="store-boolean-settings storefront-product-settings">
+        <div class="input-group mb-0">
+            <Checkbox @value={{@product.is_service}} @onToggle={{fn (mut @product.is_service)}} @disabled={{@disabled}}>
+                <FaIcon @icon="house-leave" class="text-indigo-400 mx-2" /><span class="dark:text-gray-100 text-sm">This is a service</span>
+            </Checkbox>
+        </div>
+
+        {{#if @product.is_service}}
+            <div class="input-group mb-0">
+                <Checkbox @value={{@product.is_bookable}} @onToggle={{fn (mut @product.is_bookable)}} @disabled={{@disabled}}>
+                    <FaIcon @icon="calendar-star" class="text-yellow-400 mx-2" /><span class="dark:text-gray-100 text-sm">This service is bookable</span>
+                </Checkbox>
+            </div>
+        {{/if}}
+
+        <div class="input-group mb-0">
+            <Checkbox @value={{@product.is_on_sale}} @onToggle={{fn (mut @product.is_on_sale)}} @disabled={{@disabled}}>
+                <FaIcon @icon="badge-percent" class="text-blue-400 mx-2" /><span class="dark:text-gray-100 text-sm">This product is on sale</span>
+            </Checkbox>
+        </div>
+
+        <div class="input-group mb-0">
+            <Checkbox @value={{@product.is_recommended}} @onToggle={{fn (mut @product.is_recommended)}} @disabled={{@disabled}}>
+                <FaIcon @icon="check" class="text-green-400 mx-2" /><span class="dark:text-gray-100 text-sm">This product is recommended</span>
+            </Checkbox>
+        </div>
+
+        <div class="input-group mb-0">
+            <Checkbox @value={{@product.is_available}} @onToggle={{fn (mut @product.is_available)}} @disabled={{@disabled}}>
+                <FaIcon @icon="eye" class="text-blue-400 mx-2" /><span class="dark:text-gray-100 text-sm">This product is available</span>
+            </Checkbox>
+        </div>
+    </div>
+</ContentPanel>

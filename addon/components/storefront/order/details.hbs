@@ -1,0 +1,29 @@
+<div class="storefront-order-details details-wrapper" ...attributes>
+    {{#if (has-block)}}
+        {{yield
+            (hash
+                Activity=(component "storefront/order/details/activity" resource=@resource order=@resource refresh=@refresh onChange=@onActivityChanged isLoadingActivity=@isLoadingActivity isLoading=@isLoading)
+                OrderBreakdown=(component "storefront/order/details/order-breakdown" resource=@resource order=@resource refresh=@refresh actionButtons=@orderBreakdownActionButtons isLoading=@isLoading)
+                Detail=(component "storefront/order/details/detail" resource=@resource order=@resource refresh=@refresh actionButtons=@detailActionButtons isLoading=@isLoading)
+                CustomerInsights=(component "storefront/order/details/customer-insights" resource=@resource order=@resource refresh=@refresh actionButtons=@customerInsightsActionButtons isLoading=@isLoading)
+                Route=(component "storefront/order/details/route" resource=@resource order=@resource refresh=@refresh onChange=@onRouteChanged actionButtons=@routeActionButtons isLoading=@isLoading)
+                Tracking=(component "storefront/order/details/tracking" resource=@resource order=@resource refresh=@refresh actionButtons=@trackingActionButtons isLoading=@isLoading)
+                Store=(component "storefront/order/details/store" resource=@resource order=@resource refresh=@refresh actionButtons=@storeActionButtons isLoading=@isLoading)
+                Documents=(component "storefront/order/details/documents" resource=@resource order=@resource refresh=@refresh onChange=@onDocumentsChanged actionButtons=@documentsActionButtons isLoading=@isLoading)
+                Comments=(component "storefront/order/details/comments" resource=@resource order=@resource refresh=@refresh onChange=@onCommentsChanged actionButtons=@commentsActionButtons isLoading=@isLoading)
+                Metadata=(component "storefront/order/details/metadata" resource=@resource order=@resource refresh=@refresh onChange=@onMetadataChanged actionButtons=@metadataActionButtons isLoading=@isLoading)
+            )
+        }}
+    {{else}}
+        <Storefront::Order::Details::Activity @resource={{@resource}} @onChange={{@onActivityChanged}} @isLoadingActivity={{@isLoadingActivity}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::OrderBreakdown @resource={{@resource}} @actionButtons={{@orderBreakdownActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Detail @resource={{@resource}} @actionButtons={{@detailActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::CustomerInsights @resource={{@resource}} @actionButtons={{@customerInsightsActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Route @resource={{@resource}} @onChange={{@onRouteChanged}} @actionButtons={{@routeActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Tracking @resource={{@resource}} @actionButtons={{@trackingActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Store @resource={{@resource}} @actionButtons={{@storeActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Documents @resource={{@resource}} @onChange={{@onDocumentsChanged}} @actionButtons={{@documentsActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Comments @resource={{@resource}} @onChange={{@onCommentsChanged}} @actionButtons={{@commentsActionButtons}} @isLoading={{@isLoading}} />
+        <Storefront::Order::Details::Metadata @resource={{@resource}} @onChange={{@onMetadataChanged}} @actionButtons={{@metadataActionButtons}} @isLoading={{@isLoading}} />
+    {{/if}}
+</div>

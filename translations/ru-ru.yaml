@@ -250,6 +250,10 @@ storefront:
         widget-title: Недавние заказы
         id-column: ID заказа
         cancel-order: Отменить заказ
+        cancel-orders: Отменить заказы
+        cancel-order-modal-title: Отменить этот заказ?
+        cancel-order-modal-body: Это отменит заказ Storefront и остановит оставшиеся действия по выполнению.
+        cancel-order-success: "Заказ {orderId} отменен."
         accept-order: Принять заказ!
         mark-as-ready: Отметить как готовый!
         dispatch: Отправить

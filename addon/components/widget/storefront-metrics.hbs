@@ -10,16 +10,6 @@
                 </div>
             {{/if}}
         </div>
-        <div class="storefront-datepicker">
-            <DatePicker
-                @value={{concat this.start "," this.end}}
-                @range={{true}}
-                @buttons={{this.datePickerButtons}}
-                @onSelect={{this.selectDates}}
-                placeholder="Select date range"
-                class="min-w-250px"
-            />
-        </div>
     </div>
     <dl class="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-4">
         <div class="px-4 py-5 border border-gray-200 dark:border-gray-900 bg-gray-50 dark:bg-gray-700 shadow-sm dark:shadow rounded-lg overflow-hidden sm:p-6">

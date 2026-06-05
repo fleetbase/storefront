@@ -4,8 +4,12 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Http\Controllers\Internal\v1\OrderController as FleetbaseOrderController;
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
+use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Support\Storefront;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -19,11 +23,67 @@ class OrderController extends FleetbaseOrderController
     public $resource = 'order';
 
     /**
+     * Storefront order lists need checkout totals and customer context.
+     *
+     * @var string
+     */
+    public $indexResource = StorefrontOrderIndexResource::class;
+
+    /**
      * The filter to use.
      *
      * @var \Fleetbase\Http\Filter\Filter
      */
     public $filter = \Fleetbase\Storefront\Http\Filter\OrderFilter::class;
+
+    public function onQueryRecord(Builder $query): void
+    {
+        $query->with(['customer', 'transaction', 'payload', 'driverAssigned', 'orderConfig', 'trackingNumber', 'trackingStatuses']);
+    }
+
+    public function findRecord(Request $request, $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, $this->detailRelations());
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return [
+            'order' => new StorefrontOrderResource($order),
+        ];
+    }
+
+    private function detailRelations(): array
+    {
+        return [
+            'customer',
+            'transaction',
+            'payload',
+            'payload.pickup',
+            'payload.dropoff',
+            'payload.return',
+            'payload.waypoints',
+            'payload.entities',
+            'driverAssigned',
+            'orderConfig',
+            'trackingNumber',
+            'trackingStatuses',
+            'purchaseRate',
+            'purchaseRate.serviceQuote',
+            'purchaseRate.serviceQuote.items',
+            'comments',
+            'files',
+        ];
+    }
+
+    private function orderResponse(Order $order): array
+    {
+        return [
+            'status' => $order->status,
+            'order'  => new StorefrontOrderResource($order->fresh($this->detailRelations())),
+        ];
+    }
 
     /**
      * Accept an order by incrementing status to preparing.
@@ -65,11 +125,7 @@ class OrderController extends FleetbaseOrderController
         } catch (\Exception $e) {
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -94,11 +150,7 @@ class OrderController extends FleetbaseOrderController
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');
 
-            return response()->json([
-                'status' => 'ok',
-                'order'  => $order->public_id,
-                'status' => $order->status,
-            ]);
+            return $this->orderResponse($order);
         }
 
         // toggle order to adhoc
@@ -111,14 +163,11 @@ class OrderController extends FleetbaseOrderController
             $order->assignDriver($driver);
         }
 
-        // update activity to dispatched
+        // Dispatch the order and move Storefront delivery orders into preparation.
         $order->dispatchWithActivity();
+        $order->updateStatus('preparing');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -150,11 +199,7 @@ class OrderController extends FleetbaseOrderController
             return response()->error('Unable to trigger order preparing.');
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 
     /**
@@ -176,14 +221,32 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         Storefront::patchOrderConfig($order);
 
-        // update activity to completed
-        $order->updateStatus('completed');
+        $order->updateStatus($order->isMeta('is_pickup') ? 'picked_up' : 'completed');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
+    }
+
+    public function unassignDriver(Request $request)
+    {
+        /** @var Order */
+        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['driverAssigned'])->first();
+
+        if (!$order) {
+            return response()->json([
+                'error' => 'No order to update!',
+            ], 400);
+        }
+
+        if ($order->driverAssigned) {
+            $order->driverAssigned->unassignCurrentOrder();
+        }
+
+        $order->forceFill([
+            'driver_assigned_uuid'  => null,
+            'vehicle_assigned_uuid' => null,
+        ])->save();
+
+        return $this->orderResponse($order);
     }
 
     /**
@@ -204,13 +267,8 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         Storefront::patchOrderConfig($order);
 
-        // update activity to dispatched
-        $order->updateStatus('cancel');
+        $order->updateStatus('canceled');
 
-        return response()->json([
-            'status' => 'ok',
-            'order'  => $order->public_id,
-            'status' => $order->status,
-        ]);
+        return $this->orderResponse($order);
     }
 }

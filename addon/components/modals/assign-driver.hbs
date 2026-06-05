@@ -12,18 +12,13 @@
                     </path>
                 </svg>
             </div>
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <div class="mb-4">
-                    <p class="text-sm leading-5 text-gray-500 dark:text-white">
-                        {{t "storefront.component.modals.assign-driver.message-driver"}}
-                    </p>
-                </div>
-                <InputGroup class="mt-4" @name={{t "storefront.component.modals.assign-driver.name-driver"}}>
+            <div class="w-full flex-1 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <InputGroup class="mt-4" @name={{t "storefront.component.modals.assign-driver.message-driver"}}>
                     <ModelSelect
                         @modelName="driver"
                         @selectedModel={{@options.order.driver_assigned}}
                         @placeholder={{t "storefront.component.modals.assign-driver.placeholder-driver"}}
-                        @triggerClass="form-select form-input"
+                        @triggerClass="form-select form-input w-full"
                         @infiniteScroll={{false}}
                         @renderInPlace={{true}}
                         @onChange={{fn (mut @options.order.driver_assigned)}}

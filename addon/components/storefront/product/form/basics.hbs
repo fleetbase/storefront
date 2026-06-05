@@ -1,0 +1,52 @@
+<ContentPanel @title="Basics" @open={{true}} @wrapperClass="bordered-top">
+    <InputGroup @name="Product Name" @value={{@product.name}} @helpText="Enter your product's name" @disabled={{@disabled}} />
+    <InputGroup @name="Product Description" @helpText="Enter a description of your product">
+        <Textarea @value={{@product.description}} class="form-input w-full" placeholder="Enter a description of your product...." disabled={{@disabled}} rows={{4}} />
+    </InputGroup>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <InputGroup @name="Product Category">
+            <ModelSelect
+                @modelName="category"
+                @selectedModel={{@product.category}}
+                @query={{hash for="storefront_product" owner_uuid=@activeStore.id}}
+                @placeholder="Select Product Category"
+                @triggerClass="form-select form-input"
+                @infiniteScroll={{false}}
+                @renderInPlace={{true}}
+                @allowClear={{true}}
+                @onChange={{fn (mut @product.category)}}
+                @onChangeId={{fn (mut @product.category_uuid)}}
+                as |model|
+            >
+                <div class="flex items-center">
+                    <span class="uppercase">{{model.name}}</span>
+                </div>
+            </ModelSelect>
+        </InputGroup>
+        <InputGroup @name="Product Status">
+            <Select
+                class="w-full"
+                @value={{@product.status}}
+                @placeholder="Select product status"
+                @options={{@statusOptions}}
+                @onSelect={{fn (mut @product.status)}}
+                @humanize={{true}}
+            />
+        </InputGroup>
+    </div>
+    <InputGroup @name="Product SKU" @value={{@product.sku}} @helpText="Enter product SKU if applicable" @disabled={{@disabled}} />
+    <InputGroup @name="Product Tags">
+        <TagInput
+            class="form-input"
+            @placeholder="Add tags"
+            @allowSpacesInTags={{true}}
+            @tags={{@product.tags}}
+            @addTag={{@addTag}}
+            @removeTagAtIndex={{@removeTag}}
+            @disabled={{@disabled}}
+            as |tag|
+        >
+            {{tag}}
+        </TagInput>
+    </InputGroup>
+</ContentPanel>

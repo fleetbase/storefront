@@ -161,6 +161,16 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('send-push-notification', 'ActionController@sendPushNotification');
                             }
                         );
+                        $router->group(
+                            ['prefix' => 'analytics'],
+                            function ($router) {
+                                $router->get('overview', 'AnalyticsController@overview');
+                                $router->get('revenue-trend', 'AnalyticsController@revenueTrend');
+                                $router->get('orders-by-status', 'AnalyticsController@ordersByStatus');
+                                $router->get('top-products', 'AnalyticsController@topProducts');
+                                $router->get('customer-insights', 'AnalyticsController@customerInsights');
+                            }
+                        );
                         $router->fleetbaseRoutes(
                             'orders',
                             function ($router, $controller) {
@@ -168,6 +178,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('ready', $controller('markOrderAsReady'));
                                 $router->post('preparing', $controller('markOrderAsPreparing'));
                                 $router->post('completed', $controller('markOrderAsCompleted'));
+                                $router->patch('cancel', $controller('rejectOrder'));
+                                $router->post('unassign-driver', $controller('unassignDriver'));
                             }
                         );
                         $router->fleetbaseRoutes(

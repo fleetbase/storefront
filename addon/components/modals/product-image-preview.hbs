@@ -1,0 +1,10 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="storefront-product-image-preview">
+        <Image
+            src={{@options.imageUrl}}
+            @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png"
+            alt={{@options.title}}
+            class="storefront-product-image-preview__image"
+        />
+    </div>
+</Modal::Default>

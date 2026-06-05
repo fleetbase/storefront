@@ -1,0 +1,24 @@
+<ContentPanel @title="Customer Insights" @open={{true}} @isLoading={{@isLoading}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+    <div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Customer Type</div>
+            <div class="field-value">{{n-a this.customerType}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Storefront Orders</div>
+            <div class="field-value">{{n-a this.orderCount}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Customer ID</div>
+            <ClickToCopy @value={{this.customer.public_id}} class="field-value">{{n-a this.customer.public_id}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Contact</div>
+            <div class="field-value">{{this.contactStatus}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Created</div>
+            <div class="field-value">{{n-a (format-date-fns this.customer.created_at "d MMM yyyy HH:mm")}}</div>
+        </div>
+    </div>
+</ContentPanel>

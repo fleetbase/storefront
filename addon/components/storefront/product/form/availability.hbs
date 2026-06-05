@@ -1,0 +1,9 @@
+<ContentPanel @title="Availability" @open={{true}} @wrapperClass="bordered-top">
+    <ScheduleManager
+        @subject={{@product}}
+        @subjectKey="product_uuid"
+        @hourModelType="product-hour"
+        @disabled={{@disabled}}
+        class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2"
+    />
+</ContentPanel>

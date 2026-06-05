@@ -247,6 +247,10 @@ storefront:
         widget-title: Сүүлийн захиалгууд
         id-column: Захиалгын дугаар
         cancel-order: Захиалгыг цуцлах
+        cancel-orders: Захиалгуудыг цуцлах
+        cancel-order-modal-title: Энэ захиалгыг цуцлах уу?
+        cancel-order-modal-body: Энэ нь Storefront захиалгыг цуцалж, үлдсэн гүйцэтгэлийн ажиллагааг зогсооно.
+        cancel-order-success: "{orderId} захиалга цуцлагдлаа."
         accept-order: Захиалгыг хүлээн авах!
         mark-as-ready: Бэлэн гэж тэмдэглэх!
         dispatch: Илгээх

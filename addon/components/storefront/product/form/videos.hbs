@@ -1,0 +1,8 @@
+<ContentPanel @title="Youtube Videos" @open={{true}} @wrapperClass="bordered-top">
+    <p class="text-sm">Add YouTube video urls to associate with this product or service.</p>
+    <div class="input-group">
+        <ArrayInput @data={{@product.youtube_urls}} @placeholder="Enter youtube video url" @onDataChanged={{fn (mut @product.youtube_urls)}} @disabled={{@disabled}}>
+            <InputLabel @labelText="Youtube Video URLs" @helpText="Input product youtube video urls if applicable." />
+        </ArrayInput>
+    </div>
+</ContentPanel>

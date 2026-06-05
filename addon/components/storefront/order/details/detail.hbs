@@ -1,0 +1,73 @@
+<ContentPanel @title="Details" @open={{true}} @isLoading={{@isLoading}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-4 mt-1">
+        <div class="field-info-container">
+            <div class="field-name">Customer</div>
+            <div class="field-value">
+                <div class="storefront-order-person storefront-order-person--compact">
+                    <Image src={{avatar-url @resource.customer.photo_url}} @fallbackSrc={{config "defaultValues.contactImage"}} class="storefront-order-person__avatar" alt={{@resource.customer.name}} />
+                    <div class="min-w-0">
+                        <div class="storefront-order-person__name {{unless @resource.customer "text-gray-300"}}">{{n-a @resource.customer.name "No customer"}}</div>
+                        <div class="storefront-order-person__meta">{{n-a (or @resource.customer.phone @resource.customer.email) "No contact details"}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">Driver</div>
+            <div class="field-value">
+                <div class="storefront-order-person storefront-order-person--compact">
+                    <Image src={{avatar-url @resource.driver_assigned.photo_url}} @fallbackSrc={{config "defaultValues.driverImage"}} class="storefront-order-person__avatar" alt={{@resource.driver_assigned.name}} />
+                    <div class="min-w-0">
+                        <div class="storefront-order-person__name {{unless @resource.driver_assigned "text-gray-300"}}">
+                            {{n-a (or @resource.driver_assigned.displayName @resource.driver_assigned.name) "No driver assigned"}}
+                        </div>
+                        <div class="storefront-order-person__meta">{{n-a @resource.driver_assigned.phone "No phone"}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Order ID</div>
+            <ClickToCopy @value={{@resource.public_id}} class="field-value">{{n-a @resource.public_id}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Internal ID</div>
+            <ClickToCopy @value={{@resource.internal_id}} class="field-value">{{n-a @resource.internal_id}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Tracking Number</div>
+            <ClickToCopy @value={{or @resource.tracking_number.tracking_number @resource.tracking}} class="field-value">{{n-a (or @resource.tracking_number.tracking_number @resource.tracking)}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Order Type</div>
+            <div class="field-value">{{n-a (titleize this.orderType)}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Payment Method</div>
+            <div class="field-value">{{n-a (titleize this.paymentMethod)}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Order Amount</div>
+            <div class="field-value">{{format-currency this.orderAmount this.orderCurrency}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Transaction ID</div>
+            <ClickToCopy @value={{this.transactionId}} class="field-value">{{n-a this.transactionId}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Checkout ID</div>
+            <ClickToCopy @value={{this.checkoutId}} class="field-value">{{n-a this.checkoutId}}</ClickToCopy>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Created</div>
+            <div class="field-value">{{n-a @resource.createdAt}}</div>
+        </div>
+        <div class="field-info-container field-vertical-container dashed-bottom">
+            <div class="field-name">Scheduled</div>
+            <div class="field-value">{{n-a @resource.scheduledAt}}</div>
+        </div>
+    </div>
+</ContentPanel>

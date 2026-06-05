@@ -264,7 +264,7 @@ export default class OrdersIndexController extends BaseController {
                     isVisible: (order) => order.canBeDispatched,
                 },
                 {
-                    label: this.intl.t('fleet-ops.operations.orders.index.cancel-order'),
+                    label: this.intl.t('storefront.component.widget.orders.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
                     permission: 'fleet-ops cancel order',
@@ -328,16 +328,16 @@ export default class OrdersIndexController extends BaseController {
      */
     @action cancelOrder(order, options = {}) {
         this.modalsManager.confirm({
-            title: this.intl.t('fleet-ops.operations.orders.index.cancel-title'),
-            body: this.intl.t('fleet-ops.operations.orders.index.cancel-body'),
+            title: this.intl.t('storefront.component.widget.orders.cancel-order-modal-title'),
+            body: this.intl.t('storefront.component.widget.orders.cancel-order-modal-body'),
             order,
             confirm: async (modal) => {
                 modal.startLoading();
 
                 try {
-                    await this.fetch.patch('orders/cancel', { order: order.id });
+                    await this.fetch.patch('orders/cancel', { order: order.id }, { namespace: 'storefront/int/v1' });
                     order.set('status', 'canceled');
-                    this.notifications.success(this.intl.t('fleet-ops.operations.orders.index.cancel-success', { orderId: order.public_id }));
+                    this.notifications.success(this.intl.t('storefront.component.widget.orders.cancel-order-success', { orderId: order.public_id }));
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);
@@ -403,7 +403,7 @@ export default class OrdersIndexController extends BaseController {
         }
 
         this.crud.bulkAction('cancel', selected, {
-            acceptButtonText: 'Cancel Orders',
+            acceptButtonText: this.intl.t('storefront.component.widget.orders.cancel-orders'),
             acceptButtonScheme: 'danger',
             acceptButtonIcon: 'ban',
             modelNamePath: `public_id`,
