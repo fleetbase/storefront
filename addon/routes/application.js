@@ -45,6 +45,11 @@ export default class ApplicationRoute extends Route {
         return this.store.query('store', { limit: 300, sort: '-updated_at' });
     }
 
+    setupController(controller) {
+        super.setupController(...arguments);
+        controller.loadProductCategories();
+    }
+
     afterModel() {
         this.storefront.listenForIncomingOrders();
     }

@@ -3,6 +3,7 @@ import Evented from '@ember/object/evented';
 import { inject as service } from '@ember/service';
 import { get } from '@ember/object';
 import { getOwner } from '@ember/application';
+import { tracked } from '@glimmer/tracking';
 
 /**
  * Service to manage storefront operations.
@@ -16,6 +17,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service abilities;
     @service socket;
+    @tracked activeStoreId;
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -37,6 +39,7 @@ export default class StorefrontService extends Service.extend(Evented) {
      */
     setActiveStorefront(store) {
         this.currentUser.setOption('activeStorefront', store.id);
+        this.activeStoreId = store.id;
         this.trigger('storefront.changed', store);
     }
 
@@ -62,13 +65,14 @@ export default class StorefrontService extends Service.extend(Evented) {
      * @returns {Object|null} The active store object or null if not found.
      */
     findActiveStore() {
-        const activeStoreId = this.currentUser.getOption('activeStorefront');
+        const activeStoreId = this.activeStoreId ?? this.currentUser.getOption('activeStorefront');
 
         if (!activeStoreId) {
             const stores = this.store.peekAll('store');
 
             if (stores.firstObject) {
                 this.currentUser.setOption('activeStorefront', stores.firstObject.id);
+                this.activeStoreId = stores.firstObject.id;
             }
 
             return stores.firstObject;
@@ -78,6 +82,7 @@ export default class StorefrontService extends Service.extend(Evented) {
 
         if (!activeStore) {
             this.currentUser.setOption('activeStorefront', undefined);
+            this.activeStoreId = undefined;
 
             return this.findActiveStore();
         }

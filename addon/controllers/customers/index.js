@@ -118,6 +118,7 @@ export default class CustomersIndexController extends BaseController {
      */
     @tracked columns = [
         {
+            sticky: true,
             label: this.intl.t('storefront.common.name'),
             valuePath: 'name',
             width: '15%',
@@ -222,7 +223,8 @@ export default class CustomersIndexController extends BaseController {
             ddMenuLabel: this.intl.t('storefront.customers.index.vendor-action'),
             cellClassNames: 'overflow-visible',
             wrapperClass: 'flex items-center justify-end mx-2',
-            width: '10%',
+            sticky: 'right',
+            width: 60,
             actions: [
                 {
                     label: this.intl.t('storefront.customers.index.view-customer-details'),
@@ -247,6 +249,17 @@ export default class CustomersIndexController extends BaseController {
             searchable: false,
         },
     ];
+
+    get actionButtons() {
+        return [
+            {
+                icon: 'long-arrow-up',
+                iconClass: 'rotate-icon-45',
+                text: this.intl.t('storefront.common.export'),
+                permission: 'storefront export customer',
+            },
+        ];
+    }
 
     @action viewCustomer(customer) {
         return this.transitionToRoute('customers.index.view', customer);

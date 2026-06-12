@@ -3,6 +3,7 @@ import { inject as service } from '@ember/service';
 import { alias } from '@ember/object/computed';
 import { action, set } from '@ember/object';
 import { capitalize } from '@ember/string';
+import { tracked } from '@glimmer/tracking';
 import getGatewaySchemas from '../../utils/get-gateway-schemas';
 
 export default class SettingsGatewaysController extends Controller {
@@ -14,6 +15,9 @@ export default class SettingsGatewaysController extends Controller {
     @service crud;
     @service storefront;
     @alias('storefront.activeStore') activeStore;
+    queryParams = ['query'];
+
+    @tracked query;
 
     @action createGateway() {
         const gateway = this.store.createRecord('gateway', {

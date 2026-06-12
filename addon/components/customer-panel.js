@@ -3,6 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { isArray } from '@ember/array';
+import { dasherize } from '@ember/string';
 import CustomerPanelDetailsComponent from './customer-panel/details';
 import CustomerPanelOrdersComponent from './customer-panel/orders';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
@@ -99,10 +100,21 @@ export default class CustomerPanelComponent extends Component {
         ];
 
         if (isArray(registeredTabs)) {
-            return [...defaultTabs, ...registeredTabs];
+            return [...defaultTabs, ...registeredTabs].map((tab) => this.normalizeTab(tab));
         }
 
-        return defaultTabs;
+        return defaultTabs.map((tab) => this.normalizeTab(tab));
+    }
+
+    get actionButtons() {
+        return [
+            {
+                icon: 'pencil',
+                helpText: 'Edit customer',
+                onClick: this.onEdit,
+                permission: 'storefront update customer',
+            },
+        ];
     }
     /**
      * Sets the overlay context.
@@ -123,8 +135,8 @@ export default class CustomerPanelComponent extends Component {
      * @action
      */
     @action onTabChanged(tab) {
-        this.tab = this.getTabUsingSlug(tab);
-        contextComponentCallback(this, 'onTabChanged', tab);
+        this.tab = tab;
+        contextComponentCallback(this, 'onTabChanged', tab?.slug ?? tab?.id);
     }
 
     /**
@@ -164,9 +176,20 @@ export default class CustomerPanelComponent extends Component {
      */
     getTabUsingSlug(tabSlug) {
         if (tabSlug) {
-            return this.tabs.find(({ slug }) => slug === tabSlug);
+            return this.tabs.find(({ slug, id }) => slug === tabSlug || id === tabSlug);
         }
 
         return this.tabs[0];
+    }
+
+    normalizeTab(tab) {
+        const id = tab.id ?? tab.slug ?? dasherize(tab.title ?? tab.text ?? tab.label ?? 'tab');
+
+        return {
+            ...tab,
+            id,
+            slug: tab.slug ?? id,
+            label: tab.label ?? tab.title ?? tab.text,
+        };
     }
 }

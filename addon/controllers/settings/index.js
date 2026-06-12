@@ -13,6 +13,9 @@ export default class SettingsIndexController extends Controller {
     @service intl;
 
     @alias('storefront.activeStore') activeStore;
+    queryParams = ['query'];
+
+    @tracked query;
     @tracked podMethods = getPodMethods();
     @tracked isLoading = false;
     @tracked uploadQueue = [];

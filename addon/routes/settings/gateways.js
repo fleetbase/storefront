@@ -5,7 +5,11 @@ export default class SettingsGatewaysRoute extends Route {
     @service store;
     @service storefront;
 
-    model() {
-        return this.store.query('gateway', { owner_uuid: this.storefront?.activeStore?.id });
+    queryParams = {
+        query: { refreshModel: true },
+    };
+
+    model(params) {
+        return this.store.query('gateway', { ...params, owner_uuid: this.storefront?.activeStore?.id });
     }
 }
