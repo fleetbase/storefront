@@ -10,6 +10,10 @@ export default class SettingsIndexRoute extends Route {
     @service hostRouter;
     @service notifications;
 
+    queryParams = {
+        query: { refreshModel: false },
+    };
+
     beforeModel() {
         if (this.abilities.cannot('storefront view settings')) {
             this.notifications.warning(this.intl.t('common.unauthorized-access'));

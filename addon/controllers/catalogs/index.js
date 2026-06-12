@@ -11,6 +11,9 @@ export default class CatalogsIndexController extends Controller {
     @service notifications;
     @service crud;
     @service hostRouter;
+    queryParams = ['query'];
+
+    @tracked query;
     @tracked statusOptions = ['draft', 'published'];
 
     @action createCatalog() {

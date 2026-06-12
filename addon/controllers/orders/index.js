@@ -54,6 +54,7 @@ export default class OrdersIndexController extends BaseController {
 
     @tracked columns = [
         {
+            sticky: true,
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '130px',
@@ -248,7 +249,8 @@ export default class OrdersIndexController extends BaseController {
             ddMenuLabel: 'Order Actions',
             cellClassNames: 'overflow-visible',
             wrapperClass: 'flex items-center justify-end mx-2',
-            width: '90px',
+            sticky: 'right',
+            width: 60,
             actions: [
                 {
                     label: this.intl.t('fleet-ops.operations.orders.index.view-order'),

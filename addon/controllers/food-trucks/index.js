@@ -11,6 +11,9 @@ export default class FoodTrucksIndexController extends Controller {
     @service notifications;
     @service crud;
     @service hostRouter;
+    queryParams = ['query'];
+
+    @tracked query;
     @tracked statusOptions = ['active', 'inactive'];
 
     @action createFoodTruck() {

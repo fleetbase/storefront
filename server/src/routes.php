@@ -153,6 +153,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(
                     ['prefix' => 'v1', 'middleware' => ['fleetbase.protected']],
                     function ($router) {
+                        $router->get('search', 'SearchController@search');
+
                         $router->group(
                             ['prefix' => 'actions'],
                             function ($router) {

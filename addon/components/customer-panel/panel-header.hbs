@@ -1,0 +1,33 @@
+<div class="px-4 py-2">
+    <div class="flex flex-1 flex-row items-start justify-between">
+        <div class="flex flex-row space-x-3">
+            <div class="flex items-start justify-start rounded-full">
+                <Image src={{@resource.photo_url}} @fallbackSrc={{config "defaultValues.customerImage"}} alt={{@resource.name}} height="48" width="48" class="h-14 w-14 rounded-full shadow-sm" />
+                <Attach::Tooltip @class="clean" @animation="scale" @placement="top">
+                    <InputInfo @text={{@resource.public_id}} />
+                </Attach::Tooltip>
+            </div>
+            <div class="flex flex-col">
+                <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{@resource.name}}</h1>
+                <div class="mt-1 flex flex-row items-center space-x-2">
+                    <Badge @status={{@resource.type}} />
+                    <Badge @status={{@resource.public_id}} @type="info" @hideStatusDot={{true}} />
+                </div>
+            </div>
+        </div>
+        <div class="next-view-header-right">
+            <Layout::Resource::Panel::HeaderActions
+                @resource={{@resource}}
+                @saveTask={{@saveTask}}
+                @saveOptions={{@saveOptions}}
+                @saveDisabled={{@saveDisabled}}
+                @pojoResource={{@pojoResource}}
+                @authSchema={{@authSchema}}
+                @actionButtons={{@actionButtons}}
+                @onPressCancel={{@onPressCancel}}
+            >
+                {{yield}}
+            </Layout::Resource::Panel::HeaderActions>
+        </div>
+    </div>
+</div>

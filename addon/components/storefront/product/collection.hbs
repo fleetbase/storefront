@@ -1,5 +1,5 @@
 <div class="storefront-product-workspace has-floating-pagination" data-test-storefront-product-collection>
-    <div class="storefront-product-collection {{if this.isListView "is-list"}}">
+    <div class="storefront-product-collection {{unless this.hasProducts 'is-empty'}} {{if this.isListView "is-list"}}">
         {{#if this.hasProducts}}
             {{#if this.isListView}}
                 <div class="storefront-product-table">

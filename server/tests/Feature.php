@@ -148,3 +148,28 @@ test('testing seeder purges seeded ledger storefront sale journals before orders
         ->toContain("->where('meta->seed', static::SEED_NAME)")
         ->toContain("->whereIn('meta->order_uuid', $orderUuids)");
 });
+
+test('storefront navigator search endpoint is registered and returns navigator routes', function () {
+    $routes     = file_get_contents(__DIR__ . '/../src/routes.php');
+    $controller = file_get_contents(__DIR__ . '/../src/Http/Controllers/SearchController.php');
+
+    expect($routes)
+        ->toContain("\$router->get('search', 'SearchController@search')");
+
+    expect($controller)
+        ->toContain("private const SEARCH_TYPES = ['products', 'catalogs', 'customers', 'orders', 'networks', 'stores', 'food-trucks', 'gateways', 'notification-channels']")
+        ->toContain("return response()->json(['results' => []]);")
+        ->toContain("'products'              => 'storefront see product'")
+        ->toContain("'customers'             => 'storefront see customer'")
+        ->toContain("'notification-channels' => 'storefront see notification-channel'")
+        ->toContain("'route'       => 'console.storefront.products.index.index.edit'")
+        ->toContain("'route'       => 'console.storefront.customers.index.view'")
+        ->toContain("'route'       => 'console.storefront.orders.index.view'")
+        ->toContain("'route'       => 'console.storefront.networks.index.network'")
+        ->toContain("'route'       => 'console.storefront.settings.notifications'")
+        ->toContain("'models'      => [\$product->public_id]")
+        ->toContain("'models'      => [\$customer->public_id]")
+        ->toContain("'models'      => [\$order->public_id]")
+        ->toContain("'models'      => [\$network->public_id]")
+        ->toContain("'queryParams' => ['query' => \$query]");
+});

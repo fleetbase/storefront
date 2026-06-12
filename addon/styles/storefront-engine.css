@@ -290,6 +290,10 @@ body[data-theme='dark'] .storefront-product-view-toggle {
     padding: 0.85rem;
 }
 
+.storefront-product-collection.is-empty {
+    grid-template-columns: auto;
+}
+
 .storefront-product-collection.is-list {
     display: block;
     height: 100%;
@@ -298,6 +302,10 @@ body[data-theme='dark'] .storefront-product-view-toggle {
     align-content: initial;
     padding: 0 0 4.5rem;
     overflow: auto;
+}
+
+.storefront-product-collection.is-empty.is-list {
+    padding: 0.85rem;
 }
 
 .storefront-product-table {

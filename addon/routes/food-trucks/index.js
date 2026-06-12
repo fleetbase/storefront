@@ -9,6 +9,10 @@ export default class FoodTrucksIndexRoute extends Route {
     @service hostRouter;
     @service notifications;
 
+    queryParams = {
+        query: { refreshModel: true },
+    };
+
     beforeModel() {
         if (this.abilities.cannot('storefront list food-truck')) {
             this.notifications.warning(this.intl.t('common.unauthorized-access'));

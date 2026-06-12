@@ -3,6 +3,7 @@ import { inject as service } from '@ember/service';
 import { alias } from '@ember/object/computed';
 import { action, set } from '@ember/object';
 import { capitalize } from '@ember/string';
+import { tracked } from '@glimmer/tracking';
 import getNotificationSchemas from '../../utils/get-notification-schemas';
 
 export default class SettingsNotificationsController extends Controller {
@@ -14,6 +15,9 @@ export default class SettingsNotificationsController extends Controller {
     @service storefront;
     @service hostRouter;
     @alias('storefront.activeStore') activeStore;
+    queryParams = ['query'];
+
+    @tracked query;
 
     @action createChannel() {
         const channel = this.store.createRecord('notification-channel', {
