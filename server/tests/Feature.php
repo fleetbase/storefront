@@ -95,7 +95,13 @@ test('storefront order detail resource includes checkout totals and transaction 
     $customer->forceFill(['uuid' => 'contact_uuid', 'name' => 'Ada Lovelace']);
 
     $transaction = new Transaction();
-    $transaction->forceFill(['uuid' => 'transaction_uuid', 'amount' => 50, 'currency' => 'USD', 'status' => 'paid']);
+    $transaction->forceFill([
+        'uuid'              => 'transaction_uuid',
+        'amount'            => 50,
+        'currency'          => 'USD',
+        'status'            => 'success',
+        'settlement_status' => 'paid',
+    ]);
 
     $payload = new Payload();
     $payload->forceFill(['uuid' => 'payload_uuid']);
@@ -114,10 +120,11 @@ test('storefront order detail resource includes checkout totals and transaction 
         ->and($data['customer_name'])->toBe('Ada Lovelace')
         ->and($data['transaction_amount'])->toBe($order->transaction_amount)
         ->and($data['transaction'])->toMatchArray([
-            'id'       => 'transaction_uuid',
-            'amount'   => 50,
-            'currency' => 'USD',
-            'status'   => 'paid',
+            'id'                => 'transaction_uuid',
+            'amount'            => 50,
+            'currency'          => 'USD',
+            'status'            => 'success',
+            'settlement_status' => 'paid',
         ])
         ->and($data['meta'])->toMatchArray([
             'subtotal'   => 42.25,
@@ -146,7 +153,7 @@ test('testing seeder purges seeded ledger storefront sale journals before orders
         ->toContain("->table('ledger_journals')")
         ->toContain("->where('type', 'storefront_sale')")
         ->toContain("->where('meta->seed', static::SEED_NAME)")
-        ->toContain("->whereIn('meta->order_uuid', $orderUuids)");
+        ->toContain("->whereIn('meta->order_uuid', \$orderUuids)");
 });
 
 test('storefront navigator search endpoint is registered and returns navigator routes', function () {
