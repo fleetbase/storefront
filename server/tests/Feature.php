@@ -146,7 +146,7 @@ test('testing seeder purges seeded ledger storefront sale journals before orders
         ->toContain("->table('ledger_journals')")
         ->toContain("->where('type', 'storefront_sale')")
         ->toContain("->where('meta->seed', static::SEED_NAME)")
-        ->toContain("->whereIn('meta->order_uuid', $orderUuids)");
+        ->toContain("->whereIn('meta->order_uuid', \$orderUuids)");
 });
 
 test('storefront navigator search endpoint is registered and returns navigator routes', function () {
