@@ -921,7 +921,11 @@ class CheckoutController extends Controller
             'currency'               => $currency,
             'description'            => 'Storefront order',
             'type'                   => 'storefront',
-            'status'                 => 'success',
+            'status'                 => Transaction::STATUS_SUCCESS,
+            'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
+            'settled_at'             => now(),
+            'settled_amount'         => $amount,
+            'settled_currency'       => $currency,
             'meta'                   => $transactionMeta,
         ]);
 
@@ -1216,7 +1220,11 @@ class CheckoutController extends Controller
             'currency'               => $currency,
             'description'            => 'Storefront network order',
             'type'                   => 'storefront',
-            'status'                 => 'success',
+            'status'                 => Transaction::STATUS_SUCCESS,
+            'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
+            'settled_at'             => now(),
+            'settled_amount'         => $amount,
+            'settled_currency'       => $currency,
             'meta'                   => $transactionMeta,
         ]);
 

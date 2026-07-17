@@ -23,15 +23,16 @@ class Order extends FleetOpsOrderResource
 
         if ($this->resource->relationLoaded('transaction') && $this->transaction) {
             $data['transaction'] = [
-                'id'          => $this->transaction->uuid,
-                'uuid'        => $this->transaction->uuid,
-                'public_id'   => $this->transaction->public_id ?? null,
-                'amount'      => $this->transaction->amount ?? $this->transaction_amount,
-                'currency'    => $this->transaction->currency ?? data_get($data, 'meta.currency'),
-                'status'      => $this->transaction->status ?? null,
-                'gateway'     => $this->transaction->gateway ?? data_get($data, 'meta.gateway'),
-                'created_at'  => $this->transaction->created_at,
-                'updated_at'  => $this->transaction->updated_at,
+                'id'                => $this->transaction->uuid,
+                'uuid'              => $this->transaction->uuid,
+                'public_id'         => $this->transaction->public_id ?? null,
+                'amount'            => $this->transaction->amount ?? $this->transaction_amount,
+                'currency'          => $this->transaction->currency ?? data_get($data, 'meta.currency'),
+                'status'            => $this->transaction->status ?? null,
+                'settlement_status' => $this->transaction->settlement_status ?? null,
+                'gateway'           => $this->transaction->gateway ?? data_get($data, 'meta.gateway'),
+                'created_at'        => $this->transaction->created_at,
+                'updated_at'        => $this->transaction->updated_at,
             ];
         }
 
