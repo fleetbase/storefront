@@ -51,10 +51,6 @@ class AddonCategoryController extends StorefrontController
             return new $this->resource($record);
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->error($e->getMessage());
-        } catch (\Fleetbase\Exceptions\FleetbaseRequestValidationException $e) {
-            return response()->error($e->getErrors());
         }
     }
 
@@ -94,10 +90,6 @@ class AddonCategoryController extends StorefrontController
             return new $this->resource($record);
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->error($e->getMessage());
-        } catch (\Fleetbase\Exceptions\FleetbaseRequestValidationException $e) {
-            return response()->error($e->getErrors());
         }
     }
 }

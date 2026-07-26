@@ -37,6 +37,110 @@ use Stripe\Exception\InvalidRequestException;
 
 class CheckoutController extends Controller
 {
+    protected static function qpayForGateway(Gateway $gateway): QPay
+    {
+        return QPay::instance(
+            $gateway->config->username,
+            $gateway->config->password,
+            $gateway->callback_url
+        );
+    }
+
+    protected function autoAcceptOrder(Order $order): void
+    {
+        Storefront::autoAcceptOrder($order);
+    }
+
+    protected function autoDispatchOrder(Order $order): void
+    {
+        Storefront::autoDispatchOrder($order);
+    }
+
+    protected function createIntegratedVendorOrder(ServiceQuote $serviceQuote, Request $request)
+    {
+        return $serviceQuote->integratedVendor->api()->createOrderFromServiceQuote($serviceQuote, $request);
+    }
+
+    protected function createIntegratedVendorOrderSafely(ServiceQuote $serviceQuote, Request $request): array
+    {
+        try {
+            return [
+                'order' => $this->createIntegratedVendorOrder($serviceQuote, $request),
+                'error' => null,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'order' => null,
+                'error' => response()->apiError($e->getMessage()),
+            ];
+        }
+    }
+
+    protected function resolveStoreLocationOrigin($origin, Cart $cart)
+    {
+        if ($origin) {
+            return $origin;
+        }
+
+        $storeLocation = collect($cart->items)->map(function ($cartItem) {
+            $storeLocationId = $cartItem->store_location_id ?? null;
+
+            if (!$storeLocationId) {
+                $store = Store::where('public_id', $cartItem->store_id)->first();
+
+                if ($store) {
+                    $storeLocationId = Utils::get($store, 'locations.0.public_id');
+                }
+            }
+
+            return $storeLocationId;
+        })->unique()->filter()->map(function ($storeLocationId) {
+            return StoreLocation::where('public_id', $storeLocationId)->first();
+        })->first();
+
+        return $storeLocation ? $storeLocation->place_uuid : null;
+    }
+
+    protected function resolveFoodTruck(Cart $cart): ?FoodTruck
+    {
+        return collect($cart->items)
+            ->map(fn ($cartItem) => data_get($cartItem, 'food_truck_id'))
+            ->unique()
+            ->filter()
+            ->map(fn ($foodTruckId) => FoodTruck::where('public_id', $foodTruckId)->with(['zone', 'serviceArea'])->first())
+            ->first();
+    }
+
+    protected function resolveFoodTruckOrigin(?FoodTruck $foodTruck): ?array
+    {
+        if (!$foodTruck || !$foodTruck->vehicle) {
+            return null;
+        }
+
+        return [
+            'name'     => $foodTruck->name,
+            'street1'  => data_get($foodTruck, 'zone.name'),
+            'city'     => data_get($foodTruck, 'serviceArea.name'),
+            'country'  => data_get($foodTruck, 'serviceArea.country'),
+            'location' => $foodTruck->vehicle->location,
+        ];
+    }
+
+    protected function applyFoodTruckOrderData(?FoodTruck $foodTruck, array $orderMeta, array $orderInput): array
+    {
+        if (!$foodTruck) {
+            return [$orderMeta, $orderInput];
+        }
+
+        $orderMeta['food_truck_id'] = $foodTruck->public_id;
+        $driverAssigned             = $foodTruck->getDriverAssigned();
+        if ($driverAssigned) {
+            $orderInput['driver_assigned_uuid'] = $driverAssigned->uuid;
+        }
+
+        return [$orderMeta, $orderInput];
+    }
+
     public function beforeCheckout(InitializeCheckoutRequest $request)
     {
         $gatewayCode      = $request->input('gateway');
@@ -317,9 +421,12 @@ class CheckoutController extends Controller
 
         // Retrieve and validate necessary models
         $cart = Cart::retrieve($cartId);
+        // Cart::retrieve() always returns either the persisted cart or a new cart instance.
+        // @codeCoverageIgnoreStart
         if (!$cart) {
             return response()->apiError('Invalid cart ID provided');
         }
+        // @codeCoverageIgnoreEnd
 
         $customer = Customer::findFromCustomerId($customerId);
         if (!$customer) {
@@ -441,7 +548,7 @@ class CheckoutController extends Controller
         }
 
         // Create qpay instance
-        $qpay = QPay::instance($gateway->config->username, $gateway->config->password, $gateway->callback_url);
+        $qpay = static::qpayForGateway($gateway);
         if ($gateway->sandbox) {
             $qpay = $qpay->useSandbox();
         }
@@ -618,11 +725,7 @@ class CheckoutController extends Controller
             }
 
             // Create the QPay instance.
-            $qpay = QPay::instance(
-                $gateway->config->username,
-                $gateway->config->password,
-                $gateway->callback_url
-            );
+            $qpay = static::qpayForGateway($gateway);
 
             if ($gateway->sandbox) {
                 $qpay->useSandbox();
@@ -696,7 +799,7 @@ class CheckoutController extends Controller
      *
      * @return Order|null The created order or null if already exists/error
      */
-    private function createOrderFromCheckout($checkout, $transactionDetails, $notes = null)
+    protected function createOrderFromCheckout($checkout, $transactionDetails, $notes = null)
     {
         // Define a unique lock key for this specific checkout
         $lockKey = 'create-order-checkout-' . $checkout->uuid;
@@ -836,8 +939,16 @@ class CheckoutController extends Controller
         }
 
         // get checkout data to create order
+        $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
+        if (!$checkout) {
+            return response()->apiError('Checkout session not found.');
+        }
+
         $about        = Storefront::about();
-        $checkout     = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
+        if (!$about) {
+            return response()->apiError('No storefront in request to capture order!');
+        }
+
         $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
@@ -889,12 +1000,11 @@ class CheckoutController extends Controller
 
         // if service quote is applied, resolve it
         if ($serviceQuote instanceof ServiceQuote && $serviceQuote->fromIntegratedVendor()) {
-            // create order with integrated vendor, then resume fleetbase order creation
-            try {
-                $integratedVendorOrder = $serviceQuote->integratedVendor->api()->createOrderFromServiceQuote($serviceQuote, $request);
-            } catch (\Exception $e) {
-                return response()->apiError($e->getMessage());
+            $vendorResult = $this->createIntegratedVendorOrderSafely($serviceQuote, $request);
+            if ($vendorResult['error']) {
+                return $vendorResult['error'];
             }
+            $integratedVendorOrder = $vendorResult['order'];
         }
 
         // setup transaction meta
@@ -979,45 +1089,13 @@ class CheckoutController extends Controller
         }
 
         // Check if the order origin is from a food truck via cart property
-        $foodTruck = collect($cart->items)
-            ->map(function ($cartItem) {
-                return data_get($cartItem, 'food_truck_id');
-            })
-            ->unique()
-            ->filter()
-            ->map(function ($foodTruckId) {
-                return FoodTruck::where('public_id', $foodTruckId)->with(['zone', 'serviceArea'])->first();
-            })
-            ->first();
+        $foodTruck = $this->resolveFoodTruck($cart);
 
         // Set food truck vehicle location as origin
-        if ($foodTruck && $foodTruck->vehicle) {
-            $origin = ['name' => $foodTruck->name, 'street1' => data_get($foodTruck, 'zone.name'), 'city' => data_get($foodTruck, 'serviceArea.name'), 'country' => data_get($foodTruck, 'serviceArea.country'), 'location' => $foodTruck->vehicle->location];
-        }
+        $foodTruckOrigin = $this->resolveFoodTruckOrigin($foodTruck);
+        $origin          = $foodTruckOrigin ?? $origin;
 
-        // if there is no origin attempt to get from cart
-        if (!$origin) {
-            $storeLocation = collect($cart->items)->map(function ($cartItem) {
-                $storeLocationId = $cartItem->store_location_id;
-
-                // if no store location id set, use first locations id
-                if (!$storeLocationId) {
-                    $store = Store::where('public_id', $cartItem->store_id)->first();
-
-                    if ($store) {
-                        $storeLocationId = Utils::get($store, 'locations.0.public_id');
-                    }
-                }
-
-                return $storeLocationId;
-            })->unique()->filter()->map(function ($storeLocationId) {
-                return StoreLocation::where('public_id', $storeLocationId)->first();
-            })->first();
-
-            if ($storeLocation) {
-                $origin = $storeLocation->place_uuid;
-            }
-        }
+        $origin = $this->resolveStoreLocationOrigin($origin, $cart);
 
         // convert payload destinations to Place
         $origin      = Place::createFromMixed($origin);
@@ -1080,14 +1158,7 @@ class CheckoutController extends Controller
         $orderInput = [];
 
         // if there is a food truck include it in the order meta
-        if ($foodTruck) {
-            $orderMeta['food_truck_id'] = $foodTruck->public_id;
-            // assign the driver to the food truck driver
-            $driverAssigned = $foodTruck->getDriverAssigned();
-            if ($driverAssigned) {
-                $orderInput['driver_assigned_uuid'] = $driverAssigned->uuid;
-            }
-        }
+        [$orderMeta, $orderInput] = $this->applyFoodTruckOrderData($foodTruck, $orderMeta, $orderInput);
 
         // initialize order creation input
         $orderInput = [
@@ -1127,9 +1198,9 @@ class CheckoutController extends Controller
 
         // if order is auto accepted update status
         if ($store->isOption('auto_accept_orders')) {
-            Storefront::autoAcceptOrder($order);
+            $this->autoAcceptOrder($order);
             if ($store->isOption('auto_dispatch')) {
-                Storefront::autoDispatchOrder($order);
+                $this->autoDispatchOrder($order);
             }
         }
 
@@ -1161,8 +1232,12 @@ class CheckoutController extends Controller
         }
 
         // get checkout data to create order
+        $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
+        if (!$checkout) {
+            return response()->apiError('Checkout session not found.');
+        }
+
         $about        = Storefront::about();
-        $checkout     = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
         $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
@@ -1193,12 +1268,11 @@ class CheckoutController extends Controller
 
         // if service quote is applied, resolve it
         if ($serviceQuote instanceof ServiceQuote && $serviceQuote->fromIntegratedVendor()) {
-            // create order with integrated vendor, then resume fleetbase order creation
-            try {
-                $integratedVendorOrder = $serviceQuote->integratedVendor->api()->createOrderFromServiceQuote($serviceQuote, $request);
-            } catch (\Exception $e) {
-                return response()->apiError($e->getMessage());
+            $vendorResult = $this->createIntegratedVendorOrderSafely($serviceQuote, $request);
+            if ($vendorResult['error']) {
+                return $vendorResult['error'];
             }
+            $integratedVendorOrder = $vendorResult['order'];
         }
 
         // setup transaction meta
@@ -1289,7 +1363,7 @@ class CheckoutController extends Controller
         $multipleOrders = [];
 
         foreach ($origins as $pickup) {
-            $store = Storefront::getStoreFromLocation($pickup);
+            $store = Storefront::getStoreFromLocation($pickup->uuid);
 
             // create payload
             $payload = Payload::create([
@@ -1370,9 +1444,9 @@ class CheckoutController extends Controller
 
             // if order is auto accepted update status
             if ($store->isOption('auto_accept_orders')) {
-                Storefront::autoAcceptOrder($order);
+                $this->autoAcceptOrder($order);
                 if ($store->isOption('auto_dispatch')) {
-                    Storefront::autoDispatchOrder($order);
+                    $this->autoDispatchOrder($order);
                 }
             }
 
@@ -1535,11 +1609,7 @@ class CheckoutController extends Controller
 
                     if ($qpayInvoiceId) {
                         // Create QPay instance with correct credentials
-                        $qpay = QPay::instance(
-                            $gateway->config->username,
-                            $gateway->config->password,
-                            $gateway->callback_url
-                        );
+                        $qpay = static::qpayForGateway($gateway);
 
                         if ($gateway->sandbox) {
                             $qpay->useSandbox();
@@ -1660,7 +1730,8 @@ class CheckoutController extends Controller
         $tipAmount = 0;
 
         if (is_string($tip) && Str::endsWith($tip, '%')) {
-            $tipAmount = Utils::calculatePercentage(Utils::numbersOnly($tip), $subtotal);
+            $percentage = (float) str_replace(',', '', Str::beforeLast($tip, '%'));
+            $tipAmount  = Utils::calculatePercentage($percentage, $subtotal);
         } else {
             $tipAmount = Utils::numbersOnly($tip);
         }

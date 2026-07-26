@@ -51,13 +51,22 @@ class DownloadProductImageUrl implements ShouldQueue
     public function handle()
     {
         // get product record
-        $product = Product::find($this->product);
+        $product = Product::where('uuid', $this->product)->first();
+        if (!$product) {
+            return;
+        }
+
         // download and save to product as image
-        $image = Utils::urlToStorefrontFile($this->url, 'storefront_product', $product);
+        $image = $this->downloadProductImage($product);
 
         // if image is \Fleetbase\Models\File then set as primary image
         if ($image instanceof File) {
             $product->update(['primary_image_uuid' => $image->uuid]);
         }
+    }
+
+    protected function downloadProductImage(Product $product)
+    {
+        return Utils::urlToStorefrontFile($this->url, 'storefront_product', $product);
     }
 }

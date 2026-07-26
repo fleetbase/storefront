@@ -356,11 +356,9 @@ class Store extends StorefrontModel
             return null;
         }
 
-        try {
-            $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return null;
-        } catch (\Exception $e) {
+        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
+
+        if (!$network instanceof Network) {
             return null;
         }
 

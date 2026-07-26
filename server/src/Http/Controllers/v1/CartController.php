@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    protected function retrieveCart(?string $uniqueId, bool $create = false): Cart
+    {
+        return Cart::retrieve($uniqueId, $create);
+    }
+
     /**
      * Retrieve or create a cart using a unique identifier. If no unique identifier is provided
      * one will be created.
@@ -17,7 +22,7 @@ class CartController extends Controller
      */
     public function retrieve(?string $uniqueId = null, Request $request)
     {
-        $cart = Cart::retrieve($uniqueId, true);
+        $cart = $this->retrieveCart($uniqueId, true);
 
         return new StorefrontCart($cart);
     }
@@ -34,11 +39,7 @@ class CartController extends Controller
         $addons          = $request->input('addons', []);
         $scheduledAt     = $request->input('scheduled_at');
         $storeLocationId = $request->input('store_location');
-        $cart            = Cart::retrieve($cartId);
-
-        if (!$cart) {
-            return response()->error('Cart was not found or has already been checkout out.');
-        }
+        $cart            = $this->retrieveCart($cartId);
 
         try {
             $cart->add($productId, $quantity, $variants, $addons, $storeLocationId, $scheduledAt);
@@ -62,11 +63,7 @@ class CartController extends Controller
         $variants    = $request->input('variants', null);
         $addons      = $request->input('addons', null);
         $scheduledAt = $request->input('scheduled_at');
-        $cart        = Cart::retrieve($cartId);
-
-        if (!$cart) {
-            return response()->error('Cart was not found or has already been checkout out.');
-        }
+        $cart        = $this->retrieveCart($cartId);
 
         try {
             $cart->updateItem($cartItemId, $quantity, $variants, $addons, $scheduledAt);
@@ -86,11 +83,7 @@ class CartController extends Controller
      */
     public function remove(?string $cartId, ?string $cartItemId, Request $request)
     {
-        $cart = Cart::retrieve($cartId);
-
-        if (!$cart) {
-            return response()->error('Cart was not found or has already been checkout out.');
-        }
+        $cart = $this->retrieveCart($cartId);
 
         try {
             $cart->remove($cartItemId);
@@ -108,11 +101,7 @@ class CartController extends Controller
      */
     public function empty(string $cartId)
     {
-        $cart = Cart::retrieve($cartId);
-
-        if (!$cart) {
-            return response()->error('Unable to empty cart.');
-        }
+        $cart = $this->retrieveCart($cartId);
 
         $cart->empty();
 
@@ -126,11 +115,7 @@ class CartController extends Controller
      */
     public function delete(string $cartId)
     {
-        $cart = Cart::retrieve($cartId);
-
-        if (!$cart) {
-            return response()->error('Cart was not found or has already been checkout out.');
-        }
+        $cart = $this->retrieveCart($cartId);
 
         $cart->delete();
 

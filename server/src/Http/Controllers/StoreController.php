@@ -17,7 +17,7 @@ class StoreController extends StorefrontController
     public function allStores(Request $request)
     {
         $stores = Store::select(['uuid', 'name', 'description', 'created_at'])
-            ->withoutRelations()->where('company_uuid', $request->session()->get('company'))
+            ->where('company_uuid', $request->session()->get('company'))
             ->get();
 
         return response()->json(['stores' => $stores]);

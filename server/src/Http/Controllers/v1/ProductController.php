@@ -303,6 +303,7 @@ class ProductController extends Controller
                             $optionModel = ProductVariantOption::where('public_id', $option['id'])->first();
                             if ($optionModel) {
                                 $option['uuid'] = $optionModel->uuid;
+                                unset($option['id']);
                             }
                         }
 

@@ -33,21 +33,21 @@ class ServiceQuoteController extends Controller
      */
     public function fromCart(GetServiceQuoteFromCart $request)
     {
-        $requestId        = CoreUtils::generatePublicId('request');
+        $requestId = CoreUtils::generatePublicId('request');
+        $isNetwork = Str::startsWith(session('storefront_key'), 'network_');
+
+        if ($isNetwork) {
+            return $this->fromCartForNetwork($request);
+        }
+
         $origin           = $this->getPlaceFromId($request->input('origin'));
         $destination      = $this->getPlaceFromId($request->input('destination'));
         $facilitator      = $request->input('facilitator');
         $scheduledAt      = $request->input('scheduled_at');
         $serviceType      = $request->input('service_type');
         $cart             = Cart::retrieve($request->input('cart'));
-        $currency         = $cart->currency;
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
-        $isNetwork        = Str::startsWith(session('storefront_key'), 'network_');
-
-        if ($isNetwork) {
-            return $this->fromCartForNetwork($request);
-        }
 
         if (!$origin) {
             return response()->error('No delivery origin!');
@@ -57,10 +57,7 @@ class ServiceQuoteController extends Controller
             return response()->error('No delivery destination!');
         }
 
-        // if no cart respond with error
-        if (!$cart) {
-            return response()->error('Cart session not found!');
-        }
+        $currency = $cart->currency;
 
         // if facilitator is an integrated partner resolve service quotes from bridge
         if ($facilitator && Utils::isIntegratedVendorId($facilitator)) {
@@ -69,13 +66,14 @@ class ServiceQuoteController extends Controller
                 $q->orWhere('provider', $facilitator);
             })->first();
 
-            if ($integratedVendor) {
-                try {
-                    /** @var \Fleetbase\Models\ServiceQuote $serviceQuote */
-                    $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([$origin, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
-                } catch (\Exception $e) {
-                    return response()->error($e->getMessage());
-                }
+            if (!$integratedVendor) {
+                return response()->error('Integrated vendor not found!');
+            }
+
+            try {
+                $serviceQuote = $this->getIntegratedVendorQuote($integratedVendor, $requestId, [$origin, $destination], $serviceType, $scheduledAt, $isRouteOptimized);
+            } catch (\Exception $e) {
+                return response()->error($e->getMessage());
             }
 
             // set origin and destination in service quote meta
@@ -88,7 +86,7 @@ class ServiceQuoteController extends Controller
         }
 
         // get distance matrix
-        $matrix = Utils::getDrivingDistanceAndTime($origin, $destination);
+        $matrix = $this->getDrivingMatrix($origin, $destination);
 
         // create entities from cart items
         $entities = collect($cart->items ?? [])->map(function ($cartItem) {
@@ -106,9 +104,7 @@ class ServiceQuoteController extends Controller
 
         // get service rates for config type
         // $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
-        $serviceRates = ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($q) {
-            $q->where('company_uuid', session('company'));
-        });
+        $serviceRates = $this->getServiceRates($destination, $orderConfigKey, $currency);
 
         // Convert to collection
         $serviceRates = collect($serviceRates);
@@ -120,8 +116,7 @@ class ServiceQuoteController extends Controller
 
             if ($integratedVendor) {
                 try {
-                    /** @var \Fleetbase\Models\ServiceQuote $serviceQuote */
-                    $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([$origin, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
+                    $serviceQuote = $this->getIntegratedVendorQuote($integratedVendor, $requestId, [$origin, $destination], $serviceType, $scheduledAt, $isRouteOptimized);
                 } catch (\Exception $e) {
                     return response()->error($e->getMessage());
                 }
@@ -204,7 +199,6 @@ class ServiceQuoteController extends Controller
         $scheduledAt      = $request->input('scheduled_at');
         $serviceType      = $request->input('service_type');
         $cart             = Cart::retrieve($request->input('cart'));
-        $currency         = $cart->currency;
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
 
@@ -213,10 +207,7 @@ class ServiceQuoteController extends Controller
             return response()->error('No delivery destination!');
         }
 
-        // if no cart respond with error
-        if (!$cart) {
-            return response()->error('Cart session not found!');
-        }
+        $currency = $cart->currency;
 
         // collect stores
         $storeLocations = collect($cart->items)->map(function ($cartItem) {
@@ -261,13 +252,14 @@ class ServiceQuoteController extends Controller
                 $q->orWhere('provider', $facilitator);
             })->first();
 
-            if ($integratedVendor) {
-                try {
-                    /** @var \Fleetbase\Models\ServiceQuote $serviceQuote */
-                    $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([...$origins, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
-                } catch (\Exception $e) {
-                    return response()->error($e->getMessage());
-                }
+            if (!$integratedVendor) {
+                return response()->error('Integrated vendor not found!');
+            }
+
+            try {
+                $serviceQuote = $this->getIntegratedVendorQuote($integratedVendor, $requestId, [...$origins, $destination], $serviceType, $scheduledAt, $isRouteOptimized);
+            } catch (\Exception $e) {
+                return response()->error($e->getMessage());
             }
 
             // set origin and destination in service quote meta
@@ -281,7 +273,7 @@ class ServiceQuoteController extends Controller
 
         // get distance matrix
         // $matrix = Utils::getDrivingDistanceAndTime($origin, $destination);
-        $matrix = Utils::distanceMatrix($origins, [$destination]);
+        $matrix = $this->getNetworkDistanceMatrix($origins, $destination);
 
         // create entities from cart items
         $entities = collect($cart->items ?? [])->map(function ($cartItem) {
@@ -299,9 +291,7 @@ class ServiceQuoteController extends Controller
 
         // get service rates for config type
         // $serviceRates = ServiceRate::where(['company_uuid' => session('company'), 'service_type' => $orderConfigKey])->get();
-        $serviceRates = ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($q) {
-            $q->where('company_uuid', session('company'));
-        });
+        $serviceRates = $this->getServiceRates($destination, $orderConfigKey, $currency);
 
         // Convert to collection
         $serviceRates = collect($serviceRates);
@@ -313,8 +303,7 @@ class ServiceQuoteController extends Controller
 
             if ($integratedVendor) {
                 try {
-                    /** @var ServiceQuote $serviceQuote */
-                    $serviceQuote = $integratedVendor->api()->setRequestId($requestId)->getQuoteFromPreliminaryPayload([...$origins, $destination], [], $serviceType, $scheduledAt, $isRouteOptimized);
+                    $serviceQuote = $this->getIntegratedVendorQuote($integratedVendor, $requestId, [...$origins, $destination], $serviceType, $scheduledAt, $isRouteOptimized);
                 } catch (\Exception $e) {
                     return response()->error($e->getMessage());
                 }
@@ -382,6 +371,49 @@ class ServiceQuoteController extends Controller
     }
 
     /**
+     * Request a preliminary quote from an integrated vendor.
+     */
+    protected function getIntegratedVendorQuote(
+        IntegratedVendor $integratedVendor,
+        string $requestId,
+        array $places,
+        ?string $serviceType,
+        $scheduledAt,
+        bool $isRouteOptimized,
+    ): ServiceQuote {
+        return $integratedVendor
+            ->api()
+            ->setRequestId($requestId)
+            ->getQuoteFromPreliminaryPayload($places, [], $serviceType, $scheduledAt, $isRouteOptimized);
+    }
+
+    /**
+     * Resolve the point-to-point distance matrix used to quote a store order.
+     */
+    protected function getDrivingMatrix(Place $origin, Place $destination): object
+    {
+        return Utils::getDrivingDistanceAndTime($origin, $destination);
+    }
+
+    /**
+     * Resolve the multi-origin distance matrix used to quote a network order.
+     */
+    protected function getNetworkDistanceMatrix($origins, Place $destination): object
+    {
+        return Utils::distanceMatrix($origins, [$destination]);
+    }
+
+    /**
+     * Resolve locally configured service rates for the destination and currency.
+     */
+    protected function getServiceRates(Place $destination, string $orderConfigKey, ?string $currency)
+    {
+        return ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($query) {
+            $query->where('company_uuid', session('company'));
+        });
+    }
+
+    /**
      * Returns a place from either a place id or store location id.
      */
     public function getPlaceFromId(string|array $id): ?Place
@@ -408,14 +440,14 @@ class ServiceQuoteController extends Controller
         if (Str::startsWith($id, 'vehicle_')) {
             $vehicle = Vehicle::where('public_id', $id)->first();
 
-            return Place::createFromCoordinates($vehicle->location);
+            return $vehicle ? Place::createFromCoordinates($vehicle->location) : null;
         }
 
         // If food truck
         if (Str::startsWith($id, 'food_truck_')) {
             $foodTruck = FoodTruck::where('public_id', $id)->with('vehicle')->first();
 
-            return $foodTruck->vehicle ? Place::createFromCoordinates($foodTruck->vehicle->location) : null;
+            return $foodTruck?->vehicle ? Place::createFromCoordinates($foodTruck->vehicle->location) : null;
         }
 
         // handle coordinates tooo!

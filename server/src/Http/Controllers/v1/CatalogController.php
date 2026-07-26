@@ -21,7 +21,7 @@ class CatalogController extends Controller
 
         if (session('storefront_store')) {
             $results = Catalog::queryWithRequestCached($request, function (&$query) use ($limit, $offset) {
-                $query->where('subject_uuid', session('storefront_store'));
+                $query->where('store_uuid', session('storefront_store'));
 
                 if ($limit) {
                     $query->limit($limit);

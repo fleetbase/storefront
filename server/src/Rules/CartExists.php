@@ -16,7 +16,10 @@ class CartExists implements Rule
      */
     public function passes($attribute, $value)
     {
-        return Cart::where(['public_id' => $attribute, 'unique_identifier' => $attribute])->exists();
+        return Cart::where(function ($query) use ($value) {
+            $query->where('public_id', $value)
+                ->orWhere('unique_identifier', $value);
+        })->exists();
     }
 
     /**

@@ -40,7 +40,7 @@ class PushNotification
     public static function createFcmMessage(Order $order, string $title, string $body, string $status, $notifiable = null): ?FcmMessage
     {
         $storefront          = static::getStorefrontFromOrder($order);
-        $notificationChannel = static::getNotificationChannel('apn', $storefront, $order);
+        $notificationChannel = static::getNotificationChannel('fcm', $storefront, $order);
         if (!$notificationChannel) {
             // create fcm message anyway
             return new FcmMessage(
@@ -55,9 +55,7 @@ class PushNotification
         static::configureFcm($notificationChannel);
 
         // Get FCM Client using Notification Channel
-        $container      = Container::getInstance();
-        $projectManager = new FirebaseProjectManager($container);
-        $client         = $projectManager->project($notificationChannel->app_key)->messaging();
+        $client = static::getFcmClient($notificationChannel);
 
         // Create Notification
         $notification = new FcmNotification(
@@ -89,6 +87,14 @@ class PushNotification
                 ],
             ])
             ->usingClient($client);
+    }
+
+    protected static function getFcmClient(NotificationChannel $notificationChannel)
+    {
+        $container      = Container::getInstance();
+        $projectManager = new FirebaseProjectManager($container);
+
+        return $projectManager->project($notificationChannel->app_key)->messaging();
     }
 
     public static function configureFcm(NotificationChannel $notificationChannel)

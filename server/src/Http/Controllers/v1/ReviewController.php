@@ -24,9 +24,10 @@ class ReviewController extends Controller
      */
     public function query(Request $request)
     {
-        $limit  = $request->input('limit', false);
-        $offset = $request->input('offset', false);
-        $sort   = $request->input('sort');
+        $results = [];
+        $limit   = $request->input('limit', false);
+        $offset  = $request->input('offset', false);
+        $sort    = $request->input('sort');
 
         if ($sort) {
             $this->applySort($request, $sort);

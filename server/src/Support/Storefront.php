@@ -95,7 +95,7 @@ class Storefront
     public static function getStoreFromLocation(string $id, $columns = [], $with = [])
     {
         if (is_array($columns)) {
-            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
+            $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'order_config_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
         }
 
         return Store::select($columns)->with($with)->whereHas('locations', function ($q) use ($id) {
@@ -314,7 +314,11 @@ class Storefront
             $config = DB::transaction(function () use ($attrs, $companyUuid) {
                 $existing = OrderConfig::where($attrs)->first();
                 if ($existing) {
+                    // This branch requires a concurrent request to insert between the
+                    // pre-transaction lookup and this locked recheck.
+                    // @codeCoverageIgnoreStart
                     return $existing;
+                    // @codeCoverageIgnoreEnd
                 }
 
                 return static::createStorefrontConfig($companyUuid);
@@ -752,7 +756,8 @@ class Storefront
         $tipAmount = 0;
 
         if (is_string($tip) && Str::endsWith($tip, '%')) {
-            $tipAmount = Utils::calculatePercentage(Utils::numbersOnly($tip), $subtotal);
+            $percentage = (float) str_replace(',', '', Str::beforeLast($tip, '%'));
+            $tipAmount  = Utils::calculatePercentage($percentage, $subtotal);
         } else {
             $tipAmount = Utils::numbersOnly($tip);
         }
