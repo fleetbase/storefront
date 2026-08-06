@@ -148,7 +148,7 @@ class Metrics
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])
             ->where('type', 'storefront')
-            ->whereNotIn('status', ['completed', 'created', 'pending', 'canceled']);
+            ->whereNotIn('status', ['completed', 'picked_up', 'created', 'pending', 'canceled', 'order_canceled']);
 
         if (is_callable($callback)) {
             $callback($query);
@@ -164,7 +164,7 @@ class Metrics
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])
             ->where('type', 'storefront')
-            ->where('status', 'completed');
+            ->whereIn('status', ['completed', 'picked_up']);
 
         if (is_callable($callback)) {
             $callback($query);
@@ -180,7 +180,7 @@ class Metrics
         $query = Order::where('company_uuid', $this->company->uuid)
             ->whereBetween('created_at', [$this->start, $this->end])
             ->where('type', 'storefront')
-            ->where('status', 'canceled');
+            ->whereIn('status', ['canceled', 'order_canceled']);
 
         if (is_callable($callback)) {
             $callback($query);

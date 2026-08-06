@@ -32,8 +32,8 @@ class ActionController extends Controller
     public function getMetrics(Request $request)
     {
         $store = $request->input('store');
-        $start = $request->has('start') ? Carbon::parse($request->input('start'))->toDateTimeString() : Carbon::now()->startOfMonth()->toDateTimeString();
-        $end   = $request->has('end') ? Carbon::parse($request->input('end'))->toDateTimeString() : Carbon::now()->toDateTimeString();
+        $start = $request->has('start') ? Carbon::parse($request->input('start'))->startOfDay() : Carbon::now()->startOfMonth();
+        $end   = $request->has('end') ? Carbon::parse($request->input('end'))->endOfDay() : Carbon::now()->endOfDay();
 
         // default metrics
         $metrics = [
@@ -91,7 +91,9 @@ class ActionController extends Controller
             ->whereNull('deleted_at')
             ->get()
             ->sum(function ($order) {
-                return data_get($order, 'meta.total');
+                $orderTotal = data_get($order, 'meta.total');
+
+                return is_numeric($orderTotal) ? (float) $orderTotal : (float) data_get($order, 'transaction.amount', 0);
             });
 
         return response()->json($metrics);

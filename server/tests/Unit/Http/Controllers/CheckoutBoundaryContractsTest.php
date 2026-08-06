@@ -1276,7 +1276,18 @@ test('stripe checkout rejects incomplete gateway configuration before provider c
         (object) ['is_pickup' => true],
         Request::create('/checkout')
     );
-    expect($response->getData(true))->toBe(['error' => 'Gateway not configured correctly!']);
+    $gateway->config = ['secret_key' => '   '];
+    $blankResponse   = CheckoutController::initializeStripeCheckout(
+        $customer,
+        $gateway,
+        null,
+        $cart,
+        (object) ['is_pickup' => true],
+        Request::create('/checkout')
+    );
+
+    expect($response->getData(true))->toBe(['error' => 'Gateway not configured correctly!'])
+        ->and($blankResponse->getData(true))->toBe(['error' => 'Gateway not configured correctly!']);
 });
 
 test('stripe checkout creates provider intents and persists its checkout token', function () {
@@ -1659,8 +1670,24 @@ test('stripe setup and payment update endpoints reject missing gateway configura
         'PUT'
     ));
 
+    Model::getConnectionResolver()->connection('mysql')->table('gateways')->insert([
+        'uuid'       => 'stripe_gateway_uuid',
+        'code'       => 'stripe',
+        'owner_uuid' => 'store_uuid',
+        'type'       => 'stripe',
+        'config'     => json_encode(['secret_key' => '   ']),
+    ]);
+    $blankSetup = $controller->createStripeSetupIntentForCustomer(
+        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+            '/checkout/stripe-setup',
+            'POST',
+            ['customer' => 'customer_missing']
+        )
+    );
+
     expect($setup->getData(true))->toBe(['error' => 'Stripe not setup.'])
-        ->and($update->getData(true))->toBe(['error' => 'No stripe gateway configured!']);
+        ->and($update->getData(true))->toBe(['error' => 'No stripe gateway configured!'])
+        ->and($blankSetup->getData(true))->toBe(['error' => 'Gateway not configured correctly!']);
 });
 
 test('stripe setup intent returns saved payment details and contains provider failures', function () {
@@ -1816,7 +1843,7 @@ test('stripe payment updates validate customer identity and provider credentials
         'code'       => 'stripe',
         'owner_uuid' => 'store_uuid',
         'type'       => 'stripe',
-        'config'     => '{}',
+        'config'     => json_encode(['secret_key' => '   ']),
     ]);
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
@@ -2076,6 +2103,167 @@ test('stripe payment updates contain retrieve update and ephemeral-key provider 
     ])->and($ephemeralFailure->getData(true))->toBe([
         'error' => 'Failed to create ephemeral key: ephemeral unavailable',
     ]);
+});
+
+test('stripe authentication failures return a stable non secret gateway error for every checkout operation', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('gateways')->insert([
+        'uuid'       => 'stripe_gateway_uuid',
+        'code'       => 'stripe',
+        'owner_uuid' => 'store_uuid',
+        'type'       => 'stripe',
+        'config'     => json_encode(['secret_key' => 'sk_test_storefront']),
+    ]);
+    $connection->table('contacts')->insert([
+        'uuid'         => 'customer_uuid',
+        'public_id'    => 'contact_abcdefgh',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+        'name'         => 'Ada Buyer',
+        'email'        => 'ada@example.test',
+        'phone'        => '+97699112233',
+        'meta'         => '{}',
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+    $connection->table('carts')->insert([
+        'uuid'              => 'cart_uuid',
+        'public_id'         => 'cart_abcdefgh',
+        'unique_identifier' => 'browser-cart',
+        'currency'          => 'USD',
+        'items'             => '[]',
+        'events'            => '[]',
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_store'    => 'store_uuid',
+        'storefront_network'  => null,
+        'storefront_currency' => 'USD',
+    ]);
+    $client = new class implements Stripe\HttpClient\ClientInterface {
+        public string $mode        = 'create_customer';
+        public int $ephemeralCalls = 0;
+
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
+        {
+            $isCustomer       = str_ends_with($absUrl, '/customers');
+            $isEphemeral      = str_contains($absUrl, '/ephemeral_keys');
+            $isSetupIntent    = str_contains($absUrl, '/setup_intents');
+            $isPaymentIntent  = str_contains($absUrl, '/payment_intents/');
+            $isPaymentCreate  = str_ends_with($absUrl, '/payment_intents');
+            $isPost           = strtolower($method) === 'post';
+
+            if ($isEphemeral) {
+                $this->ephemeralCalls++;
+            }
+
+            if (
+                ($this->mode === 'create_customer' && $isCustomer)
+                || ($this->mode === 'ephemeral' && $isEphemeral)
+                || ($this->mode === 'payment_create' && $isPaymentCreate)
+                || ($this->mode === 'recreate_customer' && $isCustomer)
+                || ($this->mode === 'setup_customer' && $isCustomer)
+                || ($this->mode === 'setup_intent' && $isSetupIntent)
+                || ($this->mode === 'update_customer' && $isCustomer)
+                || ($this->mode === 'payment_retrieve' && $isPaymentIntent && !$isPost)
+                || ($this->mode === 'payment_update' && $isPaymentIntent && $isPost)
+                || ($this->mode === 'update_ephemeral' && $isEphemeral)
+            ) {
+                throw new Stripe\Exception\AuthenticationException('sk_secret_should_never_leak');
+            }
+
+            if ($this->mode === 'recreate_customer' && $isEphemeral && $this->ephemeralCalls === 1) {
+                return [json_encode([
+                    'error' => ['message' => 'No such customer: cus_stale', 'type' => 'invalid_request_error'],
+                ]), 400, []];
+            }
+
+            if ($isCustomer) {
+                return [json_encode(['id' => 'cus_checkout', 'object' => 'customer']), 200, []];
+            }
+            if ($isEphemeral) {
+                return [json_encode([
+                    'id' => 'ephkey_checkout', 'object' => 'ephemeral_key', 'secret' => 'eph_secret',
+                ]), 200, []];
+            }
+            if ($isSetupIntent) {
+                return [json_encode([
+                    'id' => 'seti_checkout', 'object' => 'setup_intent', 'client_secret' => 'seti_secret',
+                ]), 200, []];
+            }
+
+            return [json_encode([
+                'id'             => 'pi_checkout',
+                'object'         => 'payment_intent',
+                'client_secret'  => 'pi_secret',
+                'payment_method' => null,
+                'status'         => 'requires_payment_method',
+            ]), 200, []];
+        }
+    };
+    Stripe\ApiRequestor::setHttpClient($client);
+    $gateway    = Gateway::query()->firstOrFail();
+    $cart       = Cart::where('unique_identifier', 'browser-cart')->firstOrFail();
+    $options    = (object) ['is_pickup' => true];
+    $initialize = function (string $mode, array $meta) use ($client, $connection, $gateway, $cart, $options) {
+        $connection->table('contacts')->where('uuid', 'customer_uuid')->update(['meta' => json_encode($meta)]);
+        $client->mode           = $mode;
+        $client->ephemeralCalls = 0;
+
+        return CheckoutController::initializeStripeCheckout(
+            Fleetbase\Storefront\Models\Customer::where('uuid', 'customer_uuid')->firstOrFail(),
+            $gateway,
+            null,
+            $cart,
+            $options,
+            Request::create('/checkout')
+        );
+    };
+    $controller = new CheckoutController();
+    $setup      = function (string $mode, array $meta) use ($client, $connection, $controller) {
+        $connection->table('contacts')->where('uuid', 'customer_uuid')->update(['meta' => json_encode($meta)]);
+        $client->mode = $mode;
+
+        return $controller->createStripeSetupIntentForCustomer(
+            Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+                '/checkout/stripe-setup',
+                'POST',
+                ['customer' => 'customer_abcdefgh']
+            )
+        );
+    };
+    $update = function (string $mode, array $meta) use ($client, $connection, $controller) {
+        $connection->table('contacts')->where('uuid', 'customer_uuid')->update(['meta' => json_encode($meta)]);
+        $client->mode = $mode;
+
+        return $controller->updateStripePaymentIntent(Request::create('/checkout/stripe-update', 'PUT', [
+            'customer'      => 'customer_abcdefgh',
+            'cart'          => 'browser-cart',
+            'paymentIntent' => 'pi_checkout',
+            'pickup'        => true,
+        ]));
+    };
+
+    $responses = [
+        $initialize('create_customer', []),
+        $initialize('ephemeral', ['stripe_id' => 'cus_checkout']),
+        $initialize('payment_create', ['stripe_id' => 'cus_checkout']),
+        $initialize('recreate_customer', ['stripe_id' => 'cus_stale']),
+        $setup('setup_customer', []),
+        $setup('setup_intent', ['stripe_id' => 'cus_checkout']),
+        $update('update_customer', []),
+        $update('payment_retrieve', ['stripe_id' => 'cus_checkout']),
+        $update('payment_update', ['stripe_id' => 'cus_checkout']),
+        $update('update_ephemeral', ['stripe_id' => 'cus_checkout']),
+    ];
+    Stripe\ApiRequestor::setHttpClient(new Stripe\HttpClient\CurlClient());
+
+    foreach ($responses as $response) {
+        expect($response->getData(true))->toBe([
+            'error' => 'Stripe gateway authentication failed. Verify the configured secret key.',
+        ])->and(json_encode($response->getData(true)))->not->toContain('sk_secret_should_never_leak');
+    }
 });
 
 test('qpay callback reports missing checkout identifiers sessions and gateways', function () {

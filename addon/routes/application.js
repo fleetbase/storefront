@@ -50,7 +50,8 @@ export default class ApplicationRoute extends Route {
         controller.loadProductCategories();
     }
 
-    afterModel() {
+    afterModel(stores) {
+        this.storefront.synchronizeActiveStore(stores);
         this.storefront.listenForIncomingOrders();
     }
 

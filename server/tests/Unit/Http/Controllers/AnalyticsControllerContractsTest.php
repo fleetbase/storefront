@@ -9,7 +9,7 @@ function createAnalyticsControllerSchema(): void
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
 
-    foreach (['orders', 'stores', 'products', 'carts', 'checkouts', 'contacts', 'files'] as $table) {
+    foreach (['orders', 'transactions', 'stores', 'products', 'carts', 'checkouts', 'contacts', 'files'] as $table) {
         $schema->dropIfExists($table);
     }
 
@@ -20,8 +20,16 @@ function createAnalyticsControllerSchema(): void
         $table->string('type')->nullable();
         $table->string('status')->nullable();
         $table->string('customer_uuid')->nullable();
+        $table->string('transaction_uuid')->nullable();
         $table->text('meta')->nullable();
         $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('transactions', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->unsignedBigInteger('amount')->nullable();
+        $table->string('currency')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('stores', function ($table) {
@@ -127,35 +135,54 @@ test('analytics aggregates revenue statuses products conversion and returning cu
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('orders')->insert([
         [
-            'uuid'          => 'order_completed',
-            'company_uuid'  => 'company_uuid',
-            'type'          => 'storefront',
-            'status'        => 'completed',
-            'customer_uuid' => 'customer_uuid',
-            'meta'          => json_encode(['total' => 2500, 'currency' => 'USD']),
-            'created_at'    => '2026-07-01 10:00:00',
-            'updated_at'    => '2026-07-01 10:00:00',
+            'uuid'             => 'order_completed',
+            'company_uuid'     => 'company_uuid',
+            'type'             => 'storefront',
+            'status'           => 'completed',
+            'customer_uuid'    => 'customer_uuid',
+            'transaction_uuid' => null,
+            'meta'             => json_encode(['total' => 2500, 'currency' => 'USD']),
+            'created_at'       => '2026-07-01 10:00:00',
+            'updated_at'       => '2026-07-01 10:00:00',
         ],
         [
-            'uuid'          => 'order_active',
-            'company_uuid'  => 'company_uuid',
-            'type'          => 'storefront',
-            'status'        => 'preparing',
-            'customer_uuid' => 'customer_uuid',
-            'meta'          => json_encode(['total' => 1500, 'currency' => 'USD']),
-            'created_at'    => '2026-07-02 10:00:00',
-            'updated_at'    => '2026-07-02 10:00:00',
+            'uuid'             => 'order_active',
+            'company_uuid'     => 'company_uuid',
+            'type'             => 'storefront',
+            'status'           => 'dispatched',
+            'customer_uuid'    => 'customer_uuid',
+            'transaction_uuid' => null,
+            'meta'             => json_encode(['total' => 1500, 'currency' => 'USD']),
+            'created_at'       => '2026-07-02 10:00:00',
+            'updated_at'       => '2026-07-02 10:00:00',
         ],
         [
-            'uuid'          => 'order_canceled',
-            'company_uuid'  => 'company_uuid',
-            'type'          => 'storefront',
-            'status'        => 'canceled',
-            'customer_uuid' => 'other_customer',
-            'meta'          => json_encode(['total' => 900, 'currency' => 'USD']),
-            'created_at'    => '2026-07-02 11:00:00',
-            'updated_at'    => '2026-07-02 11:00:00',
+            'uuid'             => 'order_canceled',
+            'company_uuid'     => 'company_uuid',
+            'type'             => 'storefront',
+            'status'           => 'canceled',
+            'customer_uuid'    => 'other_customer',
+            'transaction_uuid' => null,
+            'meta'             => json_encode(['total' => 900, 'currency' => 'USD']),
+            'created_at'       => '2026-07-02 11:00:00',
+            'updated_at'       => '2026-07-02 11:00:00',
         ],
+        [
+            'uuid'             => 'order_picked_up',
+            'company_uuid'     => 'company_uuid',
+            'type'             => 'storefront',
+            'status'           => 'picked_up',
+            'customer_uuid'    => 'pickup_customer',
+            'transaction_uuid' => 'transaction_pickup',
+            'meta'             => json_encode(['currency' => 'USD']),
+            'created_at'       => '2026-07-02 23:59:59',
+            'updated_at'       => '2026-07-02 23:59:59',
+        ],
+    ]);
+    $connection->table('transactions')->insert([
+        'uuid'     => 'transaction_pickup',
+        'amount'   => 700,
+        'currency' => 'USD',
     ]);
     $connection->table('carts')->insert([
         [
@@ -205,13 +232,13 @@ test('analytics aggregates revenue statuses products conversion and returning cu
     $products  = $controller->topProducts(analyticsRequest())->getData(true);
     $customers = $controller->customerInsights(analyticsRequest())->getData(true);
 
-    expect($overview['metrics']['revenue']['value'])->toBe(4000)
-        ->and($overview['metrics']['orders']['value'])->toBe(2)
-        ->and($overview['metrics']['completed_orders']['value'])->toBe(1)
+    expect($overview['metrics']['revenue']['value'])->toBe(4700)
+        ->and($overview['metrics']['orders']['value'])->toBe(3)
+        ->and($overview['metrics']['completed_orders']['value'])->toBe(2)
         ->and($overview['metrics']['active_orders']['value'])->toBe(1)
-        ->and($overview['metrics']['cancellation_rate']['value'])->toBe(33.33)
-        ->and($overview['metrics']['cart_conversion']['value'])->toBe(100)
-        ->and($statuses['total'])->toBe(3)
+        ->and($overview['metrics']['cancellation_rate']['value'])->toBe(25)
+        ->and($overview['metrics']['cart_conversion']['value'])->toBe(150)
+        ->and($statuses['total'])->toBe(4)
         ->and($products['products'][0])->toMatchArray([
             'id'       => 'product_coffee',
             'name'     => 'Coffee',
@@ -220,10 +247,10 @@ test('analytics aggregates revenue statuses products conversion and returning cu
             'currency' => 'USD',
         ])
         ->and($customers)->toMatchArray([
-            'new_customers'       => 1,
+            'new_customers'       => 2,
             'returning_customers' => 1,
-            'repeat_rate'         => 50,
-            'total_customers'     => 2,
+            'repeat_rate'         => 33.33,
+            'total_customers'     => 3,
             'known_customers'     => 1,
         ]);
 });

@@ -33,10 +33,32 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Stripe\Exception\AuthenticationException as StripeAuthenticationException;
 use Stripe\Exception\InvalidRequestException;
 
 class CheckoutController extends Controller
 {
+    private const STRIPE_AUTHENTICATION_ERROR = 'Stripe gateway authentication failed. Verify the configured secret key.';
+
+    private static function hasStripeSecret(Gateway $gateway): bool
+    {
+        $secretKey = data_get($gateway, 'config.secret_key');
+
+        return is_string($secretKey) && trim($secretKey) !== '';
+    }
+
+    private static function stripeAuthenticationError(Gateway $gateway, string $operation)
+    {
+        Log::warning('[Storefront] Stripe gateway authentication failed.', [
+            'gateway_uuid' => $gateway->uuid,
+            'sandbox'      => $gateway->sandbox,
+            'operation'    => $operation,
+            'exception'    => StripeAuthenticationException::class,
+        ]);
+
+        return response()->apiError(self::STRIPE_AUTHENTICATION_ERROR);
+    }
+
     protected static function qpayForGateway(Gateway $gateway): QPay
     {
         return QPay::instance(
@@ -247,7 +269,7 @@ class CheckoutController extends Controller
         $currency = $cart->getCurrency();
 
         // check for secret key first
-        if (!isset($gateway->config->secret_key)) {
+        if (!static::hasStripeSecret($gateway)) {
             return response()->apiError('Gateway not configured correctly!');
         }
 
@@ -255,8 +277,12 @@ class CheckoutController extends Controller
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
         // Check customer meta for stripe id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
+        try {
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_customer');
         }
 
         $ephemeralKey = null;
@@ -266,17 +292,23 @@ class CheckoutController extends Controller
                 ['customer' => $customer->getMeta('stripe_id')],
                 ['stripe_version' => '2020-08-27']
             );
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_ephemeral_key');
         } catch (InvalidRequestException $e) {
             $errorMessage = $e->getMessage();
 
             if (Str::contains($errorMessage, 'No such customer')) {
                 // create the customer for this network/store
-                Storefront::createStripeCustomerForContact($customer);
-                // regenerate key
-                $ephemeralKey = \Stripe\EphemeralKey::create(
-                    ['customer' => $customer->getMeta('stripe_id')],
-                    ['stripe_version' => '2020-08-27']
-                );
+                try {
+                    Storefront::createStripeCustomerForContact($customer);
+                    // regenerate key
+                    $ephemeralKey = \Stripe\EphemeralKey::create(
+                        ['customer' => $customer->getMeta('stripe_id')],
+                        ['stripe_version' => '2020-08-27']
+                    );
+                } catch (StripeAuthenticationException $e) {
+                    return static::stripeAuthenticationError($gateway, 'recreate_customer');
+                }
             } else {
                 return response()->apiError('Error from Stripe: ' . $errorMessage);
             }
@@ -296,6 +328,8 @@ class CheckoutController extends Controller
 
         try {
             $paymentIntent = \Stripe\PaymentIntent::create($paymentIntentData);
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_payment_intent');
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
         }
@@ -335,13 +369,21 @@ class CheckoutController extends Controller
             return response()->apiError('Stripe not setup.');
         }
 
+        if (!static::hasStripeSecret($gateway)) {
+            return response()->apiError('Gateway not configured correctly!');
+        }
+
         $customer = Customer::findFromCustomerId($customerId);
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
         // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
+        try {
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_setup_customer');
         }
 
         // Prepare payment intent data
@@ -390,6 +432,8 @@ class CheckoutController extends Controller
                 'defaultPaymentMethod' => $defaultPaymentMethod,
                 'customerId'           => $customer->getMeta('stripe_id'),
             ]);
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_setup_intent');
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
         }
@@ -442,7 +486,7 @@ class CheckoutController extends Controller
         $currency = $cart->getCurrency();
 
         // Check for Stripe secret key
-        if (!isset($gateway->config->secret_key)) {
+        if (!static::hasStripeSecret($gateway)) {
             return response()->apiError('Gateway not configured correctly!');
         }
 
@@ -450,13 +494,19 @@ class CheckoutController extends Controller
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
         // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
+        try {
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'create_update_customer');
         }
 
         // Retrieve the existing PaymentIntent
         try {
             $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'retrieve_payment_intent');
         } catch (\Exception $e) {
             return response()->apiError('Failed to retrieve PaymentIntent: ' . $e->getMessage());
         }
@@ -476,6 +526,8 @@ class CheckoutController extends Controller
         // Update the PaymentIntent
         try {
             $paymentIntent = \Stripe\PaymentIntent::update($paymentIntentId, $updateData);
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'update_payment_intent');
         } catch (\Exception $e) {
             return response()->apiError('Failed to update PaymentIntent: ' . $e->getMessage());
         }
@@ -493,6 +545,8 @@ class CheckoutController extends Controller
                 ['customer' => $customer->getMeta('stripe_id')],
                 ['stripe_version' => '2020-08-27']
             );
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'update_ephemeral_key');
         } catch (\Exception $e) {
             return response()->apiError('Failed to create ephemeral key: ' . $e->getMessage());
         }

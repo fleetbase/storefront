@@ -161,6 +161,8 @@ test('action controller reports scoped order customer store and earnings metrics
     $schema->create('transactions', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
+        $table->unsignedBigInteger('amount')->nullable();
+        $table->string('currency')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $connection->table('stores')->insert([
@@ -174,25 +176,43 @@ test('action controller reports scoped order customer store and earnings metrics
     ]);
     $connection->table('orders')->insert([
         [
-            'uuid'          => 'order_paid',
-            'company_uuid'  => 'company_uuid',
-            'customer_uuid' => 'customer_uuid',
-            'type'          => 'storefront',
-            'status'        => 'completed',
-            'meta'          => json_encode(['storefront_id' => 'store_public', 'total' => 1250]),
-            'created_at'    => '2026-07-15 12:00:00',
-            'updated_at'    => '2026-07-15 12:00:00',
+            'uuid'             => 'order_paid',
+            'company_uuid'     => 'company_uuid',
+            'customer_uuid'    => 'customer_uuid',
+            'transaction_uuid' => null,
+            'type'             => 'storefront',
+            'status'           => 'completed',
+            'meta'             => json_encode(['storefront_id' => 'store_public', 'total' => 1250]),
+            'created_at'       => '2026-07-15 12:00:00',
+            'updated_at'       => '2026-07-15 12:00:00',
         ],
         [
-            'uuid'          => 'order_canceled',
-            'company_uuid'  => 'company_uuid',
-            'customer_uuid' => 'customer_uuid',
-            'type'          => 'storefront',
-            'status'        => 'canceled',
-            'meta'          => json_encode(['storefront_id' => 'store_public', 'total' => 500]),
-            'created_at'    => '2026-07-16 12:00:00',
-            'updated_at'    => '2026-07-16 12:00:00',
+            'uuid'             => 'order_canceled',
+            'company_uuid'     => 'company_uuid',
+            'customer_uuid'    => 'customer_uuid',
+            'transaction_uuid' => null,
+            'type'             => 'storefront',
+            'status'           => 'canceled',
+            'meta'             => json_encode(['storefront_id' => 'store_public', 'total' => 500]),
+            'created_at'       => '2026-07-16 12:00:00',
+            'updated_at'       => '2026-07-16 12:00:00',
         ],
+        [
+            'uuid'             => 'order_late_end_date',
+            'company_uuid'     => 'company_uuid',
+            'customer_uuid'    => 'customer_uuid',
+            'type'             => 'storefront',
+            'status'           => 'dispatched',
+            'transaction_uuid' => 'transaction_late',
+            'meta'             => json_encode(['storefront_id' => 'store_public']),
+            'created_at'       => '2026-07-31 23:59:59',
+            'updated_at'       => '2026-07-31 23:59:59',
+        ],
+    ]);
+    $connection->table('transactions')->insert([
+        'uuid'     => 'transaction_late',
+        'amount'   => 750,
+        'currency' => 'USD',
     ]);
     session(['company' => 'company_uuid']);
 
@@ -203,10 +223,10 @@ test('action controller reports scoped order customer store and earnings metrics
     ]));
 
     expect($response->getData(true))->toBe([
-        'orders_count'    => 1,
+        'orders_count'    => 2,
         'customers_count' => 1,
         'stores_count'    => 2,
-        'earnings_sum'    => 1250,
+        'earnings_sum'    => 2000,
         'currency'        => 'USD',
     ]);
 });
