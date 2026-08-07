@@ -29,17 +29,17 @@ class PurgeExpiredCarts extends Command
     public function handle()
     {
         $dbConnection = DB::connection(config('storefront.connection.db'));
+        $schema       = $dbConnection->getSchemaBuilder();
 
-        // Disable foreign key checks for the correct connection
-        $dbConnection->statement('SET FOREIGN_KEY_CHECKS=0;');
+        $schema->disableForeignKeyConstraints();
 
-        // Delete expired carts
-        $dbDeletedCount = $dbConnection->table('carts')
-            ->where('expires_at', '<', now())
-            ->delete();
-
-        // Re-enable foreign key checks
-        $dbConnection->statement('SET FOREIGN_KEY_CHECKS=1;');
+        try {
+            $dbDeletedCount = $dbConnection->table('carts')
+                ->where('expires_at', '<', now())
+                ->delete();
+        } finally {
+            $schema->enableForeignKeyConstraints();
+        }
 
         // Log output
         $this->info("Successfully deleted {$dbDeletedCount} expired carts.");

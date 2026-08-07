@@ -14,14 +14,16 @@ class Order extends FleetOpsOrderIndexResource
      */
     public function toArray($request): array
     {
-        $data = parent::toArray($request);
+        $data       = parent::toArray($request);
+        $parentMeta = $this->normalizeMeta(data_get($data, 'meta', []));
 
         $data['customer_name']      = $this->customer_name;
         $data['transaction_amount'] = $this->transaction_amount;
-        $data['meta']               = array_replace(
-            $this->normalizeMeta(data_get($data, 'meta', [])),
-            $this->storefrontOrderMeta()
-        );
+        $data['meta']               = $this->storefrontOrderMeta();
+
+        if (array_key_exists('_index_resource', $parentMeta)) {
+            $data['meta']['_index_resource'] = $parentMeta['_index_resource'];
+        }
 
         return $data;
     }
@@ -46,7 +48,14 @@ class Order extends FleetOpsOrderIndexResource
             'master_order_id',
         ];
 
-        return array_intersect_key($this->normalizeMeta($this->resource->meta ?? []), array_flip($keys));
+        $meta = array_intersect_key($this->normalizeMeta($this->resource->meta ?? []), array_flip($keys));
+
+        if (isset($meta['storefront']) && (is_array($meta['storefront']) || is_object($meta['storefront']))) {
+            $storefrontKeys     = ['id', 'public_id', 'name', 'logo_url', 'is_store', 'is_network'];
+            $meta['storefront'] = array_intersect_key($this->normalizeMeta($meta['storefront']), array_flip($storefrontKeys));
+        }
+
+        return $meta;
     }
 
     private function normalizeMeta($meta): array

@@ -297,7 +297,7 @@ class Network extends StorefrontModel
             'owner_uuid'     => $this->uuid,
             'owner_type'     => Utils::getMutationType('network:storefront'),
             'parent_uuid'    => $parent instanceof Category ? $parent->uuid : null,
-            'icon_file_uuid' => $iconFile->uuid,
+            'icon_file_uuid' => $iconFile?->uuid,
             'for'            => 'storefront_network',
             'name'           => $name,
             'description'    => $description,

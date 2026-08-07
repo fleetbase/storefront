@@ -55,7 +55,7 @@ class SendOrderNotification extends Command
         }
 
         // Attempt to find the order
-        $order = Order::where('public_id', $orderId)->first();
+        $order = $this->findOrder($orderId);
 
         if (!$order) {
             $this->error('Order not found!');
@@ -92,19 +92,7 @@ class SendOrderNotification extends Command
 
         // nearby notification requires more arguments
         try {
-            if ($event === 'nearby') {
-                $origin      = $order->payload->getPickupOrFirstWaypoint();
-                $destination = $order->payload->getDropoffOrLastWaypoint();
-                $matrix      = Utils::getDrivingDistanceAndTime($origin, $destination);
-                $distance    = $matrix->distance;
-                $time        = $matrix->time;
-
-                // Trigger notification
-                $order->customer->notify(new $notificationClass($order, $distance, $time));
-            } else {
-                // Trigger notification
-                $order->customer->notify(new $notificationClass($order));
-            }
+            $this->sendNotification($order, $event, $notificationClass);
         } catch (\Exception $e) {
             $this->error($e->getMessage());
 
@@ -114,5 +102,39 @@ class SendOrderNotification extends Command
         $this->info("Notification '{$event}' has been triggered for order ID '{$orderId}'.");
 
         return 0;
+    }
+
+    /**
+     * Resolve the order targeted by the command.
+     */
+    protected function findOrder(?string $orderId): ?Order
+    {
+        return Order::where('public_id', $orderId)->first();
+    }
+
+    /**
+     * Send the resolved notification to the order customer.
+     */
+    protected function sendNotification(Order $order, string $event, string $notificationClass): void
+    {
+        if ($event === 'nearby') {
+            $origin      = $order->payload->getPickupOrFirstWaypoint();
+            $destination = $order->payload->getDropoffOrLastWaypoint();
+            $matrix      = $this->getDistanceMatrix($origin, $destination);
+
+            $order->customer->notify(new $notificationClass($order, $matrix->distance, $matrix->time));
+
+            return;
+        }
+
+        $order->customer->notify(new $notificationClass($order));
+    }
+
+    /**
+     * Resolve driving distance and time for nearby-order notifications.
+     */
+    protected function getDistanceMatrix($origin, $destination): object
+    {
+        return Utils::getDrivingDistanceAndTime($origin, $destination);
     }
 }

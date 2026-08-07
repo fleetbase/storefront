@@ -14,12 +14,10 @@ class Order extends FleetOpsOrderResource
      */
     public function toArray($request): array
     {
-        $data = parent::toArray($request);
-        $meta = $this->normalizeMeta(data_get($data, 'meta', []));
-
+        $data                       = parent::toArray($request);
         $data['customer_name']      = $this->customer_name;
         $data['transaction_amount'] = $this->transaction_amount;
-        $data['meta']               = array_replace($meta, $this->storefrontOrderMeta());
+        $data['meta']               = $this->storefrontOrderMeta();
 
         if ($this->resource->relationLoaded('transaction') && $this->transaction) {
             $data['transaction'] = [
@@ -62,6 +60,11 @@ class Order extends FleetOpsOrderResource
         ];
 
         $meta = array_intersect_key($this->normalizeMeta($this->resource->meta ?? []), array_flip($keys));
+
+        if (isset($meta['storefront']) && (is_array($meta['storefront']) || is_object($meta['storefront']))) {
+            $storefrontKeys     = ['id', 'public_id', 'name', 'logo_url', 'is_store', 'is_network'];
+            $meta['storefront'] = array_intersect_key($this->normalizeMeta($meta['storefront']), array_flip($storefrontKeys));
+        }
 
         return $meta;
     }

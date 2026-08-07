@@ -38,6 +38,27 @@ $coveredClasses    = (int) ($metrics['coveredclasses'] ?? 0);
 
 $files       = [];
 $directories = [];
+$classNodes  = $project->xpath('.//class') ?: [];
+
+if ($classNodes !== []) {
+    $classes        = 0;
+    $coveredClasses = 0;
+
+    foreach ($classNodes as $classNode) {
+        $classStatements        = intMetric($classNode, 'statements');
+        $coveredClassStatements = intMetric($classNode, 'coveredstatements');
+
+        if ($classStatements === 0) {
+            continue;
+        }
+
+        $classes++;
+
+        if ($coveredClassStatements === $classStatements) {
+            $coveredClasses++;
+        }
+    }
+}
 
 foreach ($project->xpath('.//file') ?: [] as $file) {
     $path              = (string) $file['name'];

@@ -632,8 +632,12 @@ class Cart extends StorefrontModel
     /**
      * Retrieve a cart by id or unique id.
      */
-    public static function retrieve(string $id, bool $excludeCheckedout = true): Cart
+    public static function retrieve(?string $id, bool $excludeCheckedout = true): Cart
     {
+        if (is_null($id)) {
+            return static::newCart();
+        }
+
         $query = static::where(function ($q) use ($id) {
             $q->where('public_id', $id);
             $q->orWhere('unique_identifier', $id);

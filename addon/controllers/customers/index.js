@@ -232,7 +232,6 @@ export default class CustomersIndexController extends BaseController {
                 },
                 {
                     label: this.intl.t('storefront.customers.index.edit-customer'),
-
                     // fn: this.editVendor,
                 },
                 {

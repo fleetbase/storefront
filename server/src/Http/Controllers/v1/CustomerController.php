@@ -157,10 +157,10 @@ class CustomerController extends Controller
             }
 
             return response()->json(['status' => 'ok']);
-        } catch (\Exception $e) {
-            return response()->apiError(app()->hasDebugModeEnabled() ? $e->getMessage() : 'Error sending verification code.');
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->apiError($e->getMessage());
+        } catch (\Exception $e) {
+            return response()->apiError(app()->hasDebugModeEnabled() ? $e->getMessage() : 'Error sending verification code.');
         }
     }
 
@@ -416,7 +416,7 @@ class CustomerController extends Controller
 
         $user = User::where('email', $identity)->orWhere('phone', static::phone($identity))->first();
 
-        if (!Hash::check($password, $user->password)) {
+        if (!$user || !Hash::check($password, $user->password)) {
             return response()->apiError('Authentication failed using password provided.', 401);
         }
 
@@ -518,7 +518,7 @@ class CustomerController extends Controller
 
         try {
             // Verify the Apple token using the utility function
-            $isValid = AppleVerifier::verifyAppleJwt($identityToken);
+            $isValid = $this->verifyAppleIdentity($identityToken);
             if (!$isValid) {
                 return response()->apiError('Apple ID authentication is not valid.', 400);
             }
@@ -664,7 +664,7 @@ class CustomerController extends Controller
 
         try {
             // Verify the Google ID token using the utility function
-            $payload = GoogleVerifier::verifyIdToken($idToken, $clientId);
+            $payload = $this->verifyGoogleIdentity($idToken, $clientId);
             if (!$payload) {
                 return response()->apiError('Google Sign-In authentication is not valid.', 400);
             }
@@ -777,6 +777,16 @@ class CustomerController extends Controller
         $contact->token = $token->plainTextToken;
 
         return new Customer($contact);
+    }
+
+    protected function verifyAppleIdentity(string $identityToken): bool
+    {
+        return AppleVerifier::verifyAppleJwt($identityToken);
+    }
+
+    protected function verifyGoogleIdentity(string $idToken, string $clientId): ?array
+    {
+        return GoogleVerifier::verifyIdToken($idToken, $clientId);
     }
 
     /**
@@ -981,11 +991,7 @@ class CustomerController extends Controller
         }
 
         // Check if phone number is already used by another user
-        $existingUser = User::where('phone', $phone)
-            ->where('uuid', '!=', $user->uuid)
-            ->whereNull('deleted_at')
-            ->withoutGlobalScopes()
-            ->first();
+        $existingUser = $this->findExistingUserByPhone($phone, $user->uuid);
 
         if ($existingUser) {
             return response()->apiError('This phone number is already associated with another account.');
@@ -1005,6 +1011,15 @@ class CustomerController extends Controller
         } catch (\Exception $e) {
             return response()->apiError($e->getMessage());
         }
+    }
+
+    protected function findExistingUserByPhone(string $phone, string $excludedUserUuid): ?User
+    {
+        return User::where('phone', $phone)
+            ->where('uuid', '!=', $excludedUserUuid)
+            ->whereNull('deleted_at')
+            ->withoutGlobalScopes()
+            ->first();
     }
 
     /**

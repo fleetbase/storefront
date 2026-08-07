@@ -30,7 +30,9 @@ class ProductObserver
             // set keys on files
             foreach ($files as $file) {
                 $fileRecord = File::where('uuid', $file['uuid'])->first();
-                $fileRecord->setKey($product);
+                if ($fileRecord) {
+                    $fileRecord->setKey($product);
+                }
             }
         } catch (\Exception $e) {
             Log::error($e->getMessage());

@@ -93,6 +93,10 @@ test('storefront order detail resource includes checkout totals and transaction 
 
     $customer = new Contact();
     $customer->forceFill(['uuid' => 'contact_uuid', 'name' => 'Ada Lovelace']);
+    $customer->setRelation('place', null);
+    $customer->setRelation('places', collect());
+    $customer->setRelation('user', null);
+    $customer->setRelation('customFieldValues', collect());
 
     $transaction = new Transaction();
     $transaction->forceFill([
@@ -106,6 +110,7 @@ test('storefront order detail resource includes checkout totals and transaction 
     $payload = new Payload();
     $payload->forceFill(['uuid' => 'payload_uuid']);
     $payload->setRelation('entities', collect());
+    $payload->setRelation('customFieldValues', collect());
 
     $order->setRelation('customer', $customer);
     $order->setRelation('transaction', $transaction);
@@ -113,6 +118,7 @@ test('storefront order detail resource includes checkout totals and transaction 
     $order->setRelation('trackingStatuses', collect());
     $order->setRelation('comments', collect());
     $order->setRelation('files', collect());
+    $order->setRelation('customFieldValues', collect());
 
     $data = (new StorefrontOrderResource($order))->toArray(request());
 
@@ -141,6 +147,7 @@ test('storefront order detail resource includes checkout totals and transaction 
                 'is_network' => false,
             ],
         ])
+        ->and($data['meta'])->not->toHaveKey('unrelated')
         ->and($data['meta']['storefront'])->not->toHaveKey('extra');
 });
 
@@ -153,7 +160,7 @@ test('testing seeder purges seeded ledger storefront sale journals before orders
         ->toContain("->table('ledger_journals')")
         ->toContain("->where('type', 'storefront_sale')")
         ->toContain("->where('meta->seed', static::SEED_NAME)")
-        ->toContain("->whereIn('meta->order_uuid', \$orderUuids)");
+        ->toContain("->orWhereIn('meta->order_uuid', \$orderUuids)");
 });
 
 test('storefront navigator search endpoint is registered and returns navigator routes', function () {

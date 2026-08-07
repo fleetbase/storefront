@@ -48,4 +48,28 @@ module('Unit | Service | storefront-dashboard', function (hooks) {
         assert.strictEqual(service.end, '2026-05-31');
         assert.strictEqual(service.formattedRange, 'May 25, 2026 - May 31, 2026');
     });
+
+    test('date picker presets select silently and emit one labeled period change', function (assert) {
+        const service = this.owner.lookup('service:storefront-dashboard');
+        const button = service.datePickerButtons.find((candidate) => candidate.content === 'Last 7 Days');
+        const calls = [];
+        let changes = 0;
+        const datepicker = {
+            selectDate(dates, options) {
+                calls.push({ dates, options });
+            },
+            hide() {
+                calls.push({ hidden: true });
+            },
+        };
+
+        service.on('periodChanged', () => changes++);
+        button.onClick(datepicker);
+
+        assert.strictEqual(service.label, 'Last 7 Days');
+        assert.strictEqual(changes, 1, 'refreshes dashboard widgets once');
+        assert.strictEqual(calls[0].dates.length, 2, 'selects a complete range');
+        assert.deepEqual(calls[0].options, { silent: true }, 'suppresses the delayed AirDatepicker onSelect callback');
+        assert.deepEqual(calls[1], { hidden: true }, 'closes the picker after applying the range');
+    });
 });

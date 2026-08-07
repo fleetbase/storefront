@@ -15,8 +15,8 @@ class MetricsController extends Controller
      */
     public function all(Request $request)
     {
-        $start    = $request->date('start');
-        $end      = $request->date('end');
+        $start    = $request->date('start')?->startOfDay();
+        $end      = $request->date('end')?->endOfDay();
         $discover = $request->array('discover', []);
 
         try {

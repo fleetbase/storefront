@@ -80,7 +80,7 @@ class Product extends FleetbaseResource
                     'end'   => data_get($hour, 'end'),
                 ]);
             },
-            $hours->toArray()
+            collect($hours)->toArray()
         );
     }
 
@@ -113,15 +113,15 @@ class Product extends FleetbaseResource
                     'created_at'              => $addonCategory->created_at,
                     'updated_at'              => $addonCategory->updated_at,
                 ];
-            } else {
-                return [
-                    'id'              => data_get($addonCategory, 'category.public_id'),
-                    'name'            => data_get($addonCategory, 'name'),
-                    'description'     => data_get($addonCategory, 'category.description'),
-                    'excluded_addons' => $addonCategory->excluded_addons,
-                    'addons'          => $this->mapProductAddons($addons, $addonCategory->excluded_addons),
-                ];
             }
+
+            return [
+                'id'              => data_get($addonCategory, 'category.public_id'),
+                'name'            => data_get($addonCategory, 'name'),
+                'description'     => data_get($addonCategory, 'category.description'),
+                'excluded_addons' => $addonCategory->excluded_addons,
+                'addons'          => $this->mapProductAddons($addons, $addonCategory->excluded_addons),
+            ];
 
             return [];
         });

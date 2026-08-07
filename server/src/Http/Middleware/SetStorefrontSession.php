@@ -56,7 +56,7 @@ class SetStorefrontSession
         $session = ['storefront_key' => $key];
 
         if (Str::startsWith($key, 'store')) {
-            $store = Store::select(['uuid', 'company_uuid', 'currency'])->where('key', $key)->first();
+            $store = Store::select(['uuid', 'public_id', 'company_uuid', 'currency'])->where('key', $key)->first();
 
             if ($store) {
                 $session['storefront_store']              = $store->uuid;
@@ -65,7 +65,7 @@ class SetStorefrontSession
                 $session['company']                       = $store->company_uuid;
             }
         } elseif (Str::startsWith($key, 'network')) {
-            $network = Network::select(['uuid', 'company_uuid', 'currency'])->where('key', $key)->first();
+            $network = Network::select(['uuid', 'public_id', 'company_uuid', 'currency'])->where('key', $key)->first();
 
             if ($network) {
                 $session['storefront_network']            = $network->uuid;

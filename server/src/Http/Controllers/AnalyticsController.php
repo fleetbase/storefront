@@ -15,7 +15,8 @@ use Illuminate\Support\Collection;
 
 class AnalyticsController extends Controller
 {
-    private const CANCELED_STATUSES = ['canceled', 'order_canceled'];
+    private const CANCELED_STATUSES  = ['canceled', 'order_canceled'];
+    private const COMPLETED_STATUSES = ['completed', 'picked_up'];
 
     public function overview(Request $request)
     {
@@ -25,13 +26,13 @@ class AnalyticsController extends Controller
 
         $currentOrders            = $this->orders($companyUuid, $start, $end, $store)->get();
         $previousOrders           = $this->orders($companyUuid, $previousStart, $previousEnd, $store)->get();
-        $currency                 = $store->currency ?? data_get($currentOrders->first(), 'meta.currency', 'USD');
+        $currency                 = $store->currency ?? data_get($currentOrders->first(), 'meta.currency') ?? data_get($currentOrders->first(), 'transaction.currency', 'USD');
         $currentRevenue           = $this->sumOrderRevenue($currentOrders);
         $previousRevenue          = $this->sumOrderRevenue($previousOrders);
         $currentOrderCount        = $currentOrders->whereNotIn('status', self::CANCELED_STATUSES)->count();
         $previousOrderCount       = $previousOrders->whereNotIn('status', self::CANCELED_STATUSES)->count();
-        $completedOrders          = $currentOrders->where('status', 'completed')->count();
-        $activeOrders             = $currentOrders->whereNotIn('status', array_merge(self::CANCELED_STATUSES, ['completed']))->count();
+        $completedOrders          = $currentOrders->whereIn('status', self::COMPLETED_STATUSES)->count();
+        $activeOrders             = $currentOrders->whereNotIn('status', array_merge(self::CANCELED_STATUSES, self::COMPLETED_STATUSES))->count();
         $currentCustomers         = $currentOrders->whereNotNull('customer_uuid')->pluck('customer_uuid')->unique()->count();
         $previousCustomers        = $previousOrders->whereNotNull('customer_uuid')->pluck('customer_uuid')->unique()->count();
         $currentAov               = $currentOrderCount > 0 ? round($currentRevenue / $currentOrderCount, 2) : 0;
@@ -53,8 +54,8 @@ class AnalyticsController extends Controller
                 'revenue'             => $this->metric($currentRevenue, $previousRevenue, 'money', $currency),
                 'orders'              => $this->metric($currentOrderCount, $previousOrderCount),
                 'average_order_value' => $this->metric($currentAov, $previousAov, 'money', $currency),
-                'active_orders'       => $this->metric($activeOrders, $previousOrders->whereNotIn('status', array_merge(self::CANCELED_STATUSES, ['completed']))->count()),
-                'completed_orders'    => $this->metric($completedOrders, $previousOrders->where('status', 'completed')->count()),
+                'active_orders'       => $this->metric($activeOrders, $previousOrders->whereNotIn('status', array_merge(self::CANCELED_STATUSES, self::COMPLETED_STATUSES))->count()),
+                'completed_orders'    => $this->metric($completedOrders, $previousOrders->whereIn('status', self::COMPLETED_STATUSES)->count()),
                 'customers'           => $this->metric($currentCustomers, $previousCustomers),
                 'stores'              => $this->metric(Store::where('company_uuid', $companyUuid)->count(), Store::where('company_uuid', $companyUuid)->count()),
                 'products'            => $this->metric($this->productCount($companyUuid, $store), $this->productCount($companyUuid, $store)),
@@ -107,7 +108,7 @@ class AnalyticsController extends Controller
             'summary' => [
                 'revenue'  => array_sum($revenue),
                 'orders'   => array_sum($counts),
-                'currency' => $store->currency ?? data_get($orders->first(), 'meta.currency', 'USD'),
+                'currency' => $store->currency ?? data_get($orders->first(), 'meta.currency') ?? data_get($orders->first(), 'transaction.currency', 'USD'),
             ],
         ]);
     }
@@ -263,7 +264,7 @@ class AnalyticsController extends Controller
 
     private function orders(?string $companyUuid, ?Carbon $start = null, ?Carbon $end = null, ?Store $store = null)
     {
-        $query = Order::where(['company_uuid' => $companyUuid, 'type' => 'storefront'])->whereNull('deleted_at');
+        $query = Order::with('transaction')->where(['company_uuid' => $companyUuid, 'type' => 'storefront'])->whereNull('deleted_at');
 
         if ($start && $end) {
             $query->whereBetween('created_at', [$start, $end]);
@@ -298,7 +299,9 @@ class AnalyticsController extends Controller
     private function sumOrderRevenue(Collection $orders): float
     {
         return round($orders->whereNotIn('status', self::CANCELED_STATUSES)->sum(function ($order) {
-            return (float) data_get($order, 'meta.total', 0);
+            $orderTotal = data_get($order, 'meta.total');
+
+            return is_numeric($orderTotal) ? (float) $orderTotal : (float) data_get($order, 'transaction.amount', 0);
         }), 2);
     }
 

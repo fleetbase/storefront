@@ -149,8 +149,7 @@ export function createDateRangeButtons(onRangeSelect) {
         className: 'custom-date-range-btn',
         onClick: (datepicker) => {
             const [startDate, endDate] = range.getValue();
-            datepicker.selectDate([startDate, endDate]);
-            datepicker.hide();
+            datepicker.selectDate([startDate, endDate], { silent: true });
 
             // Call the callback if provided
             if (typeof onRangeSelect === 'function') {
@@ -161,6 +160,8 @@ export function createDateRangeButtons(onRangeSelect) {
                     formattedRange: `${format(startDate, 'MMM dd, yyyy')} - ${format(endDate, 'MMM dd, yyyy')}`,
                 });
             }
+
+            datepicker.hide();
         },
     }));
 }

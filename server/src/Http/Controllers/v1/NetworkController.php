@@ -197,7 +197,7 @@ class NetworkController extends Controller
         $databaseName    = config('database.connections.mysql.database');
         $placesTableName = $databaseName . '.places';
 
-        $query = StoreLocation::select(['store_locations.*', $placesTableName . '.location', $placesTableName . '.uuid'])
+        $query = StoreLocation::select(['store_locations.*', $placesTableName . '.location', $placesTableName . '.uuid as place_uuid'])
             ->join($placesTableName, $placesTableName . '.uuid', '=', 'store_locations.place_uuid')
             ->whereHas('store', function ($q) use ($tagged, $searchQuery) {
                 $q->whereHas('networks', function ($q) {

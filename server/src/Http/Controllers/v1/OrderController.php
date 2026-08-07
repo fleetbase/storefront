@@ -35,16 +35,26 @@ class OrderController extends Controller
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $this->patchOrderConfig($order);
 
         // update activity to completed
-        $order->updateStatus('completed');
+        $this->updateOrderStatus($order, 'completed');
 
         return response()->json([
             'status' => 'ok',
             'order'  => $order->public_id,
             'status' => $order->status,
         ]);
+    }
+
+    protected function patchOrderConfig(Order $order)
+    {
+        return Storefront::patchOrderConfig($order);
+    }
+
+    protected function updateOrderStatus(Order $order, string $status)
+    {
+        return $order->updateStatus($status);
     }
 
     /**
@@ -180,7 +190,7 @@ class OrderController extends Controller
      *
      * @return QPay|JsonResponse The configured QPay instance or error response
      */
-    private function initializeQpayGateway()
+    protected function initializeQpayGateway()
     {
         // Resolve gateway configuration
         $gateway = Storefront::findGateway('qpay');
@@ -189,7 +199,7 @@ class OrderController extends Controller
         }
 
         // Create QPay instance with credentials
-        $qpay = QPay::instance(
+        $qpay = $this->createQpay(
             $gateway->config->username,
             $gateway->config->password,
             $gateway->callback_url
@@ -206,6 +216,11 @@ class OrderController extends Controller
         return $qpay;
     }
 
+    protected function createQpay(?string $username, ?string $password, ?string $callbackUrl): QPay
+    {
+        return QPay::instance($username, $password, $callbackUrl);
+    }
+
     /**
      * Create an Ebarimt receipt via QPay API.
      *
@@ -220,7 +235,7 @@ class OrderController extends Controller
      *
      * @return mixed|JsonResponse The Ebarimt receipt data or error response
      */
-    private function createEbarimtReceipt(QPay $qpay, $payment, string $receiverType, ?string $receiver = null)
+    protected function createEbarimtReceipt(QPay $qpay, $payment, string $receiverType, ?string $receiver = null)
     {
         // Prepare request parameters
         $params = [

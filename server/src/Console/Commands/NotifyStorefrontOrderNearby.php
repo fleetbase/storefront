@@ -41,7 +41,7 @@ class NotifyStorefrontOrderNearby extends Command
             function ($order) {
                 $origin      = $order->payload->getPickupOrFirstWaypoint();
                 $destination = $order->payload->getDropoffOrLastWaypoint();
-                $matrix      = Utils::getDrivingDistanceAndTime($origin, $destination);
+                $matrix      = $this->getDistanceMatrix($origin, $destination);
                 $distance    = $matrix->distance;
                 $time        = $matrix->time;
 
@@ -59,6 +59,11 @@ class NotifyStorefrontOrderNearby extends Command
                 }
             }
         );
+    }
+
+    protected function getDistanceMatrix($origin, $destination): object
+    {
+        return Utils::getDrivingDistanceAndTime($origin, $destination);
     }
 
     /**

@@ -27,10 +27,12 @@ export default class StorefrontService extends Service.extend(Evented) {
 
     /**
      * Gets the active store.
-     * @returns {Object} The active store object.
+     * @returns {Object|null} The active store object.
      */
     get activeStore() {
-        return this.findActiveStore();
+        const activeStoreId = this.activeStoreId ?? this.currentUser.getOption('activeStorefront');
+
+        return activeStoreId ? this.store.peekRecord('store', activeStoreId) : null;
     }
 
     /**
@@ -65,29 +67,27 @@ export default class StorefrontService extends Service.extend(Evented) {
      * @returns {Object|null} The active store object or null if not found.
      */
     findActiveStore() {
+        return this.activeStore;
+    }
+
+    /**
+     * Synchronizes active storefront state after the store collection has loaded.
+     * All tracked writes happen here instead of inside render-time getters.
+     *
+     * @param {Array|Object|null} stores loaded store collection
+     * @returns {Object|null} the selected store
+     */
+    synchronizeActiveStore(stores = this.store.peekAll('store')) {
         const activeStoreId = this.activeStoreId ?? this.currentUser.getOption('activeStorefront');
+        const activeStore = activeStoreId ? this.store.peekRecord('store', activeStoreId) : null;
+        const firstStore = stores?.firstObject ?? Array.from(stores ?? [])[0] ?? null;
+        const nextStore = activeStore ?? firstStore;
+        const nextStoreId = nextStore?.id;
 
-        if (!activeStoreId) {
-            const stores = this.store.peekAll('store');
+        this.currentUser.setOption('activeStorefront', nextStoreId);
+        this.activeStoreId = nextStoreId;
 
-            if (stores.firstObject) {
-                this.currentUser.setOption('activeStorefront', stores.firstObject.id);
-                this.activeStoreId = stores.firstObject.id;
-            }
-
-            return stores.firstObject;
-        }
-
-        const activeStore = this.store.peekRecord('store', activeStoreId);
-
-        if (!activeStore) {
-            this.currentUser.setOption('activeStorefront', undefined);
-            this.activeStoreId = undefined;
-
-            return this.findActiveStore();
-        }
-
-        return activeStore;
+        return nextStore;
     }
 
     /**

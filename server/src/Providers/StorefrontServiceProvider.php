@@ -5,6 +5,9 @@ namespace Fleetbase\Storefront\Providers;
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
 
+// These dependency guards are only reachable before Composer can load this provider.
+// The test runtime necessarily has both parent providers loaded, so the throw paths cannot execute.
+// @codeCoverageIgnoreStart
 if (!class_exists(CoreServiceProvider::class)) {
     throw new \Exception('Storefront cannot be loaded without `fleetbase/core-api` installed!');
 }
@@ -12,6 +15,7 @@ if (!class_exists(CoreServiceProvider::class)) {
 if (!class_exists(FleetOpsServiceProvider::class)) {
     throw new \Exception('Storefront cannot be loaded without `fleetbase/fleetops-api` installed!');
 }
+// @codeCoverageIgnoreEnd
 
 /**
  * Storefront service provider.

@@ -24,9 +24,10 @@ class ReviewController extends Controller
      */
     public function query(Request $request)
     {
-        $limit  = $request->input('limit', false);
-        $offset = $request->input('offset', false);
-        $sort   = $request->input('sort');
+        $results = [];
+        $limit   = $request->input('limit', false);
+        $offset  = $request->input('offset', false);
+        $sort    = $request->input('sort');
 
         if ($sort) {
             $this->applySort($request, $sort);
@@ -202,7 +203,8 @@ class ReviewController extends Controller
 
         // if files provided
         if ($request->filled('files')) {
-            $files = $request->input('files');
+            $files         = $request->input('files');
+            $uploadedFiles = collect();
 
             foreach ($files as $upload) {
                 $data       = Utils::get($upload, 'data');
@@ -214,7 +216,7 @@ class ReviewController extends Controller
                 $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data), 'public');
 
                 // create the file
-                $file = File::create([
+                $uploadedFiles->push(File::create([
                     'company_uuid'      => session('company'),
                     'uploader_uuid'     => $customer->user_uuid,
                     'subject_uuid'      => $review->uuid,
@@ -226,11 +228,11 @@ class ReviewController extends Controller
                     'path'              => $bucketPath,
                     'bucket'            => $bucket,
                     'type'              => 'storefront_review_upload',
-                    'size'              => Utils::getBase64ImageSize($data),
-                ]);
-
-                $review->files->push($file);
+                    'file_size'         => Utils::getBase64ImageSize($data),
+                ]));
             }
+
+            $review->setRelation('files', $uploadedFiles);
         }
 
         return new StorefrontReview($review);

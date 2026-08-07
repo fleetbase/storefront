@@ -93,7 +93,7 @@ class Customer extends Contact
      *
      * @return Customer|null The customer with the given public ID, or null if none was found
      */
-    public static function findFromCustomerId($publicId): self
+    public static function findFromCustomerId($publicId): ?self
     {
         if (Str::startsWith($publicId, 'customer')) {
             $publicId = Str::replaceFirst('customer', 'contact', $publicId);

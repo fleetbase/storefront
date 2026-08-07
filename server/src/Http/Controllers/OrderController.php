@@ -44,7 +44,7 @@ class OrderController extends FleetbaseOrderController
     public function findRecord(Request $request, $id)
     {
         try {
-            $order = Order::findRecordOrFail($id, $this->detailRelations());
+            $order = $this->findOrderRecord($id);
         } catch (ModelNotFoundException $exception) {
             return response()->error('Order not found', 404);
         }
@@ -54,7 +54,32 @@ class OrderController extends FleetbaseOrderController
         ];
     }
 
-    private function detailRelations(): array
+    protected function findOrderRecord($id): Order
+    {
+        return Order::findRecordOrFail($id, $this->detailRelations());
+    }
+
+    protected function findOrderForAction($uuid, array $relations = []): ?Order
+    {
+        return Order::where('uuid', $uuid)->whereNull('deleted_at')->with($relations)->first();
+    }
+
+    protected function patchOrderConfig(Order $order)
+    {
+        return Storefront::patchOrderConfig($order);
+    }
+
+    protected function createAcceptedActivity($orderConfig)
+    {
+        return Storefront::createAcceptedActivity($orderConfig);
+    }
+
+    protected function notifyOrderAccepted(Order $order): void
+    {
+        $order->customer->notify(new StorefrontOrderAccepted($order));
+    }
+
+    protected function detailRelations(): array
     {
         return [
             'customer',
@@ -77,7 +102,7 @@ class OrderController extends FleetbaseOrderController
         ];
     }
 
-    private function orderResponse(Order $order): array
+    protected function orderResponse(Order $order): array
     {
         return [
             'status' => $order->status,
@@ -92,7 +117,7 @@ class OrderController extends FleetbaseOrderController
      */
     public function acceptOrder(Request $request)
     {
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+        $order = $this->findOrderForAction($request->order, ['customer']);
 
         if (!$order) {
             return response()->json([
@@ -101,8 +126,8 @@ class OrderController extends FleetbaseOrderController
         }
 
         // Patch order config
-        $orderConfig = Storefront::patchOrderConfig($order);
-        $activity    = Storefront::createAcceptedActivity($orderConfig);
+        $orderConfig = $this->patchOrderConfig($order);
+        $activity    = $this->createAcceptedActivity($orderConfig);
 
         // Dispatch already if order is a pickup
         if ($order->isMeta('is_pickup')) {
@@ -121,7 +146,7 @@ class OrderController extends FleetbaseOrderController
 
         // Notify customer order was accepted
         try {
-            $order->customer->notify(new StorefrontOrderAccepted($order));
+            $this->notifyOrderAccepted($order);
         } catch (\Exception $e) {
         }
 
@@ -138,14 +163,14 @@ class OrderController extends FleetbaseOrderController
         $adhoc  = $request->boolean('adhoc');
         $driver = $request->input('driver');
         /** @var Order $order */
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+        $order = $this->findOrderForAction($request->order, ['customer']);
 
         if (!$order) {
             return response()->error('No order to update!');
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $this->patchOrderConfig($order);
 
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');
@@ -178,14 +203,14 @@ class OrderController extends FleetbaseOrderController
     public function markOrderAsPreparing(Request $request)
     {
         /** @var Order $order */
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+        $order = $this->findOrderForAction($request->order, ['customer']);
 
         if (!$order) {
             return response()->error('No order to update!');
         }
 
         // Patch order config
-        $orderConfig = Storefront::patchOrderConfig($order);
+        $orderConfig = $this->patchOrderConfig($order);
 
         // Get preparing activity
         $activity = $orderConfig->getActivityByCode('preparing');
@@ -210,7 +235,7 @@ class OrderController extends FleetbaseOrderController
     public function markOrderAsCompleted(Request $request)
     {
         /** @var Order */
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+        $order = $this->findOrderForAction($request->order, ['customer']);
 
         if (!$order) {
             return response()->json([
@@ -219,7 +244,7 @@ class OrderController extends FleetbaseOrderController
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $this->patchOrderConfig($order);
 
         $order->updateStatus($order->isMeta('is_pickup') ? 'picked_up' : 'completed');
 
@@ -229,7 +254,7 @@ class OrderController extends FleetbaseOrderController
     public function unassignDriver(Request $request)
     {
         /** @var Order */
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['driverAssigned'])->first();
+        $order = $this->findOrderForAction($request->order, ['driverAssigned']);
 
         if (!$order) {
             return response()->json([
@@ -256,7 +281,7 @@ class OrderController extends FleetbaseOrderController
      */
     public function rejectOrder(Request $request)
     {
-        $order = Order::where('uuid', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
+        $order = $this->findOrderForAction($request->order, ['customer']);
 
         if (!$order) {
             return response()->json([
@@ -265,7 +290,7 @@ class OrderController extends FleetbaseOrderController
         }
 
         // Patch order config
-        Storefront::patchOrderConfig($order);
+        $this->patchOrderConfig($order);
 
         $order->updateStatus('canceled');
 

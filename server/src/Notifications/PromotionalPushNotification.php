@@ -79,7 +79,7 @@ class PromotionalPushNotification extends Notification
      */
     public function toApn($notifiable)
     {
-        $client = PushNotification::getApnClient($this->store);
+        $client = $this->getApnClient();
         if (!$client) {
             return null;
         }
@@ -99,7 +99,7 @@ class PromotionalPushNotification extends Notification
      */
     public function toFcm($notifiable)
     {
-        $notificationChannel = PushNotification::getNotificationChannel('fcm', $this->store);
+        $notificationChannel = $this->getFcmNotificationChannel();
         if (!$notificationChannel) {
             return null;
         }
@@ -108,9 +108,7 @@ class PromotionalPushNotification extends Notification
         PushNotification::configureFcm($notificationChannel);
 
         // Get FCM Client
-        $container      = \Illuminate\Container\Container::getInstance();
-        $projectManager = new \Kreait\Laravel\Firebase\FirebaseProjectManager($container);
-        $client         = $projectManager->project($notificationChannel->app_key)->messaging();
+        $client = $this->getFcmClient($notificationChannel);
 
         // Create Notification
         $notification = new \NotificationChannels\Fcm\Resources\Notification(
@@ -146,6 +144,33 @@ class PromotionalPushNotification extends Notification
                 ],
             ])
             ->usingClient($client);
+    }
+
+    /**
+     * Resolve the APN client configured for the notification store.
+     */
+    protected function getApnClient(): ?\Pushok\Client
+    {
+        return PushNotification::getApnClient($this->store);
+    }
+
+    /**
+     * Resolve the FCM channel configured for the notification store.
+     */
+    protected function getFcmNotificationChannel(): ?\Fleetbase\Storefront\Models\NotificationChannel
+    {
+        return PushNotification::getNotificationChannel('fcm', $this->store);
+    }
+
+    /**
+     * Resolve the Firebase messaging client for the selected channel.
+     */
+    protected function getFcmClient(\Fleetbase\Storefront\Models\NotificationChannel $notificationChannel)
+    {
+        $container      = \Illuminate\Container\Container::getInstance();
+        $projectManager = new \Kreait\Laravel\Firebase\FirebaseProjectManager($container);
+
+        return $projectManager->project($notificationChannel->app_key)->messaging();
     }
 
     /**

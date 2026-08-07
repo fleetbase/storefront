@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Observers;
 
 use Fleetbase\Storefront\Models\FoodTruck;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Request;
 
 class FoodTruckObserver
@@ -17,8 +18,11 @@ class FoodTruckObserver
         try {
             $catalogs = Request::input('foodTruck.catalogs', []);
             $foodTruck->setCatalogs($catalogs);
-        } catch (\Exception $e) {
-            dd($e);
+        } catch (\Throwable $e) {
+            Log::error('Unable to synchronize food truck catalogs.', [
+                'food_truck_uuid' => $foodTruck->uuid,
+                'error'           => $e->getMessage(),
+            ]);
         }
     }
 }

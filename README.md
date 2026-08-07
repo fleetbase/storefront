@@ -18,6 +18,7 @@
 
 <p align="center">
     <img src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue" alt="License: AGPL-3.0-or-later">
+    <a href="https://codecov.io/gh/fleetbase/storefront"><img src="https://codecov.io/gh/fleetbase/storefront/branch/main/graph/badge.svg" alt="Coverage"></a>
     <img src="https://img.shields.io/badge/php-%5E8.0-777bb4" alt="PHP ^8.0">
     <img src="https://img.shields.io/badge/node-%3E%3D18-339933" alt="Node >=18">
     <img src="https://img.shields.io/badge/ember-engine-e04e39" alt="Ember Engine">

@@ -17,8 +17,6 @@ export default class StorefrontDashboardService extends Service.extend(Evented) 
     @tracked datePickerValue = '';
     @tracked datePickerButtons = [];
 
-    isSelectingPreset = false;
-
     constructor() {
         super(...arguments);
         const [startDate, endDate] = getDateRangeByLabel(DEFAULT_RANGE_LABEL);
@@ -36,17 +34,7 @@ export default class StorefrontDashboardService extends Service.extend(Evented) 
     createDatePickerButtons() {
         return createDateRangeButtons((range) => {
             this.setRange(range.startDate, range.endDate, range.label);
-        }).map((button) => ({
-            ...button,
-            onClick: (datepicker) => {
-                this.isSelectingPreset = true;
-                try {
-                    button.onClick(datepicker);
-                } finally {
-                    this.isSelectingPreset = false;
-                }
-            },
-        }));
+        });
     }
 
     withStore(store) {
@@ -57,10 +45,6 @@ export default class StorefrontDashboardService extends Service.extend(Evented) 
     }
 
     @action selectDates({ date, formattedDate }) {
-        if (this.isSelectingPreset) {
-            return;
-        }
-
         if (!formattedDate) {
             return;
         }

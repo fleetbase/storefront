@@ -2,6 +2,8 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\FleetOps\Models\Contact;
+use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
