@@ -630,7 +630,7 @@ test('authenticated review creation persists customer and store subject contract
         $table->string('path')->nullable();
         $table->string('bucket')->nullable();
         $table->string('type')->nullable();
-        $table->integer('size')->nullable();
+        $table->integer('file_size')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -719,6 +719,7 @@ test('authenticated review creation persists customer and store subject contract
         ->and($photo->subject_uuid)->toBe($withPhoto->resource->uuid)
         ->and($photo->content_type)->toBe('image/png')
         ->and($photo->bucket)->toBe('review-bucket')
+        ->and($photo->file_size)->toBe(strlen('image-bytes'))
         ->and($photo->type)->toBe('storefront_review_upload');
 });
 
@@ -788,6 +789,11 @@ test('internal order controller delegates query config activity notification and
     $schema->create('order_configs', function ($table) {
         $table->increments('id');
         $table->string('uuid');
+        $table->string('name')->nullable();
+        $table->string('namespace')->nullable();
+        $table->string('key')->nullable();
+        $table->string('status')->nullable();
+        $table->string('version')->nullable();
         $table->text('activities')->nullable();
         $table->timestamp('deleted_at')->nullable();
         $table->timestamps();
@@ -811,6 +817,8 @@ test('internal order controller delegates query config activity notification and
     ]);
     $config = Fleetbase\FleetOps\Models\OrderConfig::forceCreate([
         'uuid'       => 'order_config_uuid',
+        'name'       => 'Storefront delivery',
+        'namespace'  => 'fleetbase:order-config:storefront-delivery',
         'activities' => '[]',
     ]);
     $order = new OrderActionStub();

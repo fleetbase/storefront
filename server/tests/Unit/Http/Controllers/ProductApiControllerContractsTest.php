@@ -147,6 +147,7 @@ function createProductApiControllerSchema(): void
         $table->string('owner_uuid')->nullable();
         $table->string('owner_type')->nullable();
         $table->string('name')->nullable();
+        $table->string('slug')->nullable();
         $table->text('description')->nullable();
         $table->text('tags')->nullable();
         $table->string('for')->nullable();

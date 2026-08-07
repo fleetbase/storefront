@@ -873,7 +873,7 @@ test('customer creation persists a verified storefront identity and issues an ac
         $table->string('path')->nullable();
         $table->string('bucket')->nullable();
         $table->string('type')->nullable();
-        $table->integer('size')->nullable();
+        $table->integer('file_size')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -1427,7 +1427,7 @@ test('customer update find and delete persist profile location and photo removal
         $table->string('path')->nullable();
         $table->string('bucket')->nullable();
         $table->string('type')->nullable();
-        $table->integer('size')->nullable();
+        $table->integer('file_size')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
