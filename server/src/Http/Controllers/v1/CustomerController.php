@@ -22,6 +22,7 @@ use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -723,6 +724,46 @@ class CustomerController extends Controller
      *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
+    /**
+     * Whether a verification code should be accepted as an app-review bypass.
+     *
+     * App store reviewers cannot receive our SMS or email, so a fixed code has to keep
+     * working in production. It used to be compared against the submitted code alone,
+     * which meant anyone who learned it could authenticate as ANY customer. It is now
+     * only honoured for an identity explicitly listed in storefront.review_accounts,
+     * and both the code and the list must be configured.
+     *
+     * @param string|null $identity email or phone the caller is authenticating as
+     * @param mixed       $code     the submitted verification code
+     */
+    protected static function isReviewAccountBypass(?string $identity, $code): bool
+    {
+        $bypassCode = config('storefront.storefront_app.bypass_verification_code');
+        if (blank($bypassCode) || blank($code) || blank($identity)) {
+            return false;
+        }
+
+        $reviewAccounts = array_map(
+            static fn ($account) => strtolower(trim((string) $account)),
+            (array) config('storefront.storefront_app.review_accounts', [])
+        );
+
+        if (!in_array(strtolower(trim($identity)), $reviewAccounts, true)) {
+            return false;
+        }
+
+        // hash_equals so a wrong code cannot be recovered by timing the response.
+        if (!hash_equals((string) $bypassCode, (string) $code)) {
+            return false;
+        }
+
+        Log::warning('[Storefront] Verification bypass accepted for a review account.', [
+            'identity' => $identity,
+        ]);
+
+        return true;
+    }
+
     public function verifyCode(Request $request)
     {
         $identity = Utils::isEmail($request->identity) ? $request->identity : static::phone($request->identity);
@@ -743,7 +784,7 @@ class CustomerController extends Controller
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
-        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
+        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             return response()->apiError('Invalid verification code!');
         }
 
@@ -949,7 +990,7 @@ class CustomerController extends Controller
 
         // verify account closure code
         $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_account_closure', 'meta->identity' => $identity])->exists();
-        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
+        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             return response()->apiError('Invalid verification code provided!');
         }
 
