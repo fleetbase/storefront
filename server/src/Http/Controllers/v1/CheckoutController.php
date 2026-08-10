@@ -163,6 +163,47 @@ class CheckoutController extends Controller
         return [$orderMeta, $orderInput];
     }
 
+    /**
+     * Resolves the customer a checkout is for.
+     *
+     * The customer used to be taken from the request body and trusted. A storefront
+     * key is client-side by nature — it ships inside the storefront app — and customer
+     * public ids appear in ordinary API responses, so anyone holding a key could check
+     * out as an arbitrary customer simply by passing their id.
+     *
+     * When a Customer-Token is present it now wins, and a body parameter naming a
+     * different customer is refused rather than silently honoured. Guest checkout is
+     * unaffected: with no token the body parameter is still used, since a guest has no
+     * token to present.
+     *
+     * @return \Fleetbase\Storefront\Models\Customer|\Illuminate\Http\JsonResponse|null
+     */
+    protected static function resolveCheckoutCustomer(?string $customerId)
+    {
+        $authenticated = Storefront::getCustomerFromToken();
+
+        // Guest checkout — no token to check against.
+        if (!$authenticated) {
+            return $customerId ? Customer::findFromCustomerId($customerId) : null;
+        }
+
+        if ($customerId) {
+            // A storefront customer is stored as a Contact, and findFromCustomerId()
+            // rewrites a customer_ prefix to contact_ before looking it up. Compare in
+            // that same space, or a caller's own customer_xxxx would never match the
+            // contact_xxxx on their record and every authenticated checkout would 403.
+            $normalized = Str::startsWith($customerId, 'customer')
+                ? Str::replaceFirst('customer', 'contact', $customerId)
+                : $customerId;
+
+            if ($authenticated->public_id !== $normalized) {
+                return response()->apiError('Customer does not match the authenticated session.', 403);
+            }
+        }
+
+        return Customer::findFromCustomerId($authenticated->public_id) ?? $authenticated;
+    }
+
     public function beforeCheckout(InitializeCheckoutRequest $request)
     {
         $gatewayCode      = $request->input('gateway');
@@ -185,7 +226,10 @@ class CheckoutController extends Controller
         // find and validate cart session
         $cart         = Cart::retrieve($cartId);
         $gateway      = Storefront::findGateway($gatewayCode);
-        $customer     = Customer::findFromCustomerId($customerId);
+        $customer     = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
         // handle cash orders
@@ -373,7 +417,10 @@ class CheckoutController extends Controller
             return response()->apiError('Gateway not configured correctly!');
         }
 
-        $customer = Customer::findFromCustomerId($customerId);
+        $customer = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
@@ -472,7 +519,10 @@ class CheckoutController extends Controller
         }
         // @codeCoverageIgnoreEnd
 
-        $customer = Customer::findFromCustomerId($customerId);
+        $customer = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
         if (!$customer) {
             return response()->apiError('Invalid customer ID provided');
         }
