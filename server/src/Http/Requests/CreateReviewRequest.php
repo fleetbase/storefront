@@ -23,7 +23,15 @@ class CreateReviewRequest extends FleetbaseRequest
      */
     public function rules()
     {
+        // `subject` is required, and typing it matters: the controller resolves it with
+        // Utils::resolveSubject(), whose parameter is a non-nullable string. A request
+        // without a subject therefore threw a TypeError —
+        //   Utils::resolveSubject(): Argument #1 ($publicId) must be of type string,
+        //   null given
+        // — as a 500, before the controller's own "Invalid subject for review" guard
+        // could run. That guard was unreachable for the commonest way to get it wrong.
         return [
+            'subject'  => 'required|string',
             'rating'   => 'required|numeric',
             'content'  => 'required',
             'files'    => 'sometimes|array',

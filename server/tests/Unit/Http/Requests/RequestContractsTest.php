@@ -131,7 +131,11 @@ test('customer review verification and capture request rules preserve API contra
 
     expect($customerRules)->toHaveKeys(['code', 'name', 'email', 'phone'])
         ->and($customerRules['code'])->toBe('required|exists:verification_codes,code')
+        // `subject` is required: the controller resolves it with Utils::resolveSubject(),
+        // whose parameter is a non-nullable string, so omitting it threw a TypeError as a
+        // 500 before the controller's own "Invalid subject for review" guard could run.
         ->and($reviewRules)->toBe([
+            'subject'  => 'required|string',
             'rating'   => 'required|numeric',
             'content'  => 'required',
             'files'    => 'sometimes|array',
