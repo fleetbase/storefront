@@ -56,7 +56,9 @@ test('storefront category query scopes owner purpose and parent-only results', f
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
         $table->string('category_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
         $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('product_addon_categories', function ($table) {
@@ -107,10 +109,9 @@ test('storefront category query scopes owner purpose and parent-only results', f
         ],
     ]);
     $connection->table('products')->insert([
-        'uuid'          => 'product_uuid',
-        'public_id'     => 'product_public',
-        'category_uuid' => 'child_uuid',
-        'is_available'  => true,
+        ['uuid' => 'product_uuid', 'public_id' => 'product_public', 'category_uuid' => 'child_uuid', 'store_uuid' => 'store_uuid', 'is_available' => true, 'status' => 'published'],
+        ['uuid' => 'draft_product_uuid', 'public_id' => 'product_draft', 'category_uuid' => 'child_uuid', 'store_uuid' => 'store_uuid', 'is_available' => true, 'status' => 'draft'],
+        ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'category_uuid' => 'child_uuid', 'store_uuid' => 'other_store', 'is_available' => true, 'status' => 'published'],
     ]);
     session([
         'storefront_store'   => 'store_uuid',
@@ -256,7 +257,9 @@ test('network category query resolves a member store and its child categories', 
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
         $table->string('category_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
         $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('product_addon_categories', function ($table) {
@@ -307,10 +310,9 @@ test('network category query resolves a member store and its child categories', 
         ],
     ]);
     $connection->table('products')->insert([
-        'uuid'          => 'product_uuid',
-        'public_id'     => 'product_public',
-        'category_uuid' => 'parent_uuid',
-        'is_available'  => true,
+        ['uuid' => 'product_uuid', 'public_id' => 'product_public', 'category_uuid' => 'parent_uuid', 'store_uuid' => 'store_uuid', 'is_available' => true, 'status' => 'published'],
+        ['uuid' => 'draft_product_uuid', 'public_id' => 'product_draft', 'category_uuid' => 'parent_uuid', 'store_uuid' => 'store_uuid', 'is_available' => true, 'status' => 'draft'],
+        ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'category_uuid' => 'parent_uuid', 'store_uuid' => 'other_store', 'is_available' => true, 'status' => 'published'],
     ]);
     session([
         'company'            => 'company_uuid',

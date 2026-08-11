@@ -434,9 +434,8 @@ test('network review listing and counts validate membership and apply pagination
         $table->timestamp('deleted_at')->nullable();
     });
     $connection->table('stores')->insert([
-        'uuid'         => 'store_uuid',
-        'public_id'    => 'store_abcdefgh',
-        'company_uuid' => 'company_uuid',
+        ['uuid' => 'store_uuid', 'public_id' => 'store_abcdefgh', 'company_uuid' => 'invited_company_uuid'],
+        ['uuid' => 'foreign_store_uuid', 'public_id' => 'store_foreign', 'company_uuid' => 'company_uuid'],
     ]);
     $connection->table('networks')->insert([
         'uuid'      => 'network_uuid',
@@ -463,6 +462,14 @@ test('network review listing and counts validate membership and apply pagination
             'rating'       => 5,
             'created_at'   => '2026-01-02 00:00:00',
             'updated_at'   => '2026-01-02 00:00:00',
+        ],
+        [
+            'uuid'         => 'foreign_network_review',
+            'public_id'    => 'review_network_foreign',
+            'subject_uuid' => 'foreign_store_uuid',
+            'rating'       => 3,
+            'created_at'   => '2026-01-03 00:00:00',
+            'updated_at'   => '2026-01-03 00:00:00',
         ],
     ]);
     session([
@@ -491,6 +498,8 @@ test('network review listing and counts validate membership and apply pagination
     $counts  = $controller->count(Request::create('/reviews/count?store=store_abcdefgh', 'GET', [
         'store' => 'store_abcdefgh',
     ]));
+    $found   = $controller->find('review_network_two');
+    $foreign = $controller->find('review_network_foreign');
 
     expect($missing->getStatusCode())->toBe(400)
         ->and($missing->getData(true))->toBe(['error' => 'Cannot find reviews for store'])
@@ -498,6 +507,8 @@ test('network review listing and counts validate membership and apply pagination
         ->and($missingCount->getData(true))->toBe(['error' => 'Cannot count reviews for store'])
         ->and($reviews->resource)->toHaveCount(1)
         ->and($reviews->resource->first()->uuid)->toBe('network_review_two')
+        ->and($found->resource->uuid)->toBe('network_review_two')
+        ->and($foreign->getStatusCode())->toBe(400)
         ->and($counts->getData(true))->toBe([
             1 => 1,
             2 => 0,
@@ -521,26 +532,26 @@ test('review find and delete return not-found contracts for unknown public ids',
         ->and($delete->getData(true))->toBe(['error' => 'Review resource not found.']);
 });
 
-test('review find and delete return and soft delete persisted review resources', function () {
+test('review find is storefront scoped and unauthenticated customers cannot delete reviews', function () {
     createReviewControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('reviews')->insert([
-        'uuid'         => 'review_uuid',
-        'public_id'    => 'review_abcdefgh',
-        'subject_uuid' => 'store_uuid',
-        'rating'       => 5,
-        'content'      => 'Excellent',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        ['uuid' => 'review_uuid', 'public_id' => 'review_abcdefgh', 'subject_uuid' => 'store_uuid', 'rating' => 5, 'content' => 'Excellent', 'created_at' => now(), 'updated_at' => now()],
+        ['uuid' => 'foreign_review_uuid', 'public_id' => 'review_foreign', 'subject_uuid' => 'other_store_uuid', 'rating' => 1, 'content' => 'Foreign', 'created_at' => now(), 'updated_at' => now()],
     ]);
+    session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
     $controller = new ReviewController();
 
     $found   = $controller->find('review_abcdefgh');
+    $foreign = $controller->find('review_foreign');
     $deleted = $controller->delete('review_abcdefgh');
 
     expect($found->resource->uuid)->toBe('review_uuid')
-        ->and($deleted->resource->uuid)->toBe('review_uuid')
-        ->and($connection->table('reviews')->where('uuid', 'review_uuid')->value('deleted_at'))->not->toBeNull();
+        ->and($foreign->getStatusCode())->toBe(400)
+        ->and($foreign->getData(true))->toBe(['error' => 'Review resource not found.'])
+        ->and($deleted->getStatusCode())->toBe(403)
+        ->and($deleted->getData(true))->toBe(['error' => 'Not authorized to delete review'])
+        ->and($connection->table('reviews')->where('uuid', 'review_uuid')->value('deleted_at'))->toBeNull();
 });
 
 test('review creation enforces customer authentication and subject validity', function () {
@@ -679,6 +690,10 @@ test('authenticated review creation persists customer and store subject contract
         ])
     );
     $review = $connection->table('reviews')->first();
+    $connection->table('reviews')->where('id', $review->id)->update([
+        'uuid'      => 'owned_review_uuid',
+        'public_id' => 'review_owned',
+    ]);
     Illuminate\Support\Facades\Storage::swap(new class {
         public function disk(string $disk): self
         {
@@ -707,6 +722,8 @@ test('authenticated review creation persists customer and store subject contract
         ])
     );
     $photo = $connection->table('files')->first();
+    session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
+    $deleted = $controller->delete('review_owned');
 
     expect($invalid->getData(true))->toBe(['error' => 'Invalid subject for review'])
         ->and($created->resource->uuid)->toBe($review->uuid)
@@ -720,7 +737,9 @@ test('authenticated review creation persists customer and store subject contract
         ->and($photo->content_type)->toBe('image/png')
         ->and($photo->bucket)->toBe('review-bucket')
         ->and($photo->file_size)->toBe(strlen('image-bytes'))
-        ->and($photo->type)->toBe('storefront_review_upload');
+        ->and($photo->type)->toBe('storefront_review_upload')
+        ->and($deleted->resource->uuid)->toBe('owned_review_uuid')
+        ->and($connection->table('reviews')->where('uuid', 'owned_review_uuid')->value('deleted_at'))->not->toBeNull();
 });
 
 test('customer order actions require a customer token before order lookup', function () {

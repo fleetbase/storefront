@@ -21,6 +21,7 @@ use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
@@ -123,6 +124,72 @@ class CheckoutController extends Controller
         return $storeLocation ? $storeLocation->place_uuid : null;
     }
 
+    protected function validateMarketplaceCart(Cart $cart)
+    {
+        $networkUuid = session('storefront_network');
+        if (!$networkUuid) {
+            return null;
+        }
+
+        $items = collect($cart->items);
+        if ($items->isEmpty()) {
+            return response()->apiError('The cart is empty.', 422);
+        }
+
+        $storeIds = $items->pluck('store_id')->filter()->unique()->values();
+        if ($storeIds->count() !== $items->pluck('store_id')->unique()->count()) {
+            return response()->apiError('Every marketplace cart item must identify its store.', 422);
+        }
+
+        $stores = Store::whereIn('public_id', $storeIds)
+            ->whereHas('networks', fn ($query) => $query->where('network_uuid', $networkUuid))
+            ->get()
+            ->keyBy('public_id');
+
+        if ($stores->count() !== $storeIds->count()) {
+            return response()->apiError('The cart contains a store outside this marketplace.', 403);
+        }
+
+        if ($stores->contains(fn (Store $store) => !$store->online)) {
+            return response()->apiError('A store in this cart is currently offline.', 422);
+        }
+
+        $network          = Network::select(['uuid', 'options'])->where('uuid', $networkUuid)->first();
+        $multiCartEnabled = data_get($network, 'options.multi_cart_enabled') === true;
+        if ($storeIds->count() > 1 && !$multiCartEnabled) {
+            return response()->apiError('This marketplace only supports one store per cart.', 422);
+        }
+
+        $products = Product::whereIn('public_id', $items->pluck('product_id')->filter()->unique())
+            ->whereIn('store_uuid', $stores->pluck('uuid'))
+            ->where('is_available', 1)
+            ->where('status', 'published')
+            ->get()
+            ->keyBy('public_id');
+        $locations = StoreLocation::whereIn('public_id', $items->pluck('store_location_id')->filter()->unique())
+            ->whereIn('store_uuid', $stores->pluck('uuid'))
+            ->get()
+            ->keyBy('public_id');
+
+        foreach ($items as $item) {
+            $store    = $stores->get($item->store_id ?? null);
+            $product  = $products->get($item->product_id ?? null);
+            $location = $locations->get($item->store_location_id ?? null);
+            if (!$store || !$product || $product->store_uuid !== $store->uuid) {
+                return response()->apiError('A product in this cart is no longer available from its store.', 422);
+            }
+            if (!$location || $location->store_uuid !== $store->uuid) {
+                return response()->apiError('A store location in this cart is no longer valid.', 422);
+            }
+        }
+
+        if ($products->pluck('currency')->filter()->unique()->count() > 1) {
+            return response()->apiError('Marketplace carts cannot combine different currencies.', 422);
+        }
+
+        return null;
+    }
+
     protected function resolveFoodTruck(Cart $cart): ?FoodTruck
     {
         return collect($cart->items)
@@ -176,7 +243,7 @@ class CheckoutController extends Controller
      * unaffected: with no token the body parameter is still used, since a guest has no
      * token to present.
      *
-     * @return \Fleetbase\Storefront\Models\Customer|\Illuminate\Http\JsonResponse|null
+     * @return Customer|\Illuminate\Http\JsonResponse|null
      */
     protected static function resolveCheckoutCustomer(?string $customerId)
     {
@@ -224,7 +291,11 @@ class CheckoutController extends Controller
         ]);
 
         // find and validate cart session
-        $cart         = Cart::retrieve($cartId);
+        $cart           = Cart::retrieve($cartId);
+        $cartValidation = $this->validateMarketplaceCart($cart);
+        if ($cartValidation) {
+            return $cartValidation;
+        }
         $gateway      = Storefront::findGateway($gatewayCode);
         $customer     = static::resolveCheckoutCustomer($customerId);
         if ($customer instanceof \Illuminate\Http\JsonResponse) {

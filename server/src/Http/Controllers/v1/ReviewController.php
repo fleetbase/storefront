@@ -17,6 +17,30 @@ use Illuminate\Support\Facades\Storage;
 
 class ReviewController extends Controller
 {
+    protected function resolveStoreForContext(string $id): ?Store
+    {
+        return Store::where('public_id', $id)
+            ->when(session('storefront_store'), fn ($query) => $query->where('uuid', session('storefront_store')))
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+            })
+            ->first();
+    }
+
+    protected function findScopedReview(string $id): ?Review
+    {
+        return Review::where(function ($query) use ($id) {
+            $query->where('public_id', $id)->orWhere('uuid', $id);
+        })
+            ->when(session('storefront_store'), fn ($query) => $query->where('subject_uuid', session('storefront_store')))
+            ->when(session('storefront_network'), function ($query) {
+                $memberStoreUuids = Store::select('uuid')
+                    ->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->whereIn('subject_uuid', $memberStoreUuids);
+            })
+            ->first();
+    }
+
     /**
      * Query for Storefront Review resources.
      *
@@ -49,12 +73,7 @@ class ReviewController extends Controller
 
         if (session('storefront_network')) {
             if ($request->filled('store')) {
-                $store = Store::where([
-                    'company_uuid' => session('company'),
-                    'public_id'    => $request->input('store'),
-                ])->whereHas('networks', function ($q) {
-                    $q->where('network_uuid', session('storefront_network'));
-                })->first();
+                $store = $this->resolveStoreForContext($request->input('store'));
 
                 if (!$store) {
                     return response()->json(['error' => 'Cannot find reviews for store'], 400);
@@ -68,7 +87,7 @@ class ReviewController extends Controller
                     }
 
                     if ($offset) {
-                        $query->limit($offset);
+                        $query->offset($offset);
                     }
                 });
             }
@@ -130,12 +149,7 @@ class ReviewController extends Controller
 
         if (session('storefront_network')) {
             if ($request->filled('store')) {
-                $store = Store::where([
-                    'company_uuid' => session('company'),
-                    'public_id'    => $request->input('store'),
-                ])->whereHas('networks', function ($q) {
-                    $q->where('network_uuid', session('storefront_network'));
-                })->first();
+                $store = $this->resolveStoreForContext($request->input('store'));
 
                 if (!$store) {
                     return response()->json(['error' => 'Cannot count reviews for store'], 400);
@@ -161,7 +175,10 @@ class ReviewController extends Controller
     {
         // find for the review
         try {
-            $review = Review::findRecordOrFail($id);
+            $review = $this->findScopedReview($id);
+            if (!$review) {
+                throw new ModelNotFoundException();
+            }
         } catch (ModelNotFoundException $exception) {
             return response()->error('Review resource not found.');
         }
@@ -188,7 +205,7 @@ class ReviewController extends Controller
 
         $subject = Utils::resolveSubject($request->input('subject'));
 
-        if (!$subject) {
+        if (!$subject || ($subject instanceof Store && !$this->resolveStoreForContext($subject->public_id))) {
             return response()->error('Invalid subject for review');
         }
 
@@ -247,9 +264,17 @@ class ReviewController extends Controller
     {
         // find for the product
         try {
-            $review = Review::findRecordOrFail($id);
+            $review = $this->findScopedReview($id);
+            if (!$review) {
+                throw new ModelNotFoundException();
+            }
         } catch (ModelNotFoundException $exception) {
             return response()->error('Review resource not found.');
+        }
+
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer || $review->customer_uuid !== $customer->uuid) {
+            return response()->error('Not authorized to delete review', 403);
         }
 
         // delete the review

@@ -260,7 +260,10 @@ test('qpay tax helpers fall back to persisted product metadata', function () {
         ]),
     ]);
     $item           = (object) ['product_id' => 'product_abcdefgh'];
-    $stringMetaItem = (object) ['meta' => json_encode(['tax_product_code' => '202'])];
+    $stringMetaItem = (object) [
+        'meta'       => json_encode(['tax_product_code' => '202']),
+        'product_id' => null,
+    ];
 
     expect(QPay::getCartItemClassificationCode($item))->toBe('2111500')
         ->and(QPay::getCartItemTaxProductCode($item))->toBe('201')

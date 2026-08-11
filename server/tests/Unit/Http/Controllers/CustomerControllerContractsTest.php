@@ -461,6 +461,15 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ],
     ]);
     bindCustomerNotificationDispatcher();
+    $sentry = new class {
+        public array $exceptions = [];
+
+        public function captureException(Throwable $exception): void
+        {
+            $this->exceptions[] = $exception;
+        }
+    };
+    app()->instance('sentry', $sentry);
     $phoneConflictController                    = new PhoneConflictCustomerControllerStub();
     $phoneConflictController->existingPhoneUser = new Fleetbase\Models\User(['uuid' => 'other_user_uuid']);
     $existingPhoneConflict                      = $phoneConflictController->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
@@ -491,7 +500,8 @@ test('authenticated customer endpoints register devices and scope orders and pla
     $connection->statement(
         "CREATE TRIGGER fail_phone_verification_insert BEFORE INSERT ON verification_codes BEGIN SELECT RAISE(ABORT, 'verification insert failed'); END"
     );
-    $phoneDeliveryFailure = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
+    $closureChannelFailure = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
+    $phoneDeliveryFailure  = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
         'phone' => '+97699112234',
     ]));
     $connection->statement('DROP TRIGGER fail_phone_verification_insert');
@@ -513,6 +523,7 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'code' => $closureCode,
     ]));
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+    app()->forgetInstance('sentry');
     expect($device->getData(true))->toHaveKey('device')
         ->and($connection->table('user_devices')->where('token', 'device-token')->value('user_uuid'))->toBe('user_uuid')
         ->and($orders->resource)->toHaveCount(1)
@@ -540,6 +551,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
             'error' => 'Customer account must have a valid email or phone number linked.',
         ])->and($emailClosureStarted->getData(true))->toBe(['status' => 'OK'])
         ->and($closureDeliveryFailure->getData(true))->toHaveKey('error')
+        ->and($closureChannelFailure->getData(true))->toBe([
+            'error' => 'Unable to send account closure verification code.',
+        ])
+        ->and($sentry->exceptions)->toHaveCount(4)
         ->and($existingPhoneConflict->getData(true))->toBe([
             'error' => 'This phone number is already associated with another account.',
         ])
@@ -1301,7 +1316,7 @@ test('customer phone login falls back to email when SMS is not configured', func
     app()->instance('twilio', new class {
         public function message(string $to, string $message, array $media = [], array $params = []): object
         {
-            throw new \RuntimeException('Credentials are required to create a Client');
+            throw new RuntimeException('Credentials are required to create a Client');
         }
     });
     Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');

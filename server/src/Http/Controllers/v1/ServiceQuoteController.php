@@ -209,35 +209,62 @@ class ServiceQuoteController extends Controller
 
         $currency = $cart->currency;
 
-        // collect stores
-        $storeLocations = collect($cart->items)->map(function ($cartItem) {
-            $storeLocationId = $cartItem->store_location_id;
-
-            // if no store location id set, use first locations id
-            if (!$storeLocationId) {
-                $store = Store::where('public_id', $cartItem->store_id)->first();
-
-                if ($store) {
-                    $storeLocationId = Utils::get($store, 'locations.0.public_id');
-                }
-            }
-
-            return $storeLocationId;
-        })->unique()->filter()->map(function ($storeLocationId) {
-            return StoreLocation::where('public_id', $storeLocationId)->with(['store', 'place'])->first();
-        });
+        // Resolve explicit and default origins in bulk. This avoids querying the
+        // store and its locations once for every cart line.
+        $cartItems       = collect($cart->items ?? []);
+        $defaultStoreIds = $cartItems
+            ->filter(fn ($cartItem) => !data_get($cartItem, 'store_location_id') && data_get($cartItem, 'store_id'))
+            ->map(fn ($cartItem) => data_get($cartItem, 'store_id'))
+            ->unique()
+            ->values();
+        $defaultLocationIds = Store::whereIn('public_id', $defaultStoreIds)
+            ->whereHas('networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+            ->with(['locations' => fn ($query) => $query->orderBy('id')])
+            ->get()
+            ->mapWithKeys(fn ($store) => [$store->public_id => data_get($store, 'locations.0.public_id')]);
+        $storeLocationIds = $cartItems
+            ->map(function ($cartItem) use ($defaultLocationIds) {
+                return data_get($cartItem, 'store_location_id') ?: $defaultLocationIds->get(data_get($cartItem, 'store_id'));
+            })
+            ->unique()
+            ->filter()
+            ->values();
 
         // fallback store locations using origin param
-        if ($storeLocations->isEmpty()) {
+        if ($storeLocationIds->isEmpty()) {
             $storeLocationIds = $request->input('origin', []);
 
             if (is_string($storeLocationIds) && Str::contains($storeLocationIds, ',')) {
                 $storeLocationIds = explode(',', $storeLocationIds);
             }
+            $storeLocationIds = collect($storeLocationIds)->unique()->filter()->values();
+        }
 
-            $storeLocations = collect($storeLocationIds)->unique()->filter()->map(function ($storeLocationId) {
-                return StoreLocation::where('public_id', $storeLocationId)->with(['store', 'place'])->first();
-            });
+        $storeLocations = StoreLocation::whereIn('public_id', $storeLocationIds)
+            ->whereHas('store.networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+            ->with(['store', 'place'])
+            ->get()
+            ->sortBy(fn ($storeLocation) => $storeLocationIds->search($storeLocation->public_id))
+            ->values();
+
+        if ($storeLocationIds->isEmpty() || $storeLocations->count() !== $storeLocationIds->count()) {
+            return response()->error('One or more store locations are unavailable for this marketplace.', 422);
+        }
+
+        $storeLocationsById = $storeLocations->keyBy('public_id');
+        $hasMismatchedStore = $cartItems->contains(function ($cartItem) use ($defaultLocationIds, $storeLocationsById) {
+            $storeId = data_get($cartItem, 'store_id');
+            if (!$storeId) {
+                return false;
+            }
+
+            $storeLocationId = data_get($cartItem, 'store_location_id') ?: $defaultLocationIds->get($storeId);
+
+            return data_get($storeLocationsById->get($storeLocationId), 'store.public_id') !== $storeId;
+        });
+
+        if ($hasMismatchedStore) {
+            return response()->error('One or more store locations are unavailable for this marketplace.', 422);
         }
 
         // get origins

@@ -250,8 +250,11 @@ test('created-order notification renders pickup messages without delivery-only c
         'currency'     => 'USD',
     ]);
     $order->setRelation('payload', (object) [
-        'entities' => collect([(object) ['name' => 'Coffee'], (object) ['name' => 'Cake']]),
-        'dropoff'  => (object) ['address' => '1 Market Street'],
+        'entities'     => collect([(object) ['name' => 'Coffee'], (object) ['name' => 'Cake']]),
+        'dropoff'      => (object) ['address' => '1 Market Street'],
+        'pickup_name'  => null,
+        'dropoff_name' => null,
+        'return_name'  => null,
     ]);
     $store        = new Store(['name' => 'Corner Store']);
     $notification = notificationWithoutConstructor(StorefrontOrderCreated::class, $order, $store);

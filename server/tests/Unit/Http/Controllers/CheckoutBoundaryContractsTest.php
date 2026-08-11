@@ -4,6 +4,7 @@ use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\Storefront\Http\Controllers\v1\CheckoutController;
 use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
+use Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
@@ -110,6 +111,16 @@ class CheckoutIntegratedVendorStub extends CheckoutOrderAutomationStub
 
 class CheckoutAutomationControllerProbe extends CheckoutController
 {
+    public static function checkoutCustomer(?string $customerId)
+    {
+        return parent::resolveCheckoutCustomer($customerId);
+    }
+
+    public function marketplaceCartValidation(Cart $cart)
+    {
+        return $this->validateMarketplaceCart($cart);
+    }
+
     public function accept(Fleetbase\FleetOps\Models\Order $order): void
     {
         $this->autoAcceptOrder($order);
@@ -145,6 +156,213 @@ class CheckoutAutomationControllerProbe extends CheckoutController
         return $this->applyFoodTruckOrderData($foodTruck, $meta, $input);
     }
 }
+
+test('authenticated checkout identity cannot be replaced by a submitted customer id', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('personal_access_tokens');
+    $schema->create('personal_access_tokens', function ($table) {
+        $table->increments('id');
+        $table->string('tokenable_type');
+        $table->string('tokenable_id');
+        $table->string('name');
+        $table->string('token', 64)->unique();
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+    $customerUuid = '1d182070-f74d-4cf6-92fb-ab35531d15c6';
+    $connection->table('contacts')->insert([
+        'uuid'         => $customerUuid,
+        'public_id'    => 'contact_authenticated',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+    $connection->table('personal_access_tokens')->insert([
+        'tokenable_type' => Fleetbase\Models\User::class,
+        'tokenable_id'   => $customerUuid,
+        'name'           => $customerUuid,
+        'token'          => hash('sha256', 'authenticated-customer-secret'),
+        'abilities'      => '["*"]',
+        'created_at'     => now(),
+        'updated_at'     => now(),
+    ]);
+    $connection->table('gateways')->insert([
+        'uuid'       => 'gateway_uuid',
+        'code'       => 'stripe',
+        'owner_uuid' => 'store_owner_uuid',
+        'type'       => 'stripe',
+        'config'     => json_encode(['secret_key' => 'sk_test_contract']),
+        'sandbox'    => true,
+    ]);
+    $connection->table('carts')->insert([
+        'uuid'              => 'cart_uuid',
+        'public_id'         => 'cart_public',
+        'company_uuid'      => 'company_uuid',
+        'unique_identifier' => 'authenticated-cart',
+        'currency'          => 'USD',
+        'items'             => '[]',
+        'events'            => '[]',
+        'expires_at'        => now()->addHour(),
+        'created_at'        => now(),
+        'updated_at'        => now(),
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => 'store_owner_uuid',
+        'storefront_network' => null,
+    ]);
+    $boundRequest = Request::create('/checkout');
+    $boundRequest->headers->set('Customer-Token', 'authenticated-customer-secret');
+    app()->instance('request', $boundRequest);
+
+    $resolved        = CheckoutAutomationControllerProbe::checkoutCustomer('customer_authenticated');
+    $resolvedContact = CheckoutAutomationControllerProbe::checkoutCustomer('contact_authenticated');
+    $fallback        = CheckoutAutomationControllerProbe::checkoutCustomer(null);
+    $mismatch        = CheckoutAutomationControllerProbe::checkoutCustomer('customer_other');
+    $controller      = new CheckoutAutomationControllerProbe();
+    $before          = $controller->beforeCheckout(InitializeCheckoutRequest::create('/checkout', 'POST', [
+        'gateway'  => 'stripe',
+        'cart'     => 'cart_public',
+        'customer' => 'customer_other',
+    ]));
+    $setup = $controller->createStripeSetupIntentForCustomer(CreateStripeSetupIntentRequest::create('/checkout/stripe/setup', 'POST', [
+        'customer' => 'customer_other',
+    ]));
+    $update = $controller->updateStripePaymentIntent(Request::create('/checkout/stripe/update', 'POST', [
+        'cart'     => 'cart_public',
+        'customer' => 'customer_other',
+    ]));
+    app()->instance('request', Request::create('/'));
+
+    expect($resolved?->public_id)->toBe('contact_authenticated')
+        ->and($resolvedContact?->public_id)->toBe('contact_authenticated')
+        ->and($fallback?->public_id)->toBe('contact_authenticated')
+        ->and($mismatch->getStatusCode())->toBe(403)
+        ->and($before->getStatusCode())->toBe(403)
+        ->and($setup->getStatusCode())->toBe(403)
+        ->and($update->getStatusCode())->toBe(403)
+        ->and($update->getData(true))->toBe([
+            'error' => 'Customer does not match the authenticated session.',
+        ]);
+});
+
+test('marketplace checkout validates membership availability locations cart mode and currency before payment', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['store_locations', 'products', 'network_stores', 'networks', 'stores'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id');
+        $table->boolean('online')->default(true);
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->text('options')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('network_uuid');
+        $table->string('store_uuid');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('products', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id');
+        $table->string('store_uuid');
+        $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
+        $table->string('currency')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id');
+        $table->string('store_uuid');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_one_uuid', 'public_id' => 'store_one', 'online' => true],
+        ['uuid' => 'store_two_uuid', 'public_id' => 'store_two', 'online' => true],
+        ['uuid' => 'store_offline_uuid', 'public_id' => 'store_offline', 'online' => false],
+        ['uuid' => 'store_foreign_uuid', 'public_id' => 'store_foreign', 'online' => true],
+    ]);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'options' => json_encode(['multi_cart_enabled' => false])]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_one_uuid'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_two_uuid'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_offline_uuid'],
+    ]);
+    $connection->table('products')->insert([
+        ['uuid' => 'product_one_uuid', 'public_id' => 'product_one', 'store_uuid' => 'store_one_uuid', 'is_available' => true, 'status' => 'published', 'currency' => 'USD'],
+        ['uuid' => 'product_two_uuid', 'public_id' => 'product_two', 'store_uuid' => 'store_two_uuid', 'is_available' => true, 'status' => 'published', 'currency' => 'USD'],
+        ['uuid' => 'product_eur_uuid', 'public_id' => 'product_eur', 'store_uuid' => 'store_two_uuid', 'is_available' => true, 'status' => 'published', 'currency' => 'EUR'],
+        ['uuid' => 'product_draft_uuid', 'public_id' => 'product_draft', 'store_uuid' => 'store_one_uuid', 'is_available' => true, 'status' => 'draft', 'currency' => 'USD'],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'location_one_uuid', 'public_id' => 'location_one', 'store_uuid' => 'store_one_uuid'],
+        ['uuid' => 'location_two_uuid', 'public_id' => 'location_two', 'store_uuid' => 'store_two_uuid'],
+        ['uuid' => 'location_offline_uuid', 'public_id' => 'location_offline', 'store_uuid' => 'store_offline_uuid'],
+    ]);
+
+    $cartFor = function (array $items): Cart {
+        $cart = new Cart();
+        $cart->forceFill(['items' => array_map(fn ($item) => (object) $item, $items), 'events' => []]);
+
+        return $cart;
+    };
+    $item       = fn ($store, $product, $location) => ['store_id' => $store, 'product_id' => $product, 'store_location_id' => $location];
+    $controller = new CheckoutAutomationControllerProbe();
+
+    session(['storefront_network' => null]);
+    expect($controller->marketplaceCartValidation($cartFor([])))->toBeNull();
+
+    session(['storefront_network' => 'network_uuid']);
+    $empty         = $controller->marketplaceCartValidation($cartFor([]));
+    $missingStore  = $controller->marketplaceCartValidation($cartFor([$item(null, 'product_one', 'location_one')]));
+    $foreignStore  = $controller->marketplaceCartValidation($cartFor([$item('store_foreign', 'product_one', 'location_one')]));
+    $offlineStore  = $controller->marketplaceCartValidation($cartFor([$item('store_offline', 'product_one', 'location_offline')]));
+    $singleValid   = $controller->marketplaceCartValidation($cartFor([$item('store_one', 'product_one', 'location_one')]));
+    $multiDisabled = $controller->marketplaceCartValidation($cartFor([
+        $item('store_one', 'product_one', 'location_one'),
+        $item('store_two', 'product_two', 'location_two'),
+    ]));
+    $draftProduct  = $controller->marketplaceCartValidation($cartFor([$item('store_one', 'product_draft', 'location_one')]));
+    $wrongLocation = $controller->marketplaceCartValidation($cartFor([$item('store_one', 'product_one', 'location_two')]));
+
+    $connection->table('networks')->where('uuid', 'network_uuid')->update(['options' => json_encode(['multi_cart_enabled' => true])]);
+    $mixedCurrency = $controller->marketplaceCartValidation($cartFor([
+        $item('store_one', 'product_one', 'location_one'),
+        $item('store_two', 'product_eur', 'location_two'),
+    ]));
+    $multiValid = $controller->marketplaceCartValidation($cartFor([
+        $item('store_one', 'product_one', 'location_one'),
+        $item('store_two', 'product_two', 'location_two'),
+    ]));
+
+    expect($empty->getStatusCode())->toBe(422)
+        ->and($missingStore->getStatusCode())->toBe(422)
+        ->and($foreignStore->getStatusCode())->toBe(403)
+        ->and($offlineStore->getStatusCode())->toBe(422)
+        ->and($singleValid)->toBeNull()
+        ->and($multiDisabled->getData(true))->toBe(['error' => 'This marketplace only supports one store per cart.'])
+        ->and($draftProduct->getData(true))->toBe(['error' => 'A product in this cart is no longer available from its store.'])
+        ->and($wrongLocation->getData(true))->toBe(['error' => 'A store location in this cart is no longer valid.'])
+        ->and($mixedCurrency->getData(true))->toBe(['error' => 'Marketplace carts cannot combine different currencies.'])
+        ->and($multiValid)->toBeNull();
+});
 
 class CheckoutIntegratedVendorProbe extends Model
 {
@@ -649,6 +867,35 @@ test('checkout initialization reports a missing configured gateway', function ()
     expect($response->getData(true))->toBe(['error' => 'No gateway configured!']);
 });
 
+test('checkout initialization stops before gateway work when marketplace cart validation fails', function () {
+    createCheckoutBoundarySchema();
+    Model::getConnectionResolver()->connection('mysql')->table('carts')->insert([
+        'uuid'              => 'marketplace_cart_uuid',
+        'public_id'         => 'cart_marketplace',
+        'company_uuid'      => 'company_uuid',
+        'unique_identifier' => 'marketplace-browser-cart',
+        'currency'          => 'USD',
+        'items'             => '[]',
+        'events'            => '[]',
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_store'    => null,
+        'storefront_network'  => 'network_uuid',
+        'storefront_currency' => 'USD',
+    ]);
+
+    $response = (new CheckoutController())->beforeCheckout(
+        InitializeCheckoutRequest::create('/checkouts/before', 'POST', [
+            'gateway' => 'missing_gateway',
+            'cart'    => 'marketplace-browser-cart',
+        ])
+    );
+
+    expect($response->getStatusCode())->toBe(422)
+        ->and($response->getData(true))->toBe(['error' => 'The cart is empty.']);
+});
+
 test('checkout automation delegates accepted and pickup-dispatched orders to storefront workflows', function () {
     createCheckoutBoundarySchema();
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
@@ -656,12 +903,14 @@ test('checkout automation delegates accepted and pickup-dispatched orders to sto
     $schema->create('order_configs', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
+        $table->text('flow')->nullable();
         $table->text('activities')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
     Model::getConnectionResolver()->connection('mysql')->table('order_configs')->insert([
         'uuid'       => 'order_config_uuid',
+        'flow'       => '[]',
         'activities' => '[]',
         'created_at' => now(),
         'updated_at' => now(),
@@ -842,6 +1091,7 @@ test('checkout initialization creates a cash checkout from persisted customer ca
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
         'public_id'         => 'cart_abcdefgh',
+        'company_uuid'      => 'company_uuid',
         'unique_identifier' => 'browser-cart',
         'currency'          => 'USD',
         'items'             => json_encode([
@@ -898,6 +1148,7 @@ test('checkout initialization dispatches configured stripe and qpay gateway type
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
         'public_id'         => 'cart_abcdefgh',
+        'company_uuid'      => 'company_uuid',
         'unique_identifier' => 'browser-cart',
         'currency'          => 'USD',
         'items'             => '[]',
@@ -1567,6 +1818,7 @@ test('qpay checkout creates sandbox ebarimt invoices and persists invoice metada
         'items'    => [
             [
                 'id'                  => 'line_one',
+                'product_id'          => null,
                 'name'                => 'Delivery box',
                 'quantity'            => 2,
                 'price'               => 1000,
@@ -1659,7 +1911,7 @@ test('stripe setup and payment update endpoints reject missing gateway configura
     $controller = new CheckoutController();
 
     $setup = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_missing']
@@ -1678,7 +1930,7 @@ test('stripe setup and payment update endpoints reject missing gateway configura
         'config'     => json_encode(['secret_key' => '   ']),
     ]);
     $blankSetup = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_missing']
@@ -1754,7 +2006,7 @@ test('stripe setup intent returns saved payment details and contains provider fa
     });
     $controller = new CheckoutController();
     $success    = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_abcdefgh']
@@ -1769,7 +2021,7 @@ test('stripe setup intent returns saved payment details and contains provider fa
         ->and($successData['defaultPaymentMethod']['last4'])->toBe('4242');
     $connection->table('contacts')->where('uuid', 'customer_uuid')->update(['meta' => '{}']);
     $createdCustomerSetup = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_abcdefgh']
@@ -1800,7 +2052,7 @@ test('stripe setup intent returns saved payment details and contains provider fa
         }
     });
     $savedMethodFailure = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_abcdefgh']
@@ -1824,7 +2076,7 @@ test('stripe setup intent returns saved payment details and contains provider fa
         }
     });
     $failure = $controller->createStripeSetupIntentForCustomer(
-        Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+        CreateStripeSetupIntentRequest::create(
             '/checkout/stripe-setup',
             'POST',
             ['customer' => 'customer_abcdefgh']
@@ -1908,6 +2160,7 @@ test('stripe payment updates enforce modifiable states and persist refreshed che
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
         'public_id'         => 'cart_abcdefgh',
+        'company_uuid'      => 'company_uuid',
         'unique_identifier' => 'browser-cart',
         'currency'          => 'USD',
         'items'             => json_encode([
@@ -2226,7 +2479,7 @@ test('stripe authentication failures return a stable non secret gateway error fo
         $client->mode = $mode;
 
         return $controller->createStripeSetupIntentForCustomer(
-            Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest::create(
+            CreateStripeSetupIntentRequest::create(
                 '/checkout/stripe-setup',
                 'POST',
                 ['customer' => 'customer_abcdefgh']

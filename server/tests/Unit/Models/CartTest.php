@@ -21,12 +21,21 @@ class CartLifecycleStub extends Cart
 function createCartLifecycleSchema(): void
 {
     $schema = Capsule::schema('mysql');
+    $schema->dropIfExists('store_locations');
     $schema->dropIfExists('stores');
     $schema->dropIfExists('carts');
     $schema->create('stores', function (Blueprint $table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    $schema->create('store_locations', function (Blueprint $table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -225,6 +234,13 @@ test('cart persists add update remove empty event and currency lifecycle behavio
     Capsule::connection('mysql')->table('stores')->insert([
         'uuid'       => 'store_uuid',
         'public_id'  => 'store_public',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    Capsule::connection('mysql')->table('store_locations')->insert([
+        'uuid'       => 'location_uuid',
+        'public_id'  => 'location_public',
+        'store_uuid' => 'store_uuid',
         'created_at' => now(),
         'updated_at' => now(),
     ]);

@@ -140,7 +140,7 @@ function createServiceQuoteLookupSchema(): void
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
 
-    foreach (['places', 'store_locations', 'stores', 'vehicles', 'food_trucks', 'products', 'files', 'carts', 'service_quote_items', 'service_quotes', 'service_rates', 'integrated_vendors'] as $table) {
+    foreach (['network_stores', 'networks', 'places', 'store_locations', 'stores', 'vehicles', 'food_trucks', 'products', 'files', 'carts', 'service_quote_items', 'service_quotes', 'service_rates', 'integrated_vendors'] as $table) {
         $schema->dropIfExists($table);
     }
 
@@ -168,6 +168,22 @@ function createServiceQuoteLookupSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('name')->nullable();
         $table->text('options')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('network_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('vehicles', function ($table) {
@@ -263,6 +279,26 @@ function createServiceQuoteLookupSchema(): void
         $table->string('provider')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
+}
+
+function seedServiceQuoteMarketplace(string $storeUuid = 'store_uuid', string $storePublicId = 'store_public'): void
+{
+    $connection = Model::getConnectionResolver()->connection('mysql');
+
+    $connection->table('stores')->updateOrInsert(
+        ['uuid' => $storeUuid],
+        ['public_id' => $storePublicId, 'name' => 'Marketplace Store', 'options' => '{}']
+    );
+    $connection->table('networks')->updateOrInsert(
+        ['uuid' => 'network_uuid'],
+        ['public_id' => 'network_public', 'name' => 'Marketplace Network']
+    );
+    $connection->table('network_stores')->updateOrInsert(
+        ['network_uuid' => 'network_uuid', 'store_uuid' => $storeUuid],
+        ['uuid' => 'network_store_' . $storeUuid, 'created_at' => now(), 'updated_at' => now()]
+    );
+
+    session(['storefront_network' => 'network_uuid']);
 }
 
 test('service quote place lookup resolves tenant places and rejects missing typed resources', function () {
@@ -467,6 +503,17 @@ test('network service quote requires a delivery destination', function () {
 test('network service quote rejects missing integrated facilitators safely', function () {
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    seedServiceQuoteMarketplace();
+    $connection->table('places')->insert([
+        'uuid'      => 'origin_uuid',
+        'public_id' => 'place_origin',
+    ]);
+    $connection->table('store_locations')->insert([
+        'uuid'       => 'location_uuid',
+        'public_id'  => 'store_location_public',
+        'store_uuid' => 'store_uuid',
+        'place_uuid' => 'origin_uuid',
+    ]);
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
         'public_id'         => 'cart_public',
@@ -495,6 +542,7 @@ test('network service quote rejects missing integrated facilitators safely', fun
     $missingFacilitator = $controller->fromCartForNetwork(GetServiceQuoteFromCart::create('/quote', 'POST', [
         'destination' => 'place_destination',
         'cart'        => 'network-cart',
+        'origin'      => 'store_location_public',
         'facilitator' => 'integrated_vendor_missing',
     ]));
 
@@ -514,6 +562,7 @@ test('network service quote derives origins from explicit and default store loca
         'name'      => 'Corner Store',
         'options'   => '{}',
     ]);
+    seedServiceQuoteMarketplace();
     $connection->table('store_locations')->insert([
         'uuid'       => 'location_uuid',
         'public_id'  => 'store_location_public',
@@ -524,6 +573,7 @@ test('network service quote derives origins from explicit and default store loca
         [
             'uuid'              => 'explicit_cart_uuid',
             'public_id'         => 'explicit_cart_public',
+            'company_uuid'      => 'company_uuid',
             'unique_identifier' => 'explicit-cart',
             'currency'          => 'USD',
             'items'             => json_encode([
@@ -540,6 +590,7 @@ test('network service quote derives origins from explicit and default store loca
         [
             'uuid'              => 'default_cart_uuid',
             'public_id'         => 'default_cart_public',
+            'company_uuid'      => 'company_uuid',
             'unique_identifier' => 'default-cart',
             'currency'          => 'USD',
             'items'             => json_encode([
@@ -553,11 +604,56 @@ test('network service quote derives origins from explicit and default store loca
             'created_at' => now(),
             'updated_at' => now(),
         ],
+        [
+            'uuid'              => 'missing_location_cart_uuid',
+            'public_id'         => 'missing_location_cart_public',
+            'company_uuid'      => 'company_uuid',
+            'unique_identifier' => 'missing-location-cart',
+            'currency'          => 'USD',
+            'items'             => json_encode([
+                [
+                    'store_id'          => 'store_public',
+                    'store_location_id' => 'store_location_missing',
+                ],
+            ]),
+            'events'     => '[]',
+            'expires_at' => now()->addHour(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'uuid'              => 'mismatched_location_cart_uuid',
+            'public_id'         => 'mismatched_location_cart_public',
+            'company_uuid'      => 'company_uuid',
+            'unique_identifier' => 'mismatched-location-cart',
+            'currency'          => 'USD',
+            'items'             => json_encode([
+                [
+                    'store_id'          => 'store_different',
+                    'store_location_id' => 'store_location_public',
+                ],
+            ]),
+            'events'     => '[]',
+            'expires_at' => now()->addHour(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
     ]);
     session([
         'company'        => 'company_uuid',
         'storefront_key' => 'network_public',
     ]);
+    $scopedLocation = Fleetbase\Storefront\Models\StoreLocation::where('public_id', 'store_location_public')
+        ->whereHas('store.networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+        ->with('store')
+        ->first();
+    $scopedStore = Fleetbase\Storefront\Models\Store::where('public_id', 'store_public')
+        ->whereHas('networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+        ->with('locations')
+        ->first();
+    expect(session('storefront_network'))->toBe('network_uuid')
+        ->and($scopedLocation?->store?->public_id)->toBe('store_public')
+        ->and(data_get($scopedStore, 'locations.0.public_id'))->toBe('store_location_public');
     $controller = new class extends ServiceQuoteController {
         public function getPlaceFromId(string|array $id): ?Fleetbase\FleetOps\Models\Place
         {
@@ -578,14 +674,31 @@ test('network service quote derives origins from explicit and default store loca
         'cart'        => 'default-cart',
         'facilitator' => 'integrated_vendor_missing',
     ]));
+    $missingLocation = $controller->fromCartForNetwork(GetServiceQuoteFromCart::create('/quote', 'POST', [
+        'destination' => 'place_destination',
+        'cart'        => 'missing-location-cart',
+    ]));
+    $mismatchedLocation = $controller->fromCartForNetwork(GetServiceQuoteFromCart::create('/quote', 'POST', [
+        'destination' => 'place_destination',
+        'cart'        => 'mismatched-location-cart',
+    ]));
 
-    expect($explicit->getData(true))->toBe(['error' => 'Integrated vendor not found!'])
-        ->and($default->getData(true))->toBe(['error' => 'Integrated vendor not found!']);
+    expect($default->getData(true))->toBe(['error' => 'Integrated vendor not found!'])
+        ->and($explicit->getData(true))->toBe(['error' => 'Integrated vendor not found!'])
+        ->and($missingLocation->getStatusCode())->toBe(422)
+        ->and($missingLocation->getData(true))->toBe([
+            'error' => 'One or more store locations are unavailable for this marketplace.',
+        ])
+        ->and($mismatchedLocation->getStatusCode())->toBe(422)
+        ->and($mismatchedLocation->getData(true))->toBe([
+            'error' => 'One or more store locations are unavailable for this marketplace.',
+        ]);
 });
 
 test('network service quote persists integrated facilitator origin metadata and provider errors', function () {
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    seedServiceQuoteMarketplace();
     $connection->table('places')->insert([
         'uuid'      => 'origin_uuid',
         'public_id' => 'place_origin',
@@ -593,11 +706,13 @@ test('network service quote persists integrated facilitator origin metadata and 
     $connection->table('store_locations')->insert([
         'uuid'       => 'location_uuid',
         'public_id'  => 'store_location_public',
+        'store_uuid' => 'store_uuid',
         'place_uuid' => 'origin_uuid',
     ]);
     $connection->table('carts')->insert([
         'uuid'              => 'cart_uuid',
         'public_id'         => 'cart_public',
+        'company_uuid'      => 'company_uuid',
         'unique_identifier' => 'network-cart',
         'currency'          => 'USD',
         'items'             => json_encode([
@@ -854,6 +969,7 @@ test('service quote falls back to an integrated provider when local rates are un
 test('network service quote resolves comma separated fallback origins before reporting no rates', function () {
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    seedServiceQuoteMarketplace();
     $connection->table('places')->insert([
         ['uuid' => 'place_one_uuid', 'public_id' => 'place_one'],
         ['uuid' => 'place_two_uuid', 'public_id' => 'place_two'],
@@ -862,11 +978,13 @@ test('network service quote resolves comma separated fallback origins before rep
         [
             'uuid'       => 'location_one_uuid',
             'public_id'  => 'store_location_one',
+            'store_uuid' => 'store_uuid',
             'place_uuid' => 'place_one_uuid',
         ],
         [
             'uuid'       => 'location_two_uuid',
             'public_id'  => 'store_location_two',
+            'store_uuid' => 'store_uuid',
             'place_uuid' => 'place_two_uuid',
         ],
     ]);
@@ -909,6 +1027,7 @@ test('network service quote resolves comma separated fallback origins before rep
 test('network service quote persists local rate lines and selects the lowest matching quote', function () {
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    seedServiceQuoteMarketplace();
     $connection->table('products')->insert([
         'uuid'         => 'product_uuid',
         'public_id'    => 'product_public',
@@ -927,6 +1046,7 @@ test('network service quote persists local rate lines and selects the lowest mat
     $connection->table('store_locations')->insert([
         'uuid'       => 'location_uuid',
         'public_id'  => 'store_location_origin',
+        'store_uuid' => 'store_uuid',
         'place_uuid' => 'origin_uuid',
     ]);
     $connection->table('carts')->insert([
@@ -991,6 +1111,7 @@ test('network service quote persists local rate lines and selects the lowest mat
 test('network service quote falls back to an integrated provider when local rates are unavailable', function () {
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    seedServiceQuoteMarketplace();
     $connection->table('places')->insert([
         'uuid'      => 'origin_uuid',
         'public_id' => 'place_origin',
@@ -998,6 +1119,7 @@ test('network service quote falls back to an integrated provider when local rate
     $connection->table('store_locations')->insert([
         'uuid'       => 'location_uuid',
         'public_id'  => 'store_location_origin',
+        'store_uuid' => 'store_uuid',
         'place_uuid' => 'origin_uuid',
     ]);
     $connection->table('carts')->insert([

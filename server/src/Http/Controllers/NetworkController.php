@@ -31,6 +31,7 @@ class NetworkController extends StorefrontController
     {
         $id         = trim($id);
         $isPublicId = Str::startsWith($id, ['storefront_network_', 'network_']);
+        $network    = null;
 
         if ($isPublicId) {
             $network = Network::where('public_id', $id)->first();

@@ -127,6 +127,163 @@ test('cart retrieval reuses a caller identifier and excludes checked out carts',
         ->and($cartRows->whereNull('checkout_uuid'))->toHaveCount(1);
 });
 
+test('cart retrieval never reuses another company cart with the same browser identifier', function () {
+    createPublicCartControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('carts')->insert([
+        'uuid'              => 'foreign_cart_uuid',
+        'public_id'         => 'cart_foreign',
+        'company_uuid'      => 'other_company',
+        'unique_identifier' => 'shared-browser-id',
+        'currency'          => 'EUR',
+        'items'             => '[]',
+        'events'            => '[]',
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_currency' => 'USD',
+    ]);
+
+    $cart = (new CartController())->retrieve(Request::create('/cart'), 'shared-browser-id')->resource;
+
+    expect($cart->uuid)->not->toBe('foreign_cart_uuid')
+        ->and($cart->company_uuid)->toBe('company_uuid')
+        ->and($cart->currency)->toBe('USD');
+});
+
+test('cart add accepts member products and rejects products outside the active network', function () {
+    createPublicCartControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['files', 'store_locations', 'network_stores', 'networks', 'stores', 'products'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('logo_uuid')->nullable();
+        $table->string('backdrop_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->boolean('online')->default(true);
+        $table->string('currency')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('network_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('files', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('subject_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('products', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->string('primary_image_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->text('description')->nullable();
+        $table->integer('price')->default(0);
+        $table->string('currency')->nullable();
+        $table->integer('sale_price')->default(0);
+        $table->boolean('is_on_sale')->default(false);
+        $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('stores')->insert([
+        ['uuid' => 'member_store_uuid', 'public_id' => 'store_member', 'name' => 'Member store', 'currency' => 'USD'],
+        ['uuid' => 'foreign_store_uuid', 'public_id' => 'store_foreign', 'name' => 'Foreign store', 'currency' => 'USD'],
+    ]);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('network_stores')->insert([
+        'network_uuid' => 'network_uuid',
+        'store_uuid'   => 'member_store_uuid',
+    ]);
+    $connection->table('store_locations')->insert([
+        'uuid'       => 'member_location_uuid',
+        'public_id'  => 'location_member',
+        'store_uuid' => 'member_store_uuid',
+    ]);
+    $connection->table('products')->insert([
+        [
+            'uuid'         => 'member_product_uuid',
+            'public_id'    => 'product_member',
+            'store_uuid'   => 'member_store_uuid',
+            'name'         => 'Member product',
+            'price'        => 1000,
+            'currency'     => 'USD',
+            'is_available' => true,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+        [
+            'uuid'         => 'foreign_product_uuid',
+            'public_id'    => 'product_foreign',
+            'store_uuid'   => 'foreign_store_uuid',
+            'name'         => 'Foreign product',
+            'price'        => 1000,
+            'currency'     => 'USD',
+            'is_available' => true,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_currency' => 'USD',
+        'storefront_store'    => null,
+        'storefront_network'  => 'network_uuid',
+    ]);
+    $controller    = new CartController();
+    $memberRequest = Request::create('/cart/items', 'POST', [
+        'quantity'       => 1,
+        'store_location' => 'location_member',
+    ]);
+
+    $member        = $controller->add('marketplace-cart', 'product_member', $memberRequest);
+    $foreign       = $controller->add('marketplace-cart', 'product_foreign', Request::create('/cart/items', 'POST'));
+    $wrongLocation = $controller->add('marketplace-cart', 'product_member', Request::create('/cart/items', 'POST', [
+        'store_location' => 'location_foreign',
+    ]));
+    $resolvedMember = $member->resolve($memberRequest);
+
+    expect($member)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Cart::class)
+        ->and($member->resource->items)->toHaveCount(1)
+        ->and($member->resource->items[0]->store_id)->toBe('store_member')
+        ->and((array) data_get($resolvedMember, 'items.0.store'))->toMatchArray([
+            'id'       => 'store_member',
+            'name'     => 'Member store',
+            'online'   => true,
+            'currency' => 'USD',
+        ])
+        ->and($foreign->getStatusCode())->toBe(400)
+        ->and($foreign->getData(true))->toHaveKey('error')
+        ->and($wrongLocation->getStatusCode())->toBe(400)
+        ->and($wrongLocation->getData(true))->toBe([
+            'error' => 'The selected store location is not available for this product.',
+        ]);
+});
+
 test('cart controller reports invalid product and line item operations', function () {
     createPublicCartControllerSchema();
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();

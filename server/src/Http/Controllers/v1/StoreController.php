@@ -51,12 +51,23 @@ class StoreController extends Controller
             return response()->apiError('No ID provided for lookup.');
         }
 
-        $store = Store::where(['public_id' => $id, 'company_uuid' => session('company')])->first();
+        $store = Store::where('public_id', $id)
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+            })
+            ->when(session('storefront_store'), function ($query) {
+                $activeStore = session('storefront_store');
+                $query->where(fn ($storeQuery) => $storeQuery->where('uuid', $activeStore)->orWhere('public_id', $activeStore));
+            })
+            ->first();
         if ($store) {
             return new StorefrontResource($store);
         }
 
-        $network = Network::where(['public_id' => $id, 'company_uuid' => session('company')])->first();
+        $network = Network::where('public_id', $id)
+            ->when(session('storefront_network'), fn ($query) => $query->where('uuid', session('storefront_network')))
+            ->when(session('storefront_store'), fn ($query) => $query->where('company_uuid', session('company')))
+            ->first();
         if ($network) {
             return new NetworkResource($network);
         }
@@ -78,6 +89,14 @@ class StoreController extends Controller
         if ($request->filled('store')) {
             $locations = StoreLocation::whereHas('store', function ($q) use ($request) {
                 $q->where('public_id', $request->input('store'));
+
+                if (session('storefront_network')) {
+                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                }
+
+                if (session('storefront_store')) {
+                    $q->where('uuid', session('storefront_store'));
+                }
             })->with(['place', 'hours'])->get();
         } else {
             $locations = StoreLocation::where('store_uuid', session('storefront_store'))->with(['place', 'hours'])->get();
@@ -98,7 +117,17 @@ class StoreController extends Controller
         }
 
         $storeId = $request->input('store', session('storefront_store'));
-        $store   = Store::where('public_id', $storeId)->orWhere('uuid', $storeId)->first();
+        $store   = Store::where(function ($query) use ($storeId) {
+            $query->where('public_id', $storeId)->orWhere('uuid', $storeId);
+        })
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+            })
+            ->when(session('storefront_store'), function ($query) {
+                $activeStore = session('storefront_store');
+                $query->where(fn ($storeQuery) => $storeQuery->where('uuid', $activeStore)->orWhere('public_id', $activeStore));
+            })
+            ->first();
 
         // Both lookups were unguarded, so an id that resolved nothing was handed straight
         // to the resource and blew up inside it — GET /storefront/v1/locations/{id}
@@ -205,7 +234,12 @@ class StoreController extends Controller
             $categories = Category::where(['company_uuid' => session('company'), 'for' => 'storefront_product'])->search($searchQuery)->get();
             if ($categories) {
                 foreach ($categories as $category) {
-                    $categoryProducts = Product::where('category_uuid', $category->uuid)->get();
+                    $categoryProducts = Product::where([
+                        'category_uuid' => $category->uuid,
+                        'store_uuid'    => session('storefront_store'),
+                        'is_available'  => 1,
+                        'status'        => 'published',
+                    ])->get();
                     $results          = $results->merge($categoryProducts)->unique('uuid');
                 }
             }
@@ -214,6 +248,9 @@ class StoreController extends Controller
         }
 
         $results = Product::findFromNetwork($searchQuery, $store, $limit);
+        if ($request->boolean('with_store') || $request->inArray('with', 'store')) {
+            $results->load(['store.logo', 'store.backdrop']);
+        }
 
         return ProductResource::collection($results);
     }

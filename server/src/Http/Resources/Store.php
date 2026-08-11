@@ -46,6 +46,7 @@ class Store extends FleetbaseResource
             'backdrop_url'        => $this->backdrop_url,
             'rating'              => $this->rating,
             'online'              => $this->online,
+            'distance'            => $this->when(isset($this->distance), $this->distance),
             'alertable'           => $this->alertable,
             'is_network'          => false,
             'is_store'            => true,

@@ -341,11 +341,20 @@ class ProductController extends Controller
                         $nq->where('network_uuid', session('storefront_network'));
                     });
                 });
+
+                if ($request->filled('store')) {
+                    $query->whereHas('store', fn ($storeQuery) => $storeQuery->where('public_id', $request->input('store')));
+                }
             }
 
-            // @todo When done dev is completed make sure status is published - also add status field to product view
             $query->where('is_available', 1);
-            $query->with(['addonCategories.category', 'variants.options', 'files']);
+            $query->where('status', 'published');
+            $relations = ['addonCategories.category', 'variants.options', 'files'];
+            if ($request->boolean('with_store') || $request->inArray('with', 'store')) {
+                $relations[] = 'store.logo';
+                $relations[] = 'store.backdrop';
+            }
+            $query->with($relations);
 
             if ($request->filled('category')) {
                 $category = Category::where(['public_id' => $request->input('category'), 'for' => 'storefront_product'])->first();
@@ -366,11 +375,20 @@ class ProductController extends Controller
      */
     public function find($id)
     {
-        // find for the product
-        try {
-            $product = Product::findRecordOrFail($id);
-        } catch (ModelNotFoundException $exception) {
-            return response()->error('Product resource not found.');
+        $product = Product::where(function ($query) use ($id) {
+            $query->where('public_id', $id)->orWhere('uuid', $id);
+        })
+            ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+            })
+            ->where('is_available', 1)
+            ->where('status', 'published')
+            ->with(['addonCategories.category', 'variants.options', 'files'])
+            ->first();
+
+        if (!$product) {
+            return response()->error('Product resource not found.', 404);
         }
 
         // response the product resource
