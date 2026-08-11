@@ -36,6 +36,11 @@ class CustomerIdentityProbe extends CustomerController
     {
         return $this->verifyGoogleIdentity($token, $clientId);
     }
+
+    public static function reviewAccountBypass(?string $identity, mixed $code): bool
+    {
+        return parent::isReviewAccountBypass($identity, $code);
+    }
 }
 
 class PhoneConflictCustomerControllerStub extends CustomerController
@@ -603,6 +608,23 @@ test('customer identity verifier seams reject malformed provider tokens', functi
         ->and($probe->google('malformed-token', 'client-id'))->toBeNull();
 });
 
+test('customer verification bypass is restricted to configured review identities and constant-time codes', function () {
+    config([
+        'storefront.storefront_app.bypass_verification_code' => null,
+        'storefront.storefront_app.review_accounts'          => [],
+    ]);
+    expect(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', '246810'))->toBeFalse();
+
+    config([
+        'storefront.storefront_app.bypass_verification_code' => '246810',
+        'storefront.storefront_app.review_accounts'          => [' Reviewer@Example.Test '],
+    ]);
+
+    expect(CustomerIdentityProbe::reviewAccountBypass('other@example.test', '246810'))->toBeFalse()
+        ->and(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', 'wrong'))->toBeFalse()
+        ->and(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', '246810'))->toBeTrue();
+});
+
 test('facebook login links an existing customer identity and issues a local access token', function () {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
     foreach (['personal_access_tokens', 'contacts', 'users'] as $table) {
@@ -728,6 +750,11 @@ test('facebook login links an existing customer identity and issues a local acce
     }
     $linkedUser = $connection->table('users')->where('uuid', 'user_uuid')->first();
     $schema->drop('users');
+    $appleFailure = $socialController->loginWithApple(Request::create('/customer/apple', 'POST', [
+        'identityToken'     => 'apple-failure-token',
+        'authorizationCode' => 'authorization-code',
+        'appleUserId'       => 'apple_failure',
+    ]));
     $facebookFailure = $socialController->loginWithFacebook(Request::create('/customer/facebook', 'POST', [
         'facebookUserId' => 'facebook_failure',
     ]));
@@ -747,6 +774,7 @@ test('facebook login links an existing customer identity and issues a local acce
         ->and($newApple)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($newFacebook)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($newGoogle)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($appleFailure->getData(true))->toHaveKey('error')
         ->and($facebookFailure->getData(true))->toHaveKey('error')
         ->and($googleFailure->getData(true))->toHaveKey('error')
         ->and($connection->table('personal_access_tokens')->count())->toBe(6);
@@ -1231,11 +1259,70 @@ test('customer phone login generates a storefront-scoped SMS verification code',
     $response = (new CustomerController())->loginWithPhone();
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
 
-    expect($response->getData(true))->toBe(['status' => 'OK'])
+    expect($response->getData(true))->toBe(['status' => 'OK', 'method' => 'sms'])
         ->and($connection->table('verification_codes')->where([
             'subject_uuid' => 'user_uuid',
             'for'          => 'storefront_login',
         ])->count())->toBe(1);
+});
+
+test('customer phone login falls back to email when SMS is not configured', function () {
+    // The Twilio SDK THROWS when the store has no credentials — ConfigurationException,
+    // "Credentials are required to create a Client" — and that propagated as a 500 with an
+    // HTML stack trace. A store that has simply not set up SMS is not a server error, and
+    // it can still reach a customer who has an email address.
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'phone'      => '+97699112233',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session([
+        'company'        => 'company_uuid',
+        'storefront_key' => 'store_key',
+    ]);
+    bindUnauthenticatedCustomerRequest(['phone' => '97699112233']);
+    bindCustomerNotificationDispatcher();
+
+    // Replace the working twilio fake with one that fails the way an unconfigured
+    // install does.
+    app()->instance('twilio', new class {
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            throw new \RuntimeException('Credentials are required to create a Client');
+        }
+    });
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+
+    $response = (new CustomerController())->loginWithPhone();
+
+    // Restore the container before asserting. The whole suite runs in ONE process, so a
+    // throwing `twilio` left bound here fails every later test that sends an SMS.
+    app()->forgetInstance('twilio');
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+
+    // Two rows, not one: generateSmsVerificationFor persists the code BEFORE attempting
+    // delivery, so the failed SMS attempt leaves its row behind and the email fallback
+    // adds another. Both are valid for this subject and purpose, so either verifies —
+    // FleetOps' driver login behaves identically.
+    expect($response->getData(true))->toBe(['status' => 'OK', 'method' => 'email'])
+        ->and($connection->table('verification_codes')->where([
+            'subject_uuid' => 'user_uuid',
+            'for'          => 'storefront_login',
+        ])->count())->toBe(2);
 });
 
 test('customer password login reuses the storefront contact and issues an access token', function () {

@@ -472,14 +472,47 @@ class CustomerController extends Controller
         // get the storefront or network logging in for
         $about = Storefront::about();
 
-        // generate verification token
-        VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
-            'messageCallback' => function ($verification) use ($about) {
-                return "Your {$about->name} verification code is {$verification->code}";
-            },
-        ]);
+        // Generate the verification token.
+        //
+        // The SMS attempt is guarded because the Twilio SDK THROWS when the store has no
+        // credentials configured — ConfigurationException, "Credentials are required to
+        // create a Client" — and that propagated as a 500 carrying an HTML stack trace.
+        // A store that has simply not set up SMS is not a server error.
+        //
+        // Falling back to email mirrors FleetOps' DriverController::loginWithPhone, and
+        // means a store without Twilio can still authenticate its customers. `method`
+        // tells the client which channel actually carried the code.
+        $messageCallback = function ($verification) use ($about) {
+            return "Your {$about->name} verification code is {$verification->code}";
+        };
 
-        return response()->json(['status' => 'OK']);
+        try {
+            VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
+                'messageCallback' => $messageCallback,
+            ]);
+
+            return response()->json(['status' => 'OK', 'method' => 'sms']);
+        } catch (\Throwable $e) {
+            if (app()->bound('sentry')) {
+                app('sentry')->captureException($e);
+            }
+
+            if ($user->email) {
+                try {
+                    VerificationCode::generateEmailVerificationFor($user, 'storefront_login', [
+                        'messageCallback' => $messageCallback,
+                    ]);
+
+                    return response()->json(['status' => 'OK', 'method' => 'email']);
+                } catch (\Throwable $e) {
+                    if (app()->bound('sentry')) {
+                        app('sentry')->captureException($e);
+                    }
+                }
+            }
+        }
+
+        return response()->apiError('Unable to send verification code.');
     }
 
     /**
