@@ -90,7 +90,13 @@ test('cart retrieval creates a fresh cart when no identifier is supplied', funct
         'customer_id'         => 'customer_public',
     ]);
 
-    $resource = (new CartController())->retrieve(null, Request::create('/cart'));
+    // Called with the Request ALONE, which is exactly what the router produces for
+    // GET /storefront/v1/carts — the route with no {uniqueId}. Laravel splices
+    // class-typed parameters in at their own index and fills the rest from the route
+    // parameters, so when the optional $uniqueId came first there was nothing for index
+    // 0 and the call arrived as "Too few arguments to function retrieve(), 1 passed".
+    // Passing both arguments explicitly, as this test used to, never exercised that.
+    $resource = (new CartController())->retrieve(Request::create('/cart'));
     $cart     = $resource->resource;
 
     expect($cart->exists)->toBeTrue()
@@ -106,10 +112,10 @@ test('cart retrieval reuses a caller identifier and excludes checked out carts',
     session(['company' => 'company_uuid']);
     $controller = new CartController();
 
-    $first  = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
-    $second = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
+    $first  = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
+    $second = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
     $first->forceFill(['checkout_uuid' => 'checkout_uuid'])->save();
-    $replacement = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
+    $replacement = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
     $cartRows    = Model::getConnectionResolver()->connection('mysql')->table('carts')
         ->where('unique_identifier', 'browser-session-1')
         ->get();
@@ -178,7 +184,7 @@ test('cart controller delegates successful item and lifecycle operations with re
     $controller       = new TestableCartController();
     $controller->cart = $cart;
 
-    $retrieved = $controller->retrieve('browser-session', Request::create('/cart'));
+    $retrieved = $controller->retrieve(Request::create('/cart'), 'browser-session');
     $added     = $controller->add(
         'browser-session',
         'product_abcdefgh',
