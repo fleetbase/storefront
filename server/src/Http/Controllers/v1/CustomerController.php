@@ -518,8 +518,25 @@ class CustomerController extends Controller
         }
 
         try {
-            // Verify the Apple token using the utility function
-            $isValid = $this->verifyAppleIdentity($identityToken);
+            // Verify the Apple token using the utility function.
+            //
+            // A malformed identityToken is client input, not a server fault, but the JWT
+            // parser throws rather than returning false — so a bad token fell through to
+            // the catch at the end of this method and came back as
+            //   500 {"error":"The JWT string must have two dots"}
+            // leaking the parser's own message. Any client sending a truncated or expired
+            // token hit this. It is the same rejection as a token that parses but does not
+            // verify, so it gets the same 400.
+            try {
+                $isValid = $this->verifyAppleIdentity($identityToken);
+            } catch (\Throwable $verificationException) {
+                Log::warning('[Storefront] Apple identity token could not be parsed.', [
+                    'exception' => $verificationException->getMessage(),
+                ]);
+
+                $isValid = false;
+            }
+
             if (!$isValid) {
                 return response()->apiError('Apple ID authentication is not valid.', 400);
             }

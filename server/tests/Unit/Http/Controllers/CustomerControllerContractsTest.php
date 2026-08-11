@@ -578,7 +578,13 @@ test('customer social login endpoints validate required provider parameters', fu
         ->and($apple->getData(true))->toBe(['error' => 'Missing required Apple authentication parameters.'])
         ->and($google->getStatusCode())->toBe(400)
         ->and($google->getData(true))->toBe(['error' => 'Missing required Google authentication parameters.'])
-        ->and($invalidApple->getStatusCode())->toBe(500)
+        // A malformed identityToken is client input. The JWT parser throws rather than
+        // returning false, and that used to fall through to the blanket catch and come
+        // back as 500 {"error":"The JWT string must have two dots"} — leaking the parser's
+        // own message. $invalidGoogle below answers 400 for equally malformed input, so
+        // Apple was inconsistent with Google in this very test. This assertion pinned it.
+        ->and($invalidApple->getStatusCode())->toBe(400)
+        ->and($invalidApple->getData(true))->toBe(['error' => 'Apple ID authentication is not valid.'])
         ->and($rejectedApple->getData(true))->toBe(['error' => 'Apple ID authentication is not valid.'])
         ->and($invalidGoogle->getStatusCode())->toBe(400)
         ->and($invalidGoogle->getData(true))->toBe(['error' => 'Google Sign-In authentication is not valid.']);
