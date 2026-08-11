@@ -506,6 +506,42 @@ test('store controller rejects location access for networks without an explicit 
         ->and($location->getData(true))->toBe(['error' => 'Networks cannot have locations!']);
 });
 
+test('store controller answers 404 for an unknown store or location instead of throwing', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['store_hours', 'store_locations', 'places', 'stores'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->string('uuid')->primary();
+        $table->string('public_id');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->string('uuid')->primary();
+        $table->string('public_id');
+        $table->string('store_uuid');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('stores')->insert(['uuid' => 'store_uuid', 'public_id' => 'store_public']);
+
+    session(['storefront_network' => null, 'storefront_store' => 'store_public']);
+    $request = Request::create('/v1/storefront/locations');
+
+    // Both lookups were unguarded, so an id that resolved nothing reached the resource
+    // and threw inside it — the endpoint answered 500 with an HTML stack trace for any
+    // stale or mistyped location id.
+    $missingLocation = (new StoreController())->location('location_does_not_exist', $request);
+
+    session(['storefront_store' => 'store_does_not_exist']);
+    $missingStore = (new StoreController())->location('location_public', $request);
+
+    expect($missingLocation->getStatusCode())->toBe(404)
+        ->and($missingLocation->getData(true))->toBe(['error' => 'Store location not found!'])
+        ->and($missingStore->getStatusCode())->toBe(404)
+        ->and($missingStore->getData(true))->toBe(['error' => 'Unable to find store!']);
+});
+
 test('store controller resolves active and explicitly selected store locations with their relations', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();

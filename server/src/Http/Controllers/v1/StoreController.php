@@ -100,12 +100,24 @@ class StoreController extends Controller
         $storeId = $request->input('store', session('storefront_store'));
         $store   = Store::where('public_id', $storeId)->orWhere('uuid', $storeId)->first();
 
+        // Both lookups were unguarded, so an id that resolved nothing was handed straight
+        // to the resource and blew up inside it — GET /storefront/v1/locations/{id}
+        // answered 500 with an HTML stack trace for any unknown location, which is what a
+        // client sees for a stale or mistyped id. 404 is the correct answer.
+        if (!$store) {
+            return response()->error('Unable to find store!', 404);
+        }
+
         $location = StoreLocation::where([
             'public_id'  => $id,
             'store_uuid' => $store->uuid,
         ])
             ->with(['place', 'hours'])
             ->first();
+
+        if (!$location) {
+            return response()->error('Store location not found!', 404);
+        }
 
         return new StoreLocationResource($location);
     }
