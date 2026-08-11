@@ -582,7 +582,22 @@ test('network store locations apply store membership search and identifier filte
         ->and($offsetResource->resource->first()->uuid)->toBe('location_other_uuid');
 });
 
-test('network-only endpoints reject store and missing storefront contexts', function () {
+test('store locations and tags preserve store context while rejecting missing contexts', function () {
+    createNetworkApiControllerSchema();
+    config(['database.connections.mysql.database' => 'main']);
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_uuid', 'tags' => json_encode(['local', 'pickup'])],
+        ['uuid' => 'other_store_uuid', 'tags' => json_encode(['foreign'])],
+    ]);
+    $connection->table('places')->insert([
+        ['uuid' => 'store_place_uuid'],
+        ['uuid' => 'other_place_uuid'],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'store_location_uuid', 'public_id' => 'location_store', 'store_uuid' => 'store_uuid', 'place_uuid' => 'store_place_uuid'],
+        ['uuid' => 'other_location_uuid', 'public_id' => 'location_other', 'store_uuid' => 'other_store_uuid', 'place_uuid' => 'other_place_uuid'],
+    ]);
     $controller = new NetworkController();
     session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
 
@@ -591,8 +606,10 @@ test('network-only endpoints reject store and missing storefront contexts', func
 
     session(['storefront_store' => null, 'storefront_network' => null]);
     $missingLocations = $controller->storeLocations(Request::create('/network/store-locations'));
+    $missingTags      = $controller->tags(Request::create('/network/tags'));
 
-    expect($storeLocations->getStatusCode())->toBe(400)
-        ->and($storeTags->getStatusCode())->toBe(400)
-        ->and($missingLocations->getStatusCode())->toBe(400);
+    expect($storeLocations->resource->pluck('uuid')->all())->toBe(['store_location_uuid'])
+        ->and($storeTags->getData(true))->toBe(['local', 'pickup'])
+        ->and($missingLocations->getStatusCode())->toBe(400)
+        ->and($missingTags->getStatusCode())->toBe(400);
 });

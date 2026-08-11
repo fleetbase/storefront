@@ -381,9 +381,9 @@ class ProductController extends Controller
             ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
             ->when(session('storefront_network'), function ($query) {
                 $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->where('is_available', 1);
+                $query->where('status', 'published');
             })
-            ->where('is_available', 1)
-            ->where('status', 'published')
             ->with(['addonCategories.category', 'variants.options', 'files'])
             ->first();
 

@@ -206,17 +206,20 @@ test('product query returns only available products for the active storefront st
         'storefront_network' => null,
     ]);
 
-    $resource = (new ProductController())->query(productApiRequest(
+    $controller = new ProductController();
+    $resource   = $controller->query(productApiRequest(
         '/products?store=store_uuid',
         'GET',
         ['store' => 'store_uuid']
     ));
+    $ownedUnavailable = $controller->find('product_unavailable');
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('available_uuid')
         ->and($resource->resource->first()->relationLoaded('addonCategories'))->toBeTrue()
         ->and($resource->resource->first()->relationLoaded('variants'))->toBeTrue()
-        ->and($resource->resource->first()->relationLoaded('files'))->toBeTrue();
+        ->and($resource->resource->first()->relationLoaded('files'))->toBeTrue()
+        ->and($ownedUnavailable->resource->uuid)->toBe('unavailable_uuid');
 });
 
 test('product query returns available products assigned through the active network', function () {

@@ -3,9 +3,18 @@
 use Fleetbase\Storefront\Http\Controllers\OrderController as InternalOrderController;
 use Fleetbase\Storefront\Http\Controllers\v1\OrderController;
 use Fleetbase\Storefront\Http\Controllers\v1\ReviewController;
+use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Support\QPay;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+
+class ReviewContextControllerStub extends ReviewController
+{
+    public function subjectBelongs($subject): bool
+    {
+        return $this->subjectBelongsToContext($subject);
+    }
+}
 
 class ReceiptQPayStub extends QPay
 {
@@ -276,6 +285,7 @@ function createReviewControllerSchema(): void
 {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
     $schema->dropIfExists('reviews');
+    $schema->dropIfExists('products');
     $schema->create('reviews', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
@@ -288,6 +298,13 @@ function createReviewControllerSchema(): void
         $table->text('content')->nullable();
         $table->boolean('rejected')->default(false);
         $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('products', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
 }
@@ -317,12 +334,14 @@ test('review listing and rating counts are empty without storefront context', fu
     ]);
     $controller = new ReviewController();
 
-    $reviews = $controller->query(Request::create('/reviews'));
-    $counts  = $controller->count(Request::create('/reviews/count'));
+    $reviews            = $controller->query(Request::create('/reviews'));
+    $counts             = $controller->count(Request::create('/reviews/count'));
+    $unsupportedSubject = (new ReviewContextControllerStub())->subjectBelongs(new stdClass());
 
     expect($reviews->resource)->toBeEmpty()
         ->and($counts->getStatusCode())->toBe(200)
-        ->and($counts->getData(true))->toBe([]);
+        ->and($counts->getData(true))->toBe([])
+        ->and($unsupportedSubject)->toBeFalse();
 });
 
 test('review rating counts are scoped to the active storefront store', function () {
@@ -471,6 +490,26 @@ test('network review listing and counts validate membership and apply pagination
             'created_at'   => '2026-01-03 00:00:00',
             'updated_at'   => '2026-01-03 00:00:00',
         ],
+        [
+            'uuid'         => 'network_product_review',
+            'public_id'    => 'review_network_product',
+            'subject_uuid' => 'member_product_uuid',
+            'rating'       => 4,
+            'created_at'   => '2026-01-04 00:00:00',
+            'updated_at'   => '2026-01-04 00:00:00',
+        ],
+        [
+            'uuid'         => 'foreign_product_review',
+            'public_id'    => 'review_foreign_product',
+            'subject_uuid' => 'foreign_product_uuid',
+            'rating'       => 2,
+            'created_at'   => '2026-01-05 00:00:00',
+            'updated_at'   => '2026-01-05 00:00:00',
+        ],
+    ]);
+    $connection->table('products')->insert([
+        ['uuid' => 'member_product_uuid', 'public_id' => 'product_member', 'store_uuid' => 'store_uuid'],
+        ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'store_uuid' => 'foreign_store_uuid'],
     ]);
     session([
         'company'            => 'company_uuid',
@@ -498,8 +537,13 @@ test('network review listing and counts validate membership and apply pagination
     $counts  = $controller->count(Request::create('/reviews/count?store=store_abcdefgh', 'GET', [
         'store' => 'store_abcdefgh',
     ]));
-    $found   = $controller->find('review_network_two');
-    $foreign = $controller->find('review_network_foreign');
+    $found          = $controller->find('review_network_two');
+    $foreign        = $controller->find('review_network_foreign');
+    $product        = $controller->find('review_network_product');
+    $foreignProduct = $controller->find('review_foreign_product');
+    $memberProduct  = Product::where('uuid', 'member_product_uuid')->firstOrFail();
+    $outsideProduct = Product::where('uuid', 'foreign_product_uuid')->firstOrFail();
+    $contextProbe   = new ReviewContextControllerStub();
 
     expect($missing->getStatusCode())->toBe(400)
         ->and($missing->getData(true))->toBe(['error' => 'Cannot find reviews for store'])
@@ -509,6 +553,10 @@ test('network review listing and counts validate membership and apply pagination
         ->and($reviews->resource->first()->uuid)->toBe('network_review_two')
         ->and($found->resource->uuid)->toBe('network_review_two')
         ->and($foreign->getStatusCode())->toBe(400)
+        ->and($product->resource->uuid)->toBe('network_product_review')
+        ->and($foreignProduct->getStatusCode())->toBe(400)
+        ->and($contextProbe->subjectBelongs($memberProduct))->toBeTrue()
+        ->and($contextProbe->subjectBelongs($outsideProduct))->toBeFalse()
         ->and($counts->getData(true))->toBe([
             1 => 1,
             2 => 0,
@@ -535,20 +583,30 @@ test('review find and delete return not-found contracts for unknown public ids',
 test('review find is storefront scoped and unauthenticated customers cannot delete reviews', function () {
     createReviewControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('products')->insert([
+        ['uuid' => 'product_uuid', 'public_id' => 'product_abcdefgh', 'store_uuid' => 'store_uuid'],
+        ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'store_uuid' => 'other_store_uuid'],
+    ]);
     $connection->table('reviews')->insert([
         ['uuid' => 'review_uuid', 'public_id' => 'review_abcdefgh', 'subject_uuid' => 'store_uuid', 'rating' => 5, 'content' => 'Excellent', 'created_at' => now(), 'updated_at' => now()],
         ['uuid' => 'foreign_review_uuid', 'public_id' => 'review_foreign', 'subject_uuid' => 'other_store_uuid', 'rating' => 1, 'content' => 'Foreign', 'created_at' => now(), 'updated_at' => now()],
+        ['uuid' => 'product_review_uuid', 'public_id' => 'review_product', 'subject_uuid' => 'product_uuid', 'rating' => 4, 'content' => 'Great product', 'created_at' => now(), 'updated_at' => now()],
+        ['uuid' => 'foreign_product_review_uuid', 'public_id' => 'review_foreign_product', 'subject_uuid' => 'foreign_product_uuid', 'rating' => 2, 'content' => 'Foreign product', 'created_at' => now(), 'updated_at' => now()],
     ]);
     session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
     $controller = new ReviewController();
 
-    $found   = $controller->find('review_abcdefgh');
-    $foreign = $controller->find('review_foreign');
-    $deleted = $controller->delete('review_abcdefgh');
+    $found          = $controller->find('review_abcdefgh');
+    $foreign        = $controller->find('review_foreign');
+    $product        = $controller->find('review_product');
+    $foreignProduct = $controller->find('review_foreign_product');
+    $deleted        = $controller->delete('review_abcdefgh');
 
     expect($found->resource->uuid)->toBe('review_uuid')
         ->and($foreign->getStatusCode())->toBe(400)
         ->and($foreign->getData(true))->toBe(['error' => 'Review resource not found.'])
+        ->and($product->resource->uuid)->toBe('product_review_uuid')
+        ->and($foreignProduct->getStatusCode())->toBe(400)
         ->and($deleted->getStatusCode())->toBe(403)
         ->and($deleted->getData(true))->toBe(['error' => 'Not authorized to delete review'])
         ->and($connection->table('reviews')->where('uuid', 'review_uuid')->value('deleted_at'))->toBeNull();
@@ -666,6 +724,10 @@ test('authenticated review creation persists customer and store subject contract
         'key'          => 'store_key',
         'name'         => 'Review store',
     ]);
+    $connection->table('products')->insert([
+        ['uuid' => 'product_uuid', 'public_id' => 'product_abcdefgh', 'store_uuid' => 'store_uuid'],
+        ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'store_uuid' => 'foreign_store_uuid'],
+    ]);
     $boundRequest = Request::create('/reviews');
     $boundRequest->headers->set('Customer-Token', 'review-customer-secret');
     $boundRequest->setLaravelSession(new Illuminate\Session\Store(
@@ -673,7 +735,12 @@ test('authenticated review creation persists customer and store subject contract
         new Illuminate\Session\ArraySessionHandler(120)
     ));
     app()->instance('request', $boundRequest);
-    session(['company' => 'company_uuid', 'storefront_key' => null]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_key'     => null,
+        'storefront_store'   => 'store_uuid',
+        'storefront_network' => null,
+    ]);
     $controller = new ReviewController();
 
     $invalid = $controller->create(
@@ -687,6 +754,19 @@ test('authenticated review creation persists customer and store subject contract
             'subject' => 'store_abcdefgh',
             'rating'  => 5,
             'content' => 'Excellent service',
+        ])
+    );
+    $invalidProduct = $controller->create(
+        Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
+            'subject' => 'product_foreign',
+            'rating'  => 1,
+        ])
+    );
+    $createdProduct = $controller->create(
+        Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
+            'subject' => 'product_abcdefgh',
+            'rating'  => 4,
+            'content' => 'Excellent product',
         ])
     );
     $review = $connection->table('reviews')->first();
@@ -726,7 +806,9 @@ test('authenticated review creation persists customer and store subject contract
     $deleted = $controller->delete('review_owned');
 
     expect($invalid->getData(true))->toBe(['error' => 'Invalid subject for review'])
+        ->and($invalidProduct->getData(true))->toBe(['error' => 'Invalid subject for review'])
         ->and($created->resource->uuid)->toBe($review->uuid)
+        ->and($createdProduct->resource->subject_uuid)->toBe('product_uuid')
         ->and($review->created_by_uuid)->toBe('user_uuid')
         ->and($review->customer_uuid)->toBe($customerUuid)
         ->and($review->subject_uuid)->toBe('store_uuid')

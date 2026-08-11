@@ -8,6 +8,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\File;
 use Fleetbase\Storefront\Http\Requests\CreateReviewRequest;
 use Fleetbase\Storefront\Http\Resources\Review as StorefrontReview;
+use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
@@ -32,13 +33,41 @@ class ReviewController extends Controller
         return Review::where(function ($query) use ($id) {
             $query->where('public_id', $id)->orWhere('uuid', $id);
         })
-            ->when(session('storefront_store'), fn ($query) => $query->where('subject_uuid', session('storefront_store')))
+            ->when(session('storefront_store'), function ($query) {
+                $storeUuid = session('storefront_store');
+                $query->where(function ($subjectQuery) use ($storeUuid) {
+                    $subjectQuery->where('subject_uuid', $storeUuid)
+                        ->orWhereIn('subject_uuid', Product::select('uuid')->where('store_uuid', $storeUuid));
+                });
+            })
             ->when(session('storefront_network'), function ($query) {
                 $memberStoreUuids = Store::select('uuid')
                     ->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
-                $query->whereIn('subject_uuid', $memberStoreUuids);
+                $memberProductUuids = Product::select('uuid')->whereIn('store_uuid', clone $memberStoreUuids);
+                $query->where(function ($subjectQuery) use ($memberStoreUuids, $memberProductUuids) {
+                    $subjectQuery->whereIn('subject_uuid', $memberStoreUuids)
+                        ->orWhereIn('subject_uuid', $memberProductUuids);
+                });
             })
             ->first();
+    }
+
+    protected function subjectBelongsToContext($subject): bool
+    {
+        if ($subject instanceof Store) {
+            return (bool) $this->resolveStoreForContext($subject->public_id);
+        }
+
+        if ($subject instanceof Product) {
+            return Product::where('uuid', $subject->uuid)
+                ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
+                ->when(session('storefront_network'), function ($query) {
+                    $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                })
+                ->exists();
+        }
+
+        return false;
     }
 
     /**
@@ -205,7 +234,7 @@ class ReviewController extends Controller
 
         $subject = Utils::resolveSubject($request->input('subject'));
 
-        if (!$subject || ($subject instanceof Store && !$this->resolveStoreForContext($subject->public_id))) {
+        if (!$subject || !$this->subjectBelongsToContext($subject)) {
             return response()->error('Invalid subject for review');
         }
 

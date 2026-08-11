@@ -183,8 +183,11 @@ class NetworkController extends Controller
      */
     public function storeLocations(Request $request)
     {
-        if (session('storefront_store') || !session('storefront_network')) {
-            return response()->error('Store locations can only be queried for a network!');
+        $storeUuid   = session('storefront_store');
+        $networkUuid = session('storefront_network');
+
+        if (!$storeUuid && !$networkUuid) {
+            return response()->error('Store locations require a storefront context!');
         }
 
         $limit              = $request->input('limit', 30);
@@ -214,10 +217,12 @@ class NetworkController extends Controller
 
         $query = StoreLocation::select(['store_locations.*', $placesTableName . '.location', $placesTableName . '.uuid as place_uuid'])
             ->join($placesTableName, $placesTableName . '.uuid', '=', 'store_locations.place_uuid')
-            ->whereHas('store', function ($q) use ($tagged, $searchQuery) {
-                $q->whereHas('networks', function ($q) {
-                    $q->where('network_uuid', session('storefront_network'));
-                });
+            ->whereHas('store', function ($q) use ($storeUuid, $networkUuid, $tagged, $searchQuery) {
+                if ($storeUuid) {
+                    $q->where('uuid', $storeUuid);
+                } else {
+                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                }
 
                 if (!empty($tagged)) {
                     $q->where(function ($q) use ($tagged) {
@@ -274,17 +279,22 @@ class NetworkController extends Controller
      */
     public function tags(Request $request)
     {
-        if (session('storefront_store') || !session('storefront_network')) {
-            return response()->error('Tags can only be queried for a network!');
+        $storeUuid   = session('storefront_store');
+        $networkUuid = session('storefront_network');
+
+        if (!$storeUuid && !$networkUuid) {
+            return response()->error('Tags require a storefront context!');
         }
 
         $tags = [];
 
         $stores = Store::select(['tags'])
             ->whereHas('locations')
-            ->whereHas('networks', function ($q) {
-                $q->where('network_uuid', session('storefront_network'));
-            })->get();
+            ->when($storeUuid, fn ($query) => $query->where('uuid', $storeUuid))
+            ->when($networkUuid, function ($query) use ($networkUuid) {
+                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+            })
+            ->get();
 
         foreach ($stores as $store) {
             $tags = array_merge($tags, $store->tags ?? []);
