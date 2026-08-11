@@ -1308,10 +1308,14 @@ test('customer phone login falls back to email when SMS is not configured', func
 
     $response = (new CustomerController())->loginWithPhone();
 
-    // Restore the container before asserting. The whole suite runs in ONE process, so a
-    // throwing `twilio` left bound here fails every later test that sends an SMS.
+    // Restore the container before asserting. The whole file runs in ONE process, so
+    // anything left bound here leaks into every later test — including the working
+    // `mail.manager` that bindCustomerNotificationDispatcher() installs, which would make
+    // a later test's deliberately-failing email delivery succeed instead.
     app()->forgetInstance('twilio');
+    app()->forgetInstance('mail.manager');
     Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('mail.manager');
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
 
     // Two rows, not one: generateSmsVerificationFor persists the code BEFORE attempting
@@ -1323,6 +1327,72 @@ test('customer phone login falls back to email when SMS is not configured', func
             'subject_uuid' => 'user_uuid',
             'for'          => 'storefront_login',
         ])->count())->toBe(2);
+});
+
+test('customer phone login reports both delivery failures without leaking provider exceptions', function () {
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'phone'      => '+97699112233',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session([
+        'company'        => 'company_uuid',
+        'storefront_key' => 'store_key',
+    ]);
+    bindUnauthenticatedCustomerRequest(['phone' => '97699112233']);
+    $sentry = new class {
+        public array $exceptions = [];
+
+        public function captureException(Throwable $exception): void
+        {
+            $this->exceptions[] = $exception;
+        }
+    };
+    app()->instance('sentry', $sentry);
+    app()->instance('twilio', new class {
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            throw new RuntimeException('SMS provider unavailable');
+        }
+    });
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    app()->instance(
+        Illuminate\Contracts\Notifications\Dispatcher::class,
+        new class implements Illuminate\Contracts\Notifications\Dispatcher {
+            public function send($notifiables, $notification)
+            {
+                throw new RuntimeException('Email provider unavailable');
+            }
+
+            public function sendNow($notifiables, $notification)
+            {
+                throw new RuntimeException('Email provider unavailable');
+            }
+        }
+    );
+
+    $response = (new CustomerController())->loginWithPhone();
+
+    app()->forgetInstance('sentry');
+    app()->forgetInstance('twilio');
+    app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+
+    expect($response->getData(true))->toBe(['error' => 'Unable to send verification code.'])
+        ->and($sentry->exceptions)->toHaveCount(2);
 });
 
 test('customer password login reuses the storefront contact and issues an access token', function () {

@@ -989,31 +989,57 @@ class CustomerController extends Controller
             return response()->apiError('Customer account must have a valid email or phone number linked.');
         }
 
-        // Send account closure confirmation with code
-        try {
-            if ($user->phone) {
-                VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
-                    'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} account closure verification code is {$verification->code}";
-                    },
-                    'meta' => ['identity' => $user->phone],
-                ]);
-            } elseif ($user->email) {
-                VerificationCode::generateEmailVerificationFor($user, 'storefront_account_closure', [
-                    'subject'         => $about->name . ' account closure request',
-                    'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} account closure verification code is {$verification->code}";
-                    },
-                    'meta' => ['identity' => $user->email],
-                ]);
-            }
+        // The identity the code is filed under MUST match what confirmAccountClosure looks
+        // it up by — `$user->phone ?? $user->email` — regardless of which channel actually
+        // carried it. Previously SMS filed it under the phone and email under the email,
+        // which agreed only because the channel was chosen by the same precedence; the
+        // fallback below breaks that coupling, so it is made explicit.
+        $identity        = $user->phone ?? $user->email;
+        $messageCallback = function ($verification) use ($about) {
+            return "Your {$about->name} account closure verification code is {$verification->code}";
+        };
 
-            return response()->json(['status' => 'OK']);
-        } catch (\Exception $e) {
-            return response()->apiError($e->getMessage());
+        // The SMS attempt is guarded rather than sharing one try with the email branch.
+        // The Twilio SDK throws when the store has no credentials configured, and the old
+        // `if phone / elseif email` meant a customer WITH a phone never reached the email
+        // branch — the request just returned the SDK's own message, "Credentials are
+        // required to create a Client", to the client.
+        $sent = false;
+
+        if ($user->phone) {
+            try {
+                VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
+                    'messageCallback' => $messageCallback,
+                    'meta'            => ['identity' => $identity],
+                ]);
+                $sent = true;
+            } catch (\Throwable $e) {
+                if (app()->bound('sentry')) {
+                    app('sentry')->captureException($e);
+                }
+            }
         }
 
-        return response()->apiError('An uknown error occured attempting to close customer account.');
+        if (!$sent && $user->email) {
+            try {
+                VerificationCode::generateEmailVerificationFor($user, 'storefront_account_closure', [
+                    'subject'         => $about->name . ' account closure request',
+                    'messageCallback' => $messageCallback,
+                    'meta'            => ['identity' => $identity],
+                ]);
+                $sent = true;
+            } catch (\Throwable $e) {
+                if (app()->bound('sentry')) {
+                    app('sentry')->captureException($e);
+                }
+            }
+        }
+
+        if ($sent) {
+            return response()->json(['status' => 'OK']);
+        }
+
+        return response()->apiError('Unable to send account closure verification code.');
     }
 
     public function confirmAccountClosure(Request $request)
@@ -1099,8 +1125,18 @@ class CustomerController extends Controller
             ]);
 
             return response()->json(['status' => 'ok']);
-        } catch (\Exception $e) {
-            return response()->apiError($e->getMessage());
+        } catch (\Throwable $e) {
+            if (app()->bound('sentry')) {
+                app('sentry')->captureException($e);
+            }
+
+            // Deliberately not $e->getMessage(): the Twilio SDK throws
+            // "Credentials are required to create a Client" when the store has no SMS
+            // credentials, and returning that to an API consumer leaks an internal
+            // detail while telling them nothing they can act on. Unlike customer login
+            // and account closure, there is no email fallback here — verifying a phone
+            // number by email would not verify anything.
+            return response()->apiError('Unable to send phone verification code.');
         }
     }
 
