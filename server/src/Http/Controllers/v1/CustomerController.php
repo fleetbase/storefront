@@ -1116,6 +1116,14 @@ class CustomerController extends Controller
 
         $about = Storefront::about();
 
+        // A review account verifies with the configured bypass code, so no message needs
+        // to be delivered — and requiring one would make the flow untestable wherever SMS
+        // is not configured, which is the situation this bypass exists for. Same
+        // allowlist + constant-time code check as every other bypass call site.
+        if (static::isReviewAccountBypass($phone, config('storefront.storefront_app.bypass_verification_code'))) {
+            return response()->json(['status' => 'ok', 'method' => 'bypass']);
+        }
+
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
                 'messageCallback' => function ($verification) use ($about) {
@@ -1176,7 +1184,18 @@ class CustomerController extends Controller
             'for'          => 'storefront_verify_phone',
         ])->first();
 
+        // The bypass leaves no code row to read the phone back from, so it comes from the
+        // request — which is what the caller is asking to verify in the first place.
+        $requestedPhone = $request->input('phone') ? static::phone($request->input('phone')) : null;
+
         if (!$verificationCode) {
+            if ($requestedPhone && static::isReviewAccountBypass($requestedPhone, $code)) {
+                $user->update(['phone' => $requestedPhone, 'phone_verified_at' => now()]);
+                $customer->update(['phone' => $requestedPhone]);
+
+                return new Customer($customer->fresh());
+            }
+
             return response()->apiError('Invalid verification code!');
         }
 

@@ -1410,6 +1410,123 @@ test('customer phone login reports both delivery failures without leaking provid
         ->and($sentry->exceptions)->toHaveCount(2);
 });
 
+test('phone verification honours the review account bypass at both ends', function () {
+    // The bypass exists so App Store review can complete flows that would otherwise need a
+    // live SMS provider. It was applied to verifyCode and confirmAccountClosure but never
+    // to phone verification, so that flow still required Twilio.
+    config([
+        'storefront.storefront_app.bypass_verification_code' => '000000',
+        'storefront.storefront_app.review_accounts'          => ['+97699112233'],
+    ]);
+
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    // The delivery schema covers stores/companies/users/verification_codes; the
+    // authenticated-customer path also needs a contact and a Sanctum token.
+    foreach (['contacts', 'personal_access_tokens'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('user_uuid')->nullable();
+        $table->string('type')->nullable();
+        $table->string('name')->nullable();
+        $table->string('phone')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+        $table->timestamps();
+    });
+    // verifyPhoneNumber stamps phone_verified_at, which the shared users schema omits.
+    $schema->table('users', function ($table) {
+        $table->timestamp('phone_verified_at')->nullable();
+    });
+    $schema->create('personal_access_tokens', function ($table) {
+        $table->increments('id');
+        $table->string('tokenable_type')->nullable();
+        $table->string('tokenable_id')->nullable();
+        $table->string('name')->nullable();
+        $table->string('token')->nullable();
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    // A real uuid: Storefront::getCustomerFromToken() only resolves the contact from the
+    // token's name when Str::isUuid() passes, and silently falls through otherwise.
+    $connection->table('contacts')->insert([
+        'uuid'         => '8f14e45f-ceea-467a-9f4d-2b5c1e0a77aa',
+        'public_id'    => 'customer_public',
+        'company_uuid' => 'company_uuid',
+        'user_uuid'    => 'user_uuid',
+        'type'         => 'customer',
+        'name'         => 'Ada Buyer',
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+    $connection->table('personal_access_tokens')->insert([
+        'name'       => '8f14e45f-ceea-467a-9f4d-2b5c1e0a77aa',
+        'token'      => hash('sha256', 'phone-verify-secret'),
+        'abilities'  => '["*"]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['company' => 'company_uuid', 'storefront_key' => 'store_key']);
+
+    $authenticate = function (array $input) {
+        $request = bindUnauthenticatedCustomerRequest($input);
+        $request->headers->set('Customer-Token', 'phone-verify-secret');
+        app()->instance('request', $request);
+
+        return $request;
+    };
+
+    // No SMS provider is bound at all — the send must not need one for a review account.
+    $sent = (new CustomerController())->requestPhoneVerification(
+        $authenticate(['phone' => '97699112233'])
+    );
+
+    expect($sent->getData(true))->toBe(['status' => 'ok', 'method' => 'bypass'])
+        // and nothing was queued for delivery
+        ->and($connection->table('verification_codes')->count())->toBe(0);
+
+    $verified = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '000000'])
+    );
+
+    expect($verified)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone'))->toBe('+97699112233')
+        ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone_verified_at'))->not->toBeNull();
+
+    // A code that is not the bypass, for the same account, is still rejected.
+    $rejected = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '111111'])
+    );
+    expect($rejected->getData(true))->toBe(['error' => 'Invalid verification code!']);
+
+    config([
+        'storefront.storefront_app.bypass_verification_code' => null,
+        'storefront.storefront_app.review_accounts'          => [],
+    ]);
+});
+
 test('customer password login reuses the storefront contact and issues an access token', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
