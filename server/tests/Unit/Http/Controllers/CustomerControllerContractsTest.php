@@ -901,6 +901,53 @@ test('customer creation rejects unverified identities before creating users or c
     ]);
 });
 
+test('customer creation falls back to the payload email when no identity is sent', function () {
+    // A body of {name, email, code} used to leave $identity null, static::phone() turned it
+    // into the literal '+', and the lookup on meta->identity could never match — so a
+    // correctly issued code was rejected.
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('verification_codes');
+    $schema->create('verification_codes', function ($table) {
+        $table->increments('id');
+        $table->string('code')->nullable();
+        $table->string('for')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('verification_codes')->insert([
+        'uuid'       => 'verification_uuid',
+        'code'       => '123456',
+        'for'        => 'storefront_create_customer',
+        'meta'       => json_encode(['identity' => 'buyer@example.test']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['storefront_key' => null]);
+
+    $matched = (new CustomerController())->create(
+        CreateCustomerRequest::create('/customer', 'POST', [
+            'code'  => '123456',
+            'email' => 'buyer@example.test',
+            'name'  => 'Buyer',
+        ])
+    );
+
+    $missing = (new CustomerController())->create(
+        CreateCustomerRequest::create('/customer', 'POST', [
+            'code' => '123456',
+            'name' => 'Buyer',
+        ])
+    );
+
+    // The fallback got past the code check — whatever it fails on next, it is no longer
+    // "Invalid verification code provided!".
+    expect(data_get($matched->getData(true), 'error'))->not->toBe('Invalid verification code provided!')
+        ->and($missing->getData(true))->toBe(['error' => 'An identity is required to create a customer.']);
+});
+
 test('customer creation persists a verified storefront identity and issues an access token', function () {
     createCustomerVerificationDeliverySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
@@ -1814,6 +1861,15 @@ test('customer phone normalization adds one international prefix', function () {
     bindUnauthenticatedCustomerRequest(['phone' => '15551234567']);
 
     expect(CustomerController::phone())->toBe('+15551234567');
+});
+
+test('customer phone normalization returns null when there is nothing to format', function () {
+    // It used to return a bare '+', which was written into contacts.phone and users.phone
+    // for every customer created without one, and used as a lookup key that never matched.
+    bindUnauthenticatedCustomerRequest();
+
+    expect(CustomerController::phone())->toBeNull()
+        ->and(CustomerController::phone(''))->toBeNull();
 });
 
 test('customer code verification rejects identities without a user account', function () {

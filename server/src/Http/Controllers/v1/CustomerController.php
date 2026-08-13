@@ -22,10 +22,10 @@ use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CustomerController extends Controller
@@ -176,11 +176,21 @@ class CustomerController extends Controller
         $code     = $request->input('code');
         $about    = Storefront::about(['company_uuid']);
         $input    = $request->only(['name', 'type', 'title', 'email', 'phone', 'meta']);
-        $identity = $request->input('identity');
         $user     = null;
 
-        if (!Utils::isEmail($identity)) {
+        // The code was filed against whatever identity requestCustomerCreationCode was
+        // given. A client that just verified an address and now posts it as `email` should
+        // not have to repeat it as `identity` — fall back to the payload before giving up.
+        // Without this, a body of {name, email, code} left $identity null, static::phone()
+        // turned it into the literal '+', and a perfectly good code was rejected.
+        $identity = $request->input('identity') ?: $request->input('email') ?: $request->input('phone');
+
+        if ($identity && !Utils::isEmail($identity)) {
             $identity = static::phone($identity);
+        }
+
+        if (blank($identity)) {
+            return response()->apiError('An identity is required to create a customer.');
         }
 
         // verify code
@@ -415,7 +425,13 @@ class CustomerController extends Controller
         $password = $request->input('password');
         $attrs    = $request->input(['name', 'phone', 'email']);
 
-        $user = User::where('email', $identity)->orWhere('phone', static::phone($identity))->first();
+        // Guard the phone branch: with no identity to format, static::phone() returns null,
+        // and `where('phone', null)` compiles to `phone IS NULL` — which would match an
+        // arbitrary phone-less user rather than nobody.
+        $identityPhone = static::phone($identity);
+        $user          = User::where('email', $identity)
+            ->when($identityPhone, fn ($query) => $query->orWhere('phone', $identityPhone))
+            ->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
             return response()->apiError('Authentication failed using password provided.', 401);
@@ -461,6 +477,12 @@ class CustomerController extends Controller
     public function loginWithPhone()
     {
         $phone = static::phone();
+
+        // Without a phone in the request there is nothing to look up. Falling through would
+        // compile to `phone IS NULL` and hand back an arbitrary phone-less user.
+        if (!$phone) {
+            return response()->apiError('No customer with this phone # found.');
+        }
 
         // check if user exists
         $user = User::where('phone', $phone)->whereNull('deleted_at')->withoutGlobalScopes()->first();
@@ -825,6 +847,13 @@ class CustomerController extends Controller
             return $this->create($request);
         }
 
+        // Without an identity there is nobody to verify. The lookup below would compile to
+        // `phone IS NULL OR email IS NULL` and pick an arbitrary user to test the code
+        // against.
+        if (blank($identity)) {
+            return response()->apiError('Unable to verify code.');
+        }
+
         // check if user exists
         $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
 
@@ -883,10 +912,17 @@ class CustomerController extends Controller
     /**
      * Patches phone number with international code.
      */
-    public static function phone(?string $phone = null): string
+    public static function phone(?string $phone = null): ?string
     {
         if ($phone === null) {
             $phone = request()->input('phone');
+        }
+
+        // With nothing to format this used to return a bare '+', which was then written
+        // into contacts.phone and users.phone for every customer created without one, and
+        // used as a verification-code lookup key that could never match.
+        if (blank($phone)) {
+            return null;
         }
 
         if (!Str::startsWith($phone, '+')) {
@@ -1107,6 +1143,12 @@ class CustomerController extends Controller
             return response()->apiError('No user associated with this customer.');
         }
 
+        // No phone to verify. This used to arrive as the literal '+' and get as far as the
+        // SMS provider before failing with a credentials error.
+        if (!$phone) {
+            return response()->apiError('A phone number is required to request verification.');
+        }
+
         // Check if phone number is already used by another user
         $existingUser = $this->findExistingUserByPhone($phone, $user->uuid);
 
@@ -1199,8 +1241,13 @@ class CustomerController extends Controller
             return response()->apiError('Invalid verification code!');
         }
 
-        // Get the phone number from meta
-        $phone = $verificationCode->meta['phone'];
+        // Get the phone number from meta. A row written by anything other than
+        // requestPhoneVerification may not carry it, and an unguarded subscript turns a
+        // recoverable 400 into a 500.
+        $phone = data_get($verificationCode->meta, 'phone');
+        if (!$phone) {
+            return response()->apiError('Verification code is not associated with a phone number.');
+        }
 
         // Update user and contact
         $user->update(['phone' => $phone, 'phone_verified_at' => now()]);
