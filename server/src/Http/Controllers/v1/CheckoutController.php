@@ -369,8 +369,12 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
+        // `checkout` is the chkt_* public id and `token` is a separate checkout_* value.
+        // GET /checkouts/status needs BOTH, and only initializeQPayCheckout was returning
+        // the id — so a cash or card client could never reach its own checkout's status.
         return response()->json([
-            'token' => $checkout->token,
+            'checkout' => $checkout->public_id,
+            'token'    => $checkout->token,
         ]);
     }
 
@@ -466,11 +470,14 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
+        // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
+        // requires alongside the token, and nothing but the QPay path used to return it.
         return response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
+            'checkout'      => $checkout->public_id,
             'token'         => $checkout->token,
         ]);
     }
@@ -689,12 +696,14 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
-        // Return JSON response with updated PaymentIntent and ephemeral key
+        // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
+        // the chkt_* public id GET /checkouts/status requires alongside the token.
         return response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
+            'checkout'      => $checkout->public_id,
             'token'         => $checkout->token,
         ]);
     }

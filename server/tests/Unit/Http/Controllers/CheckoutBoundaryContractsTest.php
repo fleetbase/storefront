@@ -1130,6 +1130,9 @@ test('checkout initialization creates a cash checkout from persisted customer ca
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true)['token'])->toBe($checkout->token)
+        // GET /checkouts/status needs the chkt_* public id as well as the token, and only
+        // the QPay path used to return it.
+        ->and($response->getData(true)['checkout'])->toBe($checkout->public_id)
         ->and($checkout->owner_uuid)->toBe('customer_uuid')
         ->and($checkout->cart_uuid)->toBe('cart_uuid')
         ->and($checkout->service_quote_uuid)->toBe('quote_uuid')
@@ -1652,6 +1655,7 @@ test('stripe checkout creates provider intents and persists its checkout token',
         ->and($data['ephemeralKey'])->toBe('eph_secret')
         ->and($data['customerId'])->toBe('cus_checkout')
         ->and($data['token'])->toBe($checkout->token)
+        ->and($data['checkout'])->toBe($checkout->public_id)
         ->and($checkout->owner_uuid)->toBe('customer_uuid')
         ->and($checkout->amount)->toBe(2200)
         ->and($checkout->is_pickup)->toBeTrue()
@@ -1870,6 +1874,7 @@ test('qpay checkout creates sandbox ebarimt invoices and persists invoice metada
     expect($data['invoice']['invoice_id'])->toBe('invoice_checkout')
         ->and($data['checkout'])->toBe($checkout->public_id)
         ->and($data['token'])->toBe($checkout->token)
+        ->and($data['checkout'])->toBe($checkout->public_id)
         ->and($checkout->amount)->toBe(2000)
         ->and($checkout->getOption('qpay_invoice_id'))->toBe('invoice_checkout')
         ->and($customer->getMeta('ebarimt_registration_no'))->toBe('1234567')
@@ -2256,6 +2261,7 @@ test('stripe payment updates enforce modifiable states and persist refreshed che
         ->and($updatedData['ephemeralKey'])->toBe('eph_secret')
         ->and($updatedData['customerId'])->toBe('cus_checkout')
         ->and($updatedData['token'])->toBe($checkout->token)
+        ->and($updatedData['checkout'])->toBe($checkout->public_id)
         ->and($checkout->amount)->toBe(1650)
         ->and($checkout->is_pickup)->toBeTrue()
         ->and($meta['stripe_payment_method_id'])->toBe('pm_new');
