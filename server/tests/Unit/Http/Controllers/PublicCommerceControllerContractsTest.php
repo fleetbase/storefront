@@ -51,9 +51,9 @@ class TestableCartController extends CartController
     public ?Fleetbase\Storefront\Models\Cart $cart = null;
     public array $retrievals                       = [];
 
-    protected function retrieveCart(?string $uniqueId, bool $create = false): Fleetbase\Storefront\Models\Cart
+    protected function retrieveCart(?string $uniqueId): Fleetbase\Storefront\Models\Cart
     {
-        $this->retrievals[] = [$uniqueId, $create];
+        $this->retrievals[] = [$uniqueId];
 
         return $this->cart;
     }
@@ -377,13 +377,16 @@ test('cart controller delegates successful item and lifecycle operations with re
         ->and($removed->resource)->toBe($cart)
         ->and($emptied->resource)->toBe($cart)
         ->and($deleted->getData(true))->toBe([])
+        // Every action resolves the cart the same way now. The flag used to vary here, but
+        // it was landing in Cart::retrieve()'s $excludeCheckedout, which meant the five
+        // mutating actions operated on carts that had already produced an order.
         ->and($controller->retrievals)->toBe([
-            ['browser-session', true],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
         ])
         ->and($cart->calls['add'])->toBe([
             'product_abcdefgh',

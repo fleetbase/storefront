@@ -9,9 +9,17 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    protected function retrieveCart(?string $uniqueId, bool $create = false): Cart
+    /**
+     * The flag used to be passed through as `$create`, but Cart::retrieve()'s second
+     * parameter is `$excludeCheckedout`. Every mutating action below took the `false`
+     * default and so happily added to, updated, emptied or deleted a cart that had
+     * already produced an order, while the GET action passed `true` and did not. The
+     * name made that read as intentional. Let Cart::retrieve() keep its own default so
+     * a checked-out cart is off limits everywhere.
+     */
+    protected function retrieveCart(?string $uniqueId): Cart
     {
-        return Cart::retrieve($uniqueId, $create);
+        return Cart::retrieve($uniqueId);
     }
 
     /**
@@ -33,7 +41,7 @@ class CartController extends Controller
      */
     public function retrieve(Request $request, ?string $uniqueId = null)
     {
-        $cart = $this->retrieveCart($uniqueId, true);
+        $cart = $this->retrieveCart($uniqueId);
 
         return new StorefrontCart($cart);
     }
