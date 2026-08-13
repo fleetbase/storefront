@@ -918,7 +918,6 @@ test('customer creation falls back to the payload email when no identity is sent
         $table->timestamp('deleted_at')->nullable();
     });
     $connection->table('verification_codes')->insert([
-        'uuid'       => 'verification_uuid',
         'code'       => '123456',
         'for'        => 'storefront_create_customer',
         'meta'       => json_encode(['identity' => 'buyer@example.test']),

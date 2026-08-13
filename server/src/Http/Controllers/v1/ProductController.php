@@ -72,7 +72,10 @@ class ProductController extends Controller
         // default, so an API-created product used to land as NULL and was then invisible to
         // every `where('status', 'published')` read path — including the cart validation in
         // CheckoutController, which dropped it at capture time.
-        $input['status'] = data_get($input, 'status') ?: Product::PUBLISHED;
+        // Literal rather than Product::PUBLISHED. The constant does not resolve under the
+        // unit-test harness (reproducible on the whole suite, not just an isolated file),
+        // and the rest of this controller writes the status literally too.
+        $input['status'] = data_get($input, 'status') ?: 'published';
 
         // Resolve category
         if ($request->filled('category')) {

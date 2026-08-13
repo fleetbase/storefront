@@ -3,7 +3,6 @@
 use Fleetbase\Storefront\Http\Controllers\v1\ProductController;
 use Fleetbase\Storefront\Http\Requests\CreateProductRequest;
 use Fleetbase\Storefront\Http\Requests\UpdateProductRequest;
-use Fleetbase\Storefront\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
@@ -328,7 +327,7 @@ test('product creation defaults status to published so the product is actually r
         'status' => 'draft',
     ]))->resource;
 
-    expect($defaulted->status)->toBe(Product::PUBLISHED)
+    expect($defaulted->status)->toBe('published')
         ->and($explicit->status)->toBe('draft');
 });
 
