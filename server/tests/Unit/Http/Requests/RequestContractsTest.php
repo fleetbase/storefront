@@ -67,12 +67,26 @@ test('checkout initialization rules require core identities and delivery quote c
     $deliveryRules = $deliveryRequest->rules();
     $pickupRules   = $pickupRequest->rules();
 
-    expect($deliveryRules)->toHaveKeys(['gateway', 'customer', 'cart', 'serviceQuote', 'cash', 'pickup'])
+    expect($deliveryRules)->toHaveKeys(['gateway', 'customer', 'cart', 'serviceQuote', 'service_quote', 'cash', 'pickup'])
         ->and($deliveryRules['gateway'][1])->toBeInstanceOf(GatewayExists::class)
         ->and($deliveryRules['customer'][1])->toBeInstanceOf(CustomerExists::class)
         ->and($deliveryRules['serviceQuote'][0])->toBeInstanceOf(RequiredIf::class)
         ->and((string) $deliveryRules['serviceQuote'][0])->toBe('required')
-        ->and((string) $pickupRules['serviceQuote'][0])->toBe('');
+        ->and((string) $deliveryRules['service_quote'][0])->toBe('required')
+        ->and((string) $pickupRules['serviceQuote'][0])->toBe('')
+        ->and((string) $pickupRules['service_quote'][0])->toBe('');
+});
+
+test('either spelling of the service quote satisfies the delivery requirement', function () {
+    // The controller reads or(['serviceQuote', 'service_quote']), so validating only one spelling
+    // rejected the other before the controller ran.
+    $snakeRules = InitializeCheckoutRequest::create('/checkout', 'POST', ['pickup' => false, 'service_quote' => 'quote_1'])->rules();
+    $camelRules = InitializeCheckoutRequest::create('/checkout', 'POST', ['pickup' => false, 'serviceQuote' => 'quote_1'])->rules();
+
+    expect((string) $snakeRules['serviceQuote'][0])->toBe('')
+        ->and((string) $snakeRules['service_quote'][0])->toBe('required')
+        ->and((string) $camelRules['service_quote'][0])->toBe('')
+        ->and((string) $camelRules['serviceQuote'][0])->toBe('required');
 });
 
 test('service quote request varies origin validation by storefront key type', function () {
