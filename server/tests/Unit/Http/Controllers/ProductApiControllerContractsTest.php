@@ -3,6 +3,7 @@
 use Fleetbase\Storefront\Http\Controllers\v1\ProductController;
 use Fleetbase\Storefront\Http\Requests\CreateProductRequest;
 use Fleetbase\Storefront\Http\Requests\UpdateProductRequest;
+use Fleetbase\Storefront\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
@@ -303,6 +304,32 @@ test('product creation normalizes commerce fields and session ownership', functi
         ->and($product->sale_price)->toBe(10000)
         ->and($product->tags)->toBe(['shipping', 'insulated'])
         ->and($product->youtube_urls)->toBe(['https://example.test/demo']);
+});
+
+test('product creation defaults status to published so the product is actually readable', function () {
+    // The column is nullable with no default. An API-created product used to land as NULL
+    // and was then invisible to every `where('status', 'published')` read path — including
+    // CheckoutController's cart validation, which dropped it at capture time.
+    createProductApiControllerSchema();
+    session([
+        'company'          => 'company_uuid',
+        'user'             => 'user_uuid',
+        'storefront_store' => 'store_uuid',
+    ]);
+
+    $defaulted = (new ProductController())->create(CreateProductRequest::create('/products', 'POST', [
+        'name'  => 'No status supplied',
+        'price' => '1000',
+    ]))->resource;
+
+    $explicit = (new ProductController())->create(CreateProductRequest::create('/products', 'POST', [
+        'name'   => 'Draft on purpose',
+        'price'  => '1000',
+        'status' => 'draft',
+    ]))->resource;
+
+    expect($defaulted->status)->toBe(Product::PUBLISHED)
+        ->and($explicit->status)->toBe('draft');
 });
 
 test('product creation persists category addons variants and option contracts', function () {

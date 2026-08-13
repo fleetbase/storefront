@@ -68,6 +68,12 @@ class ProductController extends Controller
         // Set currency
         $input['currency'] = data_get($input, 'currency', session('storefront_currency', 'USD'));
 
+        // Default the status the way the console does. The column is nullable with no
+        // default, so an API-created product used to land as NULL and was then invisible to
+        // every `where('status', 'published')` read path — including the cart validation in
+        // CheckoutController, which dropped it at capture time.
+        $input['status'] = data_get($input, 'status') ?: Product::PUBLISHED;
+
         // Resolve category
         if ($request->filled('category')) {
             $categoryInput = $request->input('category');

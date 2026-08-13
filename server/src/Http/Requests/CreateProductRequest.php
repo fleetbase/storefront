@@ -38,7 +38,12 @@ class CreateProductRequest extends FleetbaseRequest
             'is_recommended'   => 'nullable|boolean',
             'can_pickup'       => 'nullable|boolean',
             'youtube_urls'     => 'nullable|array',
-            'status'           => 'nullable|string|in:draft,active,archived',
+            // `published` is the status the rest of the module reads — Product::PUBLISHED,
+            // the network branch of Cart::findProduct(), ProductController::find/query,
+            // CategoryController, StoreController, and CheckoutController's cart validation
+            // all filter on it, and the console writes it. Leaving it out of this list meant
+            // a product created through the public API could never satisfy any of them.
+            'status'           => 'nullable|string|in:draft,active,archived,published',
             'category'         => 'nullable',
             'addon_categories' => 'nullable|array',
         ];

@@ -131,7 +131,11 @@ test('product request publishes complete create and update validation contracts'
     ])->and($createRules['price'][0])->toBeInstanceOf(RequiredIf::class)
         ->and((string) $createRules['price'][0])->toBe('required')
         ->and((string) $updateRules['price'][0])->toBe('')
-        ->and($createRules['status'])->toContain('in:draft,active,archived')
+        // `published` is what the eleven read paths filter on and what the console writes.
+        // Leaving it out meant a product created through the public API could never be
+        // seen by a network storefront, nor survive CheckoutController's cart validation.
+        ->and($createRules['status'])->toContain('in:draft,active,archived,published')
+        ->and($updateRules['status'])->toContain('in:draft,active,archived,published')
         ->and($createRules['currency'])->toContain('size:3');
 });
 
