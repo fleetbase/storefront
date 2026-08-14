@@ -1320,7 +1320,14 @@ test('customer phone login generates a storefront-scoped SMS verification code',
     $response = (new CustomerController())->loginWithPhone();
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
 
+    // No phone in the request at all. static::phone() returns null rather than the bare
+    // '+' it used to, and `where('phone', null)` compiles to `phone IS NULL` — which would
+    // hand back an arbitrary phone-less user and send them a login code.
+    bindUnauthenticatedCustomerRequest([]);
+    $withoutPhone = (new CustomerController())->loginWithPhone();
+
     expect($response->getData(true))->toBe(['status' => 'OK', 'method' => 'sms'])
+        ->and($withoutPhone->getData(true))->toBe(['error' => 'No customer with this phone # found.'])
         ->and($connection->table('verification_codes')->where([
             'subject_uuid' => 'user_uuid',
             'for'          => 'storefront_login',
@@ -1567,6 +1574,32 @@ test('phone verification honours the review account bypass at both ends', functi
     );
     expect($rejected->getData(true))->toBe(['error' => 'Invalid verification code!']);
 
+    // No phone to verify. static::phone() returns null rather than the bare '+' it used
+    // to, so this has to be caught before findExistingUserByPhone(string $phone) is
+    // reached — and long before the SMS provider is.
+    $noPhone = (new CustomerController())->requestPhoneVerification($authenticate([]));
+    expect($noPhone->getData(true))->toBe(['error' => 'A phone number is required to request verification.']);
+
+    // A verification row that carries no meta.phone. requestPhoneVerification always
+    // writes one, but anything else that files a storefront_verify_phone code may not,
+    // and the subscript used to be unguarded — a 500 where a 400 belongs.
+    $connection->table('verification_codes')->insert([
+        'uuid'         => 'verification_without_phone',
+        'subject_uuid' => 'user_uuid',
+        'subject_type' => Fleetbase\Models\User::class,
+        'code'         => '222222',
+        'for'          => 'storefront_verify_phone',
+        'meta'         => json_encode([]),
+        'expires_at'   => now()->addHour(),
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+
+    $noMetaPhone = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '222222'])
+    );
+    expect($noMetaPhone->getData(true))->toBe(['error' => 'Verification code is not associated with a phone number.']);
+
     config([
         'storefront.storefront_app.bypass_verification_code' => null,
         'storefront.storefront_app.review_accounts'          => [],
@@ -1698,10 +1731,22 @@ test('customer password login reuses the storefront contact and issues an access
         'code'     => '123456',
     ]));
 
+    // No identity at all. The lookup below the guard is `phone = $identity OR email =
+    // $identity`, which with null compiles to `phone IS NULL OR email IS NULL` and picks an
+    // arbitrary user to test the code against.
+    //
+    // The request has to be BOUND, not just passed: static::phone() falls back to
+    // request()->input('phone'), so an earlier bound request carrying a phone would supply
+    // an identity this call never sent. Last in the test so the rebind affects nothing else.
+    $withoutIdentityRequest = Request::create('/customer/code', 'POST', ['code' => '123456']);
+    app()->instance('request', $withoutIdentityRequest);
+    $withoutIdentity = (new CustomerController())->verifyCode($withoutIdentityRequest);
+
     expect($resource)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($resource->resource->uuid)->toBe('contact_uuid')
         ->and($resource->resource->token)->not->toBeEmpty()
         ->and($invalidCode->getData(true))->toBe(['error' => 'Invalid verification code!'])
+        ->and($withoutIdentity->getData(true))->toBe(['error' => 'Unable to verify code.'])
         ->and($verified)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($verified->resource->token)->not->toBeEmpty()
         ->and($tokenCount)->toBe(2)
