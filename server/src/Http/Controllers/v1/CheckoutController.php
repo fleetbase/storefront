@@ -21,6 +21,7 @@ use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
@@ -123,6 +124,72 @@ class CheckoutController extends Controller
         return $storeLocation ? $storeLocation->place_uuid : null;
     }
 
+    protected function validateMarketplaceCart(Cart $cart)
+    {
+        $networkUuid = session('storefront_network');
+        if (!$networkUuid) {
+            return null;
+        }
+
+        $items = collect($cart->items);
+        if ($items->isEmpty()) {
+            return response()->apiError('The cart is empty.', 422);
+        }
+
+        $storeIds = $items->pluck('store_id')->filter()->unique()->values();
+        if ($storeIds->count() !== $items->pluck('store_id')->unique()->count()) {
+            return response()->apiError('Every marketplace cart item must identify its store.', 422);
+        }
+
+        $stores = Store::whereIn('public_id', $storeIds)
+            ->whereHas('networks', fn ($query) => $query->where('network_uuid', $networkUuid))
+            ->get()
+            ->keyBy('public_id');
+
+        if ($stores->count() !== $storeIds->count()) {
+            return response()->apiError('The cart contains a store outside this marketplace.', 403);
+        }
+
+        if ($stores->contains(fn (Store $store) => !$store->online)) {
+            return response()->apiError('A store in this cart is currently offline.', 422);
+        }
+
+        $network          = Network::select(['uuid', 'options'])->where('uuid', $networkUuid)->first();
+        $multiCartEnabled = data_get($network, 'options.multi_cart_enabled') === true;
+        if ($storeIds->count() > 1 && !$multiCartEnabled) {
+            return response()->apiError('This marketplace only supports one store per cart.', 422);
+        }
+
+        $products = Product::whereIn('public_id', $items->pluck('product_id')->filter()->unique())
+            ->whereIn('store_uuid', $stores->pluck('uuid'))
+            ->where('is_available', 1)
+            ->where('status', 'published')
+            ->get()
+            ->keyBy('public_id');
+        $locations = StoreLocation::whereIn('public_id', $items->pluck('store_location_id')->filter()->unique())
+            ->whereIn('store_uuid', $stores->pluck('uuid'))
+            ->get()
+            ->keyBy('public_id');
+
+        foreach ($items as $item) {
+            $store    = $stores->get($item->store_id ?? null);
+            $product  = $products->get($item->product_id ?? null);
+            $location = $locations->get($item->store_location_id ?? null);
+            if (!$store || !$product || $product->store_uuid !== $store->uuid) {
+                return response()->apiError('A product in this cart is no longer available from its store.', 422);
+            }
+            if (!$location || $location->store_uuid !== $store->uuid) {
+                return response()->apiError('A store location in this cart is no longer valid.', 422);
+            }
+        }
+
+        if ($products->pluck('currency')->filter()->unique()->count() > 1) {
+            return response()->apiError('Marketplace carts cannot combine different currencies.', 422);
+        }
+
+        return null;
+    }
+
     protected function resolveFoodTruck(Cart $cart): ?FoodTruck
     {
         return collect($cart->items)
@@ -163,6 +230,47 @@ class CheckoutController extends Controller
         return [$orderMeta, $orderInput];
     }
 
+    /**
+     * Resolves the customer a checkout is for.
+     *
+     * The customer used to be taken from the request body and trusted. A storefront
+     * key is client-side by nature — it ships inside the storefront app — and customer
+     * public ids appear in ordinary API responses, so anyone holding a key could check
+     * out as an arbitrary customer simply by passing their id.
+     *
+     * When a Customer-Token is present it now wins, and a body parameter naming a
+     * different customer is refused rather than silently honoured. Guest checkout is
+     * unaffected: with no token the body parameter is still used, since a guest has no
+     * token to present.
+     *
+     * @return Customer|\Illuminate\Http\JsonResponse|null
+     */
+    protected static function resolveCheckoutCustomer(?string $customerId)
+    {
+        $authenticated = Storefront::getCustomerFromToken();
+
+        // Guest checkout — no token to check against.
+        if (!$authenticated) {
+            return $customerId ? Customer::findFromCustomerId($customerId) : null;
+        }
+
+        if ($customerId) {
+            // A storefront customer is stored as a Contact, and findFromCustomerId()
+            // rewrites a customer_ prefix to contact_ before looking it up. Compare in
+            // that same space, or a caller's own customer_xxxx would never match the
+            // contact_xxxx on their record and every authenticated checkout would 403.
+            $normalized = Str::startsWith($customerId, 'customer')
+                ? Str::replaceFirst('customer', 'contact', $customerId)
+                : $customerId;
+
+            if ($authenticated->public_id !== $normalized) {
+                return response()->apiError('Customer does not match the authenticated session.', 403);
+            }
+        }
+
+        return Customer::findFromCustomerId($authenticated->public_id) ?? $authenticated;
+    }
+
     public function beforeCheckout(InitializeCheckoutRequest $request)
     {
         $gatewayCode      = $request->input('gateway');
@@ -183,9 +291,16 @@ class CheckoutController extends Controller
         ]);
 
         // find and validate cart session
-        $cart         = Cart::retrieve($cartId);
+        $cart           = Cart::retrieve($cartId);
+        $cartValidation = $this->validateMarketplaceCart($cart);
+        if ($cartValidation) {
+            return $cartValidation;
+        }
         $gateway      = Storefront::findGateway($gatewayCode);
-        $customer     = Customer::findFromCustomerId($customerId);
+        $customer     = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
         // handle cash orders
@@ -254,8 +369,12 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
+        // `checkout` is the chkt_* public id and `token` is a separate checkout_* value.
+        // GET /checkouts/status needs BOTH, and only initializeQPayCheckout was returning
+        // the id — so a cash or card client could never reach its own checkout's status.
         return response()->json([
-            'token' => $checkout->token,
+            'checkout' => $checkout->public_id,
+            'token'    => $checkout->token,
         ]);
     }
 
@@ -351,11 +470,14 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
+        // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
+        // requires alongside the token, and nothing but the QPay path used to return it.
         return response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
+            'checkout'      => $checkout->public_id,
             'token'         => $checkout->token,
         ]);
     }
@@ -373,7 +495,10 @@ class CheckoutController extends Controller
             return response()->apiError('Gateway not configured correctly!');
         }
 
-        $customer = Customer::findFromCustomerId($customerId);
+        $customer = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
@@ -472,7 +597,10 @@ class CheckoutController extends Controller
         }
         // @codeCoverageIgnoreEnd
 
-        $customer = Customer::findFromCustomerId($customerId);
+        $customer = static::resolveCheckoutCustomer($customerId);
+        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+            return $customer;
+        }
         if (!$customer) {
             return response()->apiError('Invalid customer ID provided');
         }
@@ -568,12 +696,14 @@ class CheckoutController extends Controller
             'cart_state'         => $cart->toArray(),
         ]);
 
-        // Return JSON response with updated PaymentIntent and ephemeral key
+        // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
+        // the chkt_* public id GET /checkouts/status requires alongside the token.
         return response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
             'customerId'    => $customer->getMeta('stripe_id'),
+            'checkout'      => $checkout->public_id,
             'token'         => $checkout->token,
         ]);
     }

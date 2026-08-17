@@ -47,7 +47,12 @@ class CategoryController extends Controller
                 })->toArray();
 
                 // get all products in these categories
-                $products = Product::whereIn('category_uuid', $categoryIds)->where('is_available', 1)->with(['addonCategories', 'variants', 'files'])->get();
+                $products = Product::whereIn('category_uuid', $categoryIds)
+                    ->where('store_uuid', session('storefront_store'))
+                    ->where('is_available', 1)
+                    ->where('status', 'published')
+                    ->with(['addonCategories', 'variants', 'files'])
+                    ->get();
 
                 $results = $results->map(function ($category) use ($products) {
                     $category->products = $products->where('category_uuid', $category->uuid)->mapInto(ProductResource::class)->values();
@@ -60,7 +65,6 @@ class CategoryController extends Controller
         if (session('storefront_network')) {
             if ($request->filled('store')) {
                 $store = Store::where([
-                    'company_uuid' => session('company'),
                     'public_id'    => $request->input('store'),
                 ])->whereHas('networks', function ($q) {
                     $q->where('network_uuid', session('storefront_network'));
@@ -91,7 +95,12 @@ class CategoryController extends Controller
                         })->toArray();
 
                         // get all products in these categories
-                        $products = Product::whereIn('category_uuid', $categoryIds)->where('is_available', 1)->with(['addonCategories', 'variants', 'files'])->get();
+                        $products = Product::whereIn('category_uuid', $categoryIds)
+                            ->where('store_uuid', $store->uuid)
+                            ->where('is_available', 1)
+                            ->where('status', 'published')
+                            ->with(['addonCategories', 'variants', 'files'])
+                            ->get();
 
                         $results = $results->map(function ($category) use ($products) {
                             // $category->products = Product::where('category_uuid', $category->uuid)->get()->mapInto(ProductResource::class);
@@ -120,11 +129,21 @@ class CategoryController extends Controller
 
                 // if we want to get categories with stores
                 if ($request->has('with_stores')) {
-                    $results = $results->map(function ($category) {
-                        $category->stores = Store::whereHas('networks', function ($q) use ($category) {
-                            $q->where('network_uuid', session('storefront_network'));
-                            $q->where('category_uuid', $category->uuid);
-                        })->get();
+                    $categoryIds = $results->pluck('uuid');
+                    $stores      = Store::whereHas('networks', function ($q) use ($categoryIds) {
+                        $q->where('network_uuid', session('storefront_network'));
+                        $q->whereIn('category_uuid', $categoryIds);
+                    })->with(['networks' => function ($q) use ($categoryIds) {
+                        $q->where('network_uuid', session('storefront_network'));
+                        $q->whereIn('category_uuid', $categoryIds);
+                    }])->get();
+
+                    $results = $results->map(function ($category) use ($stores) {
+                        $category->stores = $stores->filter(function ($store) use ($category) {
+                            return $store->networks->contains(function ($network) use ($category) {
+                                return $network->pivot?->category_uuid === $category->uuid;
+                            });
+                        })->values();
 
                         return $category;
                     });

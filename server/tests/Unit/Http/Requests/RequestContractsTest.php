@@ -67,12 +67,26 @@ test('checkout initialization rules require core identities and delivery quote c
     $deliveryRules = $deliveryRequest->rules();
     $pickupRules   = $pickupRequest->rules();
 
-    expect($deliveryRules)->toHaveKeys(['gateway', 'customer', 'cart', 'serviceQuote', 'cash', 'pickup'])
+    expect($deliveryRules)->toHaveKeys(['gateway', 'customer', 'cart', 'serviceQuote', 'service_quote', 'cash', 'pickup'])
         ->and($deliveryRules['gateway'][1])->toBeInstanceOf(GatewayExists::class)
         ->and($deliveryRules['customer'][1])->toBeInstanceOf(CustomerExists::class)
         ->and($deliveryRules['serviceQuote'][0])->toBeInstanceOf(RequiredIf::class)
         ->and((string) $deliveryRules['serviceQuote'][0])->toBe('required')
-        ->and((string) $pickupRules['serviceQuote'][0])->toBe('');
+        ->and((string) $deliveryRules['service_quote'][0])->toBe('required')
+        ->and((string) $pickupRules['serviceQuote'][0])->toBe('')
+        ->and((string) $pickupRules['service_quote'][0])->toBe('');
+});
+
+test('either spelling of the service quote satisfies the delivery requirement', function () {
+    // The controller reads or(['serviceQuote', 'service_quote']), so validating only one spelling
+    // rejected the other before the controller ran.
+    $snakeRules = InitializeCheckoutRequest::create('/checkout', 'POST', ['pickup' => false, 'service_quote' => 'quote_1'])->rules();
+    $camelRules = InitializeCheckoutRequest::create('/checkout', 'POST', ['pickup' => false, 'serviceQuote' => 'quote_1'])->rules();
+
+    expect((string) $snakeRules['serviceQuote'][0])->toBe('')
+        ->and((string) $snakeRules['service_quote'][0])->toBe('required')
+        ->and((string) $camelRules['service_quote'][0])->toBe('')
+        ->and((string) $camelRules['serviceQuote'][0])->toBe('required');
 });
 
 test('service quote request varies origin validation by storefront key type', function () {
@@ -117,7 +131,11 @@ test('product request publishes complete create and update validation contracts'
     ])->and($createRules['price'][0])->toBeInstanceOf(RequiredIf::class)
         ->and((string) $createRules['price'][0])->toBe('required')
         ->and((string) $updateRules['price'][0])->toBe('')
-        ->and($createRules['status'])->toContain('in:draft,active,archived')
+        // `published` is what the eleven read paths filter on and what the console writes.
+        // Leaving it out meant a product created through the public API could never be
+        // seen by a network storefront, nor survive CheckoutController's cart validation.
+        ->and($createRules['status'])->toContain('in:draft,active,archived,published')
+        ->and($updateRules['status'])->toContain('in:draft,active,archived,published')
         ->and($createRules['currency'])->toContain('size:3');
 });
 
@@ -131,7 +149,11 @@ test('customer review verification and capture request rules preserve API contra
 
     expect($customerRules)->toHaveKeys(['code', 'name', 'email', 'phone'])
         ->and($customerRules['code'])->toBe('required|exists:verification_codes,code')
+        // `subject` is required: the controller resolves it with Utils::resolveSubject(),
+        // whose parameter is a non-nullable string, so omitting it threw a TypeError as a
+        // 500 before the controller's own "Invalid subject for review" guard could run.
         ->and($reviewRules)->toBe([
+            'subject'  => 'required|string',
             'rating'   => 'required|numeric',
             'content'  => 'required',
             'files'    => 'sometimes|array',

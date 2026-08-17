@@ -506,6 +506,148 @@ test('store controller rejects location access for networks without an explicit 
         ->and($location->getData(true))->toBe(['error' => 'Networks cannot have locations!']);
 });
 
+test('network storefront lookup and location access are limited to member stores including cross-company invitees', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['store_hours', 'places', 'store_locations', 'network_stores', 'networks', 'stores'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('network_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->string('category_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('places', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->string('place_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_hours', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('store_location_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('networks')->insert([
+        'uuid'         => 'network_uuid',
+        'public_id'    => 'network_public',
+        'company_uuid' => 'network_company',
+    ]);
+    $connection->table('stores')->insert([
+        [
+            'uuid'         => 'member_store_uuid',
+            'public_id'    => 'store_member',
+            'company_uuid' => 'invited_company',
+        ],
+        [
+            'uuid'         => 'foreign_store_uuid',
+            'public_id'    => 'store_foreign',
+            'company_uuid' => 'network_company',
+        ],
+    ]);
+    $connection->table('network_stores')->insert([
+        'network_uuid' => 'network_uuid',
+        'store_uuid'   => 'member_store_uuid',
+    ]);
+    $connection->table('places')->insert([
+        ['uuid' => 'member_place_uuid', 'public_id' => 'place_member'],
+        ['uuid' => 'foreign_place_uuid', 'public_id' => 'place_foreign'],
+    ]);
+    $connection->table('store_locations')->insert([
+        [
+            'uuid'       => 'member_location_uuid',
+            'public_id'  => 'location_member',
+            'store_uuid' => 'member_store_uuid',
+            'place_uuid' => 'member_place_uuid',
+        ],
+        [
+            'uuid'       => 'foreign_location_uuid',
+            'public_id'  => 'location_foreign',
+            'store_uuid' => 'foreign_store_uuid',
+            'place_uuid' => 'foreign_place_uuid',
+        ],
+    ]);
+    session([
+        'company'            => 'network_company',
+        'storefront_store'   => null,
+        'storefront_network' => 'network_uuid',
+    ]);
+    $controller = new StoreController();
+
+    $memberLookup     = $controller->lookup('store_member');
+    $foreignLookup    = $controller->lookup('store_foreign');
+    $memberLocations  = $controller->locations(Request::create('/locations', 'GET', ['store' => 'store_member']));
+    $foreignLocations = $controller->locations(Request::create('/locations', 'GET', ['store' => 'store_foreign']));
+    $foreignLocation  = $controller->location('location_foreign', Request::create('/locations/location_foreign', 'GET', ['store' => 'store_foreign']));
+
+    expect($memberLookup)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Store::class)
+        ->and($foreignLookup->getStatusCode())->toBe(400)
+        ->and($memberLocations->resource)->toHaveCount(1)
+        ->and($foreignLocations->resource)->toBeEmpty()
+        ->and($foreignLocation->getStatusCode())->toBe(404);
+});
+
+test('store controller answers 404 for an unknown store or location instead of throwing', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['store_hours', 'store_locations', 'places', 'stores'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->string('uuid')->primary();
+        $table->string('public_id');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->string('uuid')->primary();
+        $table->string('public_id');
+        $table->string('store_uuid');
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('stores')->insert(['uuid' => 'store_uuid', 'public_id' => 'store_public']);
+
+    session(['storefront_network' => null, 'storefront_store' => 'store_public']);
+    $request = Request::create('/v1/storefront/locations');
+
+    // Both lookups were unguarded, so an id that resolved nothing reached the resource
+    // and threw inside it — the endpoint answered 500 with an HTML stack trace for any
+    // stale or mistyped location id.
+    $missingLocation = (new StoreController())->location('location_does_not_exist', $request);
+
+    session(['storefront_store' => 'store_does_not_exist']);
+    $missingStore = (new StoreController())->location('location_public', $request);
+
+    expect($missingLocation->getStatusCode())->toBe(404)
+        ->and($missingLocation->getData(true))->toBe(['error' => 'Store location not found!'])
+        ->and($missingStore->getStatusCode())->toBe(404)
+        ->and($missingStore->getData(true))->toBe(['error' => 'Unable to find store!']);
+});
+
 test('store controller resolves active and explicitly selected store locations with their relations', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
@@ -706,9 +848,10 @@ test('store controller searches direct and category products across store and ne
         'storefront_network' => 'network_uuid',
     ]);
     $networkResults = $controller->search(Request::create('/search', 'GET', [
-        'query' => 'Coffee',
-        'store' => 'store_abcdefgh',
-        'limit' => 10,
+        'query'      => 'Coffee',
+        'store'      => 'store_abcdefgh',
+        'limit'      => 10,
+        'with_store' => true,
     ]));
 
     expect($storeResults->resource->pluck('uuid')->all())->toBe([
@@ -716,7 +859,7 @@ test('store controller searches direct and category products across store and ne
         'category_product_uuid',
     ])->and($networkResults->resource->pluck('uuid')->all())->toBe([
         'direct_product_uuid',
-    ]);
+    ])->and($networkResults->resource->first()->relationLoaded('store'))->toBeTrue();
 });
 
 test('network controller resolves public IDs and invitation codes to their network', function () {

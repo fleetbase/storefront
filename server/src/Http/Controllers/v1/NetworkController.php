@@ -25,15 +25,17 @@ class NetworkController extends Controller
             return response()->error('Stores cannot have stores!');
         }
 
-        $sort        = $request->input('sort', false);
-        $limit       = $request->input('limit', false);
-        $offset      = $request->input('offset', false);
-        $ids         = $request->input('ids', []);
-        $tagged      = $request->input('tagged', []);
-        $query       = $request->input('query', false);
-        $location    = $request->input('location');
-        $maxDistance = $request->input('maximum_distance', null);
-        $exclude     = $request->input('exclude', []);
+        $sort                           = $request->input('sort', false);
+        $limit                          = $request->input('limit', false);
+        $offset                         = $request->input('offset', false);
+        $ids                            = $request->input('ids', []);
+        $tagged                         = $request->input('tagged', []);
+        $searchQuery                    = $request->input('query', false);
+        $location                       = $request->input('location');
+        $maxDistance                    = $request->input('maximum_distance', null);
+        $exclude                        = $request->input('exclude', []);
+        $coordinates                    = Utils::getPointFromCoordinates($location);
+        $requiresDistancePostProcessing = $coordinates instanceof Point && ($sort === 'nearest' || is_numeric($maxDistance));
 
         if (is_string($tagged)) {
             $tagged = explode(',', $tagged);
@@ -49,8 +51,7 @@ class NetworkController extends Controller
 
         /** @var \Illuminate\Database\Query\Builder $query */
         $query = Store::select('*')
-            ->where('company_uuid', session('company'))
-            ->with(['logo', 'backdrop', 'media'])
+            ->with(['logo', 'backdrop', 'media', 'locations.place'])
             ->whereHas('locations')
             ->whereHas('networks', function ($q) use ($request) {
                 $q->where('network_uuid', session('storefront_network'));
@@ -62,11 +63,23 @@ class NetworkController extends Controller
 
                 // Query stores by category
                 if ($request->filled('category')) {
-                    $category = Category::select('uuid')->where('public_id', $request->input('category'))->first();
-                    $q->where('category_uuid', $category->uuid);
-                    // $q->whereHas('category', function ())
+                    $category = Category::select('uuid')
+                        ->where('public_id', $request->input('category'))
+                        ->where('owner_uuid', session('storefront_network'))
+                        ->where('for', 'storefront_network')
+                        ->first();
+
+                    $q->where('category_uuid', $category?->uuid ?? '__missing_network_category__');
                 }
             });
+
+        if ($searchQuery) {
+            $query->search($searchQuery);
+        }
+
+        if ($request->has('online')) {
+            $query->where('online', $request->boolean('online'));
+        }
 
         // query stores using tags provided
         if (!empty($tagged)) {
@@ -102,64 +115,62 @@ class NetworkController extends Controller
         switch ($sort) {
             case 'highest_rated':
                 $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating');
-                // no break
+                break;
             case 'lowest_rated':
                 $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating');
-                // no break
+                break;
             case 'newest':
                 $query->orderByDesc('created_at');
-                // no break
+                break;
             case 'oldest':
                 $query->orderBy('created_at');
-                // no break
+                break;
             case 'popular':
                 $query->withCount('checkouts')->orderByDesc('checkouts_count');
+                break;
+            case 'trending':
+                $query->withCount([
+                    'checkouts as recent_checkouts_count' => fn ($checkoutQuery) => $checkoutQuery->where('created_at', '>=', now()->subDay()),
+                ])->orderByDesc('recent_checkouts_count');
+                break;
         }
 
-        if ($limit) {
+        if ($limit && !$requiresDistancePostProcessing) {
             $query->limit($limit);
         }
 
-        if ($offset) {
+        if ($offset && !$requiresDistancePostProcessing) {
             $query->offset($offset);
         }
 
         $stores = $query->get();
 
         // handle nearest sort special case due to location depth
-        if ($sort === 'nearest' && $location) {
-            $coordinates = Utils::getPointFromCoordinates($location);
+        if ($requiresDistancePostProcessing) {
+            $stores = $stores->map(function ($store) use ($coordinates) {
+                $nearestLocation = $store->locations
+                    ->filter(fn ($storeLocation) => $storeLocation->place?->location instanceof Point)
+                    ->map(function ($storeLocation) use ($coordinates) {
+                        $storeLocation->distance = Utils::vincentyGreatCircleDistance($coordinates, $storeLocation->place->location);
 
-            $stores = $stores->sort(function ($storeA, $storeB) use ($coordinates) {
-                $distanceA = $storeA->locations->sort(function ($locationA, $locationB) use ($coordinates) {
-                    $distanceA = Utils::vincentyGreatCircleDistance($coordinates, $locationA->place->location);
-                    $distanceB = Utils::vincentyGreatCircleDistance($coordinates, $locationB->place->location);
+                        return $storeLocation;
+                    })
+                    ->sortBy('distance')
+                    ->first();
 
-                    return $distanceA - $distanceB;
-                })->map(function ($location) use ($coordinates) {
-                    $location->distance = Utils::vincentyGreatCircleDistance($coordinates, $location->place->location);
+                $store->distance = $nearestLocation?->distance;
 
-                    return $location;
-                })->first()->distance;
+                return $store;
+            })->when(is_numeric($maxDistance), function ($collection) use ($maxDistance) {
+                return $collection->filter(fn ($store) => is_numeric($store->distance) && $store->distance <= (float) $maxDistance);
+            })->when($sort === 'nearest', fn ($collection) => $collection->sortBy(fn ($store) => $store->distance ?? PHP_FLOAT_MAX))->values();
 
-                $distanceB = $storeB->locations->sort(function ($locationA, $locationB) use ($coordinates) {
-                    $distanceA = Utils::vincentyGreatCircleDistance($coordinates, $locationA->place->location);
-                    $distanceB = Utils::vincentyGreatCircleDistance($coordinates, $locationB->place->location);
-
-                    return $distanceA - $distanceB;
-                })->map(function ($location) use ($coordinates) {
-                    $location->distance = Utils::vincentyGreatCircleDistance($coordinates, $location->place->location);
-
-                    return $location;
-                })->first()->distance;
-
-                return $distanceA - $distanceB;
-            });
-        }
-
-        // sort trending ( most checkouts within 24h )
-        if ($sort === 'trending') {
-            $stores = $stores->sortByDesc('24h_checkouts_count');
+            if ($offset) {
+                $stores = $stores->slice((int) $offset)->values();
+            }
+            if ($limit) {
+                $stores = $stores->take((int) $limit)->values();
+            }
         }
 
         return StorefrontStore::collection($stores);
@@ -172,6 +183,13 @@ class NetworkController extends Controller
      */
     public function storeLocations(Request $request)
     {
+        $storeUuid   = session('storefront_store');
+        $networkUuid = session('storefront_network');
+
+        if (!$storeUuid && !$networkUuid) {
+            return response()->error('Store locations require a storefront context!');
+        }
+
         $limit              = $request->input('limit', 30);
         $ids                = $request->input('ids', []);
         $exclude            = $request->input('exclude', []);
@@ -199,10 +217,12 @@ class NetworkController extends Controller
 
         $query = StoreLocation::select(['store_locations.*', $placesTableName . '.location', $placesTableName . '.uuid as place_uuid'])
             ->join($placesTableName, $placesTableName . '.uuid', '=', 'store_locations.place_uuid')
-            ->whereHas('store', function ($q) use ($tagged, $searchQuery) {
-                $q->whereHas('networks', function ($q) {
-                    $q->where('network_uuid', session('storefront_network'));
-                });
+            ->whereHas('store', function ($q) use ($storeUuid, $networkUuid, $tagged, $searchQuery) {
+                if ($storeUuid) {
+                    $q->where('uuid', $storeUuid);
+                } else {
+                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                }
 
                 if (!empty($tagged)) {
                     $q->where(function ($q) use ($tagged) {
@@ -218,7 +238,7 @@ class NetworkController extends Controller
             });
 
         if ($shouldIncludeStore) {
-            $query->with('store');
+            $query->with(['store.logo', 'store.backdrop']);
         }
 
         // if we need to exclude specific stores
@@ -259,13 +279,22 @@ class NetworkController extends Controller
      */
     public function tags(Request $request)
     {
+        $storeUuid   = session('storefront_store');
+        $networkUuid = session('storefront_network');
+
+        if (!$storeUuid && !$networkUuid) {
+            return response()->error('Tags require a storefront context!');
+        }
+
         $tags = [];
 
         $stores = Store::select(['tags'])
             ->whereHas('locations')
-            ->whereHas('networks', function ($q) {
-                $q->where('network_uuid', session('storefront_network'));
-            })->get();
+            ->when($storeUuid, fn ($query) => $query->where('uuid', $storeUuid))
+            ->when($networkUuid, function ($query) use ($networkUuid) {
+                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+            })
+            ->get();
 
         foreach ($stores as $store) {
             $tags = array_merge($tags, $store->tags ?? []);

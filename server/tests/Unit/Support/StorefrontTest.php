@@ -227,6 +227,7 @@ test('storefront resolves store and network identities products and cart item de
     ]);
     $connection->table('order_configs')->insert([
         'uuid'       => 'order_config_uuid',
+        'flow'       => '[]',
         'activities' => '[]',
         'created_at' => now(),
         'updated_at' => now(),
@@ -278,6 +279,7 @@ test('storefront auto acceptance and dispatch preserve pickup adhoc and driver t
     ]);
     $connection->table('order_configs')->insert([
         'uuid'       => 'order_config_uuid',
+        'flow'       => '[]',
         'activities' => '[]',
         'created_at' => now(),
         'updated_at' => now(),
@@ -351,13 +353,14 @@ test('storefront resolves cached session and related order configuration contrac
         'name'              => 'Corner Store',
     ]);
     $connection->table('order_configs')->insert([
-        'uuid'         => 'order_config_uuid',
-        'company_uuid' => '11111111-1111-4111-8111-111111111111',
-        'key'          => 'storefront-config',
-        'namespace'    => 'storefront',
-        'activities'   => '[]',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'uuid'          => 'order_config_uuid',
+        'company_uuid'  => '11111111-1111-4111-8111-111111111111',
+        'key'           => 'storefront-config',
+        'namespace'     => 'storefront',
+        'flow'          => '[]',
+        'activities'    => '[]',
+        'created_at'    => now(),
+        'updated_at'    => now(),
     ]);
     session([
         'company'        => '11111111-1111-4111-8111-111111111111',
@@ -374,13 +377,14 @@ test('storefront resolves cached session and related order configuration contrac
     $company       = new Fleetbase\Models\Company();
     $company->uuid = '22222222-2222-4222-8222-222222222222';
     $connection->table('order_configs')->insert([
-        'uuid'         => 'patch_config_uuid',
-        'company_uuid' => '33333333-3333-4333-8333-333333333333',
-        'key'          => 'storefront',
-        'namespace'    => 'system:order-config:storefront',
-        'activities'   => '[]',
-        'created_at'   => now(),
-        'updated_at'   => now(),
+        'uuid'          => 'patch_config_uuid',
+        'company_uuid'  => '33333333-3333-4333-8333-333333333333',
+        'key'           => 'storefront',
+        'namespace'     => 'system:order-config:storefront',
+        'flow'          => '[]',
+        'activities'    => '[]',
+        'created_at'    => now(),
+        'updated_at'    => now(),
     ]);
     $companyOrder = new StorefrontOrderStub();
     $companyOrder->forceFill(['company_uuid' => '33333333-3333-4333-8333-333333333333']);

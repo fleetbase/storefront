@@ -68,6 +68,15 @@ class ProductController extends Controller
         // Set currency
         $input['currency'] = data_get($input, 'currency', session('storefront_currency', 'USD'));
 
+        // Default the status the way the console does. The column is nullable with no
+        // default, so an API-created product used to land as NULL and was then invisible to
+        // every `where('status', 'published')` read path — including the cart validation in
+        // CheckoutController, which dropped it at capture time.
+        // Literal rather than Product::PUBLISHED. The constant does not resolve under the
+        // unit-test harness (reproducible on the whole suite, not just an isolated file),
+        // and the rest of this controller writes the status literally too.
+        $input['status'] = data_get($input, 'status') ?: 'published';
+
         // Resolve category
         if ($request->filled('category')) {
             $categoryInput = $request->input('category');
@@ -341,11 +350,20 @@ class ProductController extends Controller
                         $nq->where('network_uuid', session('storefront_network'));
                     });
                 });
+
+                if ($request->filled('store')) {
+                    $query->whereHas('store', fn ($storeQuery) => $storeQuery->where('public_id', $request->input('store')));
+                }
             }
 
-            // @todo When done dev is completed make sure status is published - also add status field to product view
             $query->where('is_available', 1);
-            $query->with(['addonCategories.category', 'variants.options', 'files']);
+            $query->where('status', 'published');
+            $relations = ['addonCategories.category', 'variants.options', 'files'];
+            if ($request->boolean('with_store') || $request->inArray('with', 'store')) {
+                $relations[] = 'store.logo';
+                $relations[] = 'store.backdrop';
+            }
+            $query->with($relations);
 
             if ($request->filled('category')) {
                 $category = Category::where(['public_id' => $request->input('category'), 'for' => 'storefront_product'])->first();
@@ -366,11 +384,20 @@ class ProductController extends Controller
      */
     public function find($id)
     {
-        // find for the product
-        try {
-            $product = Product::findRecordOrFail($id);
-        } catch (ModelNotFoundException $exception) {
-            return response()->error('Product resource not found.');
+        $product = Product::where(function ($query) use ($id) {
+            $query->where('public_id', $id)->orWhere('uuid', $id);
+        })
+            ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->where('is_available', 1);
+                $query->where('status', 'published');
+            })
+            ->with(['addonCategories.category', 'variants.options', 'files'])
+            ->first();
+
+        if (!$product) {
+            return response()->error('Product resource not found.', 404);
         }
 
         // response the product resource

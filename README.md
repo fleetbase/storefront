@@ -95,6 +95,17 @@ The public customer-facing API is mounted under `storefront/v1` and protected by
 - Customer registration, login, SMS code verification, social login endpoints, device registration, saved places, customer orders, phone verification, Stripe customer helpers, and account closure flows.
 - Order pickup completion and receipt generation.
 
+### Marketplace network contract
+
+A public `network_...` key uses accepted `network_stores` membership as its marketplace authorization boundary, including member stores owned by another company. Marketplace responses expose only public Storefront resources; they do not expose member customers, internal API keys, or gateway credentials.
+
+- `GET storefront/v1/stores` supports search, online/tag/category/ID filters, rating/age/popularity/trending/nearest sorts, distance filtering in meters, and limit/offset pagination.
+- Categories and published products can be scoped to a member store. Product responses include public merchant context for marketplace search and cards.
+- Cart line items preserve both merchant and store-location identity. Product and location substitution across stores is rejected.
+- Checkout revalidates active membership, store availability, published products, location ownership, the network multi-cart policy, and one-cart currency before payment begins.
+- Network delivery quotes resolve one origin per represented store and reject missing, foreign, or mismatched locations with `422`.
+- When `Customer-Token` is present, it is authoritative; a conflicting checkout customer ID returns `403`.
+
 ### Internal Console API
 
 The protected internal API is mounted under `storefront/int/v1`. It powers the Fleetbase Console and includes:
@@ -203,6 +214,15 @@ composer test:types
 composer test:unit
 composer test
 ```
+
+Generate and summarize the full backend Clover baseline with Xdebug or PCOV:
+
+```bash
+XDEBUG_MODE=coverage composer test:coverage:clover
+composer coverage:summary
+```
+
+Marketplace changes on `dev-v0.4.19` must retain 100% backend statement coverage. Focused success and failure-path contracts should be added before regenerating the baseline.
 
 ## Configuration
 

@@ -25,6 +25,7 @@ use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CustomerController extends Controller
@@ -175,11 +176,21 @@ class CustomerController extends Controller
         $code     = $request->input('code');
         $about    = Storefront::about(['company_uuid']);
         $input    = $request->only(['name', 'type', 'title', 'email', 'phone', 'meta']);
-        $identity = $request->input('identity');
         $user     = null;
 
-        if (!Utils::isEmail($identity)) {
+        // The code was filed against whatever identity requestCustomerCreationCode was
+        // given. A client that just verified an address and now posts it as `email` should
+        // not have to repeat it as `identity` — fall back to the payload before giving up.
+        // Without this, a body of {name, email, code} left $identity null, static::phone()
+        // turned it into the literal '+', and a perfectly good code was rejected.
+        $identity = $request->input('identity') ?: $request->input('email') ?: $request->input('phone');
+
+        if ($identity && !Utils::isEmail($identity)) {
             $identity = static::phone($identity);
+        }
+
+        if (blank($identity)) {
+            return response()->apiError('An identity is required to create a customer.');
         }
 
         // verify code
@@ -414,7 +425,13 @@ class CustomerController extends Controller
         $password = $request->input('password');
         $attrs    = $request->input(['name', 'phone', 'email']);
 
-        $user = User::where('email', $identity)->orWhere('phone', static::phone($identity))->first();
+        // Guard the phone branch: with no identity to format, static::phone() returns null,
+        // and `where('phone', null)` compiles to `phone IS NULL` — which would match an
+        // arbitrary phone-less user rather than nobody.
+        $identityPhone = static::phone($identity);
+        $user          = User::where('email', $identity)
+            ->when($identityPhone, fn ($query) => $query->orWhere('phone', $identityPhone))
+            ->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
             return response()->apiError('Authentication failed using password provided.', 401);
@@ -461,6 +478,12 @@ class CustomerController extends Controller
     {
         $phone = static::phone();
 
+        // Without a phone in the request there is nothing to look up. Falling through would
+        // compile to `phone IS NULL` and hand back an arbitrary phone-less user.
+        if (!$phone) {
+            return response()->apiError('No customer with this phone # found.');
+        }
+
         // check if user exists
         $user = User::where('phone', $phone)->whereNull('deleted_at')->withoutGlobalScopes()->first();
 
@@ -471,14 +494,47 @@ class CustomerController extends Controller
         // get the storefront or network logging in for
         $about = Storefront::about();
 
-        // generate verification token
-        VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
-            'messageCallback' => function ($verification) use ($about) {
-                return "Your {$about->name} verification code is {$verification->code}";
-            },
-        ]);
+        // Generate the verification token.
+        //
+        // The SMS attempt is guarded because the Twilio SDK THROWS when the store has no
+        // credentials configured — ConfigurationException, "Credentials are required to
+        // create a Client" — and that propagated as a 500 carrying an HTML stack trace.
+        // A store that has simply not set up SMS is not a server error.
+        //
+        // Falling back to email mirrors FleetOps' DriverController::loginWithPhone, and
+        // means a store without Twilio can still authenticate its customers. `method`
+        // tells the client which channel actually carried the code.
+        $messageCallback = function ($verification) use ($about) {
+            return "Your {$about->name} verification code is {$verification->code}";
+        };
 
-        return response()->json(['status' => 'OK']);
+        try {
+            VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
+                'messageCallback' => $messageCallback,
+            ]);
+
+            return response()->json(['status' => 'OK', 'method' => 'sms']);
+        } catch (\Throwable $e) {
+            if (app()->bound('sentry')) {
+                app('sentry')->captureException($e);
+            }
+
+            if ($user->email) {
+                try {
+                    VerificationCode::generateEmailVerificationFor($user, 'storefront_login', [
+                        'messageCallback' => $messageCallback,
+                    ]);
+
+                    return response()->json(['status' => 'OK', 'method' => 'email']);
+                } catch (\Throwable $e) {
+                    if (app()->bound('sentry')) {
+                        app('sentry')->captureException($e);
+                    }
+                }
+            }
+        }
+
+        return response()->apiError('Unable to send verification code.');
     }
 
     /**
@@ -517,8 +573,25 @@ class CustomerController extends Controller
         }
 
         try {
-            // Verify the Apple token using the utility function
-            $isValid = $this->verifyAppleIdentity($identityToken);
+            // Verify the Apple token using the utility function.
+            //
+            // A malformed identityToken is client input, not a server fault, but the JWT
+            // parser throws rather than returning false — so a bad token fell through to
+            // the catch at the end of this method and came back as
+            //   500 {"error":"The JWT string must have two dots"}
+            // leaking the parser's own message. Any client sending a truncated or expired
+            // token hit this. It is the same rejection as a token that parses but does not
+            // verify, so it gets the same 400.
+            try {
+                $isValid = $this->verifyAppleIdentity($identityToken);
+            } catch (\Throwable $verificationException) {
+                Log::warning('[Storefront] Apple identity token could not be parsed.', [
+                    'exception' => $verificationException->getMessage(),
+                ]);
+
+                $isValid = false;
+            }
+
             if (!$isValid) {
                 return response()->apiError('Apple ID authentication is not valid.', 400);
             }
@@ -723,6 +796,46 @@ class CustomerController extends Controller
      *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
+    /**
+     * Whether a verification code should be accepted as an app-review bypass.
+     *
+     * App store reviewers cannot receive our SMS or email, so a fixed code has to keep
+     * working in production. It used to be compared against the submitted code alone,
+     * which meant anyone who learned it could authenticate as ANY customer. It is now
+     * only honoured for an identity explicitly listed in storefront.review_accounts,
+     * and both the code and the list must be configured.
+     *
+     * @param string|null $identity email or phone the caller is authenticating as
+     * @param mixed       $code     the submitted verification code
+     */
+    protected static function isReviewAccountBypass(?string $identity, $code): bool
+    {
+        $bypassCode = config('storefront.storefront_app.bypass_verification_code');
+        if (blank($bypassCode) || blank($code) || blank($identity)) {
+            return false;
+        }
+
+        $reviewAccounts = array_map(
+            static fn ($account) => strtolower(trim((string) $account)),
+            (array) config('storefront.storefront_app.review_accounts', [])
+        );
+
+        if (!in_array(strtolower(trim($identity)), $reviewAccounts, true)) {
+            return false;
+        }
+
+        // hash_equals so a wrong code cannot be recovered by timing the response.
+        if (!hash_equals((string) $bypassCode, (string) $code)) {
+            return false;
+        }
+
+        Log::warning('[Storefront] Verification bypass accepted for a review account.', [
+            'identity' => $identity,
+        ]);
+
+        return true;
+    }
+
     public function verifyCode(Request $request)
     {
         $identity = Utils::isEmail($request->identity) ? $request->identity : static::phone($request->identity);
@@ -734,6 +847,13 @@ class CustomerController extends Controller
             return $this->create($request);
         }
 
+        // Without an identity there is nobody to verify. The lookup below would compile to
+        // `phone IS NULL OR email IS NULL` and pick an arbitrary user to test the code
+        // against.
+        if (blank($identity)) {
+            return response()->apiError('Unable to verify code.');
+        }
+
         // check if user exists
         $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
 
@@ -743,7 +863,7 @@ class CustomerController extends Controller
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
-        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
+        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             return response()->apiError('Invalid verification code!');
         }
 
@@ -792,10 +912,17 @@ class CustomerController extends Controller
     /**
      * Patches phone number with international code.
      */
-    public static function phone(?string $phone = null): string
+    public static function phone(?string $phone = null): ?string
     {
         if ($phone === null) {
             $phone = request()->input('phone');
+        }
+
+        // With nothing to format this used to return a bare '+', which was then written
+        // into contacts.phone and users.phone for every customer created without one, and
+        // used as a verification-code lookup key that could never match.
+        if (blank($phone)) {
+            return null;
         }
 
         if (!Str::startsWith($phone, '+')) {
@@ -898,31 +1025,57 @@ class CustomerController extends Controller
             return response()->apiError('Customer account must have a valid email or phone number linked.');
         }
 
-        // Send account closure confirmation with code
-        try {
-            if ($user->phone) {
-                VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
-                    'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} account closure verification code is {$verification->code}";
-                    },
-                    'meta' => ['identity' => $user->phone],
-                ]);
-            } elseif ($user->email) {
-                VerificationCode::generateEmailVerificationFor($user, 'storefront_account_closure', [
-                    'subject'         => $about->name . ' account closure request',
-                    'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} account closure verification code is {$verification->code}";
-                    },
-                    'meta' => ['identity' => $user->email],
-                ]);
-            }
+        // The identity the code is filed under MUST match what confirmAccountClosure looks
+        // it up by — `$user->phone ?? $user->email` — regardless of which channel actually
+        // carried it. Previously SMS filed it under the phone and email under the email,
+        // which agreed only because the channel was chosen by the same precedence; the
+        // fallback below breaks that coupling, so it is made explicit.
+        $identity        = $user->phone ?? $user->email;
+        $messageCallback = function ($verification) use ($about) {
+            return "Your {$about->name} account closure verification code is {$verification->code}";
+        };
 
-            return response()->json(['status' => 'OK']);
-        } catch (\Exception $e) {
-            return response()->apiError($e->getMessage());
+        // The SMS attempt is guarded rather than sharing one try with the email branch.
+        // The Twilio SDK throws when the store has no credentials configured, and the old
+        // `if phone / elseif email` meant a customer WITH a phone never reached the email
+        // branch — the request just returned the SDK's own message, "Credentials are
+        // required to create a Client", to the client.
+        $sent = false;
+
+        if ($user->phone) {
+            try {
+                VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
+                    'messageCallback' => $messageCallback,
+                    'meta'            => ['identity' => $identity],
+                ]);
+                $sent = true;
+            } catch (\Throwable $e) {
+                if (app()->bound('sentry')) {
+                    app('sentry')->captureException($e);
+                }
+            }
         }
 
-        return response()->apiError('An uknown error occured attempting to close customer account.');
+        if (!$sent && $user->email) {
+            try {
+                VerificationCode::generateEmailVerificationFor($user, 'storefront_account_closure', [
+                    'subject'         => $about->name . ' account closure request',
+                    'messageCallback' => $messageCallback,
+                    'meta'            => ['identity' => $identity],
+                ]);
+                $sent = true;
+            } catch (\Throwable $e) {
+                if (app()->bound('sentry')) {
+                    app('sentry')->captureException($e);
+                }
+            }
+        }
+
+        if ($sent) {
+            return response()->json(['status' => 'OK']);
+        }
+
+        return response()->apiError('Unable to send account closure verification code.');
     }
 
     public function confirmAccountClosure(Request $request)
@@ -949,7 +1102,7 @@ class CustomerController extends Controller
 
         // verify account closure code
         $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_account_closure', 'meta->identity' => $identity])->exists();
-        if (!$verificationCode && $code !== config('storefront.storefront_app.bypass_verification_code')) {
+        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             return response()->apiError('Invalid verification code provided!');
         }
 
@@ -990,6 +1143,12 @@ class CustomerController extends Controller
             return response()->apiError('No user associated with this customer.');
         }
 
+        // No phone to verify. This used to arrive as the literal '+' and get as far as the
+        // SMS provider before failing with a credentials error.
+        if (!$phone) {
+            return response()->apiError('A phone number is required to request verification.');
+        }
+
         // Check if phone number is already used by another user
         $existingUser = $this->findExistingUserByPhone($phone, $user->uuid);
 
@@ -998,6 +1157,14 @@ class CustomerController extends Controller
         }
 
         $about = Storefront::about();
+
+        // A review account verifies with the configured bypass code, so no message needs
+        // to be delivered — and requiring one would make the flow untestable wherever SMS
+        // is not configured, which is the situation this bypass exists for. Same
+        // allowlist + constant-time code check as every other bypass call site.
+        if (static::isReviewAccountBypass($phone, config('storefront.storefront_app.bypass_verification_code'))) {
+            return response()->json(['status' => 'ok', 'method' => 'bypass']);
+        }
 
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
@@ -1008,8 +1175,18 @@ class CustomerController extends Controller
             ]);
 
             return response()->json(['status' => 'ok']);
-        } catch (\Exception $e) {
-            return response()->apiError($e->getMessage());
+        } catch (\Throwable $e) {
+            if (app()->bound('sentry')) {
+                app('sentry')->captureException($e);
+            }
+
+            // Deliberately not $e->getMessage(): the Twilio SDK throws
+            // "Credentials are required to create a Client" when the store has no SMS
+            // credentials, and returning that to an API consumer leaks an internal
+            // detail while telling them nothing they can act on. Unlike customer login
+            // and account closure, there is no email fallback here — verifying a phone
+            // number by email would not verify anything.
+            return response()->apiError('Unable to send phone verification code.');
         }
     }
 
@@ -1049,12 +1226,28 @@ class CustomerController extends Controller
             'for'          => 'storefront_verify_phone',
         ])->first();
 
+        // The bypass leaves no code row to read the phone back from, so it comes from the
+        // request — which is what the caller is asking to verify in the first place.
+        $requestedPhone = $request->input('phone') ? static::phone($request->input('phone')) : null;
+
         if (!$verificationCode) {
+            if ($requestedPhone && static::isReviewAccountBypass($requestedPhone, $code)) {
+                $user->update(['phone' => $requestedPhone, 'phone_verified_at' => now()]);
+                $customer->update(['phone' => $requestedPhone]);
+
+                return new Customer($customer->fresh());
+            }
+
             return response()->apiError('Invalid verification code!');
         }
 
-        // Get the phone number from meta
-        $phone = $verificationCode->meta['phone'];
+        // Get the phone number from meta. A row written by anything other than
+        // requestPhoneVerification may not carry it, and an unguarded subscript turns a
+        // recoverable 400 into a 500.
+        $phone = data_get($verificationCode->meta, 'phone');
+        if (!$phone) {
+            return response()->apiError('Verification code is not associated with a phone number.');
+        }
 
         // Update user and contact
         $user->update(['phone' => $phone, 'phone_verified_at' => now()]);

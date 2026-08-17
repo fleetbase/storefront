@@ -36,6 +36,11 @@ class CustomerIdentityProbe extends CustomerController
     {
         return $this->verifyGoogleIdentity($token, $clientId);
     }
+
+    public static function reviewAccountBypass(?string $identity, mixed $code): bool
+    {
+        return parent::isReviewAccountBypass($identity, $code);
+    }
 }
 
 class PhoneConflictCustomerControllerStub extends CustomerController
@@ -456,6 +461,15 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ],
     ]);
     bindCustomerNotificationDispatcher();
+    $sentry = new class {
+        public array $exceptions = [];
+
+        public function captureException(Throwable $exception): void
+        {
+            $this->exceptions[] = $exception;
+        }
+    };
+    app()->instance('sentry', $sentry);
     $phoneConflictController                    = new PhoneConflictCustomerControllerStub();
     $phoneConflictController->existingPhoneUser = new Fleetbase\Models\User(['uuid' => 'other_user_uuid']);
     $existingPhoneConflict                      = $phoneConflictController->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
@@ -486,7 +500,8 @@ test('authenticated customer endpoints register devices and scope orders and pla
     $connection->statement(
         "CREATE TRIGGER fail_phone_verification_insert BEFORE INSERT ON verification_codes BEGIN SELECT RAISE(ABORT, 'verification insert failed'); END"
     );
-    $phoneDeliveryFailure = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
+    $closureChannelFailure = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
+    $phoneDeliveryFailure  = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
         'phone' => '+97699112234',
     ]));
     $connection->statement('DROP TRIGGER fail_phone_verification_insert');
@@ -508,6 +523,7 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'code' => $closureCode,
     ]));
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+    app()->forgetInstance('sentry');
     expect($device->getData(true))->toHaveKey('device')
         ->and($connection->table('user_devices')->where('token', 'device-token')->value('user_uuid'))->toBe('user_uuid')
         ->and($orders->resource)->toHaveCount(1)
@@ -535,6 +551,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
             'error' => 'Customer account must have a valid email or phone number linked.',
         ])->and($emailClosureStarted->getData(true))->toBe(['status' => 'OK'])
         ->and($closureDeliveryFailure->getData(true))->toHaveKey('error')
+        ->and($closureChannelFailure->getData(true))->toBe([
+            'error' => 'Unable to send account closure verification code.',
+        ])
+        ->and($sentry->exceptions)->toHaveCount(4)
         ->and($existingPhoneConflict->getData(true))->toBe([
             'error' => 'This phone number is already associated with another account.',
         ])
@@ -578,7 +598,13 @@ test('customer social login endpoints validate required provider parameters', fu
         ->and($apple->getData(true))->toBe(['error' => 'Missing required Apple authentication parameters.'])
         ->and($google->getStatusCode())->toBe(400)
         ->and($google->getData(true))->toBe(['error' => 'Missing required Google authentication parameters.'])
-        ->and($invalidApple->getStatusCode())->toBe(500)
+        // A malformed identityToken is client input. The JWT parser throws rather than
+        // returning false, and that used to fall through to the blanket catch and come
+        // back as 500 {"error":"The JWT string must have two dots"} — leaking the parser's
+        // own message. $invalidGoogle below answers 400 for equally malformed input, so
+        // Apple was inconsistent with Google in this very test. This assertion pinned it.
+        ->and($invalidApple->getStatusCode())->toBe(400)
+        ->and($invalidApple->getData(true))->toBe(['error' => 'Apple ID authentication is not valid.'])
         ->and($rejectedApple->getData(true))->toBe(['error' => 'Apple ID authentication is not valid.'])
         ->and($invalidGoogle->getStatusCode())->toBe(400)
         ->and($invalidGoogle->getData(true))->toBe(['error' => 'Google Sign-In authentication is not valid.']);
@@ -595,6 +621,23 @@ test('customer identity verifier seams reject malformed provider tokens', functi
 
     expect($apple)->toBeFalse()
         ->and($probe->google('malformed-token', 'client-id'))->toBeNull();
+});
+
+test('customer verification bypass is restricted to configured review identities and constant-time codes', function () {
+    config([
+        'storefront.storefront_app.bypass_verification_code' => null,
+        'storefront.storefront_app.review_accounts'          => [],
+    ]);
+    expect(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', '246810'))->toBeFalse();
+
+    config([
+        'storefront.storefront_app.bypass_verification_code' => '246810',
+        'storefront.storefront_app.review_accounts'          => [' Reviewer@Example.Test '],
+    ]);
+
+    expect(CustomerIdentityProbe::reviewAccountBypass('other@example.test', '246810'))->toBeFalse()
+        ->and(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', 'wrong'))->toBeFalse()
+        ->and(CustomerIdentityProbe::reviewAccountBypass('reviewer@example.test', '246810'))->toBeTrue();
 });
 
 test('facebook login links an existing customer identity and issues a local access token', function () {
@@ -722,6 +765,11 @@ test('facebook login links an existing customer identity and issues a local acce
     }
     $linkedUser = $connection->table('users')->where('uuid', 'user_uuid')->first();
     $schema->drop('users');
+    $appleFailure = $socialController->loginWithApple(Request::create('/customer/apple', 'POST', [
+        'identityToken'     => 'apple-failure-token',
+        'authorizationCode' => 'authorization-code',
+        'appleUserId'       => 'apple_failure',
+    ]));
     $facebookFailure = $socialController->loginWithFacebook(Request::create('/customer/facebook', 'POST', [
         'facebookUserId' => 'facebook_failure',
     ]));
@@ -741,6 +789,7 @@ test('facebook login links an existing customer identity and issues a local acce
         ->and($newApple)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($newFacebook)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($newGoogle)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($appleFailure->getData(true))->toHaveKey('error')
         ->and($facebookFailure->getData(true))->toHaveKey('error')
         ->and($googleFailure->getData(true))->toHaveKey('error')
         ->and($connection->table('personal_access_tokens')->count())->toBe(6);
@@ -850,6 +899,52 @@ test('customer creation rejects unverified identities before creating users or c
     expect($response->getData(true))->toBe([
         'error' => 'Invalid verification code provided!',
     ]);
+});
+
+test('customer creation falls back to the payload email when no identity is sent', function () {
+    // A body of {name, email, code} used to leave $identity null, static::phone() turned it
+    // into the literal '+', and the lookup on meta->identity could never match — so a
+    // correctly issued code was rejected.
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('verification_codes');
+    $schema->create('verification_codes', function ($table) {
+        $table->increments('id');
+        $table->string('code')->nullable();
+        $table->string('for')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('verification_codes')->insert([
+        'code'       => '123456',
+        'for'        => 'storefront_create_customer',
+        'meta'       => json_encode(['identity' => 'buyer@example.test']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['storefront_key' => null]);
+
+    $matched = (new CustomerController())->create(
+        CreateCustomerRequest::create('/customer', 'POST', [
+            'code'  => '123456',
+            'email' => 'buyer@example.test',
+            'name'  => 'Buyer',
+        ])
+    );
+
+    $missing = (new CustomerController())->create(
+        CreateCustomerRequest::create('/customer', 'POST', [
+            'code' => '123456',
+            'name' => 'Buyer',
+        ])
+    );
+
+    // The fallback got past the code check — whatever it fails on next, it is no longer
+    // "Invalid verification code provided!".
+    expect(data_get($matched->getData(true), 'error'))->not->toBe('Invalid verification code provided!')
+        ->and($missing->getData(true))->toBe(['error' => 'An identity is required to create a customer.']);
 });
 
 test('customer creation persists a verified storefront identity and issues an access token', function () {
@@ -1225,11 +1320,290 @@ test('customer phone login generates a storefront-scoped SMS verification code',
     $response = (new CustomerController())->loginWithPhone();
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
 
-    expect($response->getData(true))->toBe(['status' => 'OK'])
+    // No phone in the request at all. static::phone() returns null rather than the bare
+    // '+' it used to, and `where('phone', null)` compiles to `phone IS NULL` — which would
+    // hand back an arbitrary phone-less user and send them a login code.
+    bindUnauthenticatedCustomerRequest([]);
+    $withoutPhone = (new CustomerController())->loginWithPhone();
+
+    expect($response->getData(true))->toBe(['status' => 'OK', 'method' => 'sms'])
+        ->and($withoutPhone->getData(true))->toBe(['error' => 'No customer with this phone # found.'])
         ->and($connection->table('verification_codes')->where([
             'subject_uuid' => 'user_uuid',
             'for'          => 'storefront_login',
         ])->count())->toBe(1);
+});
+
+test('customer phone login falls back to email when SMS is not configured', function () {
+    // The Twilio SDK THROWS when the store has no credentials — ConfigurationException,
+    // "Credentials are required to create a Client" — and that propagated as a 500 with an
+    // HTML stack trace. A store that has simply not set up SMS is not a server error, and
+    // it can still reach a customer who has an email address.
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'phone'      => '+97699112233',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session([
+        'company'        => 'company_uuid',
+        'storefront_key' => 'store_key',
+    ]);
+    bindUnauthenticatedCustomerRequest(['phone' => '97699112233']);
+    bindCustomerNotificationDispatcher();
+
+    // Replace the working twilio fake with one that fails the way an unconfigured
+    // install does.
+    app()->instance('twilio', new class {
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            throw new RuntimeException('Credentials are required to create a Client');
+        }
+    });
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+
+    $response = (new CustomerController())->loginWithPhone();
+
+    // Restore the container before asserting. The whole file runs in ONE process, so
+    // anything left bound here leaks into every later test — including the working
+    // `mail.manager` that bindCustomerNotificationDispatcher() installs, which would make
+    // a later test's deliberately-failing email delivery succeed instead.
+    app()->forgetInstance('twilio');
+    app()->forgetInstance('mail.manager');
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('mail.manager');
+    app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+
+    // Two rows, not one: generateSmsVerificationFor persists the code BEFORE attempting
+    // delivery, so the failed SMS attempt leaves its row behind and the email fallback
+    // adds another. Both are valid for this subject and purpose, so either verifies —
+    // FleetOps' driver login behaves identically.
+    expect($response->getData(true))->toBe(['status' => 'OK', 'method' => 'email'])
+        ->and($connection->table('verification_codes')->where([
+            'subject_uuid' => 'user_uuid',
+            'for'          => 'storefront_login',
+        ])->count())->toBe(2);
+});
+
+test('customer phone login reports both delivery failures without leaking provider exceptions', function () {
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'phone'      => '+97699112233',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session([
+        'company'        => 'company_uuid',
+        'storefront_key' => 'store_key',
+    ]);
+    bindUnauthenticatedCustomerRequest(['phone' => '97699112233']);
+    $sentry = new class {
+        public array $exceptions = [];
+
+        public function captureException(Throwable $exception): void
+        {
+            $this->exceptions[] = $exception;
+        }
+    };
+    app()->instance('sentry', $sentry);
+    app()->instance('twilio', new class {
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            throw new RuntimeException('SMS provider unavailable');
+        }
+    });
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    app()->instance(
+        Illuminate\Contracts\Notifications\Dispatcher::class,
+        new class implements Illuminate\Contracts\Notifications\Dispatcher {
+            public function send($notifiables, $notification)
+            {
+                throw new RuntimeException('Email provider unavailable');
+            }
+
+            public function sendNow($notifiables, $notification)
+            {
+                throw new RuntimeException('Email provider unavailable');
+            }
+        }
+    );
+
+    $response = (new CustomerController())->loginWithPhone();
+
+    app()->forgetInstance('sentry');
+    app()->forgetInstance('twilio');
+    app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+
+    expect($response->getData(true))->toBe(['error' => 'Unable to send verification code.'])
+        ->and($sentry->exceptions)->toHaveCount(2);
+});
+
+test('phone verification honours the review account bypass at both ends', function () {
+    // The bypass exists so App Store review can complete flows that would otherwise need a
+    // live SMS provider. It was applied to verifyCode and confirmAccountClosure but never
+    // to phone verification, so that flow still required Twilio.
+    config([
+        'storefront.storefront_app.bypass_verification_code' => '000000',
+        'storefront.storefront_app.review_accounts'          => ['+97699112233'],
+    ]);
+
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    // The delivery schema covers stores/companies/users/verification_codes; the
+    // authenticated-customer path also needs a contact and a Sanctum token.
+    foreach (['contacts', 'personal_access_tokens'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('user_uuid')->nullable();
+        $table->string('type')->nullable();
+        $table->string('name')->nullable();
+        $table->string('phone')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+        $table->timestamps();
+    });
+    // verifyPhoneNumber stamps phone_verified_at, which the shared users schema omits.
+    $schema->table('users', function ($table) {
+        $table->timestamp('phone_verified_at')->nullable();
+    });
+    $schema->create('personal_access_tokens', function ($table) {
+        $table->increments('id');
+        $table->string('tokenable_type')->nullable();
+        $table->string('tokenable_id')->nullable();
+        $table->string('name')->nullable();
+        $table->string('token')->nullable();
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Corner Store',
+    ]);
+    $connection->table('users')->insert([
+        'uuid'       => 'user_uuid',
+        'name'       => 'Ada Buyer',
+        'email'      => 'ada@example.test',
+        'type'       => 'customer',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    // A real uuid: Storefront::getCustomerFromToken() only resolves the contact from the
+    // token's name when Str::isUuid() passes, and silently falls through otherwise.
+    $connection->table('contacts')->insert([
+        'uuid'         => '8f14e45f-ceea-467a-9f4d-2b5c1e0a77aa',
+        'public_id'    => 'customer_public',
+        'company_uuid' => 'company_uuid',
+        'user_uuid'    => 'user_uuid',
+        'type'         => 'customer',
+        'name'         => 'Ada Buyer',
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+    $connection->table('personal_access_tokens')->insert([
+        'name'       => '8f14e45f-ceea-467a-9f4d-2b5c1e0a77aa',
+        'token'      => hash('sha256', 'phone-verify-secret'),
+        'abilities'  => '["*"]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['company' => 'company_uuid', 'storefront_key' => 'store_key']);
+
+    $authenticate = function (array $input) {
+        $request = bindUnauthenticatedCustomerRequest($input);
+        $request->headers->set('Customer-Token', 'phone-verify-secret');
+        app()->instance('request', $request);
+
+        return $request;
+    };
+
+    // No SMS provider is bound at all — the send must not need one for a review account.
+    $sent = (new CustomerController())->requestPhoneVerification(
+        $authenticate(['phone' => '97699112233'])
+    );
+
+    expect($sent->getData(true))->toBe(['status' => 'ok', 'method' => 'bypass'])
+        // and nothing was queued for delivery
+        ->and($connection->table('verification_codes')->count())->toBe(0);
+
+    $verified = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '000000'])
+    );
+
+    expect($verified)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone'))->toBe('+97699112233')
+        ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone_verified_at'))->not->toBeNull();
+
+    // A code that is not the bypass, for the same account, is still rejected.
+    $rejected = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '111111'])
+    );
+    expect($rejected->getData(true))->toBe(['error' => 'Invalid verification code!']);
+
+    // No phone to verify. static::phone() returns null rather than the bare '+' it used
+    // to, so this has to be caught before findExistingUserByPhone(string $phone) is
+    // reached — and long before the SMS provider is.
+    $noPhone = (new CustomerController())->requestPhoneVerification($authenticate([]));
+    expect($noPhone->getData(true))->toBe(['error' => 'A phone number is required to request verification.']);
+
+    // A verification row that carries no meta.phone. requestPhoneVerification always
+    // writes one, but anything else that files a storefront_verify_phone code may not,
+    // and the subscript used to be unguarded — a 500 where a 400 belongs.
+    $connection->table('verification_codes')->insert([
+        'uuid'         => 'verification_without_phone',
+        'subject_uuid' => 'user_uuid',
+        'subject_type' => Fleetbase\Models\User::class,
+        'code'         => '222222',
+        'for'          => 'storefront_verify_phone',
+        'meta'         => json_encode([]),
+        'expires_at'   => now()->addHour(),
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+
+    $noMetaPhone = (new CustomerController())->verifyPhoneNumber(
+        $authenticate(['phone' => '97699112233', 'code' => '222222'])
+    );
+    expect($noMetaPhone->getData(true))->toBe(['error' => 'Verification code is not associated with a phone number.']);
+
+    config([
+        'storefront.storefront_app.bypass_verification_code' => null,
+        'storefront.storefront_app.review_accounts'          => [],
+    ]);
 });
 
 test('customer password login reuses the storefront contact and issues an access token', function () {
@@ -1357,10 +1731,22 @@ test('customer password login reuses the storefront contact and issues an access
         'code'     => '123456',
     ]));
 
+    // No identity at all. The lookup below the guard is `phone = $identity OR email =
+    // $identity`, which with null compiles to `phone IS NULL OR email IS NULL` and picks an
+    // arbitrary user to test the code against.
+    //
+    // The request has to be BOUND, not just passed: static::phone() falls back to
+    // request()->input('phone'), so an earlier bound request carrying a phone would supply
+    // an identity this call never sent. Last in the test so the rebind affects nothing else.
+    $withoutIdentityRequest = Request::create('/customer/code', 'POST', ['code' => '123456']);
+    app()->instance('request', $withoutIdentityRequest);
+    $withoutIdentity = (new CustomerController())->verifyCode($withoutIdentityRequest);
+
     expect($resource)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($resource->resource->uuid)->toBe('contact_uuid')
         ->and($resource->resource->token)->not->toBeEmpty()
         ->and($invalidCode->getData(true))->toBe(['error' => 'Invalid verification code!'])
+        ->and($withoutIdentity->getData(true))->toBe(['error' => 'Unable to verify code.'])
         ->and($verified)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($verified->resource->token)->not->toBeEmpty()
         ->and($tokenCount)->toBe(2)
@@ -1519,6 +1905,15 @@ test('customer phone normalization adds one international prefix', function () {
     bindUnauthenticatedCustomerRequest(['phone' => '15551234567']);
 
     expect(CustomerController::phone())->toBe('+15551234567');
+});
+
+test('customer phone normalization returns null when there is nothing to format', function () {
+    // It used to return a bare '+', which was written into contacts.phone and users.phone
+    // for every customer created without one, and used as a lookup key that never matched.
+    bindUnauthenticatedCustomerRequest();
+
+    expect(CustomerController::phone())->toBeNull()
+        ->and(CustomerController::phone(''))->toBeNull();
 });
 
 test('customer code verification rejects identities without a user account', function () {

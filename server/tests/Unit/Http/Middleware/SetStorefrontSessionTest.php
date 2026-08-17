@@ -93,6 +93,58 @@ test('storefront session middleware validates network credentials and exposes co
         ->and(session('api_credential'))->toBe('network_secret');
 });
 
+test('switching between a network and a store key never leaves both scopes in the session', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+
+    foreach (['stores', 'networks'] as $table) {
+        $schema->dropIfExists($table);
+        $schema->create($table, function ($blueprint) {
+            $blueprint->string('uuid')->primary();
+            $blueprint->string('public_id');
+            $blueprint->string('company_uuid');
+            $blueprint->string('key');
+            $blueprint->string('currency');
+            $blueprint->timestamp('deleted_at')->nullable();
+        });
+    }
+
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_secret',
+        'currency'     => 'USD',
+    ]);
+    $connection->table('networks')->insert([
+        'uuid'         => 'network_uuid',
+        'public_id'    => 'network_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'network_secret',
+        'currency'     => 'MNT',
+    ]);
+
+    $middleware = new SetStorefrontSession();
+
+    // The session is cookie-backed, so a client hitting a network endpoint and then a
+    // store endpoint reuses it. Leaving both scopes set made every store-scoped query
+    // also apply the stricter network filter.
+    $middleware->setKey('network_secret');
+    $middleware->setKey('store_secret');
+
+    expect(session('storefront_store'))->toBe('store_uuid')
+        ->and(session('storefront_store_public_id'))->toBe('store_public')
+        ->and(session('storefront_network'))->toBeNull()
+        ->and(session('storefront_network_public_id'))->toBeNull();
+
+    $middleware->setKey('network_secret');
+
+    expect(session('storefront_network'))->toBe('network_uuid')
+        ->and(session('storefront_network_public_id'))->toBe('network_public')
+        ->and(session('storefront_store'))->toBeNull()
+        ->and(session('storefront_store_public_id'))->toBeNull();
+});
+
 test('customer setup is a no-op without a customer token', function () {
     $middleware = new SetStorefrontSession();
 

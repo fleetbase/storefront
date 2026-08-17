@@ -179,6 +179,7 @@ test('product query returns only available products for the active storefront st
             'store_uuid'   => 'store_uuid',
             'name'         => 'Available',
             'is_available' => true,
+            'status'       => 'published',
         ],
         [
             'uuid'         => 'unavailable_uuid',
@@ -187,6 +188,7 @@ test('product query returns only available products for the active storefront st
             'store_uuid'   => 'store_uuid',
             'name'         => 'Unavailable',
             'is_available' => false,
+            'status'       => 'published',
         ],
         [
             'uuid'         => 'other_store_uuid',
@@ -195,6 +197,7 @@ test('product query returns only available products for the active storefront st
             'store_uuid'   => 'other_store',
             'name'         => 'Other store',
             'is_available' => true,
+            'status'       => 'published',
         ],
     ]);
     session([
@@ -203,17 +206,20 @@ test('product query returns only available products for the active storefront st
         'storefront_network' => null,
     ]);
 
-    $resource = (new ProductController())->query(productApiRequest(
+    $controller = new ProductController();
+    $resource   = $controller->query(productApiRequest(
         '/products?store=store_uuid',
         'GET',
         ['store' => 'store_uuid']
     ));
+    $ownedUnavailable = $controller->find('product_unavailable');
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('available_uuid')
         ->and($resource->resource->first()->relationLoaded('addonCategories'))->toBeTrue()
         ->and($resource->resource->first()->relationLoaded('variants'))->toBeTrue()
-        ->and($resource->resource->first()->relationLoaded('files'))->toBeTrue();
+        ->and($resource->resource->first()->relationLoaded('files'))->toBeTrue()
+        ->and($ownedUnavailable->resource->uuid)->toBe('unavailable_uuid');
 });
 
 test('product query returns available products assigned through the active network', function () {
@@ -240,6 +246,7 @@ test('product query returns available products assigned through the active netwo
             'store_uuid'   => 'network_store_uuid',
             'name'         => 'Network product',
             'is_available' => true,
+            'status'       => 'published',
         ],
         [
             'uuid'         => 'outside_product_uuid',
@@ -247,6 +254,7 @@ test('product query returns available products assigned through the active netwo
             'store_uuid'   => 'outside_store_uuid',
             'name'         => 'Outside product',
             'is_available' => true,
+            'status'       => 'published',
         ],
     ]);
     session([
@@ -295,6 +303,32 @@ test('product creation normalizes commerce fields and session ownership', functi
         ->and($product->sale_price)->toBe(10000)
         ->and($product->tags)->toBe(['shipping', 'insulated'])
         ->and($product->youtube_urls)->toBe(['https://example.test/demo']);
+});
+
+test('product creation defaults status to published so the product is actually readable', function () {
+    // The column is nullable with no default. An API-created product used to land as NULL
+    // and was then invisible to every `where('status', 'published')` read path — including
+    // CheckoutController's cart validation, which dropped it at capture time.
+    createProductApiControllerSchema();
+    session([
+        'company'          => 'company_uuid',
+        'user'             => 'user_uuid',
+        'storefront_store' => 'store_uuid',
+    ]);
+
+    $defaulted = (new ProductController())->create(CreateProductRequest::create('/products', 'POST', [
+        'name'  => 'No status supplied',
+        'price' => '1000',
+    ]))->resource;
+
+    $explicit = (new ProductController())->create(CreateProductRequest::create('/products', 'POST', [
+        'name'   => 'Draft on purpose',
+        'price'  => '1000',
+        'status' => 'draft',
+    ]))->resource;
+
+    expect($defaulted->status)->toBe('published')
+        ->and($explicit->status)->toBe('draft');
 });
 
 test('product creation persists category addons variants and option contracts', function () {
@@ -354,7 +388,9 @@ test('product creation persists category addons variants and option contracts', 
         ],
     ]);
 
-    $product  = (new ProductController())->create($request)->resource;
+    Model::setEventDispatcher(new Illuminate\Events\Dispatcher(app()));
+    $product = (new ProductController())->create($request)->resource;
+    Model::unsetEventDispatcher();
     $category = $connection->table('categories')
         ->where('for', 'storefront_product')
         ->where('name', 'Meals')
@@ -443,6 +479,83 @@ test('product creation resolves an existing category and update creates a replac
         ->and($updated->category_uuid)->toBe($replacement->uuid);
 });
 
+test('public product query and lookup stay inside the active network membership', function () {
+    createProductApiControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert([
+        'uuid'      => 'network_uuid',
+        'public_id' => 'network_abcdefgh',
+        'name'      => 'Marketplace',
+    ]);
+    $connection->table('stores')->insert([
+        [
+            'uuid'      => 'member_store_uuid',
+            'public_id' => 'store_member',
+            'name'      => 'Member store',
+        ],
+        [
+            'uuid'      => 'foreign_store_uuid',
+            'public_id' => 'store_foreign',
+            'name'      => 'Foreign store',
+        ],
+    ]);
+    $connection->table('network_stores')->insert([
+        'network_uuid' => 'network_uuid',
+        'store_uuid'   => 'member_store_uuid',
+    ]);
+    $connection->table('products')->insert([
+        [
+            'uuid'         => 'member_product_uuid',
+            'public_id'    => 'product_member',
+            'store_uuid'   => 'member_store_uuid',
+            'name'         => 'Member product',
+            'is_available' => 1,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+        [
+            'uuid'         => 'foreign_product_uuid',
+            'public_id'    => 'product_foreign',
+            'store_uuid'   => 'foreign_store_uuid',
+            'name'         => 'Foreign product',
+            'is_available' => 1,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+        [
+            'uuid'         => 'draft_product_uuid',
+            'public_id'    => 'product_draft',
+            'store_uuid'   => 'member_store_uuid',
+            'name'         => 'Draft product',
+            'is_available' => 1,
+            'status'       => 'draft',
+            'meta'         => '{}',
+        ],
+    ]);
+    session([
+        'storefront_store'   => null,
+        'storefront_network' => 'network_uuid',
+    ]);
+    $controller = new ProductController();
+
+    $memberQuery = $controller->query(productApiRequest('/products', 'GET', [
+        'store'      => 'store_member',
+        'with_store' => true,
+    ]));
+    $foreignQuery = $controller->query(productApiRequest('/products', 'GET', ['store' => 'store_foreign']));
+    $member       = $controller->find('product_member');
+    $foreign      = $controller->find('product_foreign');
+    $draft        = $controller->find('product_draft');
+
+    expect($memberQuery->resource)->toHaveCount(1)
+        ->and($memberQuery->resource->pluck('uuid')->all())->toContain('member_product_uuid')
+        ->and($memberQuery->resource->first()->relationLoaded('store'))->toBeTrue()
+        ->and($foreignQuery->resource)->toBeEmpty()
+        ->and($member)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Product::class)
+        ->and($foreign->getStatusCode())->toBe(404)
+        ->and($draft->getStatusCode())->toBe(404);
+});
+
 test('product query applies a known storefront category filter', function () {
     createProductApiControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
@@ -462,6 +575,7 @@ test('product query applies a known storefront category filter', function () {
             'category_uuid' => 'category_uuid',
             'name'          => 'Drink',
             'is_available'  => true,
+            'status'        => 'published',
         ],
         [
             'uuid'          => 'food_uuid',
@@ -471,6 +585,7 @@ test('product query applies a known storefront category filter', function () {
             'category_uuid' => 'other_category',
             'name'          => 'Food',
             'is_available'  => true,
+            'status'        => 'published',
         ],
     ]);
     session([
@@ -528,6 +643,7 @@ test('product update find and delete preserve resource and category contracts', 
         'price'         => 1000,
         'currency'      => 'USD',
         'is_available'  => true,
+        'status'        => 'published',
     ]);
     session([
         'company'          => 'company_uuid',
@@ -542,7 +658,7 @@ test('product update find and delete preserve resource and category contracts', 
         'tags'         => ['updated'],
         'youtube_urls' => ['https://example.test/updated'],
         'category'     => 'category_updated',
-        'status'       => 'active',
+        'status'       => 'published',
     ]);
     $request->setLaravelSession(new SessionStore(
         'product-api-update-test',

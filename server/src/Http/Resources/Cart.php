@@ -43,12 +43,28 @@ class Cart extends FleetbaseResource
     {
         $items = $this->items ?? [];
 
-        return array_map(function ($cartItem) {
-            $product = Product::select(['uuid', 'public_id', 'primary_image_uuid', 'name', 'description'])->with(['files'])->where('public_id', data_get($cartItem, 'product_id'))->first();
+        $products = Product::select(['uuid', 'public_id', 'store_uuid', 'primary_image_uuid', 'name', 'description'])
+            ->with(['files', 'store.logo', 'store.backdrop'])
+            ->whereIn('public_id', collect($items)->pluck('product_id')->filter()->unique())
+            ->get()
+            ->keyBy('public_id');
+
+        return array_map(function ($cartItem) use ($products) {
+            $product = $products->get(data_get($cartItem, 'product_id'));
             if ($product) {
                 data_set($cartItem, 'name', $product->name);
                 data_set($cartItem, 'description', $product->description);
                 data_set($cartItem, 'product_image_url', $product->primary_image_url);
+                if ($product->store) {
+                    data_set($cartItem, 'store', [
+                        'id'           => $product->store->public_id,
+                        'name'         => $product->store->name,
+                        'logo_url'     => $product->store->logo_url,
+                        'backdrop_url' => $product->store->backdrop_url,
+                        'online'       => $product->store->online,
+                        'currency'     => $product->store->currency,
+                    ]);
+                }
             }
 
             return $cartItem;

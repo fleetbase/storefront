@@ -53,7 +53,19 @@ class SetStorefrontSession
      */
     public function setKey(string $key): void
     {
-        $session = ['storefront_key' => $key];
+        // Clear whichever scope the previous key established before writing this one.
+        // Sessions here are cookie-backed, so a client that calls a network endpoint and
+        // then a store endpoint reuses the same session: leaving the old keys in place
+        // left BOTH storefront_store and storefront_network set, and every query that
+        // branches on them (Cart::findProduct, ProductController::find/query, ...) then
+        // applied the store filter AND the stricter network filter at once.
+        $session = [
+            'storefront_key'               => $key,
+            'storefront_store'             => null,
+            'storefront_store_public_id'   => null,
+            'storefront_network'           => null,
+            'storefront_network_public_id' => null,
+        ];
 
         if (Str::startsWith($key, 'store')) {
             $store = Store::select(['uuid', 'public_id', 'company_uuid', 'currency'])->where('key', $key)->first();

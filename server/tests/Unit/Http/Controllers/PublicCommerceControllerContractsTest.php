@@ -51,9 +51,9 @@ class TestableCartController extends CartController
     public ?Fleetbase\Storefront\Models\Cart $cart = null;
     public array $retrievals                       = [];
 
-    protected function retrieveCart(?string $uniqueId, bool $create = false): Fleetbase\Storefront\Models\Cart
+    protected function retrieveCart(?string $uniqueId): Fleetbase\Storefront\Models\Cart
     {
-        $this->retrievals[] = [$uniqueId, $create];
+        $this->retrievals[] = [$uniqueId];
 
         return $this->cart;
     }
@@ -90,7 +90,13 @@ test('cart retrieval creates a fresh cart when no identifier is supplied', funct
         'customer_id'         => 'customer_public',
     ]);
 
-    $resource = (new CartController())->retrieve(null, Request::create('/cart'));
+    // Called with the Request ALONE, which is exactly what the router produces for
+    // GET /storefront/v1/carts — the route with no {uniqueId}. Laravel splices
+    // class-typed parameters in at their own index and fills the rest from the route
+    // parameters, so when the optional $uniqueId came first there was nothing for index
+    // 0 and the call arrived as "Too few arguments to function retrieve(), 1 passed".
+    // Passing both arguments explicitly, as this test used to, never exercised that.
+    $resource = (new CartController())->retrieve(Request::create('/cart'));
     $cart     = $resource->resource;
 
     expect($cart->exists)->toBeTrue()
@@ -106,10 +112,10 @@ test('cart retrieval reuses a caller identifier and excludes checked out carts',
     session(['company' => 'company_uuid']);
     $controller = new CartController();
 
-    $first  = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
-    $second = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
+    $first  = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
+    $second = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
     $first->forceFill(['checkout_uuid' => 'checkout_uuid'])->save();
-    $replacement = $controller->retrieve('browser-session-1', Request::create('/cart'))->resource;
+    $replacement = $controller->retrieve(Request::create('/cart'), 'browser-session-1')->resource;
     $cartRows    = Model::getConnectionResolver()->connection('mysql')->table('carts')
         ->where('unique_identifier', 'browser-session-1')
         ->get();
@@ -119,6 +125,163 @@ test('cart retrieval reuses a caller identifier and excludes checked out carts',
     expect($cartRows)->toHaveCount(2)
         ->and($cartRows->whereNotNull('checkout_uuid'))->toHaveCount(1)
         ->and($cartRows->whereNull('checkout_uuid'))->toHaveCount(1);
+});
+
+test('cart retrieval never reuses another company cart with the same browser identifier', function () {
+    createPublicCartControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('carts')->insert([
+        'uuid'              => 'foreign_cart_uuid',
+        'public_id'         => 'cart_foreign',
+        'company_uuid'      => 'other_company',
+        'unique_identifier' => 'shared-browser-id',
+        'currency'          => 'EUR',
+        'items'             => '[]',
+        'events'            => '[]',
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_currency' => 'USD',
+    ]);
+
+    $cart = (new CartController())->retrieve(Request::create('/cart'), 'shared-browser-id')->resource;
+
+    expect($cart->uuid)->not->toBe('foreign_cart_uuid')
+        ->and($cart->company_uuid)->toBe('company_uuid')
+        ->and($cart->currency)->toBe('USD');
+});
+
+test('cart add accepts member products and rejects products outside the active network', function () {
+    createPublicCartControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['files', 'store_locations', 'network_stores', 'networks', 'stores', 'products'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('logo_uuid')->nullable();
+        $table->string('backdrop_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->boolean('online')->default(true);
+        $table->string('currency')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('network_uuid')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('store_locations', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('files', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('subject_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('products', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('store_uuid')->nullable();
+        $table->string('primary_image_uuid')->nullable();
+        $table->string('name')->nullable();
+        $table->text('description')->nullable();
+        $table->integer('price')->default(0);
+        $table->string('currency')->nullable();
+        $table->integer('sale_price')->default(0);
+        $table->boolean('is_on_sale')->default(false);
+        $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('stores')->insert([
+        ['uuid' => 'member_store_uuid', 'public_id' => 'store_member', 'name' => 'Member store', 'currency' => 'USD'],
+        ['uuid' => 'foreign_store_uuid', 'public_id' => 'store_foreign', 'name' => 'Foreign store', 'currency' => 'USD'],
+    ]);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('network_stores')->insert([
+        'network_uuid' => 'network_uuid',
+        'store_uuid'   => 'member_store_uuid',
+    ]);
+    $connection->table('store_locations')->insert([
+        'uuid'       => 'member_location_uuid',
+        'public_id'  => 'location_member',
+        'store_uuid' => 'member_store_uuid',
+    ]);
+    $connection->table('products')->insert([
+        [
+            'uuid'         => 'member_product_uuid',
+            'public_id'    => 'product_member',
+            'store_uuid'   => 'member_store_uuid',
+            'name'         => 'Member product',
+            'price'        => 1000,
+            'currency'     => 'USD',
+            'is_available' => true,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+        [
+            'uuid'         => 'foreign_product_uuid',
+            'public_id'    => 'product_foreign',
+            'store_uuid'   => 'foreign_store_uuid',
+            'name'         => 'Foreign product',
+            'price'        => 1000,
+            'currency'     => 'USD',
+            'is_available' => true,
+            'status'       => 'published',
+            'meta'         => '{}',
+        ],
+    ]);
+    session([
+        'company'             => 'company_uuid',
+        'storefront_currency' => 'USD',
+        'storefront_store'    => null,
+        'storefront_network'  => 'network_uuid',
+    ]);
+    $controller    = new CartController();
+    $memberRequest = Request::create('/cart/items', 'POST', [
+        'quantity'       => 1,
+        'store_location' => 'location_member',
+    ]);
+
+    $member        = $controller->add('marketplace-cart', 'product_member', $memberRequest);
+    $foreign       = $controller->add('marketplace-cart', 'product_foreign', Request::create('/cart/items', 'POST'));
+    $wrongLocation = $controller->add('marketplace-cart', 'product_member', Request::create('/cart/items', 'POST', [
+        'store_location' => 'location_foreign',
+    ]));
+    $resolvedMember = $member->resolve($memberRequest);
+
+    expect($member)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Cart::class)
+        ->and($member->resource->items)->toHaveCount(1)
+        ->and($member->resource->items[0]->store_id)->toBe('store_member')
+        ->and((array) data_get($resolvedMember, 'items.0.store'))->toMatchArray([
+            'id'       => 'store_member',
+            'name'     => 'Member store',
+            'online'   => true,
+            'currency' => 'USD',
+        ])
+        ->and($foreign->getStatusCode())->toBe(400)
+        ->and($foreign->getData(true))->toHaveKey('error')
+        ->and($wrongLocation->getStatusCode())->toBe(400)
+        ->and($wrongLocation->getData(true))->toBe([
+            'error' => 'The selected store location is not available for this product.',
+        ]);
 });
 
 test('cart controller reports invalid product and line item operations', function () {
@@ -178,7 +341,7 @@ test('cart controller delegates successful item and lifecycle operations with re
     $controller       = new TestableCartController();
     $controller->cart = $cart;
 
-    $retrieved = $controller->retrieve('browser-session', Request::create('/cart'));
+    $retrieved = $controller->retrieve(Request::create('/cart'), 'browser-session');
     $added     = $controller->add(
         'browser-session',
         'product_abcdefgh',
@@ -214,13 +377,16 @@ test('cart controller delegates successful item and lifecycle operations with re
         ->and($removed->resource)->toBe($cart)
         ->and($emptied->resource)->toBe($cart)
         ->and($deleted->getData(true))->toBe([])
+        // Every action resolves the cart the same way now. The flag used to vary here, but
+        // it was landing in Cart::retrieve()'s $excludeCheckedout, which meant the five
+        // mutating actions operated on carts that had already produced an order.
         ->and($controller->retrievals)->toBe([
-            ['browser-session', true],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
-            ['browser-session', false],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
+            ['browser-session'],
         ])
         ->and($cart->calls['add'])->toBe([
             'product_abcdefgh',

@@ -307,6 +307,18 @@ class Cart extends StorefrontModel
         $id       = Utils::generatePublicId('cart_item');
         $cartItem = new \stdClass();
 
+        if ($storeLocationId && !Str::startsWith($storeLocationId, 'food_truck_')) {
+            $locationBelongsToStore = StoreLocation::where('store_uuid', $product->store_uuid)
+                ->where(function ($query) use ($storeLocationId) {
+                    $query->where('public_id', $storeLocationId)->orWhere('uuid', $storeLocationId);
+                })
+                ->exists();
+
+            if (!$locationBelongsToStore) {
+                throw new \Exception('The selected store location is not available for this product.');
+            }
+        }
+
         // set base price
         $price = Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
 
@@ -643,6 +655,10 @@ class Cart extends StorefrontModel
             $q->orWhere('unique_identifier', $id);
         });
 
+        if (session('company')) {
+            $query->where('company_uuid', session('company'));
+        }
+
         if ($excludeCheckedout) {
             $query->whereNull('checkout_uuid');
         }
@@ -684,7 +700,16 @@ class Cart extends StorefrontModel
      */
     public static function findProduct(string $id): ?Product
     {
-        return Product::select(['uuid', 'store_uuid', 'public_id', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale', 'meta'])->where(['public_id' => $id])->with([])->first();
+        return Product::select(['uuid', 'store_uuid', 'public_id', 'primary_image_uuid', 'name', 'description', 'price', 'currency', 'sale_price', 'is_on_sale', 'is_available', 'status', 'meta'])
+            ->where('public_id', $id)
+            ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
+            ->when(session('storefront_network'), function ($query) {
+                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->where('is_available', 1);
+                $query->where('status', 'published');
+            })
+            ->with(['store.locations'])
+            ->first();
     }
 
     public function getCurrency(?string $fallbackCurrency = null): ?string

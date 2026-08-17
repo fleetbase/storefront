@@ -32,6 +32,7 @@ class Product extends FleetbaseResource
             'name'               => $this->name,
             'description'        => $this->description,
             'category'           => $this->when(Http::isInternalRequest(), $this->category),
+            'store'              => $this->when($request->boolean('with_store') || $request->inArray('with', 'store'), new Store($this->store)),
             'sku'                => $this->sku,
             'primary_image_url'  => $this->primary_image_url,
             'price'              => $this->price,

@@ -9,20 +9,39 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    protected function retrieveCart(?string $uniqueId, bool $create = false): Cart
+    /**
+     * The flag used to be passed through as `$create`, but Cart::retrieve()'s second
+     * parameter is `$excludeCheckedout`. Every mutating action below took the `false`
+     * default and so happily added to, updated, emptied or deleted a cart that had
+     * already produced an order, while the GET action passed `true` and did not. The
+     * name made that read as intentional. Let Cart::retrieve() keep its own default so
+     * a checked-out cart is off limits everywhere.
+     */
+    protected function retrieveCart(?string $uniqueId): Cart
     {
-        return Cart::retrieve($uniqueId, $create);
+        return Cart::retrieve($uniqueId);
     }
 
     /**
      * Retrieve or create a cart using a unique identifier. If no unique identifier is provided
      * one will be created.
      *
+     * The injected Request is declared FIRST on purpose. Laravel resolves method
+     * dependencies by splicing class-typed parameters in at their own index and filling
+     * the remainder from the route parameters, in order. With the optional $uniqueId
+     * first, GET /storefront/v1/carts (the route with no {uniqueId}) had nothing to put
+     * at index 0, so the Request landed at index 1 and the call arrived with a hole:
+     *
+     *   ArgumentCountError: Too few arguments to function retrieve(), 1 passed
+     *
+     * The route WITH an id worked, which is why this looked like a cart problem rather
+     * than a signature one. Five requests in the Storefront collection failed behind it.
+     *
      * @return \Illuminate\Http\Response
      */
-    public function retrieve(?string $uniqueId = null, Request $request)
+    public function retrieve(Request $request, ?string $uniqueId = null)
     {
-        $cart = $this->retrieveCart($uniqueId, true);
+        $cart = $this->retrieveCart($uniqueId);
 
         return new StorefrontCart($cart);
     }
