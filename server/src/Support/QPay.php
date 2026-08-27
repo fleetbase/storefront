@@ -108,7 +108,7 @@ class QPay
      */
     public function __construct(?string $username = null, ?string $password = null, ?string $callbackUrl = null)
     {
-        $this->callbackUrl    = $callbackUrl ?? Utils::apiUrl('storefront/v1/checkouts/process-qpay');
+        $this->callbackUrl    = $callbackUrl ?? Utils::apiUrl('storefront/v1/checkouts/capture-qpay');
         $this->requestOptions = [
             'base_uri' => $this->buildRequestUrl(),
             'auth'     => [$username, $password],

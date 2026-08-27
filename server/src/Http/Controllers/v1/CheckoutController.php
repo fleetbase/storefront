@@ -812,7 +812,7 @@ class CheckoutController extends Controller
         // Create qpay invoice
         $invoice = null;
         if ($ebarimtInvoiceCode) {
-            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
+            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines, $callbackUrl);
         } else {
             $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
         }
