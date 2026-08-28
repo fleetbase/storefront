@@ -765,7 +765,7 @@ class CheckoutController extends Controller
         if ($testPayment) {
             $callbackParams['test'] = data_get($checkoutOptions, 'testPayment');
         }
-        $callbackUrl = Utils::apiUrl('storefront/v1/checkouts/capture-qpay', $callbackParams);
+        $qpay->setCallback(QPay::callbackUrl($callbackParams));
 
         // Create invoice description
         $taxType             = '1'; // Start with VAT required
@@ -784,9 +784,11 @@ class CheckoutController extends Controller
         ]);
 
         // Create QPay line items
-        $lines = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
+        $lines        = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
+        $cartProducts = Product::whereIn('public_id', collect($cart->items)->pluck('product_id')->filter()->unique())->get()->keyBy('public_id');
         foreach ($cart->items as $item) {
-            $classificationCode = QPay::getCartItemClassificationCode($item);
+            $product            = $item->product_id ? $cartProducts->get($item->product_id) : null;
+            $classificationCode = QPay::getCartItemClassificationCode($item, $product);
             $isVatExempt        = QPay::isTaxFreeClassificationCode($classificationCode);
 
             $line = [
@@ -795,7 +797,7 @@ class CheckoutController extends Controller
                 'line_unit_price'     => number_format($item->price, 2, '.', ''),
                 'note'                => $checkout->public_id,
                 'classification_code' => $classificationCode,
-                'tax_product_code'    => QPay::getCartItemTaxProductCode($item),
+                'tax_product_code'    => QPay::getCartItemTaxProductCode($item, $product),
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',
@@ -812,9 +814,9 @@ class CheckoutController extends Controller
         // Create qpay invoice
         $invoice = null;
         if ($ebarimtInvoiceCode) {
-            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines, $callbackUrl);
+            $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
         } else {
-            $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
+            $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
         }
 
         // Update checkout with invoice id

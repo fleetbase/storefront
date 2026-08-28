@@ -8,6 +8,7 @@ use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Support\Utils;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -97,6 +98,18 @@ class QPay
     ];
 
     /**
+     * Build the URL to the storefront QPay capture callback endpoint.
+     *
+     * @param array $params Query parameters to append (e.g. the checkout public id)
+     */
+    public static function callbackUrl(array $params = []): string
+    {
+        $prefix = trim((string) config('storefront.api.routing.prefix', 'storefront'), '/');
+
+        return Utils::apiUrl($prefix . '/v1/checkouts/capture-qpay', $params);
+    }
+
+    /**
      * QPay constructor.
      *
      * Initializes the QPay client with authentication credentials and sets up
@@ -108,7 +121,10 @@ class QPay
      */
     public function __construct(?string $username = null, ?string $password = null, ?string $callbackUrl = null)
     {
-        $this->callbackUrl    = $callbackUrl ?? Utils::apiUrl('storefront/v1/checkouts/capture-qpay');
+        // Last-resort default only: it reaches the capture endpoint but carries no
+        // checkout id, so callers must provide a full callback URL via setCallback()
+        // or the constructor for payments to be captured
+        $this->callbackUrl    = $callbackUrl ?? static::callbackUrl();
         $this->requestOptions = [
             'base_uri' => $this->buildRequestUrl(),
             'auth'     => [$username, $password],
@@ -333,13 +349,27 @@ class QPay
     {
         if ($accessToken) {
             $this->useBearerToken($accessToken);
-        } else {
-            $response = $this->getAuthToken();
-            $token    = $response->access_token;
 
-            if (isset($token)) {
-                $this->useBearerToken($token);
+            return $this;
+        }
+
+        $username = $this->requestOptions['auth'][0] ?? '';
+        $cacheKey = 'storefront:qpay:token:' . md5(($this->requestOptions['base_uri'] ?? '') . '|' . $username);
+        $token    = Cache::get($cacheKey);
+
+        if (!$token) {
+            $response  = $this->getAuthToken();
+            $token     = data_get($response, 'access_token');
+            $expiresIn = (int) data_get($response, 'expires_in', 0);
+
+            // Reuse the token across requests until shortly before it expires
+            if ($token && $expiresIn > 120) {
+                Cache::put($cacheKey, $token, $expiresIn - 60);
             }
+        }
+
+        if ($token) {
+            $this->useBearerToken($token);
         }
 
         return $this;
@@ -359,10 +389,6 @@ class QPay
      */
     public function createSimpleInvoice(int $amount, ?string $invoiceCode = '', ?string $invoiceDescription = '', ?string $invoiceReceiverCode = '', ?string $senderInvoiceNo = '', ?string $callbackUrl = null)
     {
-        if (!$callbackUrl && $this->hasCallbackUrl()) {
-            $callbackUrl = $this->callbackUrl;
-        }
-
         $params = array_filter([
             'invoice_code'          => $invoiceCode,
             'amount'                => $amount,
@@ -392,10 +418,6 @@ class QPay
      */
     public function createEbarimtInvoice(?string $invoiceCode = '', ?string $senderInvoiceNo = '', ?string $invoiceReceiverCode = '', array $invoiceReceiverData = [], ?string $invoiceDescription = '', ?string $taxType = '1', ?string $districtCode = '', array $lines = [], ?string $callbackUrl = null)
     {
-        if (!$callbackUrl && $this->hasCallbackUrl()) {
-            $callbackUrl = $this->callbackUrl;
-        }
-
         $params = array_filter([
             'invoice_code'          => $invoiceCode,
             'sender_invoice_no'     => $senderInvoiceNo,
@@ -484,7 +506,7 @@ class QPay
     public function paymentCancel(string $invoiceId, $options = [])
     {
         $params = [
-            'callback_url' => '"https://qpay.mn/payment/result?payment_id=' . $invoiceId,
+            'callback_url' => 'https://qpay.mn/payment/result?payment_id=' . $invoiceId,
         ];
 
         return $this->delete('payment/cancel', $params, $options);
@@ -501,7 +523,7 @@ class QPay
     public function paymentRefund(string $invoiceId, $options = [])
     {
         $params = [
-            'callback_url' => '"https://qpay.mn/payment/result?payment_id=' . $invoiceId,
+            'callback_url' => 'https://qpay.mn/payment/result?payment_id=' . $invoiceId,
         ];
 
         return $this->delete('payment/refund', $params, $options);
@@ -788,11 +810,12 @@ class QPay
      * Attempts to retrieve the classification code from the item's meta data first,
      * then falls back to the product's meta data, and finally uses a default code.
      *
-     * @param object $item The cart item
+     * @param object       $item    The cart item
+     * @param Product|null $product Optional preloaded product to avoid an extra query
      *
      * @return string The classification code (7 digits)
      */
-    public static function getCartItemClassificationCode($item): string
+    public static function getCartItemClassificationCode($item, ?Product $product = null): string
     {
         $classificationCode = '6511100';
 
@@ -810,14 +833,14 @@ class QPay
         }
 
         // Try product meta fallback
-        if ($item->product_id) {
+        if (!$product && $item->product_id) {
             $product = Product::where('public_id', $item->product_id)->first();
+        }
 
-            if ($product && $product->hasMeta('classification_code')) {
-                $productCode = $product->getMeta('classification_code');
-                if (self::isValidClassificationCode($productCode)) {
-                    return $productCode;
-                }
+        if ($product && $product->hasMeta('classification_code')) {
+            $productCode = $product->getMeta('classification_code');
+            if (self::isValidClassificationCode($productCode)) {
+                return $productCode;
             }
         }
 
@@ -831,11 +854,12 @@ class QPay
      * Attempts to retrieve the tax product code from the item's meta data first,
      * then falls back to the product's meta data, and finally uses a default code.
      *
-     * @param object $item The cart item
+     * @param object       $item    The cart item
+     * @param Product|null $product Optional preloaded product to avoid an extra query
      *
      * @return string The tax_product_code code (7 digits)
      */
-    public static function getCartItemTaxProductCode($item): string
+    public static function getCartItemTaxProductCode($item, ?Product $product = null): string
     {
         $taxProductCode = '319';
 
@@ -853,14 +877,14 @@ class QPay
         }
 
         // Try product meta fallback
-        if ($item->product_id) {
+        if (!$product && $item->product_id) {
             $product = Product::where('public_id', $item->product_id)->first();
+        }
 
-            if ($product && $product->hasMeta('tax_product_code')) {
-                $productCode = $product->getMeta('tax_product_code');
-                if (self::isValidTaxProductCode($productCode)) {
-                    return $productCode;
-                }
+        if ($product && $product->hasMeta('tax_product_code')) {
+            $productCode = $product->getMeta('tax_product_code');
+            if (self::isValidTaxProductCode($productCode)) {
+                return $productCode;
             }
         }
 
