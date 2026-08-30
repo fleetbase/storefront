@@ -990,8 +990,9 @@ class CheckoutController extends Controller
         // Define a unique lock key for this specific checkout
         $lockKey = 'create-order-checkout-' . $checkout->uuid;
 
-        // Attempt to acquire a lock for 10 seconds
-        $lock = Cache::lock($lockKey, 10);
+        // Keep the lock for the full provider/order workflow. Checkout creation can
+        // legitimately take longer than ten seconds when downstream services are slow.
+        $lock = Cache::lock($lockKey, 120);
 
         if ($lock->get()) {
             try {
@@ -1019,6 +1020,7 @@ class CheckoutController extends Controller
                     'transactionDetails' => $transactionDetails,
                     'notes'              => $notes,
                 ]);
+                $captureRequest->attributes->set('storefront_checkout_lock_held', true);
 
                 // Call captureOrder to create the order
                 $this->captureOrder($captureRequest);
@@ -1115,6 +1117,15 @@ class CheckoutController extends Controller
 
     public function captureOrder(CaptureOrderRequest $request)
     {
+        if (!$request->attributes->get('storefront_checkout_lock_held')) {
+            $checkout = Checkout::where('token', $request->input('token'))->first();
+            if (!$checkout) {
+                return response()->apiError('Checkout session not found.');
+            }
+
+            return $this->captureOrderWithLock($checkout, $request);
+        }
+
         $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
         $notes              = $request->input('notes');
@@ -1404,6 +1415,36 @@ class CheckoutController extends Controller
         ]);
 
         return new OrderResource($order);
+    }
+
+    protected function captureOrderWithLock(Checkout $checkout, CaptureOrderRequest $request)
+    {
+        $lock = Cache::lock('create-order-checkout-' . $checkout->uuid, 120);
+
+        if (!$lock->get()) {
+            // Another request owns the capture. Return its authoritative result when it
+            // has already completed; otherwise tell the caller to retry safely.
+            $checkout->refresh();
+            if ($checkout->order_uuid && $checkout->order) {
+                return new OrderResource($checkout->order);
+            }
+
+            return response()->apiError('Order capture is already in progress.', 409);
+        }
+
+        try {
+            $checkout->refresh();
+            if ($checkout->order_uuid && $checkout->order) {
+                return new OrderResource($checkout->order);
+            }
+
+            $request->attributes->set('storefront_checkout_lock_held', true);
+
+            return $this->captureOrder($request);
+        } finally {
+            $request->attributes->remove('storefront_checkout_lock_held');
+            $lock->release();
+        }
     }
 
     public function captureMultipleOrders(CaptureOrderRequest $request)
