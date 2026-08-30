@@ -157,6 +157,14 @@ class CheckoutAutomationControllerProbe extends CheckoutController
     }
 }
 
+class CheckoutStripeVerificationProbe extends CheckoutController
+{
+    public function verifyStripePayment(Checkout $checkout, Gateway $gateway, ?Contact $customer, int $amount, ?string $currency): array|Illuminate\Http\JsonResponse
+    {
+        return $this->verifyStripePaymentForCheckout($checkout, $gateway, $customer, $amount, $currency);
+    }
+}
+
 test('authenticated checkout identity cannot be replaced by a submitted customer id', function () {
     createCheckoutBoundarySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
@@ -538,6 +546,7 @@ function createCheckoutBoundarySchema(): void
         $table->text('cart_state')->nullable();
         $table->string('token')->nullable();
         $table->string('order_uuid')->nullable();
+        $table->string('stripe_payment_intent_id')->nullable();
         $table->boolean('captured')->default(false);
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
@@ -1700,9 +1709,148 @@ test('stripe checkout creates provider intents and persists its checkout token',
         ->and($data['token'])->toBe($checkout->token)
         ->and($data['checkout'])->toBe($checkout->public_id)
         ->and($checkout->owner_uuid)->toBe('customer_uuid')
+        ->and($checkout->stripe_payment_intent_id)->toBe('pi_checkout')
         ->and($checkout->amount)->toBe(2200)
         ->and($checkout->is_pickup)->toBeTrue()
         ->and($createdCustomerResponse->getData(true)['customerId'])->toBe('cus_checkout');
+});
+
+test('stripe capture verifies the server linked payment intent before order creation', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Test store',
+        'currency'     => 'USD',
+    ]);
+    $connection->table('gateways')->insert([
+        'uuid'       => 'stripe_gateway_uuid',
+        'owner_uuid' => 'store_uuid',
+        'code'       => 'stripe',
+        'type'       => 'stripe',
+        'sandbox'    => true,
+        'config'     => json_encode(['secret_key' => 'sk_test_storefront']),
+    ]);
+    $connection->table('contacts')->insert([
+        'uuid'         => 'customer_uuid',
+        'public_id'    => 'contact_public',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+        'meta'         => json_encode(['stripe_id' => 'cus_checkout']),
+    ]);
+    $connection->table('carts')->insert([
+        'uuid'              => 'cart_uuid',
+        'public_id'         => 'cart_public',
+        'company_uuid'      => 'company_uuid',
+        'unique_identifier' => 'stripe-cart',
+        'currency'          => 'USD',
+        'items'             => json_encode([
+            ['id' => 'line_one', 'quantity' => 1, 'subtotal' => 2500],
+        ]),
+        'events'            => '[]',
+        'expires_at'        => now()->addHour(),
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'                     => 'checkout_uuid',
+        'public_id'                => 'checkout_public',
+        'token'                    => 'checkout_token',
+        'cart_uuid'                => 'cart_uuid',
+        'gateway_uuid'             => 'stripe_gateway_uuid',
+        'owner_uuid'               => 'customer_uuid',
+        'owner_type'               => Contact::class,
+        'stripe_payment_intent_id' => 'pi_checkout',
+        'amount'                   => 2500,
+        'currency'                 => 'USD',
+        'is_pickup'                => true,
+        'options'                  => json_encode(['is_pickup' => true]),
+    ]);
+    session([
+        'company'          => 'company_uuid',
+        'storefront_key'   => 'store_key',
+        'storefront_store' => 'store_uuid',
+    ]);
+    $http = new class implements Stripe\HttpClient\ClientInterface {
+        public string $scenario = 'pending';
+
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
+        {
+            expect($absUrl)->toContain('/payment_intents/pi_checkout');
+
+            if ($this->scenario === 'provider_failure') {
+                return [json_encode(['error' => ['message' => 'Provider unavailable', 'type' => 'api_error']]), 500, []];
+            }
+            if ($this->scenario === 'authentication_failure') {
+                return [json_encode(['error' => ['message' => 'sk_secret_should_never_leak', 'type' => 'authentication_error']]), 401, []];
+            }
+
+            return [json_encode([
+                'id'              => $this->scenario === 'wrong_intent' ? 'pi_other' : 'pi_checkout',
+                'object'          => 'payment_intent',
+                'status'          => $this->scenario === 'pending' ? 'requires_payment_method' : 'succeeded',
+                'amount'          => $this->scenario === 'wrong_amount' ? 2600 : 2500,
+                'amount_received' => $this->scenario === 'wrong_received' ? 2400 : 2500,
+                'currency'        => $this->scenario === 'wrong_currency' ? 'eur' : 'usd',
+                'customer'        => $this->scenario === 'wrong_customer' ? 'cus_other' : 'cus_checkout',
+                'livemode'        => $this->scenario === 'wrong_mode',
+            ]), 200, []];
+        }
+    };
+    Stripe\ApiRequestor::setHttpClient($http);
+    $controller = new CheckoutController();
+    $request    = fn () => CaptureOrderRequest::create('/checkout/capture', 'POST', [
+        'token'              => 'checkout_token',
+        'transactionDetails' => ['transaction_id' => 'untrusted_client_id'],
+    ]);
+
+    $pending           = $controller->captureOrder($request());
+    $http->scenario    = 'wrong_amount';
+    $mismatched        = $controller->captureOrder($request());
+    $http->scenario    = 'provider_failure';
+    $providerError     = $controller->captureOrder($request());
+    $checkout          = Checkout::where('uuid', 'checkout_uuid')->firstOrFail();
+    $gateway           = Gateway::where('uuid', 'stripe_gateway_uuid')->firstOrFail();
+    $customer          = Contact::where('uuid', 'customer_uuid')->firstOrFail();
+    $http->scenario    = 'succeeded';
+    $details           = (new CheckoutStripeVerificationProbe())->verifyStripePayment($checkout, $gateway, $customer, 2500, 'USD');
+    $mismatchResponses = [];
+    foreach (['wrong_intent', 'wrong_received', 'wrong_currency', 'wrong_customer', 'wrong_mode'] as $scenario) {
+        $http->scenario      = $scenario;
+        $mismatchResponses[] = (new CheckoutStripeVerificationProbe())->verifyStripePayment($checkout, $gateway, $customer, 2500, 'USD');
+    }
+    $http->scenario                             = 'authentication_failure';
+    $authenticationError                        = (new CheckoutStripeVerificationProbe())->verifyStripePayment($checkout, $gateway, $customer, 2500, 'USD');
+    $unlinkedCheckout                           = clone $checkout;
+    $unlinkedCheckout->stripe_payment_intent_id = null;
+    $unlinkedError                              = (new CheckoutStripeVerificationProbe())->verifyStripePayment($unlinkedCheckout, $gateway, $customer, 2500, 'USD');
+    Stripe\ApiRequestor::setHttpClient(new Stripe\HttpClient\CurlClient());
+    session(['storefront_key' => null, 'storefront_store' => null]);
+
+    expect($pending->getStatusCode())->toBe(402)
+        ->and($pending->getData(true))->toBe(['error' => 'Stripe payment has not been completed.'])
+        ->and($mismatched->getStatusCode())->toBe(422)
+        ->and($mismatched->getData(true))->toBe(['error' => 'Stripe payment does not match this checkout.'])
+        ->and($providerError->getStatusCode())->toBe(502)
+        ->and($providerError->getData(true))->toBe(['error' => 'Unable to verify Stripe payment.'])
+        ->and($details)->toBe([
+            'id'                => 'pi_checkout',
+            'transaction_id'    => 'pi_checkout',
+            'payment_intent_id' => 'pi_checkout',
+            'payment_status'    => 'succeeded',
+        ])
+        ->and($authenticationError->getData(true))->toBe([
+            'error' => 'Stripe gateway authentication failed. Verify the configured secret key.',
+        ])
+        ->and(json_encode($authenticationError->getData(true)))->not->toContain('sk_secret_should_never_leak')
+        ->and($unlinkedError->getStatusCode())->toBe(422)
+        ->and($unlinkedError->getData(true))->toBe(['error' => 'Stripe PaymentIntent is not linked to this checkout.']);
+
+    foreach ($mismatchResponses as $mismatchResponse) {
+        expect($mismatchResponse->getStatusCode())->toBe(422)
+            ->and($mismatchResponse->getData(true))->toBe(['error' => 'Stripe payment does not match this checkout.']);
+    }
 });
 
 test('stripe checkout retries missing customers and contains ephemeral-key and intent failures', function () {
