@@ -30,6 +30,11 @@ use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
+    protected function authenticatedCustomerForRequest(Request $request): ?Contact
+    {
+        return Storefront::getCustomerFromToken();
+    }
+
     /**
      * Query for Storefront Customer orders.
      *
@@ -291,6 +296,11 @@ class CustomerController extends Controller
      */
     public function update($id, UpdateContactRequest $request)
     {
+        $authenticatedCustomer = $this->authenticatedCustomerForRequest($request);
+        if (!$authenticatedCustomer) {
+            return response()->apiError('Not authorized to update customer.', 403);
+        }
+
         if (Str::startsWith($id, 'customer')) {
             $id = Str::replaceFirst('customer', 'contact', $id);
         }
@@ -300,6 +310,10 @@ class CustomerController extends Controller
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return response()->apiError('Customer resource not found.');
+        }
+
+        if ($contact->uuid !== $authenticatedCustomer->uuid) {
+            return response()->apiError('Not authorized to update customer.', 403);
         }
 
         // get request input

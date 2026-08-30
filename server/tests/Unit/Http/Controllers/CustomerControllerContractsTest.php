@@ -53,6 +53,16 @@ class PhoneConflictCustomerControllerStub extends CustomerController
     }
 }
 
+class AuthenticatedCustomerControllerStub extends CustomerController
+{
+    public ?Fleetbase\FleetOps\Models\Contact $authenticatedCustomer = null;
+
+    protected function authenticatedCustomerForRequest(Request $request): ?Fleetbase\FleetOps\Models\Contact
+    {
+        return $this->authenticatedCustomer;
+    }
+}
+
 function bindUnauthenticatedCustomerRequest(array $input = []): Request
 {
     $request = Request::create('/customer', 'POST', $input);
@@ -1757,8 +1767,9 @@ test('customer password login reuses the storefront contact and issues an access
 test('customer public id aliases preserve not-found update find and delete contracts', function () {
     createCustomerControllerContactsSchema();
     session(['company' => null]);
-    $controller = new CustomerController();
-    $update     = UpdateContactRequest::create('/customer/customer_missing', 'PATCH');
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = new Fleetbase\FleetOps\Models\Contact(['uuid' => 'authenticated_customer']);
+    $update                            = UpdateContactRequest::create('/customer/customer_missing', 'PATCH');
 
     $updated = $controller->update('customer_missing', $update);
     $found   = $controller->find('customer_missing');
@@ -1767,6 +1778,37 @@ test('customer public id aliases preserve not-found update find and delete contr
     expect($updated->getData(true))->toBe(['error' => 'Customer resource not found.'])
         ->and($found->getData(true))->toBe(['error' => 'Customer resource not found.'])
         ->and($deleted->getData(true))->toBe(['error' => 'Customer resource not found.']);
+});
+
+test('customer update requires the token owner and rejects cross-customer mutation', function () {
+    createCustomerControllerContactsSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('contacts')->insert([
+        [
+            'uuid'         => 'owner_uuid',
+            'public_id'    => 'contact_owner',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'other_uuid',
+            'public_id'    => 'contact_other',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+    ]);
+    session(['company' => 'company_uuid']);
+    $controller = new AuthenticatedCustomerControllerStub();
+    $request    = UpdateContactRequest::create('/customer/contact_other', 'PUT');
+
+    $unauthenticated                   = $controller->update('contact_other', $request);
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'owner_uuid')->firstOrFail();
+    $crossCustomer                     = $controller->update('contact_other', $request);
+
+    expect($unauthenticated->getStatusCode())->toBe(403)
+        ->and($unauthenticated->getData(true))->toBe(['error' => 'Not authorized to update customer.'])
+        ->and($crossCustomer->getStatusCode())->toBe(403)
+        ->and($crossCustomer->getData(true))->toBe(['error' => 'Not authorized to update customer.']);
 });
 
 test('customer update find and delete persist profile location and photo removal contracts', function () {
@@ -1837,8 +1879,9 @@ test('customer update find and delete persist profile location and photo removal
         'public_id' => 'file_abcdefgh',
     ]);
     session(['company' => 'company_uuid']);
-    $controller = new CustomerController();
-    $request    = UpdateContactRequest::create('/customer/contact_public', 'PATCH', [
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'contact_uuid')->firstOrFail();
+    $request                           = UpdateContactRequest::create('/customer/contact_public', 'PATCH', [
         'name'  => 'Ada Buyer',
         'email' => 'ada@example.test',
         'place' => 'place_public',
