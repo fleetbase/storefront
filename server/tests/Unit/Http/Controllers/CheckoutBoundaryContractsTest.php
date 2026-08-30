@@ -1432,6 +1432,49 @@ test('cash checkout persists calculated totals ownership and cart state without 
         ->and($checkout->cart_state['subtotal'])->toBe(1000);
 });
 
+test('cash pickup checkout does not require a delivery quote', function () {
+    createCheckoutBoundarySchema();
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => 'store_uuid',
+        'storefront_network' => null,
+    ]);
+    $cart = new Cart();
+    $cart->forceFill([
+        'uuid'     => 'cart_uuid',
+        'currency' => 'USD',
+        'items'    => [
+            [
+                'id'       => 'line_one',
+                'quantity' => 1,
+                'subtotal' => 1000,
+            ],
+        ],
+        'events' => [],
+    ]);
+    $customer = new Fleetbase\Storefront\Models\Customer();
+    $customer->forceFill(['uuid' => 'customer_uuid']);
+    $gateway = Gateway::cash();
+    $gateway->forceFill(['uuid' => 'gateway_uuid']);
+
+    $response = CheckoutController::initializeCashCheckout(
+        $customer,
+        $gateway,
+        null,
+        $cart,
+        (object) ['is_pickup' => true],
+        Request::create('/checkout')
+    );
+    $checkout = Checkout::query()->first();
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($checkout)->not->toBeNull()
+        ->and($checkout->service_quote_uuid)->toBeNull()
+        ->and($checkout->amount)->toBe(1000)
+        ->and($checkout->is_cod)->toBeTrue()
+        ->and($checkout->is_pickup)->toBeTrue();
+});
+
 test('cash checkout infers the owning store from a single public store cart item', function () {
     createCheckoutBoundarySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');

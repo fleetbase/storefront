@@ -325,7 +325,7 @@ class CheckoutController extends Controller
         return response()->apiError('Unable to initialize checkout!');
     }
 
-    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
+    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
     {
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
@@ -358,7 +358,7 @@ class CheckoutController extends Controller
             'network_uuid'       => session('storefront_network'),
             'cart_uuid'          => $cart->uuid,
             'gateway_uuid'       => $gateway->uuid ?? null,
-            'service_quote_uuid' => $serviceQuote->uuid,
+            'service_quote_uuid' => $serviceQuote?->uuid,
             'owner_uuid'         => $customer->uuid,
             'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
