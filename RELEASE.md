@@ -1,44 +1,46 @@
-> v0.4.19 ~ "Marketplace storefronts with safer checkout and customer verification"
+> v0.4.20 ~ "Verified payments and gateway callbacks that arrive"
 
 ---
 ## Highlights
 
-Storefront networks can now power a multi-merchant marketplace. Network clients can discover member stores, locations, categories, products, tags, reviews, and payment gateways while the API keeps every result inside the active marketplace.
+Payment capture is now settled by the payment provider rather than by the client. A Stripe checkout is captured only after Fleetbase retrieves the PaymentIntent it linked to that checkout and confirms the payment succeeded and matches the checkout, and QPay callbacks reach a route that exists so a paid invoice completes its order instead of waiting for a client to poll.
 
-Carts and checkout now validate merchant membership, store locations, product availability, online status, currency, and the network's multi-store policy. Delivery quotes preserve one origin per merchant, and cart responses include merchant details without querying each line separately.
+Capture itself is serialized per checkout, so a retry or a double-tap can no longer produce two orders for one payment.
 
 ---
 ## Security and Reliability
 
-- Authenticated checkout now treats the `Customer-Token` identity as authoritative and rejects a conflicting customer ID with `403`.
-- The app-review verification bypass is disabled by default and only works for explicitly allowlisted email addresses or phone numbers.
-- Switching between store and network keys clears the previous storefront scope, preventing filters from leaking between requests.
-- Store, category, product, location, and review lookups are constrained to the active storefront context.
-- Invalid cart, location, review, Apple sign-in, and SMS-provider states now return controlled API errors instead of internal exceptions.
+- Stripe capture verifies the server-linked PaymentIntent — status, amount, amount received, currency, customer, and live/test mode — before creating an order. Client-supplied transaction details can no longer stand in for the provider's verified values.
+- Checkout capture is serialized per checkout: a concurrent capture returns `409` while the first is still in progress, and an already-captured checkout returns its existing order instead of creating a second one.
+- Customer profile updates require the `Customer-Token` of the customer being updated. A missing or mismatched token returns `403`, on both `/customers/{id}` and the `/contacts/{id}` alias.
+- QPay payment cancel and refund requests no longer send a malformed callback URL.
 
 ---
 ## API and Checkout Changes
 
-- Network store discovery supports search, category and tag filters, online state, ratings, popularity, trending activity, age, nearest distance, and maximum distance.
-- Product creation now defaults to `published`, matching the console, and marketplace reads only return published, available products.
-- Checkout accepts both `serviceQuote` and the documented `service_quote` field.
-- Cash, card, and payment-intent checkout responses now include the `checkout` public ID alongside the existing token so clients can query checkout status.
-- A cart that has already produced an order can no longer be mutated; retrieving its old ID creates a fresh cart.
-- SMS login and account-closure requests fall back to email when SMS is unavailable, and responses identify the delivery method.
+- QPay invoices carry the per-checkout callback URL, and the callback targets the registered `capture-qpay` endpoint — the previous default named a route that was never registered, so payment notifications were lost. The URL is built from one helper that honors the configured storefront route prefix.
+- Capturing a Stripe checkout whose payment has not completed returns `402`; a missing or mismatched PaymentIntent returns `422`, and a temporary Stripe verification failure returns `502`.
+- A cash pickup checkout no longer requires a delivery service quote.
+- Checkouts persist the Stripe PaymentIntent they were initialized with, which is the identifier capture verifies against.
+- QPay access tokens are reused until shortly before they expire instead of re-authenticating on every checkout, callback, and status poll, and invoice line items resolve their products in one query rather than two per cart item.
 
 ---
 ## Upgrade Steps
 
-No database migration is required.
+This release adds a `stripe_payment_intent_id` column to `checkouts`. Run migrations after deploying:
 
-Installations that use a fixed code for app-store review accounts must now configure both values; the previous `999000` default no longer works:
-
-```dotenv
-STOREFRONT_BYPASS_VERIFICATION_CODE=<a secret, rotated code>
-STOREFRONT_REVIEW_ACCOUNTS=apple-review@example.com,+15555550100
+```bash
+php artisan migrate
 ```
 
-Release the matching Storefront SDK and API specification before distributing marketplace-enabled app builds. Publish the corresponding documentation with the backend release.
+Update `fleetbase/core-api` to **v1.6.60 or newer**. The QPay callback URL depends on the `Utils::apiUrl` query-string fix released there; against an older core-api the checkout identifier is appended as a path segment and the callback cannot be matched.
+
+Two client-facing contracts changed:
+
+- Clients must confirm the Stripe PaymentIntent before calling checkout capture. A client that captured optimistically now receives `402` until the payment succeeds.
+- Clients that update a customer profile must send that customer's `Customer-Token`; the storefront key alone is no longer sufficient.
+
+Publish the matching API specification and documentation with this release.
 
 ---
 ## Need help?
