@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
 use Illuminate\Session\Store as SessionStore;
 
+class BaseAuthenticatedCustomerProbe extends CustomerController
+{
+    public function baseAuthenticatedCustomer(Request $request): ?Fleetbase\FleetOps\Models\Contact
+    {
+        return parent::authenticatedCustomerForRequest($request);
+    }
+}
+
 class SocialCustomerControllerStub extends CustomerController
 {
     public bool $appleValid      = true;
@@ -50,6 +58,16 @@ class PhoneConflictCustomerControllerStub extends CustomerController
     protected function findExistingUserByPhone(string $phone, string $excludedUserUuid): ?Fleetbase\Models\User
     {
         return $this->existingPhoneUser;
+    }
+}
+
+class AuthenticatedCustomerControllerStub extends CustomerController
+{
+    public ?Fleetbase\FleetOps\Models\Contact $authenticatedCustomer = null;
+
+    protected function authenticatedCustomerForRequest(Request $request): ?Fleetbase\FleetOps\Models\Contact
+    {
+        return $this->authenticatedCustomer;
     }
 }
 
@@ -1757,8 +1775,9 @@ test('customer password login reuses the storefront contact and issues an access
 test('customer public id aliases preserve not-found update find and delete contracts', function () {
     createCustomerControllerContactsSchema();
     session(['company' => null]);
-    $controller = new CustomerController();
-    $update     = UpdateContactRequest::create('/customer/customer_missing', 'PATCH');
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = new Fleetbase\FleetOps\Models\Contact(['uuid' => 'authenticated_customer']);
+    $update                            = UpdateContactRequest::create('/customer/customer_missing', 'PATCH');
 
     $updated = $controller->update('customer_missing', $update);
     $found   = $controller->find('customer_missing');
@@ -1767,6 +1786,37 @@ test('customer public id aliases preserve not-found update find and delete contr
     expect($updated->getData(true))->toBe(['error' => 'Customer resource not found.'])
         ->and($found->getData(true))->toBe(['error' => 'Customer resource not found.'])
         ->and($deleted->getData(true))->toBe(['error' => 'Customer resource not found.']);
+});
+
+test('customer update requires the token owner and rejects cross-customer mutation', function () {
+    createCustomerControllerContactsSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('contacts')->insert([
+        [
+            'uuid'         => 'owner_uuid',
+            'public_id'    => 'contact_owner',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'other_uuid',
+            'public_id'    => 'contact_other',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+    ]);
+    session(['company' => 'company_uuid']);
+    $controller = new AuthenticatedCustomerControllerStub();
+    $request    = UpdateContactRequest::create('/customer/contact_other', 'PUT');
+
+    $unauthenticated                   = $controller->update('contact_other', $request);
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'owner_uuid')->firstOrFail();
+    $crossCustomer                     = $controller->update('contact_other', $request);
+
+    expect($unauthenticated->getStatusCode())->toBe(403)
+        ->and($unauthenticated->getData(true))->toBe(['error' => 'Not authorized to update customer.'])
+        ->and($crossCustomer->getStatusCode())->toBe(403)
+        ->and($crossCustomer->getData(true))->toBe(['error' => 'Not authorized to update customer.']);
 });
 
 test('customer update find and delete persist profile location and photo removal contracts', function () {
@@ -1837,8 +1887,9 @@ test('customer update find and delete persist profile location and photo removal
         'public_id' => 'file_abcdefgh',
     ]);
     session(['company' => 'company_uuid']);
-    $controller = new CustomerController();
-    $request    = UpdateContactRequest::create('/customer/contact_public', 'PATCH', [
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'contact_uuid')->firstOrFail();
+    $request                           = UpdateContactRequest::create('/customer/contact_public', 'PATCH', [
         'name'  => 'Ada Buyer',
         'email' => 'ada@example.test',
         'place' => 'place_public',
@@ -1958,4 +2009,10 @@ test('customer query scopes records to customer type and active company', functi
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('customer_one');
+});
+
+test('customer authentication seam resolves the token customer from the storefront request', function () {
+    $probe = new BaseAuthenticatedCustomerProbe();
+
+    expect($probe->baseAuthenticatedCustomer(Request::create('/customer/contact_public', 'PUT')))->toBeNull();
 });

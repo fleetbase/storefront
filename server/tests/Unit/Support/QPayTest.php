@@ -125,6 +125,38 @@ test('qpay supports direct tokens refreshes and individual payment lookups', fun
         ->and((string) $history[2]['request']->getUri())->toContain('payment/payment-7');
 });
 
+test('qpay caches auth tokens across instances until shortly before expiry', function () {
+    $history = [];
+    $mock    = new MockHandler([
+        new Response(200, [], '{"access_token":"cached-token","expires_in":3600}'),
+    ]);
+    $handler = HandlerStack::create($mock);
+    $handler->push(Middleware::history($history));
+
+    $qpay = new QPay('cache-merchant', 'cache-secret', 'https://storefront.test/qpay');
+    $qpay->updateRequestOption('handler', $handler);
+
+    expect($qpay->setAuthToken())->toBe($qpay);
+
+    // A new instance with the same credentials reuses the cached token without re-authenticating
+    $secondHistory = [];
+    $secondMock    = new MockHandler([
+        new Response(200, [], '{"ok":true}'),
+    ]);
+    $secondHandler = HandlerStack::create($secondMock);
+    $secondHandler->push(Middleware::history($secondHistory));
+
+    $second = new QPay('cache-merchant', 'cache-secret', 'https://storefront.test/qpay');
+    $second->updateRequestOption('handler', $secondHandler);
+
+    expect($second->setAuthToken())->toBe($second)
+        ->and($second->get('health')->ok)->toBeTrue()
+        ->and($history)->toHaveCount(1)
+        ->and((string) $history[0]['request']->getUri())->toContain('auth/token')
+        ->and($secondHistory)->toHaveCount(1)
+        ->and($secondHistory[0]['request']->getHeaderLine('Authorization'))->toBe('Bearer cached-token');
+});
+
 test('qpay invoice factory authenticates and forwards invoice parameters', function () {
     QPayInvoiceStub::$captured = [];
 

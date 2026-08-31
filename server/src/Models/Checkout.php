@@ -44,7 +44,7 @@ class Checkout extends StorefrontModel
      *
      * @var array
      */
-    protected $fillable = ['company_uuid', 'order_uuid', 'network_uuid', 'store_uuid', 'cart_uuid', 'gateway_uuid', 'service_quote_uuid', 'owner_uuid', 'owner_type', 'amount', 'currency', 'is_cod', 'is_pickup', 'options', 'token', 'cart_state', 'captured'];
+    protected $fillable = ['company_uuid', 'order_uuid', 'network_uuid', 'store_uuid', 'cart_uuid', 'gateway_uuid', 'service_quote_uuid', 'owner_uuid', 'owner_type', 'amount', 'currency', 'is_cod', 'is_pickup', 'options', 'token', 'cart_state', 'captured', 'stripe_payment_intent_id'];
 
     /**
      * The attributes that should be cast to native types.

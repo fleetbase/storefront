@@ -29,6 +29,7 @@ use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StripeUtils;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -243,7 +244,7 @@ class CheckoutController extends Controller
      * unaffected: with no token the body parameter is still used, since a guest has no
      * token to present.
      *
-     * @return Customer|\Illuminate\Http\JsonResponse|null
+     * @return Customer|JsonResponse|null
      */
     protected static function resolveCheckoutCustomer(?string $customerId)
     {
@@ -298,7 +299,7 @@ class CheckoutController extends Controller
         }
         $gateway      = Storefront::findGateway($gatewayCode);
         $customer     = static::resolveCheckoutCustomer($customerId);
-        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+        if ($customer instanceof JsonResponse) {
             return $customer;
         }
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
@@ -325,7 +326,7 @@ class CheckoutController extends Controller
         return response()->apiError('Unable to initialize checkout!');
     }
 
-    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
+    public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
     {
         // check if pickup order
         $isPickup = $checkoutOptions->is_pickup;
@@ -358,7 +359,7 @@ class CheckoutController extends Controller
             'network_uuid'       => session('storefront_network'),
             'cart_uuid'          => $cart->uuid,
             'gateway_uuid'       => $gateway->uuid ?? null,
-            'service_quote_uuid' => $serviceQuote->uuid,
+            'service_quote_uuid' => $serviceQuote?->uuid,
             'owner_uuid'         => $customer->uuid,
             'owner_type'         => 'fleet-ops:contact',
             'amount'             => $amount,
@@ -455,19 +456,20 @@ class CheckoutController extends Controller
 
         // create checkout token
         $checkout = Checkout::create([
-            'company_uuid'       => session('company'),
-            'store_uuid'         => session('storefront_store'),
-            'network_uuid'       => session('storefront_network'),
-            'cart_uuid'          => $cart->uuid,
-            'gateway_uuid'       => $gateway->uuid,
-            'service_quote_uuid' => $serviceQuote ? $serviceQuote->uuid : null,
-            'owner_uuid'         => $customer->uuid,
-            'owner_type'         => 'fleet-ops:contact',
-            'amount'             => $amount,
-            'currency'           => $currency,
-            'is_pickup'          => $isPickup,
-            'options'            => $checkoutOptions,
-            'cart_state'         => $cart->toArray(),
+            'company_uuid'             => session('company'),
+            'store_uuid'               => session('storefront_store'),
+            'network_uuid'             => session('storefront_network'),
+            'cart_uuid'                => $cart->uuid,
+            'gateway_uuid'             => $gateway->uuid,
+            'service_quote_uuid'       => $serviceQuote ? $serviceQuote->uuid : null,
+            'owner_uuid'               => $customer->uuid,
+            'owner_type'               => 'fleet-ops:contact',
+            'amount'                   => $amount,
+            'currency'                 => $currency,
+            'is_pickup'                => $isPickup,
+            'options'                  => $checkoutOptions,
+            'cart_state'               => $cart->toArray(),
+            'stripe_payment_intent_id' => $paymentIntent->id,
         ]);
 
         // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
@@ -496,7 +498,7 @@ class CheckoutController extends Controller
         }
 
         $customer = static::resolveCheckoutCustomer($customerId);
-        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+        if ($customer instanceof JsonResponse) {
             return $customer;
         }
 
@@ -598,7 +600,7 @@ class CheckoutController extends Controller
         // @codeCoverageIgnoreEnd
 
         $customer = static::resolveCheckoutCustomer($customerId);
-        if ($customer instanceof \Illuminate\Http\JsonResponse) {
+        if ($customer instanceof JsonResponse) {
             return $customer;
         }
         if (!$customer) {
@@ -765,7 +767,7 @@ class CheckoutController extends Controller
         if ($testPayment) {
             $callbackParams['test'] = data_get($checkoutOptions, 'testPayment');
         }
-        $callbackUrl = Utils::apiUrl('storefront/v1/checkouts/capture-qpay', $callbackParams);
+        $qpay->setCallback(QPay::callbackUrl($callbackParams));
 
         // Create invoice description
         $taxType             = '1'; // Start with VAT required
@@ -784,9 +786,11 @@ class CheckoutController extends Controller
         ]);
 
         // Create QPay line items
-        $lines = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
+        $lines        = QPay::createQpayInitialLines($cart, $serviceQuote, $checkoutOptions);
+        $cartProducts = Product::whereIn('public_id', collect($cart->items)->pluck('product_id')->filter()->unique())->get()->keyBy('public_id');
         foreach ($cart->items as $item) {
-            $classificationCode = QPay::getCartItemClassificationCode($item);
+            $product            = $item->product_id ? $cartProducts->get($item->product_id) : null;
+            $classificationCode = QPay::getCartItemClassificationCode($item, $product);
             $isVatExempt        = QPay::isTaxFreeClassificationCode($classificationCode);
 
             $line = [
@@ -795,7 +799,7 @@ class CheckoutController extends Controller
                 'line_unit_price'     => number_format($item->price, 2, '.', ''),
                 'note'                => $checkout->public_id,
                 'classification_code' => $classificationCode,
-                'tax_product_code'    => QPay::getCartItemTaxProductCode($item),
+                'tax_product_code'    => QPay::getCartItemTaxProductCode($item, $product),
                 'taxes'               => [
                     [
                         'tax_code'    => 'VAT',
@@ -814,7 +818,7 @@ class CheckoutController extends Controller
         if ($ebarimtInvoiceCode) {
             $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
         } else {
-            $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo, $callbackUrl);
+            $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
         }
 
         // Update checkout with invoice id
@@ -849,7 +853,7 @@ class CheckoutController extends Controller
      *                         - `respond` (boolean): Whether to return a JSON response.
      *                         - `test` (string|null): A test scenario indicator ('success' or 'error') for sandbox mode.
      *
-     * @return \Illuminate\Http\JsonResponse a JSON response with payment data or error details
+     * @return JsonResponse a JSON response with payment data or error details
      *
      * @throws \Exception if an error occurs during payment processing, an API error is returned
      */
@@ -988,8 +992,9 @@ class CheckoutController extends Controller
         // Define a unique lock key for this specific checkout
         $lockKey = 'create-order-checkout-' . $checkout->uuid;
 
-        // Attempt to acquire a lock for 10 seconds
-        $lock = Cache::lock($lockKey, 10);
+        // Keep the lock for the full provider/order workflow. Checkout creation can
+        // legitimately take longer than ten seconds when downstream services are slow.
+        $lock = Cache::lock($lockKey, 120);
 
         if ($lock->get()) {
             try {
@@ -1017,6 +1022,7 @@ class CheckoutController extends Controller
                     'transactionDetails' => $transactionDetails,
                     'notes'              => $notes,
                 ]);
+                $captureRequest->attributes->set('storefront_checkout_lock_held', true);
 
                 // Call captureOrder to create the order
                 $this->captureOrder($captureRequest);
@@ -1113,6 +1119,15 @@ class CheckoutController extends Controller
 
     public function captureOrder(CaptureOrderRequest $request)
     {
+        if (!$request->attributes->get('storefront_checkout_lock_held')) {
+            $checkout = Checkout::where('token', $request->input('token'))->first();
+            if (!$checkout) {
+                return response()->apiError('Checkout session not found.');
+            }
+
+            return $this->captureOrderWithLock($checkout, $request);
+        }
+
         $token              = $request->input('token');
         $transactionDetails = $request->input('transactionDetails', []); // optional details to be supplied about transaction
         $notes              = $request->input('notes');
@@ -1157,6 +1172,18 @@ class CheckoutController extends Controller
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? $cart->getCurrency();
         $store    = $about;
+
+        if ($gateway && $gateway->isStripeGateway) {
+            $stripeVerification = $this->verifyStripePaymentForCheckout($checkout, $gateway, $customer, (int) $amount, (string) $currency);
+            if ($stripeVerification instanceof JsonResponse) {
+                return $stripeVerification;
+            }
+
+            // Provider data is authoritative. Never allow client-supplied transaction
+            // identifiers or payment status to replace the verified Stripe values.
+            $transactionDetails = array_merge($transactionDetails, $stripeVerification);
+            $request->merge(['transactionDetails' => $transactionDetails]);
+        }
 
         // check if order is via network for a single store
         $isNetworkOrder          = $about->is_network === true;
@@ -1402,6 +1429,101 @@ class CheckoutController extends Controller
         ]);
 
         return new OrderResource($order);
+    }
+
+    protected function verifyStripePaymentForCheckout(Checkout $checkout, Gateway $gateway, ?Contact $customer, int $amount, ?string $currency): array|JsonResponse
+    {
+        if (!$checkout->stripe_payment_intent_id) {
+            return response()->apiError('Stripe PaymentIntent is not linked to this checkout.', 422);
+        }
+
+        if (!static::hasStripeSecret($gateway)) {
+            return response()->apiError('Gateway not configured correctly!');
+        }
+
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+
+        try {
+            $paymentIntent = \Stripe\PaymentIntent::retrieve($checkout->stripe_payment_intent_id);
+        } catch (StripeAuthenticationException $e) {
+            return static::stripeAuthenticationError($gateway, 'verify_checkout_payment_intent');
+        } catch (\Exception $e) {
+            Log::warning('[Storefront] Unable to verify Stripe checkout payment.', [
+                'checkout_uuid' => $checkout->uuid,
+                'gateway_uuid'  => $gateway->uuid,
+                'exception'     => get_class($e),
+            ]);
+
+            return response()->apiError('Unable to verify Stripe payment.', 502);
+        }
+
+        if ($paymentIntent->status !== 'succeeded') {
+            return response()->apiError('Stripe payment has not been completed.', 402);
+        }
+
+        if (!is_string($currency) || trim($currency) === '') {
+            return response()->apiError('Stripe payment does not match this checkout.', 422);
+        }
+
+        $stripeCustomerId = is_object($paymentIntent->customer) ? $paymentIntent->customer->id : $paymentIntent->customer;
+        $expectedCustomer = $customer?->getMeta('stripe_id');
+        $expectedAmount   = Utils::formatAmountForStripe($amount, $currency);
+        $expectedLiveMode = !$gateway->sandbox;
+
+        if (
+            $paymentIntent->id !== $checkout->stripe_payment_intent_id
+            || (int) $paymentIntent->amount !== $expectedAmount
+            || (int) $paymentIntent->amount_received !== $expectedAmount
+            || strtolower((string) $paymentIntent->currency) !== strtolower((string) $currency)
+            || !$expectedCustomer
+            || $stripeCustomerId !== $expectedCustomer
+            || (bool) $paymentIntent->livemode !== $expectedLiveMode
+        ) {
+            Log::warning('[Storefront] Stripe payment did not match checkout.', [
+                'checkout_uuid'     => $checkout->uuid,
+                'gateway_uuid'      => $gateway->uuid,
+                'payment_intent_id' => $paymentIntent->id,
+            ]);
+
+            return response()->apiError('Stripe payment does not match this checkout.', 422);
+        }
+
+        return [
+            'id'                => $paymentIntent->id,
+            'transaction_id'    => $paymentIntent->id,
+            'payment_intent_id' => $paymentIntent->id,
+            'payment_status'    => $paymentIntent->status,
+        ];
+    }
+
+    protected function captureOrderWithLock(Checkout $checkout, CaptureOrderRequest $request)
+    {
+        $lock = Cache::lock('create-order-checkout-' . $checkout->uuid, 120);
+
+        if (!$lock->get()) {
+            // Another request owns the capture. Return its authoritative result when it
+            // has already completed; otherwise tell the caller to retry safely.
+            $checkout->refresh();
+            if ($checkout->order_uuid && $checkout->order) {
+                return new OrderResource($checkout->order);
+            }
+
+            return response()->apiError('Order capture is already in progress.', 409);
+        }
+
+        try {
+            $checkout->refresh();
+            if ($checkout->order_uuid && $checkout->order) {
+                return new OrderResource($checkout->order);
+            }
+
+            $request->attributes->set('storefront_checkout_lock_held', true);
+
+            return $this->captureOrder($request);
+        } finally {
+            $request->attributes->remove('storefront_checkout_lock_held');
+            $lock->release();
+        }
     }
 
     public function captureMultipleOrders(CaptureOrderRequest $request)
@@ -1747,7 +1869,7 @@ class CheckoutController extends Controller
      * including payment confirmation and order details. If payment is confirmed but
      * order doesn't exist (callback failed), it will create the order as a fallback.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getCheckoutStatus(Request $request)
     {
