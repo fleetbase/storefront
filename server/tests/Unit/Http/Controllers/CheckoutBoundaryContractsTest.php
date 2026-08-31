@@ -165,6 +165,18 @@ class CheckoutStripeVerificationProbe extends CheckoutController
     }
 }
 
+class CheckoutMultiStoreCaptureProbe extends CheckoutController
+{
+    public ?CaptureOrderRequest $forwardedRequest = null;
+
+    public function captureMultipleOrders(CaptureOrderRequest $request)
+    {
+        $this->forwardedRequest = $request;
+
+        return response()->json(['captured' => 'multiple']);
+    }
+}
+
 test('authenticated checkout identity cannot be replaced by a submitted customer id', function () {
     createCheckoutBoundarySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
@@ -3834,4 +3846,252 @@ test('direct checkout capture rejects a concurrent request before creating finan
         ->and($response->getData(true))->toBe(['error' => 'Order capture is already in progress.'])
         ->and($connection->table('transactions')->count())->toBe($transactionCount)
         ->and($connection->table('orders')->count())->toBe($orderCount);
+});
+
+test('locked checkout capture re-validates its session and reuses a completed order', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Test store',
+        'currency'     => 'USD',
+    ]);
+    $connection->table('orders')->insert([
+        'uuid'      => 'completed_order_uuid',
+        'public_id' => 'order_completed',
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'       => 'checkout_uuid',
+        'public_id'  => 'checkout_public',
+        'token'      => 'checkout_token',
+        'order_uuid' => 'completed_order_uuid',
+    ]);
+    session([
+        'company'          => 'company_uuid',
+        'storefront_key'   => 'store_key',
+        'storefront_store' => 'store_uuid',
+    ]);
+    $controller = new CheckoutController();
+    $lockHeld   = function (string $token) {
+        $request = CaptureOrderRequest::create('/checkout/capture', 'POST', ['token' => $token]);
+        $request->attributes->set('storefront_checkout_lock_held', true);
+
+        return $request;
+    };
+
+    $missing   = $controller->captureOrder($lockHeld('missing_token'));
+    $completed = $controller->captureOrder($lockHeld('checkout_token'));
+    session(['storefront_key' => null, 'storefront_store' => null]);
+
+    expect($missing->getData(true))->toBe(['error' => 'Checkout session not found.'])
+        ->and($completed)->toBeInstanceOf(Fleetbase\FleetOps\Http\Resources\v1\Order::class)
+        ->and($completed->resource->uuid)->toBe('completed_order_uuid');
+});
+
+test('stripe verification rejects unconfigured gateways and blank currencies', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('gateways')->insert([
+        'uuid'       => 'stripe_gateway_uuid',
+        'owner_uuid' => 'store_uuid',
+        'code'       => 'stripe',
+        'type'       => 'stripe',
+        'sandbox'    => true,
+        'config'     => json_encode(['secret_key' => 'sk_test_storefront']),
+    ]);
+    $connection->table('contacts')->insert([
+        'uuid'         => 'customer_uuid',
+        'public_id'    => 'contact_public',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+        'meta'         => json_encode(['stripe_id' => 'cus_checkout']),
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'                     => 'checkout_uuid',
+        'public_id'                => 'checkout_public',
+        'token'                    => 'checkout_token',
+        'stripe_payment_intent_id' => 'pi_checkout',
+        'amount'                   => 2500,
+        'currency'                 => 'USD',
+    ]);
+    $checkout     = Checkout::where('uuid', 'checkout_uuid')->firstOrFail();
+    $customer     = Contact::where('uuid', 'customer_uuid')->firstOrFail();
+    $unconfigured = new Gateway();
+    $unconfigured->forceFill([
+        'uuid'   => 'unconfigured_gateway_uuid',
+        'type'   => 'stripe',
+        'config' => [],
+    ]);
+    $probe         = new CheckoutStripeVerificationProbe();
+    $missingSecret = $probe->verifyStripePayment($checkout, $unconfigured, $customer, 2500, 'USD');
+
+    $http = new class implements Stripe\HttpClient\ClientInterface {
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
+        {
+            return [json_encode([
+                'id'              => 'pi_checkout',
+                'object'          => 'payment_intent',
+                'status'          => 'succeeded',
+                'amount'          => 2500,
+                'amount_received' => 2500,
+                'currency'        => 'usd',
+                'customer'        => 'cus_checkout',
+                'livemode'        => false,
+            ]), 200, []];
+        }
+    };
+    Stripe\ApiRequestor::setHttpClient($http);
+    $gateway       = Gateway::where('uuid', 'stripe_gateway_uuid')->firstOrFail();
+    $blankCurrency = $probe->verifyStripePayment($checkout, $gateway, $customer, 2500, '   ');
+    Stripe\ApiRequestor::setHttpClient(new Stripe\HttpClient\CurlClient());
+
+    expect($missingSecret->getData(true))->toBe(['error' => 'Gateway not configured correctly!'])
+        ->and($blankCurrency->getStatusCode())->toBe(422)
+        ->and($blankCurrency->getData(true))->toBe(['error' => 'Stripe payment does not match this checkout.']);
+});
+
+test('stripe capture forwards verified provider details into multi store capture', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert([
+        'uuid'      => 'network_uuid',
+        'public_id' => 'network_public',
+        'key'       => 'network_test_key',
+        'name'      => 'Test network',
+        'currency'  => 'USD',
+        'options'   => json_encode(['multi_cart_enabled' => true]),
+    ]);
+    $connection->table('gateways')->insert([
+        'uuid'       => 'stripe_gateway_uuid',
+        'owner_uuid' => 'network_uuid',
+        'code'       => 'stripe',
+        'type'       => 'stripe',
+        'sandbox'    => true,
+        'config'     => json_encode(['secret_key' => 'sk_test_storefront']),
+    ]);
+    $connection->table('contacts')->insert([
+        'uuid'         => 'customer_uuid',
+        'public_id'    => 'contact_public',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+        'meta'         => json_encode(['stripe_id' => 'cus_checkout']),
+    ]);
+    $connection->table('carts')->insert([
+        'uuid'              => 'cart_uuid',
+        'public_id'         => 'cart_public',
+        'company_uuid'      => 'company_uuid',
+        'unique_identifier' => 'multi-store-cart',
+        'currency'          => 'USD',
+        'items'             => json_encode([
+            ['id' => 'line_one', 'store_id' => 'store_one', 'quantity' => 1, 'subtotal' => 1000],
+            ['id' => 'line_two', 'store_id' => 'store_two', 'quantity' => 1, 'subtotal' => 1500],
+        ]),
+        'events'            => '[]',
+        'expires_at'        => now()->addHour(),
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'                     => 'checkout_uuid',
+        'public_id'                => 'checkout_public',
+        'token'                    => 'checkout_token',
+        'cart_uuid'                => 'cart_uuid',
+        'gateway_uuid'             => 'stripe_gateway_uuid',
+        'owner_uuid'               => 'customer_uuid',
+        'owner_type'               => Contact::class,
+        'stripe_payment_intent_id' => 'pi_checkout',
+        'amount'                   => 2500,
+        'currency'                 => 'USD',
+        'is_pickup'                => true,
+        'options'                  => json_encode(['is_pickup' => true]),
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_key'     => 'network_test_key',
+        'storefront_network' => 'network_uuid',
+        'storefront_store'   => null,
+    ]);
+    $http = new class implements Stripe\HttpClient\ClientInterface {
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
+        {
+            return [json_encode([
+                'id'              => 'pi_checkout',
+                'object'          => 'payment_intent',
+                'status'          => 'succeeded',
+                'amount'          => 2500,
+                'amount_received' => 2500,
+                'currency'        => 'usd',
+                'customer'        => 'cus_checkout',
+                'livemode'        => false,
+            ]), 200, []];
+        }
+    };
+    Stripe\ApiRequestor::setHttpClient($http);
+    $controller = new CheckoutMultiStoreCaptureProbe();
+
+    $response = $controller->captureOrder(CaptureOrderRequest::create('/checkout/capture', 'POST', [
+        'token'              => 'checkout_token',
+        'transactionDetails' => ['transaction_id' => 'untrusted_client_id'],
+    ]));
+    Stripe\ApiRequestor::setHttpClient(new Stripe\HttpClient\CurlClient());
+    session(['storefront_key' => null, 'storefront_network' => null]);
+
+    expect($response->getData(true))->toBe(['captured' => 'multiple'])
+        ->and($controller->forwardedRequest)->not->toBeNull()
+        ->and($controller->forwardedRequest->input('transactionDetails'))->toBe([
+            'transaction_id'    => 'pi_checkout',
+            'id'                => 'pi_checkout',
+            'payment_intent_id' => 'pi_checkout',
+            'payment_status'    => 'succeeded',
+        ]);
+});
+
+test('waiting checkout capture returns the order completed by the lock owner', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('orders')->insert([
+        'uuid'      => 'winner_order_uuid',
+        'public_id' => 'order_winner',
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'      => 'checkout_uuid',
+        'public_id' => 'checkout_public',
+        'token'     => 'checkout_token',
+    ]);
+    $previousCache = app('cache');
+    app()->instance('cache', new class($connection) {
+        public function __construct(private $connection)
+        {
+        }
+
+        public function lock($key, $seconds): object
+        {
+            return new class($this->connection) {
+                public function __construct(private $connection)
+                {
+                }
+
+                public function get(): bool
+                {
+                    $this->connection->table('checkouts')->where('uuid', 'checkout_uuid')->update([
+                        'order_uuid' => 'winner_order_uuid',
+                        'captured'   => true,
+                    ]);
+
+                    return false;
+                }
+            };
+        }
+    });
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('cache');
+
+    $response = (new CheckoutController())->captureOrder(
+        CaptureOrderRequest::create('/checkout/capture', 'POST', ['token' => 'checkout_token'])
+    );
+    app()->instance('cache', $previousCache);
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('cache');
+
+    expect($response)->toBeInstanceOf(Fleetbase\FleetOps\Http\Resources\v1\Order::class)
+        ->and($response->resource->uuid)->toBe('winner_order_uuid');
 });

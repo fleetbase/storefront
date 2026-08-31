@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
 use Illuminate\Session\Store as SessionStore;
 
+class BaseAuthenticatedCustomerProbe extends CustomerController
+{
+    public function baseAuthenticatedCustomer(Request $request): ?Fleetbase\FleetOps\Models\Contact
+    {
+        return parent::authenticatedCustomerForRequest($request);
+    }
+}
+
 class SocialCustomerControllerStub extends CustomerController
 {
     public bool $appleValid      = true;
@@ -2001,4 +2009,10 @@ test('customer query scopes records to customer type and active company', functi
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('customer_one');
+});
+
+test('customer authentication seam resolves the token customer from the storefront request', function () {
+    $probe = new BaseAuthenticatedCustomerProbe();
+
+    expect($probe->baseAuthenticatedCustomer(Request::create('/customer/contact_public', 'PUT')))->toBeNull();
 });
