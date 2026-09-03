@@ -198,11 +198,13 @@ class Network extends StorefrontModel
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * Network store categories (the categories stores are grouped under in a marketplace).
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function categories()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->hasMany(Category::class, 'owner_uuid')->where(['for' => 'network_category']);
+        return $this->setConnection(config('fleetbase.connection.db'))->hasMany(Category::class, 'owner_uuid')->where(['for' => 'storefront_network']);
     }
 
     /**
@@ -295,7 +297,7 @@ class Network extends StorefrontModel
         return Category::create([
             'company_uuid'   => $this->company_uuid,
             'owner_uuid'     => $this->uuid,
-            'owner_type'     => Utils::getMutationType('network:storefront'),
+            'owner_type'     => Utils::getMutationType('storefront:network'),
             'parent_uuid'    => $parent instanceof Category ? $parent->uuid : null,
             'icon_file_uuid' => $iconFile?->uuid,
             'for'            => 'storefront_network',

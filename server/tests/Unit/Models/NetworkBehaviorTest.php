@@ -106,7 +106,7 @@ test('networks add stores idempotently and report active store counts', function
     $connection->table('categories')->insert([
         'uuid'  => 'category_uuid',
         'name'  => 'Food',
-        'for'   => 'network_category',
+        'for'   => 'storefront_network',
     ]);
 
     $network  = Network::where('uuid', 'network_uuid')->firstOrFail();
@@ -160,6 +160,9 @@ test('network categories preserve parent icon and strict uniqueness contracts', 
         ->and($existing->name)->toBe($withFile->name)
         ->and($existing->description)->toBe('Everyday goods')
         ->and($created->name)->toBe('Flowers')
+        ->and($withFile->owner_type)->toBe(Network::class)
+        ->and($withFile->for)->toBe('storefront_network')
+        ->and($network->categories()->count())->toBe(4)
         ->and(Capsule::connection('mysql')->table('categories')->count())->toBe(4);
 });
 
