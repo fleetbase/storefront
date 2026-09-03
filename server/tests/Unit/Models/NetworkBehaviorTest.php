@@ -190,7 +190,7 @@ test('network order config falls back to the company default and fails clearly w
         ->toThrow(RuntimeException::class, 'No default OrderConfig is configured.');
 });
 
-test('network options accept valid JSON and invitation relationships are exposed', function () {
+test('network options are normalized and stored as JSON and invitation relationships are exposed', function () {
     $environmentRepository = new ReflectionProperty(Illuminate\Support\Env::class, 'repository');
     $environmentRepository->setValue(null, new class {
         public function get(string $key): mixed
@@ -207,9 +207,9 @@ test('network options accept valid JSON and invitation relationships are exposed
     $validOptions     = $network->getAttributes()['options'];
     $network->options = new stdClass();
 
-    expect($validOptions)->toBe([
+    expect(json_decode($validOptions, true))->toBe([
         'required_checkout_min_amount' => 2550,
         'pickup'                       => true,
-    ])->and($network->getAttributes()['options'])->toBe([])
+    ])->and(json_decode($network->getAttributes()['options'], true))->toBe([])
         ->and($network->invitations())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
 });
