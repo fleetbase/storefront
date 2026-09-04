@@ -8,7 +8,6 @@ use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Support\Utils;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -353,20 +352,13 @@ class QPay
             return $this;
         }
 
-        $username = $this->requestOptions['auth'][0] ?? '';
-        $cacheKey = 'storefront:qpay:token:' . md5(($this->requestOptions['base_uri'] ?? '') . '|' . $username);
-        $token    = Cache::get($cacheKey);
-
-        if (!$token) {
-            $response  = $this->getAuthToken();
-            $token     = data_get($response, 'access_token');
-            $expiresIn = (int) data_get($response, 'expires_in', 0);
-
-            // Reuse the token across requests until shortly before it expires
-            if ($token && $expiresIn > 120) {
-                Cache::put($cacheKey, $token, $expiresIn - 60);
-            }
-        }
+        // Always mint a fresh token. QPay returns `expires_in` as an absolute UNIX
+        // timestamp, not a lifetime in seconds, so caching keyed off it cached the token
+        // for decades and every call kept sending a token QPay had already expired —
+        // answering NO_CREDENTIALS with perfectly valid credentials. Reuse is worth one
+        // round trip only if the real expiry is honoured; until then, correctness wins.
+        $response = $this->getAuthToken();
+        $token    = data_get($response, 'access_token');
 
         if ($token) {
             $this->useBearerToken($token);
