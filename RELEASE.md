@@ -1,46 +1,42 @@
-> v0.4.20 ~ "Verified payments and gateway callbacks that arrive"
+> v0.4.21 ~ "QPay checkout restored and marketplace network repairs"
 
 ---
 ## Highlights
 
-Payment capture is now settled by the payment provider rather than by the client. A Stripe checkout is captured only after Fleetbase retrieves the PaymentIntent it linked to that checkout and confirms the payment succeeded and matches the checkout, and QPay callbacks reach a route that exists so a paid invoice completes its order instead of waiting for a client to poll.
+QPay checkout works again. v0.4.20 cached the QPay access token using `expires_in`, which QPay returns as an absolute timestamp rather than a lifetime in seconds — so the token was held far past its real life, and once QPay expired it every storefront request kept presenting a dead token and was answered with `NO_CREDENTIALS` even though the merchant credentials were valid. A token is minted per authentication again.
 
-Capture itself is serialized per checkout, so a retry or a double-tap can no longer produce two orders for one payment.
-
----
-## Security and Reliability
-
-- Stripe capture verifies the server-linked PaymentIntent — status, amount, amount received, currency, customer, and live/test mode — before creating an order. Client-supplied transaction details can no longer stand in for the provider's verified values.
-- Checkout capture is serialized per checkout: a concurrent capture returns `409` while the first is still in progress, and an already-captured checkout returns its existing order instead of creating a second one.
-- Customer profile updates require the `Customer-Token` of the customer being updated. A missing or mismatched token returns `403`, on both `/customers/{id}` and the `/contacts/{id}` alias.
-- QPay payment cancel and refund requests no longer send a malformed callback URL.
+Marketplace networks also pick up three repairs: saving a network with options, listing the categories its stores are grouped under, and creating those categories all failed in ways that only surfaced against a fully seeded marketplace.
 
 ---
-## API and Checkout Changes
+## Fixes
 
-- QPay invoices carry the per-checkout callback URL, and the callback targets the registered `capture-qpay` endpoint — the previous default named a route that was never registered, so payment notifications were lost. The URL is built from one helper that honors the configured storefront route prefix.
-- Capturing a Stripe checkout whose payment has not completed returns `402`; a missing or mismatched PaymentIntent returns `422`, and a temporary Stripe verification failure returns `502`.
-- A cash pickup checkout no longer requires a delivery service quote.
-- Checkouts persist the Stripe PaymentIntent they were initialized with, which is the identifier capture verifies against.
-- QPay access tokens are reused until shortly before they expire instead of re-authenticating on every checkout, callback, and status poll, and invoice line items resolve their products in one query rather than two per cart item.
+- QPay authenticates fresh on every call, restoring checkout invoice creation, the `capture-qpay` callback, checkout status polling, and eBarimt receipts. Caching the token is only safe once the expiry timestamp is read as a timestamp, so it is gone rather than patched.
+- Saving a `Network` with options no longer fails: the options mutator bypassed the model's JSON cast and stored a raw array.
+- `Network::categories()` matched `for = 'network_category'`, a value nothing writes, so the relation was always empty. It now matches the `storefront_network` categories the console and the v1 API already use.
+- `Network::createCategory()` derived its owner type from `network:storefront`, which resolves to no class. It now resolves to the `Network` model, so created categories are owned correctly.
+
+---
+## Testing Fixtures
+
+The storefront testing seeders are split into two complete, idempotent fixtures over a shared concern, both run by `TestingSeeder`:
+
+- `StoreSeeder` seeds one standalone store end to end — order config, a store location with weekly hours, a sandbox Stripe gateway, categories, products covering variants, addons and sale, unavailable and draft cases, a published catalog, customers, an open cart, a pending checkout, orders spread across the last month, and reviews.
+- `NetworkSeeder` seeds a marketplace: a network with its own sandbox gateway, network categories, member stores built the same way, and network-tagged orders across them.
+
+This closes gaps that made local testing misleading: no gateway, location or hours were seeded, so Stripe checkout and delivery quoting could not be exercised at all; core product categories were never purged and duplicated on every run; addon categories had no owner, so the console never listed them; every order collapsed to `created` because the status is reset when the tracking number is generated; and all records shared a single timestamp. Each seeder now tags and purges only its own fixtures.
 
 ---
 ## Upgrade Steps
 
-This release adds a `stripe_payment_intent_id` column to `checkouts`. Run migrations after deploying:
+No database migration is required.
+
+Nothing needs clearing after deploying: the fixed code never reads the cached QPay token, so any entry left by v0.4.20 is inert. Installations still on v0.4.20 that need QPay working before they can deploy can drop that entry to buy one token lifetime, but the upgrade is the fix:
 
 ```bash
-php artisan migrate
+php artisan cache:forget storefront:qpay:token:<md5 of "<qpay base uri>|<merchant username>">
 ```
 
-Update `fleetbase/core-api` to **v1.6.60 or newer**. The QPay callback URL depends on the `Utils::apiUrl` query-string fix released there; against an older core-api the checkout identifier is appended as a path segment and the callback cannot be matched.
-
-Two client-facing contracts changed:
-
-- Clients must confirm the Stripe PaymentIntent before calling checkout capture. A client that captured optimistically now receives `402` until the payment succeeds.
-- Clients that update a customer profile must send that customer's `Customer-Token`; the storefront key alone is no longer sufficient.
-
-Publish the matching API specification and documentation with this release.
+Releases are now cut from `release/v0.0.0` branches instead of `dev-v0.0.0`. The tag workflow accepts both while open branches move over, so no in-flight release branch is stranded.
 
 ---
 ## Need help?

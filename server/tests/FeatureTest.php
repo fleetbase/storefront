@@ -151,16 +151,19 @@ test('storefront order detail resource includes checkout totals and transaction 
         ->and($data['meta']['storefront'])->not->toHaveKey('extra');
 });
 
-test('testing seeder purges seeded ledger storefront sale journals before orders', function () {
-    $seeder = file_get_contents(__DIR__ . '/../seeders/Testing/CheckoutOrdersSeeder.php');
+test('testing seeders purge seeded ledger storefront sale journals before orders', function () {
+    $fixtures = file_get_contents(__DIR__ . '/../seeders/Testing/Concerns/SeedsStorefrontFixtures.php');
 
-    expect($seeder)
-        ->toContain('$orderUuids       = $this->seededUuids(Order::class)')
+    expect($fixtures)
+        ->toContain('$orderUuids           = $this->seededUuids(Order::class)')
         ->toContain('$this->purgeSeededLedgerJournals($orderUuids)')
         ->toContain("->table('ledger_journals')")
         ->toContain("->where('type', 'storefront_sale')")
-        ->toContain("->where('meta->seed', static::SEED_NAME)")
+        ->toContain("->whereIn('meta->seed', \$this->seedNames())")
         ->toContain("->orWhereIn('meta->order_uuid', \$orderUuids)");
+
+    expect(strpos($fixtures, '$this->purgeSeededLedgerJournals($orderUuids)'))
+        ->toBeLessThan(strpos($fixtures, '$this->purgeModel(Order::class)'));
 });
 
 test('storefront navigator search endpoint is registered and returns navigator routes', function () {

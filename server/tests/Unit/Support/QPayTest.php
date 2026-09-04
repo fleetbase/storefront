@@ -125,36 +125,42 @@ test('qpay supports direct tokens refreshes and individual payment lookups', fun
         ->and((string) $history[2]['request']->getUri())->toContain('payment/payment-7');
 });
 
-test('qpay caches auth tokens across instances until shortly before expiry', function () {
+test('qpay mints a fresh auth token for every authentication', function () {
+    // QPay returns `expires_in` as an ABSOLUTE UNIX TIMESTAMP, not a lifetime in
+    // seconds — the value below is a real one, and it is roughly a day away, not the
+    // 56 years it would mean as a duration. Caching a token against that reading kept
+    // sending a token QPay had already expired, so authentication must not reuse one.
     $history = [];
-    $mock    = new MockHandler([
-        new Response(200, [], '{"access_token":"cached-token","expires_in":3600}'),
-    ]);
-    $handler = HandlerStack::create($mock);
-    $handler->push(Middleware::history($history));
-
-    $qpay = new QPay('cache-merchant', 'cache-secret', 'https://storefront.test/qpay');
-    $qpay->updateRequestOption('handler', $handler);
-
-    expect($qpay->setAuthToken())->toBe($qpay);
-
-    // A new instance with the same credentials reuses the cached token without re-authenticating
-    $secondHistory = [];
-    $secondMock    = new MockHandler([
+    $qpay    = qpayWithResponses([
+        new Response(200, [], '{"access_token":"first-token","expires_in":1788603222}'),
         new Response(200, [], '{"ok":true}'),
-    ]);
-    $secondHandler = HandlerStack::create($secondMock);
-    $secondHandler->push(Middleware::history($secondHistory));
+        new Response(200, [], '{"access_token":"second-token","expires_in":1788603222}'),
+        new Response(200, [], '{"ok":true}'),
+    ], $history);
 
-    $second = new QPay('cache-merchant', 'cache-secret', 'https://storefront.test/qpay');
-    $second->updateRequestOption('handler', $secondHandler);
+    $qpay->setAuthToken();
+    $qpay->get('health');
+    $qpay->setAuthToken();
+    $qpay->get('health');
 
-    expect($second->setAuthToken())->toBe($second)
-        ->and($second->get('health')->ok)->toBeTrue()
-        ->and($history)->toHaveCount(1)
+    expect($history)->toHaveCount(4)
         ->and((string) $history[0]['request']->getUri())->toContain('auth/token')
-        ->and($secondHistory)->toHaveCount(1)
-        ->and($secondHistory[0]['request']->getHeaderLine('Authorization'))->toBe('Bearer cached-token');
+        ->and($history[1]['request']->getHeaderLine('Authorization'))->toBe('Bearer first-token')
+        ->and((string) $history[2]['request']->getUri())->toContain('auth/token')
+        ->and($history[3]['request']->getHeaderLine('Authorization'))->toBe('Bearer second-token');
+});
+
+test('qpay authentication tolerates a token response without an access token', function () {
+    $history = [];
+    $qpay    = qpayWithResponses([
+        new Response(200, [], '{"error":"NO_CREDENTIALS"}'),
+        new Response(200, [], '{"ok":true}'),
+    ], $history);
+
+    expect($qpay->setAuthToken())->toBe($qpay)
+        ->and($qpay->get('health')->ok)->toBeTrue()
+        // No bearer is installed, so the client keeps falling back to basic auth
+        ->and($history[1]['request']->getHeaderLine('Authorization'))->not->toContain('Bearer');
 });
 
 test('qpay invoice factory authenticates and forwards invoice parameters', function () {
