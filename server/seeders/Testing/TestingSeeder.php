@@ -3,34 +3,24 @@
 namespace Fleetbase\Storefront\Seeders\Testing;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema;
 
+/**
+ * Runs every Storefront testing seeder.
+ *
+ * Each seeder purges and recreates its own fixtures, so this entrypoint just orders
+ * them. Run a single seeder directly when only one scenario is needed:
+ *
+ *   php artisan db:seed --class="Fleetbase\\Storefront\\Seeders\\Testing\\TestingSeeder"
+ *   php artisan db:seed --class="Fleetbase\\Storefront\\Seeders\\Testing\\StoreSeeder"
+ *   php artisan db:seed --class="Fleetbase\\Storefront\\Seeders\\Testing\\NetworkSeeder"
+ */
 class TestingSeeder extends Seeder
 {
     public function run(): void
     {
-        Schema::connection(config('fleetbase.connection.db'))->disableForeignKeyConstraints();
-        Schema::connection(config('storefront.connection.db'))->disableForeignKeyConstraints();
-        try {
-            $this->purgeSeedData();
-        } finally {
-            Schema::connection(config('storefront.connection.db'))->enableForeignKeyConstraints();
-            Schema::connection(config('fleetbase.connection.db'))->enableForeignKeyConstraints();
-        }
-
         $this->call([
-            CatalogAndProductsSeeder::class,
-            CheckoutOrdersSeeder::class,
+            StoreSeeder::class,
+            NetworkSeeder::class,
         ]);
-    }
-
-    protected function purgeSeedData(): void
-    {
-        foreach ([
-            new CheckoutOrdersSeeder(),
-            new CatalogAndProductsSeeder(),
-        ] as $seeder) {
-            $seeder->purgeSeedData();
-        }
     }
 }

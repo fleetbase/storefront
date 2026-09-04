@@ -294,14 +294,14 @@ test('network normalizes checkout minimum options and invalid inputs', function 
     $network          = new Network();
     $network->options = ['required_checkout_min_amount' => '$1,234.50', 'pickup' => true];
 
-    expect($network->getAttributes()['options'])->toBe([
+    expect(json_decode($network->getAttributes()['options'], true))->toBe([
         'required_checkout_min_amount' => 123450,
         'pickup'                       => true,
     ]);
 
     $network->options = 'not-json';
 
-    expect($network->getAttributes()['options'])->toBe([]);
+    expect(json_decode($network->getAttributes()['options'], true))->toBe([]);
 });
 
 test('network order config uses direct foreign keys and loaded relations', function () {
