@@ -32,7 +32,10 @@ class HandleOrderDriverAssigned implements ShouldQueue
         // if storefront order notify customer driver has been addigned
         if ($order->hasMeta('storefront_id')) {
             $order->load(['customer']);
-            $order->customer->notify(new StorefrontOrderDriverAssigned($order));
+
+            if ($order->customer) {
+                $order->customer->notify(new StorefrontOrderDriverAssigned($order));
+            }
         }
     }
 }

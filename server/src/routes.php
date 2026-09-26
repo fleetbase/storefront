@@ -104,6 +104,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->put('{id}', 'CustomerController@update');
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
+                    $router->post('unregister-device', 'CustomerController@unregisterDevice');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');
@@ -213,7 +214,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('product-addon-categories');
                         $router->fleetbaseRoutes('addon-categories');
                         $router->fleetbaseRoutes('gateways');
-                        $router->fleetbaseRoutes('notification-channels');
+                        $router->fleetbaseRoutes(
+                            'notification-channels',
+                            function ($router, $controller) {
+                                $router->post('{id}/test', $controller('testPush'));
+                            }
+                        );
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');
