@@ -367,3 +367,21 @@ test('promotional notifications deliver through the storefront push channel and 
         ->and($push->data)->toBe(['type' => 'promotional', 'store' => 'store_uuid', 'store_id' => 'store_public'])
         ->and(collect($notification->pushStorefronts())->pluck('uuid')->all())->toBe(['store_uuid', 'network_uuid']);
 });
+
+test('promotional notifications still use the store app when network membership cannot be loaded', function () {
+    Illuminate\Database\Capsule\Manager::schema('mysql')->dropIfExists('network_stores');
+    Illuminate\Database\Capsule\Manager::schema('mysql')->dropIfExists('networks');
+
+    $store = new Store();
+    $store->forceFill(['uuid' => 'store_uuid', 'public_id' => 'store_public']);
+
+    expect(collect((new PromotionalPushNotification('Sale', 'Save now', $store))->pushStorefronts())->pluck('uuid')->all())->toBe(['store_uuid']);
+});
+
+test('order notifications fall back to their storefront when the order has no storefront metadata', function () {
+    $store = new Store();
+    $store->forceFill(['uuid' => 'store_uuid', 'public_id' => 'store_public', 'name' => 'Corner Store']);
+    $notification = notificationWithoutConstructor(StorefrontOrderAccepted::class, notificationOrder(), $store);
+
+    expect(collect($notification->pushStorefronts())->pluck('uuid')->all())->toBe(['store_uuid']);
+});

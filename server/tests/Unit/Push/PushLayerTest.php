@@ -524,3 +524,188 @@ test('platform names are normalized', function () {
         ->and(StorefrontPushChannel::normalizePlatform('web'))->toBeNull()
         ->and(StorefrontPushChannel::normalizePlatform(null))->toBeNull();
 });
+
+test('push message fluent setters render into both provider payloads', function () {
+    $message = PushMessage::create('Order ready', 'Collect it now')
+        ->data(['id' => 'order_public'])
+        ->data(['type' => 'order_ready'])
+        ->badge(3)
+        ->sound('chime.caf')
+        ->image('https://example.test/order.png')
+        ->category('view_order')
+        ->collapseKey('order_public');
+
+    $fcm = $message->toFcmArray();
+    $apn = json_decode(json_encode($message->toApnPayload()), true);
+
+    expect($message->data)->toBe(['id' => 'order_public', 'type' => 'order_ready'])
+        ->and($fcm['notification']['image'])->toBe('https://example.test/order.png')
+        ->and($fcm['android']['collapse_key'])->toBe('order_public')
+        ->and($fcm['android']['notification'])->toMatchArray(['sound' => 'chime.caf', 'click_action' => 'view_order', 'tag' => 'order_public'])
+        ->and($fcm['apns']['payload']['aps'])->toBe(['sound' => 'chime.caf', 'badge' => 3, 'category' => 'view_order'])
+        ->and($apn['aps'])->toMatchArray(['sound' => 'chime.caf', 'badge' => 3, 'category' => 'view_order', 'mutable-content' => 1]);
+
+    $silent = json_decode(json_encode(PushMessage::create('Hi', 'There')->sound(null)->badge(null)->toApnPayload()), true);
+
+    expect($silent['aps'])->not->toHaveKey('sound')
+        ->and($silent['aps'])->not->toHaveKey('badge');
+});
+
+test('FCM transport multicasts the rendered message and maps each token report', function () {
+    $messaging = $this->createMock(Kreait\Firebase\Contract\Messaging::class);
+    $messaging->expects($this->once())
+        ->method('sendMulticast')
+        ->with(
+            $this->callback(fn ($message) => $message instanceof Kreait\Firebase\Messaging\CloudMessage
+                && data_get($message->jsonSerialize(), 'android.notification.channel_id') === 'orders'),
+            ['ok_token', 'dead_token']
+        )
+        ->willReturn(Kreait\Firebase\Messaging\MulticastSendReport::withItems([
+            SendReport::success(MessageTarget::with(MessageTarget::TOKEN, 'ok_token'), ['name' => 'projects/x/messages/1']),
+            SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, 'dead_token'), new NotFound('Requested entity was not found.')),
+        ]));
+    $factory = new class($messaging) extends FirebaseMessagingFactory {
+        public function __construct(public $messaging)
+        {
+        }
+
+        public function make(NotificationChannel $channel): Kreait\Firebase\Contract\Messaging
+        {
+            return $this->messaging;
+        }
+    };
+    $transport = new FcmTransport($factory);
+    $channel   = pushChannel(['app_key' => 'fcm', 'scheme' => 'fcm'], ['android_channel_id' => 'orders']);
+
+    $outcomes = $transport->send($channel, PushMessage::create('Order ready', 'Collect it now'), ['ok_token', 'dead_token']);
+
+    expect(collect($outcomes)->map->status->all())->toBe(['ok_token' => PushOutcome::SENT, 'dead_token' => PushOutcome::DEAD])
+        ->and($transport->send($channel, PushMessage::create('Hi', 'There'), []))->toBe([]);
+});
+
+test('FCM invalid registration arguments are treated as dead tokens', function () {
+    $report = SendReport::failure(
+        MessageTarget::with(MessageTarget::TOKEN, 'token'),
+        new Kreait\Firebase\Exception\Messaging\InvalidArgument('The registration token is not valid')
+    );
+
+    expect(FcmTransport::outcomeFor($report)->status)->toBe(PushOutcome::DEAD);
+});
+
+test('APNs transport queues a high priority notification per token and maps each response', function () {
+    $client = $this->createMock(Pushok\Client::class);
+    $queued = [];
+    $client->expects($this->exactly(2))
+        ->method('addNotification')
+        ->willReturnCallback(function (Pushok\Notification $notification) use (&$queued) {
+            $queued[] = [$notification->getDeviceToken(), $notification->getPriority(), $notification->getCollapseId()];
+        });
+    $client->method('push')->willReturn([
+        new Pushok\Response(200, '', '', 'ok_token'),
+        new Pushok\Response(410, '', json_encode(['reason' => 'Unregistered']), 'gone_token'),
+    ]);
+    $factory = new class($client) extends ApnClientFactory {
+        public ?string $environment = null;
+
+        public function __construct(public $client)
+        {
+        }
+
+        public function make(NotificationChannel $channel, string $environment): Pushok\Client
+        {
+            $this->environment = $environment;
+
+            return $this->client;
+        }
+    };
+    $transport = new ApnTransport($factory);
+    $channel   = pushChannel(['app_key' => 'apn', 'scheme' => 'apn']);
+
+    $outcomes = $transport->send($channel, 'sandbox', PushMessage::create('Order ready', 'Collect it now')->collapseKey(str_repeat('k', 80)), ['ok_token', 'gone_token']);
+
+    expect(collect($outcomes)->map->status->all())->toBe(['ok_token' => PushOutcome::SENT, 'gone_token' => PushOutcome::DEAD])
+        ->and($factory->environment)->toBe('sandbox')
+        ->and($queued)->toBe([
+            ['ok_token', Pushok\Notification::PRIORITY_HIGH, str_repeat('k', 64)],
+            ['gone_token', Pushok\Notification::PRIORITY_HIGH, str_repeat('k', 64)],
+        ])
+        ->and($transport->send($channel, 'sandbox', PushMessage::create('Hi', 'There'), []))->toBe([]);
+});
+
+test('storefront push channel stops walking APNs environments once every token is delivered', function () {
+    $transport   = fakeApn(fn ($channel, $environment, array $tokens) => array_fill_keys($tokens, PushOutcome::sent()));
+    $pushChannel = new StorefrontPushChannel(fakeResolver(['apn' => [pushChannel(['app_key' => 'apn', 'scheme' => 'apn'], ['environment' => 'auto'])]]), fakeFcm(fn () => []), $transport);
+    $notifiable  = new class(collect([pushDevice('ios_token', 'ios')])) {
+        public function __construct(public $devices)
+        {
+        }
+    };
+
+    $pushChannel->send($notifiable, pushNotification([]));
+
+    expect($transport->calls)->toBe([['apn', 'production', ['ios_token']]]);
+});
+
+test('storefront push channel prefers an explicit push route and survives failing notifications', function () {
+    $fcm         = fakeFcm(fn ($channel, array $tokens) => array_fill_keys($tokens, PushOutcome::sent()));
+    $pushChannel = new StorefrontPushChannel(fakeResolver(['fcm' => [pushChannel(['app_key' => 'fcm', 'scheme' => 'fcm'])]]), $fcm, fakeApn(fn () => []));
+    $notifiable  = new class {
+        public $devices = [];
+
+        public function routeNotificationForStorefrontPush(): array
+        {
+            return [pushDevice('routed_token', 'android')];
+        }
+    };
+    $failing = new class extends Notification implements SendsPushNotification {
+        public function toPush($notifiable): ?PushMessage
+        {
+            throw new RuntimeException('payload failure');
+        }
+
+        public function pushStorefronts(): array
+        {
+            return [];
+        }
+    };
+
+    expect(array_keys($pushChannel->send($notifiable, pushNotification([]))))->toBe(['routed_token'])
+        ->and($pushChannel->send($notifiable, $failing))->toBe([]);
+});
+
+test('storefront push channel pruning tolerates non-model devices, storage failures and logger failures', function () {
+    $schema = Capsule::schema('mysql');
+    $schema->dropIfExists('user_devices');
+    $unsaved = tap(new UserDevice())->forceFill(['uuid' => 'unsaved_uuid', 'platform' => 'android', 'token' => 'unsaved_token', 'status' => 'active']);
+    $plain   = (object) ['token' => 'plain_token', 'platform' => 'android', 'status' => 'active'];
+
+    $app      = Illuminate\Container\Container::getInstance();
+    $original = $app->make('log');
+    $app->instance('log', new class {
+        public function __call($method, $arguments)
+        {
+            throw new RuntimeException('logger unavailable');
+        }
+    });
+    Illuminate\Support\Facades\Log::clearResolvedInstance('log');
+
+    try {
+        $pushChannel = new StorefrontPushChannel(
+            fakeResolver(['fcm' => [pushChannel(['app_key' => 'fcm', 'scheme' => 'fcm'])]]),
+            fakeFcm(fn ($channel, array $tokens) => array_fill_keys($tokens, PushOutcome::dead('Unregistered'))),
+            fakeApn(fn () => [])
+        );
+        $notifiable = new class(collect([$unsaved, $plain])) {
+            public function __construct(public $devices)
+            {
+            }
+        };
+
+        $outcomes = $pushChannel->send($notifiable, pushNotification([]));
+    } finally {
+        $app->instance('log', $original);
+        Illuminate\Support\Facades\Log::clearResolvedInstance('log');
+    }
+
+    expect(collect($outcomes)->map->status->all())->toBe(['unsaved_token' => PushOutcome::DEAD, 'plain_token' => PushOutcome::DEAD]);
+});

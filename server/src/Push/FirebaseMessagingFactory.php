@@ -42,7 +42,7 @@ class FirebaseMessagingFactory
     /**
      * Decode and normalize the service account stored on the channel.
      *
-     * Accepts the JSON string pasted in the console, an already decoded array/object, and
+     * Accepts the JSON string pasted in the console or an already decoded array, and
      * repairs private keys whose newlines were escaped (`\\n`) during copy/paste.
      *
      * @throws PushConfigurationException
@@ -51,10 +51,6 @@ class FirebaseMessagingFactory
     {
         $config      = (array) $channel->config;
         $credentials = $config['firebase_credentials_json'] ?? $config['credentials'] ?? null;
-
-        if (is_object($credentials)) {
-            $credentials = json_decode(json_encode($credentials), true);
-        }
 
         if (is_string($credentials)) {
             $decoded = json_decode(trim($credentials), true);

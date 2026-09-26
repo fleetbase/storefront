@@ -134,11 +134,7 @@ class CustomerController extends Controller
      */
     protected static function userDeviceColumns(): array
     {
-        try {
-            return (new UserDevice())->getConnection()->getSchemaBuilder()->getColumnListing('user_devices');
-        } catch (\Throwable $e) {
-            return [];
-        }
+        return (new UserDevice())->getConnection()->getSchemaBuilder()->getColumnListing('user_devices');
     }
 
     /**

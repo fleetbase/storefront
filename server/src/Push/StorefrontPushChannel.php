@@ -54,7 +54,7 @@ class StorefrontPushChannel
 
         $outcomes = [];
         foreach ($devices->groupBy(fn ($device) => static::normalizePlatform($device->platform)) as $platform => $platformDevices) {
-            foreach ($platformDevices->groupBy(fn ($device) => $device->getAttribute('app_identifier') ?? '') as $appIdentifier => $group) {
+            foreach ($platformDevices->groupBy(fn ($device) => data_get($device, 'app_identifier') ?? '') as $appIdentifier => $group) {
                 $outcomes += match ($platform) {
                     'android' => $this->sendToAndroid($group, $message, $storefronts, $appIdentifier ?: null),
                     'ios'     => $this->sendToIos($group, $message, $storefronts, $appIdentifier ?: null),
@@ -81,7 +81,7 @@ class StorefrontPushChannel
         $outcomes = [];
 
         // Devices that registered their APNs environment are sent to that environment only.
-        foreach ($devices->groupBy(fn ($device) => $device->getAttribute('environment') ?? '') as $deviceEnvironment => $group) {
+        foreach ($devices->groupBy(fn ($device) => data_get($device, 'environment') ?? '') as $deviceEnvironment => $group) {
             $outcomes += $this->deliver(
                 $group,
                 $channels,

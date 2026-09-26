@@ -97,6 +97,15 @@ test('device registration validates the token and platform', function () {
         ->and(UserDevice::query()->count())->toBe(0);
 });
 
+test('device registration requires the customer to have a user account', function () {
+    bootDeviceRegistrationCustomer('33333333-3333-4333-8333-333333333333', '', 'userless-secret');
+    Model::getConnectionResolver()->connection('mysql')->table('contacts')->where('uuid', '33333333-3333-4333-8333-333333333333')->update(['user_uuid' => null]);
+
+    $response = (new CustomerController())->registerDevice(deviceRegistrationRequest('userless-secret', ['token' => 'abc', 'platform' => 'ios']));
+
+    expect($response->getData(true))->toBe(['error' => 'Unable to register device for customer without a user account.']);
+});
+
 test('device registration normalizes the platform and reassigns a token to the latest customer', function () {
     $controller = new CustomerController();
 
