@@ -34,7 +34,7 @@ class CustomerNotificationPresenter
             $body = $title;
         }
 
-        $payload = Arr::except($data, static::HIDDEN_KEYS);
+        $payload = array_filter(Arr::except($data, static::HIDDEN_KEYS), fn ($value) => $value !== null);
 
         return [
             'type'  => $type,

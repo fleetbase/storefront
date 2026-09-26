@@ -16,14 +16,9 @@ class CustomerNotification extends FleetbaseResource
      */
     public function toArray($request)
     {
-        $data = $this->data;
-        if (is_string($data)) {
-            $data = json_decode($data, true);
-        }
-
         return array_merge(
             ['id' => $this->id],
-            CustomerNotificationPresenter::present((array) $data, $this->type),
+            CustomerNotificationPresenter::present((array) $this->data, $this->type),
             [
                 'is_read'    => $this->read_at !== null,
                 'read_at'    => $this->read_at,

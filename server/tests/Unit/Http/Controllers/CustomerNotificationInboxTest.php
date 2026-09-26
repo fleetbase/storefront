@@ -321,3 +321,99 @@ test('broadcast failures never fail the notification send', function () {
 
     expect((new SafeBroadcastChannel($events))->send($notifiable, new PromotionalPushNotification('Sale', 'Save now', $store)))->toBeNull();
 });
+
+test('a single notification can be fetched by id', function () {
+    inboxRequest();
+
+    expect((new NotificationController())->find('n_store_a')->resolve())->toMatchArray([
+        'id'    => 'n_store_a',
+        'type'  => 'order_completed',
+        'title' => 'Delivered',
+    ]);
+});
+
+test('an unknown network app shows nothing but storefront-less notifications, and no storefront context shows everything', function () {
+    session(['storefront_store' => null, 'storefront_network' => 'missing_network']);
+    $controller = new NotificationController();
+
+    expect(inboxIds($controller->query(inboxRequest())))->toBe(['n_store_a', 'n_network', 'n_store_c', 'n_generic', 'n_legacy']);
+
+    session(['storefront_store' => null, 'storefront_network' => null]);
+
+    expect(inboxIds($controller->query(inboxRequest())))->toBe(['n_store_a', 'n_network', 'n_store_c', 'n_generic', 'n_legacy']);
+});
+
+test('order notifications broadcast their inbox item', function () {
+    $order = new Fleetbase\FleetOps\Models\Order();
+    $order->forceFill(['uuid' => 'order_uuid', 'public_id' => 'order_public', 'meta' => ['storefront_id' => 'store_a']]);
+    $order->setRelation('customer', null);
+    $order->setRelation('company', null);
+    $notification                 = (new ReflectionClass(StorefrontOrderCompleted::class))->newInstanceWithoutConstructor();
+    $notification->order          = $order;
+    $notification->storefront     = tap(new Store())->forceFill(['public_id' => 'store_a', 'name' => 'Store A']);
+    $notification->sentAt         = '2026-09-01 10:00:00';
+    $notification->notificationId = 'notification_test';
+    $notification->subject        = 'Delivered';
+    $notification->body           = 'Enjoy!';
+    $notification->status         = 'order_completed';
+
+    expect($notification->toBroadcast(null)->data)->toBe([
+        'type'  => 'order_completed',
+        'title' => 'Delivered',
+        'body'  => 'Enjoy!',
+        'image' => null,
+        'data'  => ['order_id' => 'order_public', 'storefront_id' => 'store_a', 'store_id' => 'store_a'],
+    ])->and($notification->broadcastType())->toBe('order_completed');
+});
+
+test('successful broadcasts are delegated to the framework broadcast channel', function () {
+    $dispatched = [];
+    $events     = new class($dispatched) extends Illuminate\Events\Dispatcher {
+        public function __construct(public array &$dispatched)
+        {
+        }
+
+        public function dispatch($event, $payload = [], $halt = false)
+        {
+            $this->dispatched[] = $event;
+
+            return [];
+        }
+    };
+    $store      = tap(new Store())->forceFill(['uuid' => 'store_a_uuid', 'public_id' => 'store_a', 'name' => 'Store A']);
+    $notifiable = new Contact();
+    $notifiable->forceFill(['uuid' => INBOX_CUSTOMER]);
+
+    (new SafeBroadcastChannel($events))->send($notifiable, new PromotionalPushNotification('Sale', 'Save now', $store));
+
+    expect($dispatched)->toHaveCount(1)
+        ->and($dispatched[0])->toBeInstanceOf(Illuminate\Notifications\Events\BroadcastNotificationCreated::class);
+});
+
+test('broadcast failures are swallowed even when logging fails', function () {
+    $events = new class extends Illuminate\Events\Dispatcher {
+        public function dispatch($event, $payload = [], $halt = false)
+        {
+            throw new RuntimeException('socket unavailable');
+        }
+    };
+    $app      = Illuminate\Container\Container::getInstance();
+    $original = $app->make('log');
+    $app->instance('log', new class {
+        public function __call($method, $arguments)
+        {
+            throw new RuntimeException('logger unavailable');
+        }
+    });
+    Illuminate\Support\Facades\Log::clearResolvedInstance('log');
+    $store = tap(new Store())->forceFill(['uuid' => 'store_a_uuid', 'public_id' => 'store_a', 'name' => 'Store A']);
+
+    try {
+        $result = (new SafeBroadcastChannel($events))->send(new Contact(), new PromotionalPushNotification('Sale', 'Save now', $store));
+    } finally {
+        $app->instance('log', $original);
+        Illuminate\Support\Facades\Log::clearResolvedInstance('log');
+    }
+
+    expect($result)->toBeNull();
+});
