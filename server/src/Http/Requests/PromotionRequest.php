@@ -47,7 +47,12 @@ class PromotionRequest extends FleetbaseRequest
             'priority'                     => ['sometimes', 'integer'],
             'is_public'                    => ['sometimes', 'boolean'],
             'starts_at'                    => ['nullable', 'date'],
-            'ends_at'                      => ['nullable', 'date', 'after:starts_at'],
+            'ends_at'                      => ['nullable', 'date', function ($attribute, $value, $fail) {
+                $startsAt = $this->input('promotion.starts_at', $this->input('starts_at'));
+                if ($value && $startsAt && strtotime($value) <= strtotime($startsAt)) {
+                    $fail('The end date must be after the start date.');
+                }
+            }],
             'schedule'                     => ['nullable', 'array'],
             'schedule.*.days'              => ['sometimes', 'array'],
             'schedule.*.days.*'            => ['integer', 'between:1,7'],
