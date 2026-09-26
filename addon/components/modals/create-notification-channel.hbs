@@ -34,6 +34,20 @@
                         <div class="input-group">
                             <Checkbox @value={{value}} @label={{humanize key}} @onToggle={{fn @options.setConfigKey key}} />
                         </div>
+                    {{else if (eq key "environment")}}
+                        <InputGroup @name={{humanize key}} @helpText={{t "storefront.component.modals.create-notification-channel.environment-help-text"}}>
+                            <Select
+                                class="w-full"
+                                @options={{array "auto" "production" "sandbox"}}
+                                @value={{value}}
+                                @onSelect={{fn @options.setConfigKey key}}
+                                @humanize={{true}}
+                            />
+                        </InputGroup>
+                    {{else if (eq key "android_channel_id")}}
+                        <InputGroup @name={{humanize key}} @helpText={{t "storefront.component.modals.create-notification-channel.android-channel-id-help-text"}}>
+                            <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />
+                        </InputGroup>
                     {{else if (or (eq key "private_key_content") (eq key "firebase_credentials_json"))}}
                         <InputGroup @name={{humanize key}}>
                             <Textarea class="form-input w-full" rows="6" placeholder={{humanize key}} @value={{value}} {{on "blur" (fn @options.setConfigKey key)}} />

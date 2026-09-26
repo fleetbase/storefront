@@ -14,6 +14,7 @@ export default class SettingsNotificationsController extends Controller {
     @service crud;
     @service storefront;
     @service hostRouter;
+    @service fetch;
     @alias('storefront.activeStore') activeStore;
     queryParams = ['query'];
 
@@ -85,6 +86,44 @@ export default class SettingsNotificationsController extends Controller {
                     });
             },
             ...options,
+        });
+    }
+
+    @action testChannel(channel) {
+        this.modalsManager.show('modals/test-notification-channel', {
+            title: this.intl.t('storefront.settings.notification.send-test-push'),
+            acceptButtonText: this.intl.t('storefront.settings.notification.send-test-push-button'),
+            acceptButtonIcon: 'paper-plane',
+            channel,
+            token: '',
+            environment: null,
+            results: null,
+            setToken: (event) => {
+                this.modalsManager.setOption('token', event.target.value);
+            },
+            setEnvironment: (environment) => {
+                this.modalsManager.setOption('environment', environment);
+            },
+            keepOpen: true,
+            confirm: async (modal) => {
+                const { token, environment } = this.modalsManager.getOptions(['token', 'environment']);
+                modal.startLoading();
+
+                try {
+                    const response = await this.fetch.post(`notification-channels/${channel.id}/test`, { token, environment }, { namespace: 'storefront/int/v1' });
+                    this.modalsManager.setOption('results', response.results);
+
+                    if (response.status === 'OK') {
+                        this.notifications.success(this.intl.t('storefront.settings.notification.test-push-sent'));
+                    } else {
+                        this.notifications.warning(this.intl.t('storefront.settings.notification.test-push-failed'));
+                    }
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
         });
     }
 

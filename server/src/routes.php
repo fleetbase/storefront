@@ -105,11 +105,24 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}', 'PromotionController@find');
                 });
 
+                // storefront/v1/notifications
+                $router->group(['prefix' => 'notifications'], function () use ($router) {
+                    $router->get('/', 'NotificationController@query');
+                    $router->get('unread-count', 'NotificationController@unreadCount');
+                    $router->get('preferences', 'NotificationController@getPreferences');
+                    $router->put('preferences', 'NotificationController@updatePreferences');
+                    $router->put('read-all', 'NotificationController@markAllAsRead');
+                    $router->get('{id}', 'NotificationController@find');
+                    $router->put('{id}/read', 'NotificationController@markAsRead');
+                    $router->delete('{id}', 'NotificationController@delete');
+                });
+
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
+                    $router->post('unregister-device', 'CustomerController@unregisterDevice');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');
@@ -222,7 +235,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('product-addon-categories');
                         $router->fleetbaseRoutes('addon-categories');
                         $router->fleetbaseRoutes('gateways');
-                        $router->fleetbaseRoutes('notification-channels');
+                        $router->fleetbaseRoutes(
+                            'notification-channels',
+                            function ($router, $controller) {
+                                $router->post('{id}/test', $controller('testPush'));
+                            }
+                        );
                         $router->fleetbaseRoutes(
                             'promotions',
                             function ($router, $controller) {

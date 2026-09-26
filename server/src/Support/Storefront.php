@@ -636,7 +636,8 @@ class Storefront
         // Notify customer order was accepted
         try {
             $order->customer->notify(new StorefrontOrderAccepted($order));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('[Storefront] was unable to notify the customer that their order was accepted.', ['order' => $order->public_id, 'error' => $e->getMessage()]);
         }
 
         return $order;
