@@ -3,10 +3,14 @@
 namespace Fleetbase\Storefront\Notifications;
 
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
 use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
 use Fleetbase\Storefront\Push\PushMessage;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
+use Fleetbase\Storefront\Support\NotificationPreferences;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 class PromotionalPushNotification extends Notification implements SendsPushNotification
@@ -57,7 +61,27 @@ class PromotionalPushNotification extends Notification implements SendsPushNotif
      */
     public function via($notifiable): array
     {
-        return [StorefrontPushChannel::class, 'database'];
+        if (!NotificationPreferences::allows($notifiable, 'promotions')) {
+            return [];
+        }
+
+        return [StorefrontPushChannel::class, 'database', SafeBroadcastChannel::class];
+    }
+
+    /**
+     * Realtime payload sent to the customer's `contact.{uuid}` channel.
+     */
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage(CustomerNotificationPresenter::present($this->toArray($notifiable), static::class));
+    }
+
+    /**
+     * The broadcast event uses this as the payload `type`, so keep it equal to the inbox item type.
+     */
+    public function broadcastType(): string
+    {
+        return 'promotional';
     }
 
     /**

@@ -195,7 +195,7 @@ test('order lifecycle notifications build their runtime messages and provider pa
         ->and($notification->status)->toBe($expectedStatus)
         ->and($notification->subject)->not->toBeEmpty()
         ->and($notification->body)->not->toBeEmpty()
-        ->and($notification->via($notifiable))->toBe([StorefrontPushChannel::class, 'database', 'mail'])
+        ->and($notification->via($notifiable))->toBe([StorefrontPushChannel::class, 'database', 'mail', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
         ->and($push)->toBeInstanceOf(PushMessage::class)
         ->and($push->title)->toBe($notification->subject)
         ->and($push->body)->toBe($notification->body)
@@ -361,7 +361,7 @@ test('promotional notifications deliver through the storefront push channel and 
     $notification = new PromotionalPushNotification('Weekend sale', 'Save now', $store);
     $push         = $notification->toPush(null);
 
-    expect($notification->via(null))->toBe([StorefrontPushChannel::class, 'database'])
+    expect($notification->via(null))->toBe([StorefrontPushChannel::class, 'database', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
         ->and($push)->toBeInstanceOf(PushMessage::class)
         ->and($push->title)->toBe('Weekend sale')
         ->and($push->data)->toBe(['type' => 'promotional', 'store' => 'store_uuid', 'store_id' => 'store_public'])

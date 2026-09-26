@@ -5,12 +5,16 @@ namespace Fleetbase\Storefront\Notifications;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
 use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
 use Fleetbase\Storefront\Push\PushCredentialResolver;
 use Fleetbase\Storefront\Push\PushMessage;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
+use Fleetbase\Storefront\Support\NotificationPreferences;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -70,11 +74,34 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
     /**
      * Get the notification's delivery channels.
      *
-     * Push is sent first and never throws, so mail or database failures cannot stop it.
+     * Push is sent first and never throws, so mail or database failures cannot stop it. The
+     * customer can turn order update pushes off; the inbox copy is always kept.
      */
     public function via($notifiable): array
     {
-        return [StorefrontPushChannel::class, 'database', 'mail'];
+        $channels = [];
+        if (NotificationPreferences::allows($notifiable, 'order_updates')) {
+            $channels[] = StorefrontPushChannel::class;
+        }
+
+        return [...$channels, 'database', 'mail', SafeBroadcastChannel::class];
+    }
+
+    /**
+     * Realtime payload sent to the customer's `contact.{uuid}` channel. Mirrors an inbox item,
+     * without the recipient details stored in the database copy.
+     */
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage(CustomerNotificationPresenter::present($this->toArray($notifiable), static::class));
+    }
+
+    /**
+     * The broadcast event uses this as the payload `type`, so keep it equal to the inbox item type.
+     */
+    public function broadcastType(): string
+    {
+        return $this->status;
     }
 
     /**
