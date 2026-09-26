@@ -58,6 +58,10 @@ class Storefront
             $about = Network::select($columns)->where('key', $key)->with($with)->first();
         }
 
+        if (!$about) {
+            return null;
+        }
+
         $about->is_store   = Str::startsWith($key, 'store');
         $about->is_network = Str::startsWith($key, 'network');
 

@@ -2,9 +2,16 @@
 
 namespace Fleetbase\Storefront\Http\Controllers\v1;
 
+use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Resources\Cart as StorefrontCart;
 use Fleetbase\Storefront\Models\Cart;
+use Fleetbase\Storefront\Models\PromotionCode;
+use Fleetbase\Storefront\Promotions\PromotionContext;
+use Fleetbase\Storefront\Promotions\PromotionEngine;
+use Fleetbase\Storefront\Promotions\PromotionResult;
+use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -125,6 +132,84 @@ class CartController extends Controller
         $cart->empty();
 
         return new StorefrontCart($cart);
+    }
+
+    /**
+     * Applies a promotion code to the cart after checking that it can be used on it.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function applyPromotionCode(string $cartId, Request $request)
+    {
+        $code = PromotionCode::normalize($request->input('code'));
+        if ($code === '') {
+            return response()->apiError('A promotion code is required.');
+        }
+
+        $cart   = $this->retrieveCart($cartId);
+        $codes  = array_values(array_unique([...$cart->getPromotionCodes(), $code]));
+        $result = $this->evaluatePromotions($cart, $request, $codes);
+
+        $rejection = collect($result->rejected)->firstWhere('code', $code);
+        if ($rejection && $rejection['reason'] !== PromotionEngine::REASON_NOT_COMBINABLE) {
+            return response()->apiError('Promotion code "' . $code . '" cannot be applied (' . $rejection['reason'] . ').', 400, ['reason' => $rejection['reason']]);
+        }
+
+        $cart->setPromotionCodes($codes)->save();
+
+        return response()->json([
+            'cart'       => new StorefrontCart($cart),
+            'promotions' => $result->toPublicArray(),
+        ]);
+    }
+
+    /**
+     * Removes a promotion code from the cart.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function removePromotionCode(string $cartId, string $code, Request $request)
+    {
+        $cart  = $this->retrieveCart($cartId);
+        $codes = array_values(array_diff($cart->getPromotionCodes(), [PromotionCode::normalize($code)]));
+        $cart->setPromotionCodes($codes)->save();
+
+        return response()->json([
+            'cart'       => new StorefrontCart($cart),
+            'promotions' => $this->evaluatePromotions($cart, $request, $codes)->toPublicArray(),
+        ]);
+    }
+
+    /**
+     * Previews the discounts the cart currently qualifies for.
+     *
+     * Query params: `pickup` (bool) and `service_quote` (a quote id, for delivery discounts).
+     * Customer specific rules (first order, per-customer limits) are only checked when a
+     * customer token is sent, and are always enforced again at checkout.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function promotions(string $cartId, Request $request)
+    {
+        $cart = $this->retrieveCart($cartId);
+
+        return response()->json($this->evaluatePromotions($cart, $request, $cart->getPromotionCodes())->toPublicArray());
+    }
+
+    protected function evaluatePromotions(Cart $cart, Request $request, array $codes): PromotionResult
+    {
+        $isPickup     = $request->boolean('pickup');
+        $quoteId      = $request->or(['service_quote', 'serviceQuote']);
+        $serviceQuote = $isPickup || !$quoteId ? null : ServiceQuote::where('public_id', $quoteId)->first(['uuid', 'amount']);
+        $context      = PromotionContext::fromCart(
+            $cart,
+            Storefront::about(),
+            Storefront::getCustomerFromToken(),
+            $isPickup,
+            $serviceQuote ? (int) Utils::numbersOnly($serviceQuote->amount) : 0
+        );
+
+        return app(PromotionEngine::class)->evaluate($context, $codes);
     }
 
     /**

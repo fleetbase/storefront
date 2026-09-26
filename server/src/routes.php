@@ -99,6 +99,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->post('receipt', 'OrderController@getReceipt');
                 });
 
+                // storefront/v1/promotions
+                $router->group(['prefix' => 'promotions'], function () use ($router) {
+                    $router->get('/', 'PromotionController@query');
+                    $router->get('{id}', 'PromotionController@find');
+                });
+
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');
@@ -131,6 +137,9 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'CartController@retrieve');
                     $router->get('{uniqueId}', 'CartController@retrieve');
                     $router->put('{cartId}/empty', 'CartController@empty');
+                    $router->get('{cartId}/promotions', 'CartController@promotions');
+                    $router->post('{cartId}/promo-code', 'CartController@applyPromotionCode');
+                    $router->delete('{cartId}/promo-code/{code}', 'CartController@removePromotionCode');
                     $router->post('{cartId}/{productId}', 'CartController@add');
                     $router->put('{cartId}/{lineItemId}', 'CartController@update');
                     $router->delete('{cartId}/{lineItemId}', 'CartController@remove');
@@ -214,6 +223,13 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('addon-categories');
                         $router->fleetbaseRoutes('gateways');
                         $router->fleetbaseRoutes('notification-channels');
+                        $router->fleetbaseRoutes(
+                            'promotions',
+                            function ($router, $controller) {
+                                $router->post('{id}/generate-codes', $controller('generateCodes'));
+                            }
+                        );
+                        $router->fleetbaseRoutes('promotion-codes');
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');

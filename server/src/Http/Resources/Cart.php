@@ -33,6 +33,7 @@ class Cart extends FleetbaseResource
             'items'              => $this->getCartItems(),
             'events'             => $this->events ?? [],
             'discount_code'      => $this->discount_code,
+            'promo_codes'        => array_values(array_filter(explode(',', (string) $this->discount_code))),
             'expires_at'         => $this->expires_at,
             'created_at'         => $this->created_at,
             'updated_at'         => $this->updated_at,
