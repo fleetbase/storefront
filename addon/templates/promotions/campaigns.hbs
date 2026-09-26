@@ -1,0 +1,21 @@
+<Layout::Section::Header @title={{t "storefront.promotions.campaigns.header"}} @searchQuery={{this.query}} @onSearch={{this.search}}>
+    <Button @type="primary" @icon="plus" @text={{t "storefront.promotions.campaigns.new-campaign"}} @onClick={{this.createCampaign}} @permission="storefront create campaign" />
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    {{#if @model.length}}
+        <Table
+            @wrapperClass="overscroll-y-none"
+            @rows={{@model}}
+            @columns={{this.columns}}
+            @selectable={{false}}
+            @canSelectAll={{false}}
+            @pagination={{true}}
+            @paginationMeta={{@model.meta}}
+            @page={{this.page}}
+            @onPageChange={{fn (mut this.page)}}
+        />
+    {{else}}
+        <div class="p-8 text-center text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.campaigns.empty"}}</div>
+    {{/if}}
+</Layout::Section::Body>

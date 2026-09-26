@@ -1,0 +1,65 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <InputGroup @name={{t "storefront.promotions.codes.count"}}>
+                <Input @type="number" min="1" max="1000" class="form-input w-full" @value={{this.count}} {{on "input" (fn this.setValue "count")}} />
+            </InputGroup>
+            <InputGroup @name={{t "storefront.promotions.codes.prefix"}}>
+                <Input class="form-input w-full uppercase" @value={{this.prefix}} {{on "input" (fn this.setValue "prefix")}} />
+            </InputGroup>
+            <InputGroup @name={{t "storefront.promotions.codes.length"}}>
+                <Input @type="number" min="6" max="16" class="form-input w-full" @value={{this.length}} {{on "input" (fn this.setValue "length")}} />
+            </InputGroup>
+            <InputGroup @name={{t "storefront.promotions.codes.usage-limit"}} @helpText={{t "storefront.promotions.codes.usage-limit-help"}}>
+                <Input @type="number" min="1" class="form-input w-full" @value={{this.usageLimit}} {{on "input" (fn this.setValue "usageLimit")}} />
+            </InputGroup>
+        </div>
+        <InputGroup @name={{t "storefront.promotions.codes.specific-code"}}>
+            <Input class="form-input w-full uppercase" placeholder={{t "storefront.promotions.codes.specific-code-placeholder"}} @value={{this.specificCode}} {{on "input" (fn this.setValue "specificCode")}} />
+        </InputGroup>
+        <div class="flex justify-end">
+            <Button
+                @type="primary"
+                @icon="wand-magic-sparkles"
+                @text={{t "storefront.promotions.codes.generate"}}
+                @isLoading={{this.isGenerating}}
+                @onClick={{this.generate}}
+                @permission="storefront generate-codes promotion"
+            />
+        </div>
+
+        <div class="border rounded-md dark:border-gray-700 max-h-80 overflow-y-auto">
+            <table class="w-full text-sm">
+                <thead class="text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-3 py-2">{{t "storefront.promotions.codes.code"}}</th>
+                        <th class="px-3 py-2">{{t "storefront.promotions.codes.used"}}</th>
+                        <th class="px-3 py-2">{{t "storefront.promotions.common.status"}}</th>
+                        <th class="px-3 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each this.codes as |code|}}
+                        <tr class="border-t dark:border-gray-700">
+                            <td class="px-3 py-2 font-mono"><ClickToCopy @value={{code.code}}>{{code.code}}</ClickToCopy></td>
+                            <td class="px-3 py-2">{{code.times_used}}{{#if code.usage_limit}} / {{code.usage_limit}}{{/if}}</td>
+                            <td class="px-3 py-2"><Badge @status={{code.status}} @hideStatusDot={{true}} /></td>
+                            <td class="px-3 py-2 text-right">
+                                <Button
+                                    @size="xs"
+                                    @text={{if (eq code.status "active") (t "storefront.promotions.codes.disable") (t "storefront.promotions.codes.enable")}}
+                                    @onClick={{fn this.toggleCode code}}
+                                    @permission="storefront update promotion-code"
+                                />
+                            </td>
+                        </tr>
+                    {{else}}
+                        <tr>
+                            <td colspan="4" class="px-3 py-4 text-center text-gray-500">{{t "storefront.promotions.codes.empty"}}</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</Modal::Default>

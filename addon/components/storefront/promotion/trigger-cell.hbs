@@ -1,0 +1,3 @@
+<Table::Cell::Base @column={{@column}}>
+    <Badge @status={{if (eq @row.trigger "code") "info" "success"}} @hideStatusDot={{true}}>{{t (concat "storefront.promotions.triggers." @row.trigger)}}</Badge>
+</Table::Cell::Base>

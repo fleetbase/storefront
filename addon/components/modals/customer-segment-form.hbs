@@ -1,0 +1,31 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-3">
+        <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.segment.name}} />
+        <InputGroup @name={{t "storefront.promotions.common.description"}}>
+            <Textarea @value={{this.segment.description}} class="form-input w-full" rows="2" />
+        </InputGroup>
+
+        <div class="pt-2 border-t dark:border-gray-700">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold text-sm dark:text-white">{{t "storefront.promotions.segments.rules"}}</h4>
+                {{#if this.hasMatching}}
+                    <Badge @status="info" @hideStatusDot={{true}}>{{t "storefront.promotions.segments.matching" count=this.matching}}</Badge>
+                {{/if}}
+            </div>
+            <p class="text-xs text-gray-500 mb-2">{{t "storefront.promotions.segments.rules-help"}}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {{#each this.numberRules as |rule|}}
+                    <InputGroup @name={{t rule.label}}>
+                        <Input @type="number" min="0" class="form-input w-full" @value={{get this.rules rule.key}} {{on "input" (fn this.setNumberRule rule.key)}} />
+                    </InputGroup>
+                {{/each}}
+                <InputGroup @name={{t "storefront.promotions.segments.min-spent"}}>
+                    <MoneyInput class="w-full" @currency={{@options.currency}} @value={{this.rules.min_spent}} @canSelectCurrency={{false}} @onChange={{fn this.setMoneyRule "min_spent"}} />
+                </InputGroup>
+            </div>
+            <div class="mt-3">
+                <Toggle @isToggled={{this.rules.has_push_device}} @onToggle={{fn this.setBooleanRule "has_push_device"}} @label={{t "storefront.promotions.segments.has-push-device"}} />
+            </div>
+        </div>
+    </div>
+</Modal::Default>
