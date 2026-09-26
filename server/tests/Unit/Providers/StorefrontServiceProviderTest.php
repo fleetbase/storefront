@@ -110,6 +110,7 @@ test('storefront provider boot wires commands schedules observers middleware and
         'storefront:notify-order-nearby',
         'storefront:purge-carts',
         'storefront:release-promotion-reservations',
+        'storefront:dispatch-campaigns',
         'observers',
         'middleware',
         'expansions',
