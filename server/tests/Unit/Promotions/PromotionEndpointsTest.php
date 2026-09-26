@@ -199,6 +199,18 @@ test('promotion validation requires an owner from the company and valid discount
         $failures[] = $message;
     });
 
+    $endsAt       = PromotionRequest::createFrom(promotionRequest(['promotion' => ['starts_at' => '2026-10-01 00:00:00']], 'POST'))->rules()['ends_at'][2];
+    $dateFailures = [];
+    $collect      = function ($message) use (&$dateFailures) {
+        $dateFailures[] = $message;
+    };
+    $endsAt('ends_at', '2026-11-01 00:00:00', $collect);
+    $endsAt('ends_at', '2026-09-01 00:00:00', $collect);
+    $endsAt('ends_at', null, $collect);
+    PromotionRequest::createFrom(promotionRequest([], 'POST'))->rules()['ends_at'][2]('ends_at', '2026-09-01 00:00:00', $collect);
+
+    expect($dateFailures)->toBe(['The end date must be after the start date.']);
+
     expect($rules['name'][0])->toBe('required')
         ->and($rules['type'][1])->toBe('in:percentage,fixed_amount,free_delivery,bogo')
         ->and($rules['value'][3])->toBe('required_if:type,percentage,fixed_amount')
