@@ -47,6 +47,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Push Notifications
+    |--------------------------------------------------------------------------
+    |
+    | android_channel_id: the Android notification channel storefront pushes are
+    | posted to. Leave empty to use the app's default FCM channel. A notification
+    | channel's own `android_channel_id` setting takes precedence.
+    */
+    'push' => [
+        'android_channel_id' => env('STOREFRONT_PUSH_ANDROID_CHANNEL_ID'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connection
     |--------------------------------------------------------------------------
     */

@@ -1,0 +1,28 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{t "storefront.promotions.announce.help"}}</p>
+        <InputGroup @name={{t "storefront.promotions.announce.segment"}} as |inputId|>
+            <ModelSelect
+                @triggerId={{inputId}}
+                @modelName="customer-segment"
+                @selectedModel={{@options.announcement.segment}}
+                @placeholder={{t "storefront.promotions.announce.segment-placeholder"}}
+                @triggerClass="form-select form-input w-full"
+                @renderInPlace={{true}}
+                @infiniteScroll={{false}}
+                @allowClear={{true}}
+                @onChange={{fn (mut @options.announcement.segment)}}
+                as |segment|
+            >
+                {{segment.name}}
+            </ModelSelect>
+        </InputGroup>
+        <InputGroup @name={{t "storefront.promotions.announce.message-title"}} @placeholder={{t "storefront.promotions.announce.title-placeholder"}} @value={{@options.announcement.title}} />
+        <InputGroup @name={{t "storefront.promotions.announce.message-body"}} as |inputId|>
+            <Textarea id={{inputId}} @value={{@options.announcement.body}} placeholder={{t "storefront.promotions.announce.body-placeholder"}} class="form-input w-full" rows="3" />
+        </InputGroup>
+        <InputGroup @name={{t "storefront.promotions.announce.send-at"}} @helpText={{t "storefront.promotions.announce.send-at-help"}}>
+            <DateTimeInput role="group" aria-label={{t "storefront.promotions.announce.send-at"}} class="form-input w-full" @value={{@options.announcement.send_at}} @onUpdate={{fn (mut @options.announcement.send_at)}} />
+        </InputGroup>
+    </div>
+</Modal::Default>

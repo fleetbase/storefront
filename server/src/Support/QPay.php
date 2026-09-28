@@ -735,6 +735,27 @@ class QPay
             ];
         }
 
+        // Promotions: one negative line so the invoice total matches the discounted amount.
+        $discount = (int) data_get($checkoutOptions, 'promotions.discount_subtotal', 0) + ($isPickup ? 0 : (int) data_get($checkoutOptions, 'promotions.discount_delivery', 0));
+        if ($discount > 0) {
+            $lines[] = [
+                'line_description'    => 'Discount',
+                'line_quantity'       => number_format(1, 2, '.', ''),
+                'line_unit_price'     => number_format(-$discount, 2, '.', ''),
+                'note'                => 'Discount',
+                'classification_code' => '6511100',
+                'tax_product_code'    => '319',
+                'taxes'               => [
+                    [
+                        'tax_code'    => 'VAT',
+                        'description' => 'VAT',
+                        'amount'      => -QPay::calculateTax($discount),
+                        'note'        => 'Discount',
+                    ],
+                ],
+            ];
+        }
+
         return $lines;
     }
 

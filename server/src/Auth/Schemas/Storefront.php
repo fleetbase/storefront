@@ -112,6 +112,22 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'promotion',
+            'actions' => ['generate-codes', 'announce'],
+        ],
+        [
+            'name'    => 'promotion-code',
+            'actions' => [],
+        ],
+        [
+            'name'    => 'customer-segment',
+            'actions' => ['preview'],
+        ],
+        [
+            'name'    => 'campaign',
+            'actions' => ['send', 'cancel'],
+        ],
+        [
             'name'           => 'settings',
             'action'         => ['import'],
             'remove_actions' => ['delete', 'export', 'list', 'create'],
@@ -152,6 +168,17 @@ class Storefront
                 'see extension',
                 '* customer',
                 '* order',
+            ],
+        ],
+        [
+            'name'        => 'PromotionsManager',
+            'description' => 'Policy for managing promotions, promotion codes, customer segments and campaigns.',
+            'permissions' => [
+                'see extension',
+                '* promotion',
+                '* promotion-code',
+                '* customer-segment',
+                '* campaign',
             ],
         ],
         [

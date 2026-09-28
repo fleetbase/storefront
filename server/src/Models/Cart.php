@@ -148,6 +148,30 @@ class Cart extends StorefrontModel
     }
 
     /**
+     * Promotion codes applied to the cart, stored comma separated in `discount_code`.
+     *
+     * @return string[]
+     */
+    public function getPromotionCodes(): array
+    {
+        return array_values(array_filter(array_map(
+            [PromotionCode::class, 'normalize'],
+            explode(',', (string) $this->getAttribute('discount_code'))
+        )));
+    }
+
+    /**
+     * @param string[] $codes
+     */
+    public function setPromotionCodes(array $codes): self
+    {
+        $codes = array_values(array_unique(array_filter(array_map([PromotionCode::class, 'normalize'], $codes))));
+        $this->setAttribute('discount_code', $codes ? implode(',', $codes) : null);
+
+        return $this;
+    }
+
+    /**
      * Computes subtotal of cart.
      *
      * @return int

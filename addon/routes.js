@@ -45,7 +45,10 @@ export default buildRoutes(function () {
         this.route('index', { path: '/' }, function () {});
     });
     this.route('promotions', function () {
-        this.route('push-notifications', { path: '/' });
+        this.route('index', { path: '/' });
+        this.route('campaigns');
+        this.route('segments');
+        this.route('push-notifications');
     });
     this.route('coupons');
     this.route('broadcast');

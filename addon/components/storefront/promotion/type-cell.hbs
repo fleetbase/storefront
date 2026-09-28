@@ -1,0 +1,12 @@
+<Table::Cell::Base @column={{@column}}>
+    <div class="flex flex-col">
+        <span>{{t (concat "storefront.promotions.types." @row.type)}}</span>
+        {{#if (eq @row.type "percentage")}}
+            <span class="text-xs text-gray-500">{{@row.value}}%</span>
+        {{else if (eq @row.type "fixed_amount")}}
+            <span class="text-xs text-gray-500">{{format-currency @row.value @row.currency}}</span>
+        {{else if (eq @row.type "bogo")}}
+            <span class="text-xs text-gray-500">{{or @row.bogo_config.buy_quantity 1}} + {{or @row.bogo_config.get_quantity 1}}</span>
+        {{/if}}
+    </div>
+</Table::Cell::Base>

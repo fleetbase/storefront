@@ -99,11 +99,42 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->post('receipt', 'OrderController@getReceipt');
                 });
 
+                // storefront/v1/promotions
+                $router->group(['prefix' => 'promotions'], function () use ($router) {
+                    $router->get('/', 'PromotionController@query');
+                    $router->get('{id}', 'PromotionController@find');
+                });
+                
+                // storefront/v1/notifications
+                $router->group(['prefix' => 'notifications'], function () use ($router) {
+                    $router->get('/', 'NotificationController@query');
+                    $router->get('unread-count', 'NotificationController@unreadCount');
+                    $router->get('preferences', 'NotificationController@getPreferences');
+                    $router->put('preferences', 'NotificationController@updatePreferences');
+                    $router->put('read-all', 'NotificationController@markAllAsRead');
+                    $router->get('{id}', 'NotificationController@find');
+                    $router->put('{id}/read', 'NotificationController@markAsRead');
+                    $router->delete('{id}', 'NotificationController@delete');
+                });
+
+                // storefront/v1/notifications
+                $router->group(['prefix' => 'notifications'], function () use ($router) {
+                    $router->get('/', 'NotificationController@query');
+                    $router->get('unread-count', 'NotificationController@unreadCount');
+                    $router->get('preferences', 'NotificationController@getPreferences');
+                    $router->put('preferences', 'NotificationController@updatePreferences');
+                    $router->put('read-all', 'NotificationController@markAllAsRead');
+                    $router->get('{id}', 'NotificationController@find');
+                    $router->put('{id}/read', 'NotificationController@markAsRead');
+                    $router->delete('{id}', 'NotificationController@delete');
+                });
+
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
+                    $router->post('unregister-device', 'CustomerController@unregisterDevice');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');
@@ -131,6 +162,9 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'CartController@retrieve');
                     $router->get('{uniqueId}', 'CartController@retrieve');
                     $router->put('{cartId}/empty', 'CartController@empty');
+                    $router->get('{cartId}/promotions', 'CartController@promotions');
+                    $router->post('{cartId}/promo-code', 'CartController@applyPromotionCode');
+                    $router->delete('{cartId}/promo-code/{code}', 'CartController@removePromotionCode');
                     $router->post('{cartId}/{productId}', 'CartController@add');
                     $router->put('{cartId}/{lineItemId}', 'CartController@update');
                     $router->delete('{cartId}/{lineItemId}', 'CartController@remove');
@@ -213,7 +247,35 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('product-addon-categories');
                         $router->fleetbaseRoutes('addon-categories');
                         $router->fleetbaseRoutes('gateways');
-                        $router->fleetbaseRoutes('notification-channels');
+                        $router->fleetbaseRoutes(
+                            'notification-channels',
+                            function ($router, $controller) {
+                                $router->post('{id}/test', $controller('testPush'));
+                            }
+                        );
+                        $router->fleetbaseRoutes(
+                            'promotions',
+                            function ($router, $controller) {
+                                $router->post('{id}/generate-codes', $controller('generateCodes'));
+                                $router->post('{id}/announce', $controller('announce'));
+                            }
+                        );
+                        $router->fleetbaseRoutes('promotion-codes');
+                        $router->fleetbaseRoutes(
+                            'customer-segments',
+                            function ($router, $controller) {
+                                $router->post('preview', $controller('previewRules'));
+                                $router->get('{id}/preview', $controller('preview'));
+                            }
+                        );
+                        $router->fleetbaseRoutes(
+                            'campaigns',
+                            function ($router, $controller) {
+                                $router->post('{id}/send', $controller('send'));
+                                $router->post('{id}/cancel', $controller('cancel'));
+                                $router->get('{id}/audience', $controller('audience'));
+                            }
+                        );
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');

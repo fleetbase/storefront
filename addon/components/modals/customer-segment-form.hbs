@@ -1,0 +1,60 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="p-4 form-wrapper">
+        <InputGroup
+            @name={{t "storefront.promotions.common.name"}}
+            @value={{this.segment.name}}
+            @placeholder={{t "storefront.promotions.segments.name-placeholder"}}
+            @required={{true}}
+            maxlength="191"
+        />
+        <InputGroup @name={{t "storefront.promotions.common.description"}} as |id|>
+            <Textarea id={{id}} @value={{this.segment.description}} placeholder={{t "storefront.promotions.segments.description-placeholder"}} class="form-input w-full" rows="2" />
+        </InputGroup>
+
+        <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{t "storefront.promotions.segments.rules"}}</h4>
+                <div role="status" aria-live="polite" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{#if this.isLoadingCount}}
+                        {{t "storefront.promotions.segments.matching-loading"}}
+                    {{else if this.countUnavailable}}
+                        {{t "storefront.promotions.segments.matching-unavailable"}}
+                    {{else if this.hasMatching}}
+                        <Badge @status="info" @hideStatusDot={{true}}>{{t "storefront.promotions.segments.matching" count=this.matching}}</Badge>
+                    {{/if}}
+                </div>
+            </div>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.segments.rules-help"}}</p>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {{#each this.numberRules as |rule|}}
+                    <InputGroup @name={{t rule.label}} as |id|>
+                        <Input
+                            id={{id}}
+                            @type="number"
+                            min={{rule.minimum}}
+                            step="1"
+                            placeholder={{t rule.placeholder}}
+                            class="form-input w-full"
+                            @value={{get this.rules rule.key}}
+                            {{on "input" (fn this.setNumberRule rule.key)}}
+                        />
+                    </InputGroup>
+                {{/each}}
+                <InputGroup @name={{t "storefront.promotions.segments.min-spent"}} @helpText={{t "storefront.promotions.segments.min-spent-help"}} as |id|>
+                    <MoneyInput
+                        id={{id}}
+                        class="w-full"
+                        placeholder={{t "storefront.promotions.segments.spend-placeholder"}}
+                        @currency={{@options.currency}}
+                        @value={{this.rules.min_spent}}
+                        @canSelectCurrency={{false}}
+                        @onChange={{fn this.setMoneyRule "min_spent"}}
+                    />
+                </InputGroup>
+            </div>
+            <div class="mt-4">
+                <Toggle @isToggled={{this.rules.has_push_device}} @onToggle={{fn this.setBooleanRule "has_push_device"}} @label={{t "storefront.promotions.segments.has-push-device"}} />
+            </div>
+        </div>
+    </div>
+</Modal::Default>

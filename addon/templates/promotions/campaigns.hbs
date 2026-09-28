@@ -1,0 +1,46 @@
+<Layout::Section::Header
+    @title={{t "storefront.promotions.campaigns.header"}}
+    @searchQuery={{this.query}}
+    @searchPlaceholder={{t "storefront.promotions.campaigns.search-placeholder"}}
+    @onSearch={{this.search}}
+>
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.campaigns.new-campaign"}} @onClick={{this.createCampaign}} @permission="storefront create campaign" />
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    {{#if @model.length}}
+        <Table
+            @wrapperClass="overscroll-y-none"
+            @rows={{@model}}
+            @columns={{this.columns}}
+            @selectable={{false}}
+            @canSelectAll={{false}}
+            @pagination={{true}}
+            @paginationMeta={{@model.meta}}
+            @page={{this.page}}
+            @onPageChange={{fn (mut this.page)}}
+        />
+    {{else}}
+        <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
+            <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <FaIcon @icon="bullhorn" @size="lg" />
+            </div>
+            {{#if (or this.query this.status (gt this.page 1))}}
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.common.no-results"}}</h3>
+                <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.common.no-results-help"}}</p>
+                <Button @size="sm" @icon="arrow-left" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
+            {{else}}
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.campaigns.empty-title"}}</h3>
+                <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.campaigns.empty-help"}}</p>
+                <Button
+                    @type="primary"
+                    @size="sm"
+                    @icon="plus"
+                    @text={{t "storefront.promotions.campaigns.new-campaign"}}
+                    @onClick={{this.createCampaign}}
+                    @permission="storefront create campaign"
+                />
+            {{/if}}
+        </div>
+    {{/if}}
+</Layout::Section::Body>

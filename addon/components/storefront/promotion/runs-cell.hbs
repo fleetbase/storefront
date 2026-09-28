@@ -1,0 +1,8 @@
+<Table::Cell::Base @column={{@column}}>
+    <div class="flex flex-col text-xs">
+        <span>{{or @row.runsFrom "—"}}</span>
+        {{#if @row.runsUntil}}
+            <span class="text-gray-500">→ {{@row.runsUntil}}</span>
+        {{/if}}
+    </div>
+</Table::Cell::Base>

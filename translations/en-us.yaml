@@ -153,6 +153,14 @@ storefront:
         name-text: Give your notification channel a name, this will only be relevent internally
         key: Channel Key
         key-text: This is your notification channel key, use this to specify which apps should utilize this notification channel via sdk configs.
+        environment-help-text: Auto tries production first and retries sandbox (development builds) when Apple rejects the device token.
+        android-channel-id-help-text: Optional Android notification channel ID. Leave empty to use the app's default channel.
+      test-notification-channel:
+        token: Device token
+        token-text: Paste an FCM registration token (Android) or APNs device token (iOS) from a device running your app.
+        environment: APNs environment
+        environment-text: Leave empty to try the channel's configured environments.
+        result: Provider result
       create-product-category:
         name: Category name
         name-text: Enter a name for category
@@ -658,6 +666,11 @@ storefront:
       notification-settings: Notification Settings
       notification-storefront: Configure notification channels for your storefront, each notification channel additionally can have it's own rules and options.
       new-channel: New channel
+      send-test: Send test
+      send-test-push: Send a test push notification
+      send-test-push-button: Send test push
+      test-push-sent: Test push notification was delivered to the provider.
+      test-push-failed: Test push notification failed, see the provider result below.
   service:
     storefront:
       new-incoming-order: You have a new incoming order!
@@ -690,3 +703,216 @@ storefront:
       validation-customers-required: Please select at least one customer to send the notification to
       notification-sent-success: Push notification sent successfully to selected customers
       notification-sent-error: Failed to send push notification. Please try again.
+    common:
+      new: New
+      edit: Edit
+      delete: Delete
+      save: Save
+      cancel: Cancel
+      name: Name
+      description: Description
+      status: Status
+      created: Created
+      updated: Updated
+      none: None
+      all-customers: All customers
+      done: Done
+      no-results: No matching results
+      no-results-help: Try another search or return to the full list.
+      reset-filters: Show all
+    statuses:
+      draft: Draft
+      active: Active
+      paused: Paused
+      ended: Ended
+      scheduled: Scheduled
+      sending: Sending
+      sent: Sent
+      canceled: Canceled
+    list:
+      tab-title: Promotions
+      header: Promotions
+      new-promotion: New promotion
+      edit-promotion: Edit promotion
+      type: Type
+      trigger: Trigger
+      runs: Runs
+      redemptions: Redemptions
+      discount-given: Discount given
+      actions: Promotion actions
+      manage-codes: Manage codes
+      announce: Announce to customers
+      activate: Activate
+      pause: Pause
+      end: End promotion
+      created-success: Promotion created.
+      saved-success: Promotion saved.
+      status-updated: Promotion status updated.
+      empty: No promotions yet. Create one to offer discounts at checkout.
+      search-placeholder: Search promotions...
+      empty-title: No promotions yet
+      empty-help: Create a promotion to offer discounts at checkout.
+    types:
+      percentage: Percentage off
+      fixed_amount: Amount off
+      free_delivery: Free delivery
+      bogo: Buy X get Y
+    triggers:
+      automatic: Automatic
+      code: Promo code
+    form:
+      basics: Basics
+      name-placeholder: e.g. Weekend offer
+      name-help: Shown to customers at checkout and in the app.
+      description-placeholder: Describe the offer and any conditions
+      description-help: Optional details shown with the deal in the app.
+      type-help: How the discount is calculated.
+      trigger-help: Automatic promotions apply to every eligible cart; code promotions need a promo code.
+      percent-off: Percent off
+      amount-off: Amount off
+      buy-quantity: Buy quantity
+      get-quantity: Get quantity
+      get-discount-percent: Discount on the get items (%)
+      bogo-help: For every group of "buy" + "get" eligible items, the cheapest "get" items are discounted.
+      schedule: Schedule
+      starts-at: Starts at
+      ends-at: Ends at
+      schedule-help: Leave the start empty to make the promotion available as soon as it is active. Leave the end empty for no end date.
+      conditions: Conditions
+      min-subtotal: Minimum spend
+      min-items: Minimum items
+      no-minimum: No minimum
+      no-limit: No limit
+      first-order-only: First order only
+      first-order-only-help: Only customers who have never ordered can use it.
+      targeting: Targeting
+      targeting-help: Limit the discount to these products or categories. Leave empty for the whole cart.
+      products: Products
+      products-placeholder: Search and select products
+      categories: Categories
+      categories-placeholder: Search and select categories
+      exclude-products: Excluded products
+      exclude-products-placeholder: Search for products to exclude
+      limits: Limits
+      usage-limit: Total uses
+      usage-limit-per-customer: Uses per customer
+      budget-amount: Total budget
+      max-discount-amount: Maximum discount per order
+      limits-help: Leave empty for no limit.
+      stacking: Stacking and visibility
+      stackable: Can combine with other promotions
+      stackable-help: Otherwise it applies alone, when it gives the customer the bigger discount.
+      priority: Priority
+      priority-help: Higher priority promotions apply first.
+      is-public: Show in the app's deals
+    codes:
+      title: Promo codes for {name}
+      help: Generate a batch of unique codes or enter one specific code to share with customers.
+      generate: Generate codes
+      count: How many
+      prefix: Prefix
+      prefix-placeholder: e.g. SUMMER
+      length: Code length
+      usage-limit: Uses per code
+      usage-limit-help: 1 for single-use codes. Leave empty for unlimited.
+      specific-code: Or create a specific code
+      specific-code-placeholder: e.g. SUMMER25
+      specific-code-help: When entered, only this code is created. The quantity, prefix, and code length above are ignored.
+      loading: Loading promo codes...
+      load-failed: Promo codes could not be loaded.
+      retry: Try again
+      code: Code
+      used: Used
+      expires: Expires
+      disable: Disable
+      enable: Enable
+      generated-success: Codes generated.
+      empty: No codes yet.
+    announce:
+      title: Announce {name}
+      help: Send a notification about this promotion to your customers. It is sent when the promotion starts, or right away if it already has.
+      segment: Audience
+      segment-placeholder: All customers
+      message-title: Notification title
+      title-placeholder: e.g. Your next order is on offer
+      message-body: Notification message
+      body-placeholder: Tell customers about the offer
+      send-at: Send at (optional)
+      send-at-help: Leave empty to send when the promotion starts, or immediately if it has already started.
+      success: Announcement scheduled.
+    campaigns:
+      tab-title: Campaigns
+      header: Campaigns
+      new-campaign: New campaign
+      edit-campaign: Edit campaign
+      view-campaign: View campaign
+      search-placeholder: Search campaigns...
+      empty-title: No campaigns yet
+      empty-help: Create a campaign to send updates and offers to your customers.
+      name-placeholder: e.g. Weekend specials announcement
+      name-help: Internal name to help your team identify this campaign.
+      title-placeholder: e.g. Your weekend offers are here
+      body-placeholder: Write the message your customers will receive.
+      read-only-help: This campaign can no longer be edited. Its message and audience are shown for reference.
+      audience: Audience
+      audience-help: Select a segment to target a group, or leave empty to include all customers in your organization.
+      channels: Channels
+      channels-help: Choose where customers should receive this campaign.
+      channel-push: Push notification
+      channel-inbox: In-app inbox
+      send-at: Send at
+      sent-at: Sent
+      targeted: Customers reached
+      send-now: Send now
+      send-now-confirm: Send this campaign to its audience now?
+      cancel-campaign: Cancel campaign
+      cancel-confirm: Cancel this campaign? It will not be sent.
+      audience-count: This campaign will reach {count} customers.
+      title-label: Notification title
+      body-label: Notification message
+      promotion: Linked promotion
+      promotion-help: Tapping the notification opens this promotion.
+      promotion-placeholder: Select a promotion (optional)
+      link-url: Or link to a URL
+      link-help: Optional destination when the customer taps the notification.
+      link-placeholder: https://example.com/offers
+      when: When to send
+      when-draft: Save as draft
+      when-now: Send now
+      when-schedule: Schedule
+      required-fields: Enter a campaign name, notification title, and message.
+      required-channel: Select at least one delivery channel.
+      required-schedule: Choose a future date and time for this campaign.
+      schedule-help: Select a future date and time in your local time zone.
+      saved-success: Campaign saved.
+      sent-success: Campaign sent.
+      canceled-success: Campaign canceled.
+      empty: No campaigns yet.
+    segments:
+      tab-title: Segments
+      header: Customer segments
+      new-segment: New segment
+      edit-segment: Edit segment
+      search-placeholder: Search segments...
+      empty-title: No customer segments yet
+      empty-help: Group customers by their order history and activity to target campaigns.
+      name-placeholder: e.g. Frequent customers
+      description-placeholder: Describe who belongs in this segment (optional).
+      rules: Rules
+      rules-help: Customers must match every rule you fill in. Leave a rule empty to ignore it, or leave all rules empty to include every customer in your organization.
+      orders-placeholder: No order count limit
+      days-placeholder: No time limit
+      spend-placeholder: No minimum spend
+      min-orders: At least this many orders
+      max-orders: At most this many orders
+      ordered-within-days: Ordered in the last (days)
+      not-ordered-within-days: Has not ordered in the last (days)
+      joined-within-days: Joined in the last (days)
+      min-spent: Spent at least
+      min-spent-help: Minimum successful payment total across your organization. Leave empty or set to 0 for no minimum.
+      has-push-device: Can receive push notifications
+      matching: '{count} matching customers'
+      matching-loading: Counting matching customers...
+      matching-unavailable: Customer count is temporarily unavailable.
+      saved-success: Segment saved.
+      empty: No segments yet. Segments let you target campaigns at groups of customers.

@@ -63,6 +63,8 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Console\Commands\SendOrderNotification::class,
         \Fleetbase\Storefront\Console\Commands\PurgeExpiredCarts::class,
         \Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers::class,
+        \Fleetbase\Storefront\Console\Commands\ReleasePromotionReservations::class,
+        \Fleetbase\Storefront\Console\Commands\DispatchCampaigns::class,
     ];
 
     /**
@@ -98,6 +100,8 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->scheduleCommands(function ($schedule) {
             $schedule->command('storefront:notify-order-nearby')->everyMinute()->storeOutputInDb();
             $schedule->command('storefront:purge-carts')->daily()->storeOutputInDb();
+            $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->storeOutputInDb();
+            $schedule->command('storefront:dispatch-campaigns')->everyMinute()->storeOutputInDb();
         });
         $this->registerObservers();
         $this->registerMiddleware();

@@ -58,6 +58,10 @@ class Storefront
             $about = Network::select($columns)->where('key', $key)->with($with)->first();
         }
 
+        if (!$about) {
+            return null;
+        }
+
         $about->is_store   = Str::startsWith($key, 'store');
         $about->is_network = Str::startsWith($key, 'network');
 
@@ -632,7 +636,8 @@ class Storefront
         // Notify customer order was accepted
         try {
             $order->customer->notify(new StorefrontOrderAccepted($order));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('[Storefront] was unable to notify the customer that their order was accepted.', ['order' => $order->public_id, 'error' => $e->getMessage()]);
         }
 
         return $order;

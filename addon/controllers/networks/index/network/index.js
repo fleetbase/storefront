@@ -270,6 +270,16 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     }
 
     /**
+     * Send a test push notification through a notification channel.
+     *
+     * @method testChannel
+     * @public
+     */
+    @action testChannel() {
+        return this.notificationsController.testChannel(...arguments);
+    }
+
+    /**
      * Make an alertable action.
      *
      * @method makeAlertable
