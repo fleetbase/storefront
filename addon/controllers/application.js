@@ -97,12 +97,33 @@ export default class ApplicationController extends Controller {
             },
             {
                 label: this.intl.t('storefront.sidebar.promotions'),
-                description: 'Send promotional notifications.',
+                description: 'Discounts, promo codes, customer segments and campaigns.',
                 icon: 'bullhorn',
                 permission: 'storefront view promotions',
                 visible: this.can('storefront see promotions'),
                 disabled: !hasActiveStore,
                 children: [
+                    {
+                        label: this.intl.t('storefront.promotions.list.tab-title'),
+                        description: 'Create discounts and promo codes applied at checkout.',
+                        icon: 'tags',
+                        route: 'console.storefront.promotions.index',
+                        keywords: ['discounts', 'coupons', 'promo codes', 'sales', 'deals'],
+                    },
+                    {
+                        label: this.intl.t('storefront.promotions.campaigns.tab-title'),
+                        description: 'Send scheduled notifications to customer segments.',
+                        icon: 'bullhorn',
+                        route: 'console.storefront.promotions.campaigns',
+                        keywords: ['marketing', 'broadcast', 'notifications'],
+                    },
+                    {
+                        label: this.intl.t('storefront.promotions.segments.tab-title'),
+                        description: 'Group customers by their order history for targeting.',
+                        icon: 'users',
+                        route: 'console.storefront.promotions.segments',
+                        keywords: ['audience', 'customers', 'targeting'],
+                    },
                     {
                         label: 'Push Notifications',
                         description: 'Send push notifications to storefront customers.',

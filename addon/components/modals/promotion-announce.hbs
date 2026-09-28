@@ -1,0 +1,27 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-3">
+        <p class="text-sm text-gray-600 dark:text-gray-300">{{t "storefront.promotions.announce.help"}}</p>
+        <InputGroup @name={{t "storefront.promotions.announce.segment"}}>
+            <ModelSelect
+                @modelName="customer-segment"
+                @selectedModel={{@options.announcement.segment}}
+                @placeholder={{t "storefront.promotions.announce.segment-placeholder"}}
+                @triggerClass="form-select form-input"
+                @renderInPlace={{true}}
+                @infiniteScroll={{false}}
+                @allowClear={{true}}
+                @onChange={{fn (mut @options.announcement.segment)}}
+                as |segment|
+            >
+                {{segment.name}}
+            </ModelSelect>
+        </InputGroup>
+        <InputGroup @name={{t "storefront.promotions.announce.message-title"}} @value={{@options.announcement.title}} />
+        <InputGroup @name={{t "storefront.promotions.announce.message-body"}}>
+            <Textarea @value={{@options.announcement.body}} class="form-input w-full" rows="3" />
+        </InputGroup>
+        <InputGroup @name={{t "storefront.promotions.announce.send-at"}}>
+            <DateTimeInput class="form-input w-full" @value={{@options.announcement.send_at}} @onUpdate={{fn (mut @options.announcement.send_at)}} />
+        </InputGroup>
+    </div>
+</Modal::Default>

@@ -1,0 +1,80 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-3">
+        {{#if this.hasAudienceCount}}
+            <div class="text-sm text-gray-600 dark:text-gray-300">{{t "storefront.promotions.campaigns.audience-count" count=this.audienceCount}}</div>
+        {{/if}}
+        <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.campaign.name}} />
+        <InputGroup @name={{t "storefront.promotions.campaigns.title-label"}} @value={{this.campaign.title}} />
+        <InputGroup @name={{t "storefront.promotions.campaigns.body-label"}}>
+            <Textarea @value={{this.campaign.body}} class="form-input w-full" rows="3" />
+        </InputGroup>
+
+        <InputGroup @name={{t "storefront.promotions.campaigns.audience"}}>
+            <ModelSelect
+                @modelName="customer-segment"
+                @selectedModel={{this.segment}}
+                @query={{hash owner=this.campaign.owner_uuid}}
+                @placeholder={{t "storefront.promotions.common.all-customers"}}
+                @triggerClass="form-select form-input"
+                @renderInPlace={{true}}
+                @infiniteScroll={{false}}
+                @allowClear={{true}}
+                @onChange={{this.setSegment}}
+                as |segment|
+            >
+                {{segment.name}}
+            </ModelSelect>
+        </InputGroup>
+
+        <InputGroup @name={{t "storefront.promotions.campaigns.channels"}}>
+            <div class="flex space-x-6">
+                <Checkbox @value={{this.hasChannel "push"}} @label={{t "storefront.promotions.campaigns.channel-push"}} @onToggle={{fn this.toggleChannel "push"}} />
+                <Checkbox @value={{this.hasChannel "inbox"}} @label={{t "storefront.promotions.campaigns.channel-inbox"}} @onToggle={{fn this.toggleChannel "inbox"}} />
+            </div>
+        </InputGroup>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <InputGroup @name={{t "storefront.promotions.campaigns.promotion"}} @helpText={{t "storefront.promotions.campaigns.promotion-help"}}>
+                <ModelSelect
+                    @modelName="promotion"
+                    @selectedModel={{this.promotion}}
+                    @query={{hash owner=this.campaign.owner_uuid}}
+                    @placeholder={{t "storefront.promotions.common.none"}}
+                    @triggerClass="form-select form-input"
+                    @renderInPlace={{true}}
+                    @infiniteScroll={{false}}
+                    @allowClear={{true}}
+                    @onChange={{this.setPromotion}}
+                    as |promotion|
+                >
+                    {{promotion.name}}
+                </ModelSelect>
+            </InputGroup>
+            {{#unless this.promotion}}
+                <InputGroup @name={{t "storefront.promotions.campaigns.link-url"}}>
+                    <Input class="form-input w-full" placeholder="https://" @value={{this.linkUrl}} {{on "change" this.setLinkUrl}} />
+                </InputGroup>
+            {{/unless}}
+        </div>
+
+        {{#if this.campaign.isEditable}}
+            <InputGroup @name={{t "storefront.promotions.campaigns.when"}}>
+                <div class="flex space-x-2">
+                    {{#each this.whenOptions as |option|}}
+                        <Button
+                            @size="sm"
+                            @type={{if (eq this.when option) "primary" "default"}}
+                            @text={{t (concat "storefront.promotions.campaigns.when-" option)}}
+                            @onClick={{fn this.setWhen option}}
+                        />
+                    {{/each}}
+                </div>
+            </InputGroup>
+            {{#if (eq this.when "schedule")}}
+                <InputGroup @name={{t "storefront.promotions.campaigns.send-at"}}>
+                    <DateTimeInput class="form-input w-full" @value={{this.campaign.send_at}} @onUpdate={{fn (mut this.campaign.send_at)}} />
+                </InputGroup>
+            {{/if}}
+        {{/if}}
+    </div>
+</Modal::Default>
