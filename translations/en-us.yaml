@@ -153,6 +153,14 @@ storefront:
         name-text: Give your notification channel a name, this will only be relevent internally
         key: Channel Key
         key-text: This is your notification channel key, use this to specify which apps should utilize this notification channel via sdk configs.
+        environment-help-text: Auto tries production first and retries sandbox (development builds) when Apple rejects the device token.
+        android-channel-id-help-text: Optional Android notification channel ID. Leave empty to use the app's default channel.
+      test-notification-channel:
+        token: Device token
+        token-text: Paste an FCM registration token (Android) or APNs device token (iOS) from a device running your app.
+        environment: APNs environment
+        environment-text: Leave empty to try the channel's configured environments.
+        result: Provider result
       create-product-category:
         name: Category name
         name-text: Enter a name for category
@@ -658,6 +666,11 @@ storefront:
       notification-settings: Notification Settings
       notification-storefront: Configure notification channels for your storefront, each notification channel additionally can have it's own rules and options.
       new-channel: New channel
+      send-test: Send test
+      send-test-push: Send a test push notification
+      send-test-push-button: Send test push
+      test-push-sent: Test push notification was delivered to the provider.
+      test-push-failed: Test push notification failed, see the provider result below.
   service:
     storefront:
       new-incoming-order: You have a new incoming order!

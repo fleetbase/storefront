@@ -22,7 +22,10 @@ class HandleOrderStarted
         // if storefront order / notify customer driver has started and is en-route
         if ($order->hasMeta('storefront_id')) {
             $order->load(['customer']);
-            $order->customer->notify(new StorefrontOrderEnroute($order));
+
+            if ($order->customer) {
+                $order->customer->notify(new StorefrontOrderEnroute($order));
+            }
         }
     }
 }

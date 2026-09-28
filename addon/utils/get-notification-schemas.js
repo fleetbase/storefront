@@ -5,12 +5,11 @@ export default function getNotificationSchemas() {
             team_id: '',
             app_bundle_id: '',
             private_key_content: '',
-            production: true,
+            environment: 'auto',
         },
         fcm: {
             firebase_credentials_json: '',
-            firebase_database_url: '',
-            firebase_project_name: '',
+            android_channel_id: '',
         },
     };
 
