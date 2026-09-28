@@ -113,11 +113,19 @@ class Storefront
         ],
         [
             'name'    => 'promotion',
-            'actions' => ['generate-codes'],
+            'actions' => ['generate-codes', 'announce'],
         ],
         [
             'name'    => 'promotion-code',
             'actions' => [],
+        ],
+        [
+            'name'    => 'customer-segment',
+            'actions' => ['preview'],
+        ],
+        [
+            'name'    => 'campaign',
+            'actions' => ['send', 'cancel'],
         ],
         [
             'name'           => 'settings',
@@ -164,11 +172,13 @@ class Storefront
         ],
         [
             'name'        => 'PromotionsManager',
-            'description' => 'Policy for managing promotions and promotion codes.',
+            'description' => 'Policy for managing promotions, promotion codes, customer segments and campaigns.',
             'permissions' => [
                 'see extension',
                 '* promotion',
                 '* promotion-code',
+                '* customer-segment',
+                '* campaign',
             ],
         ],
         [

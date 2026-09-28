@@ -13,6 +13,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
+/**
+ * @deprecated Promotional messages are sent as campaigns (CampaignNotification). Kept for
+ *             integrations that notify customers with this class directly.
+ */
 class PromotionalPushNotification extends Notification implements SendsPushNotification
 {
     use Queueable;

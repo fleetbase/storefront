@@ -209,4 +209,156 @@ if (!function_exists('promotionDb')) {
             $overrides['now'] ?? null,
         );
     }
+
+    /**
+     * Tables for segments and campaigns, on top of createPromotionSchema().
+     */
+    function createCampaignSchema(): void
+    {
+        $schema = promotionDb()->getSchemaBuilder();
+        foreach (['customer_segments', 'campaigns', 'contacts', 'user_devices', 'transactions', 'notifications'] as $table) {
+            $schema->dropIfExists($table);
+        }
+
+        $schema->create('customer_segments', function ($table) {
+            $table->increments('id');
+            $table->string('uuid')->nullable();
+            $table->string('public_id')->nullable();
+            $table->string('company_uuid')->nullable();
+            $table->string('created_by_uuid')->nullable();
+            $table->string('owner_uuid')->nullable();
+            $table->string('owner_type')->nullable();
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+            $table->text('rules')->nullable();
+            $table->text('meta')->nullable();
+            $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        $schema->create('campaigns', function ($table) {
+            $table->increments('id');
+            $table->string('uuid')->nullable();
+            $table->string('public_id')->nullable();
+            $table->string('company_uuid')->nullable();
+            $table->string('created_by_uuid')->nullable();
+            $table->string('owner_uuid')->nullable();
+            $table->string('owner_type')->nullable();
+            $table->string('segment_uuid')->nullable();
+            $table->string('promotion_uuid')->nullable();
+            $table->text('recipients')->nullable();
+            $table->string('name')->nullable();
+            $table->string('status')->default('draft');
+            $table->text('channels')->nullable();
+            $table->string('title')->nullable();
+            $table->text('body')->nullable();
+            $table->string('image_uuid')->nullable();
+            $table->text('action')->nullable();
+            $table->timestamp('send_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('sent_at')->nullable();
+            $table->text('stats')->nullable();
+            $table->text('meta')->nullable();
+            $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        $schema->create('contacts', function ($table) {
+            $table->increments('id');
+            $table->string('uuid')->nullable();
+            $table->string('public_id')->nullable();
+            $table->string('company_uuid')->nullable();
+            $table->string('user_uuid')->nullable();
+            $table->string('type')->nullable();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->text('meta')->nullable();
+            $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        $schema->create('user_devices', function ($table) {
+            $table->increments('id');
+            $table->string('uuid')->nullable();
+            $table->string('public_id')->nullable();
+            $table->string('user_uuid')->nullable();
+            $table->string('platform')->nullable();
+            $table->text('token')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        $schema->create('transactions', function ($table) {
+            $table->increments('id');
+            $table->string('uuid')->nullable();
+            $table->string('customer_uuid')->nullable();
+            $table->string('type')->nullable();
+            $table->string('status')->nullable();
+            $table->integer('amount')->nullable();
+            $table->timestamps();
+            $table->timestamp('deleted_at')->nullable();
+        });
+        $schema->create('notifications', function ($table) {
+            $table->string('id')->primary();
+            $table->string('type');
+            $table->string('notifiable_type');
+            $table->string('notifiable_id');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Bind a bus dispatcher that records queued jobs and, optionally, runs them.
+     */
+    function fakeCampaignBus(bool $run = false): object
+    {
+        $bus = new class($run) implements Illuminate\Contracts\Bus\Dispatcher {
+            public array $jobs = [];
+
+            public function __construct(public bool $run)
+            {
+            }
+
+            public function dispatch($command)
+            {
+                $this->jobs[] = $command;
+                if ($this->run) {
+                    $command->handle();
+                }
+            }
+
+            public function dispatchSync($command, $handler = null)
+            {
+                return $this->dispatch($command);
+            }
+
+            public function dispatchNow($command, $handler = null)
+            {
+                return $this->dispatch($command);
+            }
+
+            public function hasCommandHandler($command)
+            {
+                return false;
+            }
+
+            public function getCommandHandler($command)
+            {
+                return false;
+            }
+
+            public function pipeThrough(array $pipes)
+            {
+                return $this;
+            }
+
+            public function map(array $map)
+            {
+                return $this;
+            }
+        };
+        app()->instance(Illuminate\Contracts\Bus\Dispatcher::class, $bus);
+
+        return $bus;
+    }
 }

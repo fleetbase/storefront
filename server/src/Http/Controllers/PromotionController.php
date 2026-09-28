@@ -3,10 +3,15 @@
 namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\Storefront\Http\Requests\PromotionRequest;
+use Fleetbase\Storefront\Http\Resources\Campaign as CampaignResource;
 use Fleetbase\Storefront\Http\Resources\PromotionCode as PromotionCodeResource;
+use Fleetbase\Storefront\Models\Campaign;
+use Fleetbase\Storefront\Models\CustomerSegment;
 use Fleetbase\Storefront\Models\Promotion;
 use Fleetbase\Storefront\Models\PromotionCode;
+use Fleetbase\Storefront\Promotions\CampaignDispatcher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class PromotionController extends StorefrontController
 {
@@ -72,6 +77,59 @@ class PromotionController extends StorefrontController
         }
 
         return response()->json(['codes' => PromotionCodeResource::collection(array_values($codes))]);
+    }
+
+    /**
+     * Announce a promotion to customers with a campaign.
+     *
+     * Body (all optional): `title`, `body`, `segment` (segment uuid), `channels`, `send_at`
+     * (defaults to when the promotion starts, or now). Returns the campaign; it is sent right
+     * away when its send time has arrived, otherwise by the campaign scheduler.
+     */
+    public function announce(string $id, Request $request, CampaignDispatcher $dispatcher)
+    {
+        $promotion = Promotion::where('company_uuid', session('company'))
+            ->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))
+            ->first();
+
+        if (!$promotion) {
+            return response()->error('Promotion not found.', 404);
+        }
+
+        if (in_array($promotion->status, [Promotion::STATUS_PAUSED, Promotion::STATUS_ENDED], true)) {
+            return response()->error('Only draft or active promotions can be announced.');
+        }
+
+        $segment = $request->filled('segment')
+            ? CustomerSegment::where('company_uuid', session('company'))->where('uuid', $request->input('segment'))->first()
+            : null;
+        if ($request->filled('segment') && !$segment) {
+            return response()->error('Segment not found.', 404);
+        }
+
+        $sendAt   = $request->filled('send_at') ? Carbon::parse($request->input('send_at')) : ($promotion->starts_at && $promotion->starts_at->isFuture() ? $promotion->starts_at : now());
+        $campaign = Campaign::create([
+            'company_uuid'   => $promotion->company_uuid,
+            'created_by_uuid'=> session('user'),
+            'owner_uuid'     => $promotion->owner_uuid,
+            'owner_type'     => $promotion->owner_type,
+            'segment_uuid'   => $segment?->uuid,
+            'promotion_uuid' => $promotion->uuid,
+            'name'           => 'Announce: ' . $promotion->name,
+            'status'         => Campaign::STATUS_SCHEDULED,
+            'channels'       => $request->input('channels', [Campaign::CHANNEL_PUSH, Campaign::CHANNEL_INBOX]),
+            'title'          => $request->input('title', $promotion->name),
+            'body'           => $request->input('body', $promotion->description ?: 'A new deal is available, tap to see it.'),
+            'image_uuid'     => $promotion->image_uuid,
+            'action'         => ['type' => 'promotion', 'id' => $promotion->public_id],
+            'send_at'        => $sendAt,
+        ]);
+
+        if (!$campaign->send_at->isFuture()) {
+            $dispatcher->dispatch($campaign);
+        }
+
+        return new CampaignResource($campaign->refresh());
     }
 
     protected function generateCode(int $length, string $prefix): string

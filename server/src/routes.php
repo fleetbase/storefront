@@ -117,6 +117,18 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->delete('{id}', 'NotificationController@delete');
                 });
 
+                // storefront/v1/notifications
+                $router->group(['prefix' => 'notifications'], function () use ($router) {
+                    $router->get('/', 'NotificationController@query');
+                    $router->get('unread-count', 'NotificationController@unreadCount');
+                    $router->get('preferences', 'NotificationController@getPreferences');
+                    $router->put('preferences', 'NotificationController@updatePreferences');
+                    $router->put('read-all', 'NotificationController@markAllAsRead');
+                    $router->get('{id}', 'NotificationController@find');
+                    $router->put('{id}/read', 'NotificationController@markAsRead');
+                    $router->delete('{id}', 'NotificationController@delete');
+                });
+
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');
@@ -245,9 +257,25 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             'promotions',
                             function ($router, $controller) {
                                 $router->post('{id}/generate-codes', $controller('generateCodes'));
+                                $router->post('{id}/announce', $controller('announce'));
                             }
                         );
                         $router->fleetbaseRoutes('promotion-codes');
+                        $router->fleetbaseRoutes(
+                            'customer-segments',
+                            function ($router, $controller) {
+                                $router->post('preview', $controller('previewRules'));
+                                $router->get('{id}/preview', $controller('preview'));
+                            }
+                        );
+                        $router->fleetbaseRoutes(
+                            'campaigns',
+                            function ($router, $controller) {
+                                $router->post('{id}/send', $controller('send'));
+                                $router->post('{id}/cancel', $controller('cancel'));
+                                $router->get('{id}/audience', $controller('audience'));
+                            }
+                        );
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');

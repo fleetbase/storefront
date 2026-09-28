@@ -5,10 +5,11 @@ namespace Fleetbase\Storefront\Http\Controllers;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Storefront\Models\Campaign;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Promotions\CampaignDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class ActionController extends Controller
 {
@@ -100,7 +101,11 @@ class ActionController extends Controller
     }
 
     /**
-     * Send promotional push notification to selected customers.
+     * Send a promotional notification to selected customers, or to all of them.
+     *
+     * The message is sent as a campaign (push and inbox), so it is recorded, honors customers'
+     * promotion preferences and is delivered in queued batches. `sent_count` and `total` are
+     * the number of customers targeted.
      *
      * @return \Illuminate\Http\Response
      */
@@ -122,41 +127,47 @@ class ActionController extends Controller
         }
 
         // Get the store
-        $store = Store::where('public_id', $storeId)->first();
+        $store = Store::where('public_id', $storeId)->where('company_uuid', session('company'))->first();
         if (!$store) {
             return response()->json(['error' => 'Store not found'], 404);
         }
 
-        // Get customers
-        if ($selectAll) {
-            // Get all customers for this store's company
-            $customers = Contact::where('company_uuid', session('company'))
-                ->where('type', 'customer')
-                ->get();
-        } else {
-            // Get only selected customers
-            $customers = Contact::whereIn('uuid', $customerIds)
+        // Only the company's own customers can be targeted
+        $recipients = null;
+        if (!$selectAll) {
+            $recipients = Contact::whereIn('uuid', (array) $customerIds)
                 ->where('company_uuid', session('company'))
                 ->where('type', 'customer')
-                ->get();
-        }
+                ->pluck('uuid')
+                ->all();
 
-        // Send notifications
-        $sentCount = 0;
-        foreach ($customers as $customer) {
-            try {
-                $customer->notify(new \Fleetbase\Storefront\Notifications\PromotionalPushNotification($title, $body, $store));
-                $sentCount++;
-            } catch (\Exception $e) {
-                // Log error but continue with other customers
-                Log::error('Failed to send push notification to customer: ' . $customer->uuid, ['error' => $e->getMessage()]);
+            if (empty($recipients)) {
+                return response()->json(['status' => 'OK', 'sent_count' => 0, 'total' => 0]);
             }
         }
 
+        $campaign = Campaign::create([
+            'company_uuid'    => $store->company_uuid,
+            'created_by_uuid' => session('user'),
+            'owner_uuid'      => $store->uuid,
+            'owner_type'      => Store::class,
+            'name'            => 'Push notification: ' . $title,
+            'status'          => Campaign::STATUS_SCHEDULED,
+            'channels'        => [Campaign::CHANNEL_PUSH, Campaign::CHANNEL_INBOX],
+            'title'           => $title,
+            'body'            => $body,
+            'recipients'      => $recipients,
+            'send_at'         => now(),
+        ]);
+        app(CampaignDispatcher::class)->dispatch($campaign);
+
+        $targeted = (int) data_get($campaign->refresh()->stats, 'targeted', 0);
+
         return response()->json([
             'status'     => 'OK',
-            'sent_count' => $sentCount,
-            'total'      => count($customers),
+            'sent_count' => $targeted,
+            'total'      => $targeted,
+            'campaign'   => $campaign->public_id,
         ]);
     }
 }
