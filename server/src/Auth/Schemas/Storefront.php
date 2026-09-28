@@ -112,6 +112,14 @@ class Storefront
             'actions' => [],
         ],
         [
+            'name'    => 'promotion',
+            'actions' => ['generate-codes'],
+        ],
+        [
+            'name'    => 'promotion-code',
+            'actions' => [],
+        ],
+        [
             'name'           => 'settings',
             'action'         => ['import'],
             'remove_actions' => ['delete', 'export', 'list', 'create'],
@@ -152,6 +160,15 @@ class Storefront
                 'see extension',
                 '* customer',
                 '* order',
+            ],
+        ],
+        [
+            'name'        => 'PromotionsManager',
+            'description' => 'Policy for managing promotions and promotion codes.',
+            'permissions' => [
+                'see extension',
+                '* promotion',
+                '* promotion-code',
             ],
         ],
         [

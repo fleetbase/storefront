@@ -25,6 +25,11 @@ use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
+use Fleetbase\Storefront\Promotions\PromotionContext;
+use Fleetbase\Storefront\Promotions\PromotionEngine;
+use Fleetbase\Storefront\Promotions\PromotionRedemptions;
+use Fleetbase\Storefront\Promotions\PromotionResult;
+use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StripeUtils;
@@ -304,6 +309,12 @@ class CheckoutController extends Controller
         }
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])->where('public_id', $serviceQuoteId)->first();
 
+        // price promotions onto the checkout
+        $promotionError = static::applyPromotions($cart, $serviceQuote, $checkoutOptions, $customer, $request);
+        if ($promotionError) {
+            return $promotionError;
+        }
+
         // handle cash orders
         if ($isCashOnDelivery) {
             return static::initializeCashCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions, $request);
@@ -373,7 +384,8 @@ class CheckoutController extends Controller
         // `checkout` is the chkt_* public id and `token` is a separate checkout_* value.
         // GET /checkouts/status needs BOTH, and only initializeQPayCheckout was returning
         // the id — so a cash or card client could never reach its own checkout's status.
-        return response()->json([
+        // The checkout is discarded instead if one of its promotions ran out meanwhile.
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
         ]);
@@ -474,7 +486,7 @@ class CheckoutController extends Controller
 
         // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
         // requires alongside the token, and nothing but the QPay path used to return it.
-        return response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -611,6 +623,12 @@ class CheckoutController extends Controller
             ->where('public_id', $serviceQuoteId)
             ->first();
 
+        // Price promotions onto the new checkout
+        $promotionError = static::applyPromotions($cart, $serviceQuote, $checkoutOptions, $customer, $request);
+        if ($promotionError) {
+            return $promotionError;
+        }
+
         // Recalculate amount based on cart, serviceQuote, and checkoutOptions
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkoutOptions);
         $currency = $cart->getCurrency();
@@ -700,7 +718,7 @@ class CheckoutController extends Controller
 
         // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
         // the chkt_* public id GET /checkouts/status requires alongside the token.
-        return response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -824,7 +842,7 @@ class CheckoutController extends Controller
         // Update checkout with invoice id
         $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
 
-        return response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
             'invoice'  => $invoice,
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
@@ -1294,6 +1312,10 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // if promotions were applied create a (credit) transaction item for the discount
+        $promotions = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
+        static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
+
         // if single cart checkout and origin is array get the first id
         if (is_array($origin)) {
             $origin = Arr::first($origin);
@@ -1356,6 +1378,8 @@ class CheckoutController extends Controller
             'delivery_fee' => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'          => $checkout->getOption('tip'),
             'delivery_tip' => $checkout->getOption('delivery_tip'),
+            'discount'     => $promotions->discount(),
+            'promotions'   => $promotions->toPublicArray()['applied'],
             'total'        => Utils::numbersOnly($amount),
             'currency'     => $currency,
             'gateway'      => $gateway->type,
@@ -1398,6 +1422,9 @@ class CheckoutController extends Controller
 
         // create order
         $order = Order::create($orderInput);
+
+        // record the promotions as used by this order
+        PromotionRedemptions::redeem($checkout, $order);
 
         // notify driver if assigned
         $order->notifyDriverAssigned();
@@ -1660,6 +1687,11 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // if promotions were applied create a (credit) transaction item for the discount
+        $promotions          = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
+        $discountAllocations = $promotions->allocationsByStore();
+        static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
+
         // convert payload destinations to Place
         $origins = collect($origins)->map(function ($publicId) {
             return Place::createFromMixed($publicId);
@@ -1689,8 +1721,9 @@ class CheckoutController extends Controller
                 $this->processCartItem($cartItem, $payload, $customer);
             }
 
-            // get order subtotal
-            $subtotal = $cart->getSubtotalForStore($store);
+            // get order subtotal and this store's share of the item discount
+            $subtotal      = $cart->getSubtotalForStore($store);
+            $storeDiscount = min((int) ($discountAllocations[$store->public_id] ?? 0), (int) $subtotal);
 
             // prepare order meta
             $orderMeta = [
@@ -1704,7 +1737,8 @@ class CheckoutController extends Controller
                 'delivery_fee'          => 0,
                 'tip'                   => 0,
                 'delivery_tip'          => 0,
-                'total'                 => $subtotal,
+                'discount'              => $storeDiscount,
+                'total'                 => $subtotal - $storeDiscount,
                 'currency'              => $currency,
                 'gateway'               => $gateway->type,
                 'require_pod'           => $about->getOption('require_pod'),
@@ -1791,6 +1825,8 @@ class CheckoutController extends Controller
             'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'                   => $checkout->getOption('tip'),
             'delivery_tip'          => $checkout->getOption('delivery_tip'),
+            'discount'              => $promotions->discount(),
+            'promotions'            => $promotions->toPublicArray()['applied'],
             'total'                 => Utils::numbersOnly($amount),
             'currency'              => $currency,
             'gateway'               => $gateway->type,
@@ -1827,6 +1863,9 @@ class CheckoutController extends Controller
 
         // create master order
         $order = Order::create($masterOrderInput);
+
+        // record the promotions as used by this checkout's master order
+        PromotionRedemptions::redeem($checkout, $order);
 
         // update child orders with master order id in meta
         foreach ($multipleOrders as $childOrder) {
@@ -2028,7 +2067,96 @@ class CheckoutController extends Controller
             $total += Utils::numbersOnly($serviceQuote->amount);
         }
 
-        return $total;
+        // Promotions priced when the checkout was created. Tips are computed on the
+        // undiscounted subtotal, and discounts never exceed what they discount.
+        $promotions = data_get($checkoutOptions, 'promotions');
+        if ($promotions) {
+            $total -= min((int) data_get($promotions, 'discount_subtotal', 0), $subtotal);
+            if (!$isPickup) {
+                $total -= min((int) data_get($promotions, 'discount_delivery', 0), (int) Utils::numbersOnly($serviceQuote->amount));
+            }
+        }
+
+        return max($total, 0);
+    }
+
+    /**
+     * Record the promotions' discount as a transaction item.
+     *
+     * The amount is stored positive (the Money cast drops signs) and flagged as a credit with the
+     * `discount` code: the transaction amount is the items minus this line.
+     */
+    protected static function createDiscountTransactionItem(Transaction $transaction, PromotionResult $promotions, ?string $currency): void
+    {
+        if ($promotions->discount() <= 0) {
+            return;
+        }
+
+        TransactionItem::create([
+            'transaction_uuid' => $transaction->uuid,
+            'amount'           => $promotions->discount(),
+            'currency'         => $currency,
+            'details'          => 'Discount: ' . implode(', ', array_filter(array_column($promotions->applied, 'name'))),
+            'code'             => 'discount',
+            'meta'             => ['direction' => 'credit', 'promotions' => $promotions->toPublicArray()['applied']],
+        ]);
+    }
+
+    /**
+     * Price the cart's promotions and store them on the checkout options.
+     *
+     * Codes come from the request (`promo_codes`, `promo_code` or `discount_code`) and from codes
+     * applied to the cart. A code that cannot be applied fails the checkout, so the customer is
+     * never charged without a discount they expected. Codes that only lost to a better
+     * combination of promotions do not.
+     */
+    protected static function applyPromotions(Cart $cart, ?ServiceQuote $serviceQuote, $checkoutOptions, ?Contact $customer, Request $request): ?JsonResponse
+    {
+        $isPickup    = (bool) data_get($checkoutOptions, 'is_pickup', false);
+        $deliveryFee = $serviceQuote && !$isPickup ? (int) Utils::numbersOnly($serviceQuote->amount) : 0;
+        $context     = PromotionContext::fromCart($cart, Storefront::about(), $customer, $isPickup, $deliveryFee);
+        $result      = app(PromotionEngine::class)->evaluate($context, static::promotionCodesFor($cart, $request));
+
+        $blocking = array_values(array_filter($result->rejected, fn ($rejection) => $rejection['reason'] !== PromotionEngine::REASON_NOT_COMBINABLE));
+        if ($blocking) {
+            return response()->apiError(
+                'Promotion code "' . $blocking[0]['code'] . '" cannot be applied (' . $blocking[0]['reason'] . ').',
+                400,
+                ['promotions' => ['rejected' => $blocking]]
+            );
+        }
+
+        if (!$result->isEmpty()) {
+            $checkoutOptions->promotions = $result->toArray();
+        }
+
+        return null;
+    }
+
+    protected static function promotionCodesFor(Cart $cart, Request $request): array
+    {
+        $codes = $request->input('promo_codes', $request->or(['promo_code', 'promoCode', 'discount_code']));
+        if (is_string($codes)) {
+            $codes = explode(',', $codes);
+        }
+
+        return array_values(array_unique(array_filter(array_merge((array) $codes, $cart->getPromotionCodes()), 'is_string')));
+    }
+
+    /**
+     * Reserve a new checkout's promotions, discarding the checkout if one ran out meanwhile.
+     */
+    protected static function reservePromotions(Checkout $checkout, $checkoutOptions, ?Contact $customer): ?JsonResponse
+    {
+        try {
+            PromotionRedemptions::reserve($checkout, PromotionResult::fromArray(data_get($checkoutOptions, 'promotions')), $customer?->uuid);
+        } catch (PromotionUnavailableException $e) {
+            $checkout->delete();
+
+            return response()->apiError($e->getMessage());
+        }
+
+        return null;
     }
 
     private static function calculateTipAmount($tip, $subtotal)
