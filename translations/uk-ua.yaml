@@ -1,0 +1,692 @@
+storefront:
+  extension-name: Storefront
+  common:
+    address: Адреса
+    alerts: Сповіщення
+    amount: Сума
+    api: API
+    back: Назад
+    backdrop: Банер
+    building: Будинок
+    bulk-action: Масова дія
+    cash: Готівка
+    city: Місто
+    config: Конфігурація
+    coordinates: Координати
+    country: Країна
+    created: Створено
+    currency: Валюта
+    customer: Клієнт
+    customers: Клієнти
+    category: Категорія
+    delivery-tip: Чайові кур'єру
+    delivery: Доставка
+    details: Деталі
+    description: Опис
+    driver: Водій
+    dropoff: Місце вивантаження
+    earning: Доходи
+    email: Електронна пошта
+    export: Експорт
+    id: ID
+    internal-id: Внутрішній ID
+    import: Імпорт
+    invalid: Недійсний
+    loading: Завантаження...
+    logo: Логотип
+    name: Назва
+    neighborhood: Район
+    online: В мережі
+    orders: Замовлення
+    phone: Телефон
+    photos: Фотографії
+    pickup: Місце забору
+    product: Товари
+    remove: Видалити
+    state: Область/Штат
+    status: Статус
+    store: Магазин
+    street-1: Вулиця 1
+    storefront: Вітрина
+    tag: Теги
+    tip: Чайові
+    title: Заголовок
+    total: Загалом
+    type: Тип
+    upload-new: Завантажити нове
+    uploading: Завантаження...
+    view: Перегляд
+    website: Веб-сайт
+    edit: Редагувати
+    delete: Видалити
+    network: Мережі
+    file: файли
+    general: Загальні
+    location: Локація
+    notification: Сповіщення
+    gateways: Шлюзи
+    settings: Налаштування
+    new: Новий
+    facebook: Facebook
+    instagram: Instagram
+    twitter: Twitter
+    food-trucks: Фуд-траки
+    catalog: Каталог
+    catalogs: Каталоги
+  sidebar:
+    storefront: Вітрина
+    dashboard: Панель керування
+    products: Товари
+    catalogs: Каталоги
+    food-trucks: Фуд-траки
+    customers: Клієнти
+    orders: Замовлення
+    networks: Мережі
+    promotions: Акції
+    settings: Налаштування
+    launch-app: Запустити додаток
+  component:
+    storefront-order-summary:
+      order-summary-title: Деталізація замовлення вітрини
+    modals:
+      add-store-hours:
+        start-time: Час початку
+        operation-start: Час початку доступності/роботи
+        end-time: Час завершення
+        operation-end: Час завершення доступності/роботи
+      assign-driver:
+        message-driver: Оберіть водія для призначення на це замовлення.
+        name-driver: Обрати водія
+        placeholder-driver: Оберіть водія для призначення
+      create-first-store:
+        title: Ласкаво просимо до Storefront!
+        message: Storefront дозволяє швидко налаштувати автономний та динамічний магазин на вимогу на базі Fleetbase.
+        submit-message: Заповніть форму нижче, щоб створити свій перший магазин.
+        storefront-name: Назва вітрини
+        enter-name: Введіть назву вашого магазину
+        description: Опис вітрини
+        brief-description: Надайте короткий опис товарів, які продаються у вашому магазині
+        currency: Валюта вітрини
+        select-currency: Оберіть основну валюту для вашої вітрини
+      create-getaway:
+        getaway: Тип шлюзу
+        getaway-text: Оберіть тип шлюзу
+        getaway-name: Назва шлюзу
+        name-text: Назвіть платіжний шлюз (використовується лише внутрішньо)
+        getaway-code: Код шлюзу
+        code-text: Ідентифікаційний код, який використовується для визначення шлюзу в SDK
+        callback-url: Callback URL
+        callback-text: URL зворотного виклику (якщо застосовно)
+        return-url: Return URL
+        return-text: URL повернення (якщо застосовно)
+        sandbox-getaway: Це тестовий шлюз (песочниця)
+      create-network-category:
+        parent-category: Батьківська категорія
+        select-parent: Оберіть батьківську категорію (якщо є)
+        category-name: Назва категорії
+        name-text: Введіть назву категорії
+        description: Опис категорії
+        description-text: Надайте короткий опис категорії мережі
+        category-icon: Тип іконки категорії
+      create-network:
+        title: Створити мережу
+        message-line1: Storefront дозволяє швидко створювати маркетплейси, об'єднуючи кілька магазинів під одним брендом.
+        message-line2: Під час створення мережі ви визначаєте власні правила та можете розширювати її за допомогою запрошень.
+        message-line3: Розпочніть зі створення мережі нижче.
+        name: Назва мережі
+        name-text: Введіть назву вашого магазину
+        description: Опис мережі
+        description-text: Надайте короткий опис товарів, які продаються
+        currency: Валюта мережі
+        currency-text: Оберіть основну валюту для вашої вітрини
+      create-new-variant:
+        name: Назва варіанта
+        name-text: Вкажіть назву варіанта товару
+        description: Опис варіанта
+        description-text: Короткий опис варіанта
+        checkbox-1: Дозволити користувачеві обирати кілька варіантів одночасно
+        checkbox-2: Вибір цього варіанта товару є обов'язковим
+      create-notification-channel:
+        title: Канал
+        title-text: Оберіть канал сповіщень
+        name: Назва каналу
+        name-text: Вкажіть назву каналу сповіщень (використовується лише внутрішньо)
+        key: Ключ каналу
+        key-text: Це ключ вашого каналу сповіщень, використовуйте його в налаштуваннях SDK, щоб вказати, які додатки мають його використовувати.
+      create-product-category:
+        name: Назва категорії
+        name-text: Введіть назву категорії
+        description: Опис категорії
+        description-text: Надайте короткий опис категорії товарів
+        icon: Іконка категорії
+        uploading-new: Завантажити нову іконку категорії
+      create-store:
+        name: Назва вітрини
+        name-text: Введіть назву вашого магазину
+        description: Опис вітрини
+        description-text: Надайте короткий опис товарів, які продаються у вашому магазині
+        currency: Валюта вітрини
+        currency-text: Оберіть основну валюту для вашої вітрини
+      import-products:
+        uploading-message: Обробка імпорту...
+        drop-upload: Перетягніть для завантаження
+        ready-upload: готово до завантаження.
+        upload-spreadsheets: Завантажити електронні таблиці
+        drag-drop: Перетягніть файли таблиць у цю область
+        select-spreadsheets: або оберіть таблиці для завантаження.
+        upload-queue: Черга завантаження
+        optionally-select-category: За бажанням оберіть категорію для імпорту товарів
+        select-category: Обрати категорію
+      incoming-order:
+        assigned: Водія призначено
+        not-assigned: Водія не призначено
+        no-phone: Немає телефону
+        change-driver: Змінити водія
+        assign-driver: Призначити водія
+        pickup-order: Клієнт повинен забрати замовлення з
+        address: Адреса клієнта
+        tracking: Відстеження
+        summary: Деталізація замовлення
+        subtotal: Проміжний підсумок
+        fee: Вартість доставки
+        tip: Чайові
+        delivery-tip: Чайові кур'єру
+      manage-addons:
+        title: Нова категорія
+        delete: Видалити категорію
+        new-addon: Нова надбудова
+        addon-name: Назва надбудови
+        description: Опис надбудови
+        delete-this-addon-category-assosiated-will-lost: Ви впевнені, що хочете видалити цю категорію надбудов? Усі пов'язані надбудови буде втрачено!
+        untitled-addon-category: Категорія без назви
+      order-ready-assign-driver:
+        driver-dispatch: Ви збираєтеся позначити замовлення як готове та відправити його. Скористайтеся випадаючим списком нижче, щоб обрати водія. <br><br>Або ви можете відправити замовлення у режимі adhoc, що надішле сповіщення усім найближчим водіям.
+        adhoc-dispatch-nearby-drivers: Adhoc-відправка найближчим водіям
+        select-driver: Обрати водія
+        select-driver-to-assign: Оберіть водія для призначення
+      share-network:
+        invite-member: Запросити учасників до вашої мережі
+        email-below: Скористайтеся посиланням для запрошення або надішліть індивідуальні запрошення на електронну пошту нижче.
+        invite-network: Введіть електронні адреси людей або організацій, яким ви хочете надіслати запрошення.
+        add-email: Додати email
+        get-link: Отримати посилання
+        enable-shareable-link: Увімкнути спільне посилання
+        anyone-with-this-link-able-to-join-your-network: Будь-хто з цим посиланням зможе приєднатися до вашої мережі
+      store-form:
+        storefront-name: Назва вітрини
+        the-name-of-your-store: Назва вашого магазину.
+        storefront-description-placeholder: Опис вітрини
+        give-your-store-brief-description: Надайте короткий опис магазину, щоб користувачі знали, що ви продаєте.
+        add-tags-placeholder: Додати теги
+      store-location-form:
+        street-2: Вулиця 2
+        security-access-code: Код доступу / Пароль
+        postal-code: Поштовий індекс
+    widget:
+      key-metrics:
+        title: Метрики вітрини
+      customers:
+        widget-title: Останні клієнти
+        phone: Телефон
+        email: Електронна пошта
+      orders:
+        widget-title: Останні замовлення
+        id-column: ID замовлення
+        cancel-order: Скасувати замовлення
+        cancel-orders: Скасувати замовлення
+        cancel-order-modal-title: Скасувати це замовлення?
+        cancel-order-modal-body: Це скасує замовлення у Storefront і зупинить усі подальші дії з його виконання.
+        cancel-order-success: "Замовлення {orderId} скасовано."
+        accept-order: Прийняти замовлення!
+        mark-as-ready: Позначити як готове!
+        dispatch: Відправити
+        mark-as-preparing: Позначити як готується
+        mark-as-completed: Позначити як завершено
+        more-details: Більше деталей
+        customer: Клієнт
+        driver: Водій
+        subtotal: Проміжний підсумок
+        delivery-fee: Вартість доставки
+        delivery-tip: Чайові кур'єру
+        tip: Чайові
+        total: Загалом
+        change-driver: Змінити водія
+        assign-driver: Призначити водія
+        customer-pickup: Самовивіз клієнтом
+        pickup-order: Забрати замовлення
+        mark-as-ready-modal-pickup-title: Позначити замовлення готовим до самовивозу?
+        mark-as-ready-modal-pickup-body: Позначення замовлення як готового сповістить клієнта про те, що його замовлення можна забирати!
+        mark-as-ready-modal-pickup-accept-button-text: Готово до самовивозу!
+        mark-as-ready-modal-not-adhoc-title: Призначити водія та відправити замовлення
+        mark-as-ready-modal-not-adhoc-accept-button-text: Призначити та відправити!
+        mark-as-ready-modal-title: Ви впевнені, що хочете позначити замовлення як готове?
+        mark-as-ready-modal-body: Позначення замовлення як готового відправить його найближчим водіям. Позначайте замовлення готовим лише тоді, коли його дійсно можна забрати.
+        mark-as-ready-modal-accept-button-text: Відправити!
+        mark-as-completed-modal-title: Ви впевнені, що хочете позначити замовлення як завершене?
+        mark-as-completed-modal-body: Позначення замовлення як завершеного є підтвердженням того, що клієнт отримав/забрав замовлення і воно виконане.
+        mark-as-completed-accept-button-text: Замовлення завершено!
+        mark-as-preparing-modal-title: Ви впевнені, що хочете позначити замовлення як таке, що готується?
+        mark-as-preparing-modal-body: Позначення замовлення як таке, що готується, є підтвердженням того, що замовлення обробляється.
+        mark-as-preparing-accept-button-text: Замовлення готується
+        assign-driver-modal-title: Призначити водія
+        assign-driver-modal-accept-button-text: Призначити водія
+      storefront-metrics:
+        last-day: Останні 30 днів
+    file-record:
+      delete-this-file: Ви впевнені, що хочете видалити цей файл?
+      delete-this-file-you-will-unable-recover: Після видалення цього файлу ви не зможете його відновити.
+    network-category-picker:
+      no-subcategory: Немає підкатегорій для
+      no-categories: Немає категорій для цієї мережі
+      create-category: Створити нову категорію
+    schedule-manager:
+      add-hours: Додати години
+      add-new-hours-for-day: Додати новий робочий час для {day}
+      new-hours-added-for-day: Додано новий робочий час для {day}
+      you-wish-to-remove-these-hour: Ви впевнені, що хочете видалити цей робочий час?
+      by-removing-these-operation: Видалення цього часу роботи/доступності може зробити ваш магазин або товар неактивним чи недоступним відповідно до оновленого розкладу...
+    store-selector:
+      no-stores: Немає магазинів для вибору
+      create-storefront: Створити нову
+  home:
+    title: Панель керування Storefront
+  customers:
+    index:
+      internal-id: Внутрішній ID
+      create-at: Створено
+      update-at: Оновлено
+      vendor-action: Дії продавця
+      view-customer-details: Переглянути деталі клієнта
+      edit-customer: Редагувати клієнта
+      success-message: Вашу нову мережу вітрин успішно створено!
+      delete-customer: Видалити клієнта
+    customer-panel:
+      details:
+        web-url: URL-адреса веб-сайту
+      edit-button: Редагувати клієнта
+      cancel-edit-button: Скасувати редагування клієнта
+      cancel-new-button: Скасувати створення клієнта
+  networks:
+    index:
+      network-option: Параметри мережі
+      manage-network: Керувати мережею
+      send-invite: Надіслати запрошення
+      delete-network: Видалити мережу
+      create-new-network: Створити нову мережу
+      success-message: Вашу нову мережу вітрин успішно створено!
+      delete-this-network-all-assigned-stores-customer-order: Ви впевнені, що хочете видалити цю мережу ({networkName})? Усі призначені магазини, клієнти та замовлення більше не будуть доступні.
+      network:
+        manage-network: Керувати мережею
+        settings: Налаштування
+        customers: Клієнти
+        orders: Замовлення
+        Network-changes-not-save: Зміни мережі не збережено!
+        going-back-will-rollback-all-unsaved-changes: Повернення назад скасує всі незбережені зміни, ви впевнені, що хочете продовжити?
+        index:
+          change-network-saved: Зміни в мережі збережено.
+          create-new-payment-gateway: Створити новий платіжний шлюз
+          save-gateway: Зберегти шлюз
+          new-gateway-add-network: Новий шлюз додано до мережі
+          payment-gateway-changes-success: Зміни платіжного шлюзу збережено!
+          create-new-notification-channel: Створити новий канал сповіщень
+          create-notification-channel: Створити канал сповіщень
+          notification-channel-add-network: Новий канал сповіщень додано до мережі!
+          notification-channel-changes-save: Зміни каналу сповіщень збережено!
+          general-network-settings-title: Загальні налаштування мережі
+          general-network-settings-subtitle: Вкажіть загальні налаштування для вашої мережі або маркетплейсу.
+          general-network-settings-form:
+            save-changes-button-text: Зберегти зміни
+            name: Назва
+            name-placeholder: Назва вітрини
+            name-help-text: Назва вашої мережі або маркетплейсу.
+            description: Опис
+            description-placeholder: Опис вітрини
+            description-help-text: Надайте короткий опис, щоб користувачі знали, чому присвячена ваша мережа.
+            currency: Валюта
+            contact-social-panel:
+              panel-title: Контакти та соцмережі
+              phone: Телефон
+              email: Електронна пошта
+              email-help-text: Робочий email.
+              website: Веб-сайт
+              website-help-text: URL-адреса вашого веб-сайту.
+              facebook: Facebook
+              facebook-help-text: ID сторінки вашого бізнесу у Facebook.
+              instagram: Instagram
+              instagram-help-text: Ім’я користувача вашого бізнесу в Instagram.
+              twitter: Twitter
+              twitter-help-text: Ім’я користувача вашого бізнесу в Twitter.
+            logo-backdrop-panel:
+              panel-title: Логотип та банер
+              logo-label: Логотип
+              logo-help-text: Логотип вашого магазину.
+              upload-logo-button-text: Завантажити новий логотип
+              backdrop-label: Банер
+              backdrop-help-text: Додатковий баннер або фонове зображення для вашого магазину.
+              upload-backdrop-button-text: Завантажити новий банер
+            alert-panel:
+              panel-title: Сповіщення
+              panel-description: Налаштуйте, хто повинен отримувати сповіщення про певні події
+              new-order-alert-label: Сповіщення про нове замовлення
+              new-order-alert-placeholder: Оберіть користувачів для сповіщення про нове замовлення
+            config-switches:
+              online: В мережі
+              enable-tax: Увімкнути податок
+              tax-percentage-input-label: Відсоток податку
+              tax-percentage-input-help-text: Відсоток податку з продажів, який застосовується до замовлень.
+              enable-minimum-order-amount: Увімкнути мінімальну суму замовлення
+              minimum-order-amount-input-label: Мінімальна сума замовлення
+              minimum-order-amount-input-help-text: Мінімальна сума замовлення, необхідна для оформлення.
+              auto-accept-incoming-orders: Автоматично приймати вхідні замовлення
+              auto-dispatch-orders: Автоматично відправляти замовлення
+              require-proof-of-delivery: Вимагати підтвердження доставки
+              proof-of-delivery-method-label: Метод підтвердження доставки
+              enable-cash-on-delivery: Увімкнути оплату при отриманні
+              enable-order-pickup: Увімкнути самовивіз
+              enable-tips: Увімкнути чайові
+              enable-delivery-tips: Увімкнути чайові кур'єру
+              enable-multi-cart-checkout: Увімкнути оформлення з кількох кошиків
+              enable-user-reviews: Увімкнути відгуки користувачів
+          api-panel:
+            panel-title: API
+            panel-header: Налаштування API
+            panel-description: Ключ доступу для Storefront API та інтеграцій
+            network-key-label: Ключ мережі
+            network-key-help-text: Це ключ вашої мережі, використовуйте його для підключення додатків та інтеграцій.
+          payment-gateways-panel:
+            panel-title: Налаштування шлюзів
+            panel-description: Додавайте або керуйте налаштуваннями платіжних шлюзів тут.
+            new-gateway-button-text: Створити новий шлюз
+            gateway-form:
+              name: Назва шлюзу
+              name-help-text: Назвіть платіжний шлюз (використовується лише внутрішньо)
+              code: Код шлюзу
+              code-help-text: Ідентифікаційний код, який використовується для визначення шлюзу в SDK
+              callback-url: Callback URL
+              callback-url-help-text: URL зворотного виклику (якщо застосовно)
+              return-url: Return URL
+              return-url-help-text: URL повернення (якщо застосовно)
+              sandbox-toggle-label: Це тестовий шлюз (песочниця)
+              config-header-label: Конфігурація
+              delete-gateway-button-text: Видалити платіжний шлюз
+          notification-channels-panel:
+            panel-title: Канали сповіщень
+            panel-header: Налаштування сповіщень
+            panel-description: Налаштуйте канали сповіщень для вашої вітрини. Кожен канал додатково може мати власні правила та параметри.
+            new-channel-button-text: Створити новий канал
+        stores:
+          store: Магазини
+          add-stores-button-text: Додати магазини
+          invite-stores-button-text: Запросити магазини
+          created-at: Створено
+          view-store-details: Переглянути деталі магазину
+          edit-store: Редагувати магазин
+          assign-category: Призначити категорію
+          remove-category: Видалити категорію
+          remove-store-from-network: Видалити магазин з мережі
+          delete-network-category: Видалити категорію мережі?
+          deleting-category-move-all-stores-inside-on-top-level: Видалення цієї категорії перемістить усі магазини всередині неї на верхній рівень, ви впевнені, що хочете видалити цю категорію?
+          add-store-to-category: Додати магазин до категорії
+          save-change: Зберегти зміни
+          add-new-network-category: Додати нову категорію мережі
+          create-new-category: Створити нову категорію
+          new-category-created: Нову категорію створено.
+          network-category-create: Створено нову категорію мережі.
+          edit-category: Редагувати категорію ({categoryName})
+          add-stores-to-network: Додати магазини до мережі
+          network-stores-update: Магазини мережі оновлено.
+          remove-this-store: Видалити цей магазин ({storeName}) з цієї мережі ({networkName})?
+          done: Готово
+          longer-findable-by-this-network: Ви впевнені, що хочете видалити цей магазин з мережі? Його більше не можна буде знайти через цю мережу.
+          viewing-storefront: Перегляд вітрини {storeName}
+          editing-storefront: Редагування вітрини {storeName}
+          send-invitations: Надіслати запрошення
+          invitation-sent-recipients: Запрошення надіслано отримувачам!
+          invalid-emails-provided-error: Вказано недійсні електронні адреси!
+          remove-store-category: Видалити категорію магазину
+          remove-store-category-body: Ви збираєтеся видалити {storeName} з категорії {categoryName}, ви бажаєте продовжити?
+  orders:
+    index:
+      internal-id: Внутрішній ID
+      customer: Клієнт
+      select-order-customer: Оберіть клієнта замовлення
+      select-order-pickup-location: Оберіть місце забору замовлення
+      select-order-dropoff-location: Оберіть місце доставки замовлення
+      scheduled-at: Заплановано на
+      transaction-total: Сума транзакції
+      total: Загалом
+      tracking-number: Номер відстеження
+      driver-assigned: Водія призначено
+      select-driver-for-order: Оберіть водія для замовлення
+      created-at: Створено
+      updated-at: Оновлено
+      created-by: Створив
+      updated-by: Оновив
+      select-user: Оберіть користувача
+      view-order: Переглянути замовлення
+      cancel-order: Скасувати замовлення
+      delete-order: Видалити замовлення
+      view:
+        route-panel-title: Маршрут
+        comments-title: Коментарі
+        notes-title: Примітки
+        dispatch: Відправити
+        unassign-driver: Скасувати призначення водія
+        assign-driver: Призначити водія
+        cancel-order: Скасувати замовлення
+        delete-order: Видалити замовлення
+        activity: Активність
+        unable-load-order-activity: Не вдалося завантажити активність замовлення
+        ad-hoc: Ad-Hoc
+        customer: Клієнт
+        facilitator: Посередник
+        driver-assigned: Водія призначено
+        change-driver: Змінити водія
+        tracking-number: Номер відстеження
+        date-scheduled: Запланована дата
+        date-dispatched: Дата відправки
+        date-started: Дата початку
+        order-details-title: Деталі замовлення
+        route: Маршрут
+        pickup: Забір
+        dropoff: Доставка
+        return: Повернення
+        order-summary: Деталізація замовлення
+        subtotal: Проміжний підсумок
+        delivery-fee: Вартість доставки
+        tip: Чайові
+        delivery-tip: Чайові кур'єру
+        total: Загалом
+        payload: Вміст / Вантаж
+        items-drop: Товари вивантажуються в
+        tracking: Відстеження
+        view-activity: Переглянути активність
+        order-metadata: Метадані замовлення
+        unassign-title: Ви впевнені, що хочете зняти водія ({driverName}) з цього замовлення?
+        unassign-body: Після зняття призначення водій більше не матиме доступу до деталей цього замовлення.
+        unassign-success: Водія знято з цього замовлення.
+        route-error: Оптимізація маршруту не вдалася, перевірте точки маршруту та спробуйте знову.
+        invalid-warning: Введено недійсний користувацький статус.
+        change-order: Змінити водія замовлення
+        assign-order: Призначити водія на замовлення
+        assign-success: Водія для {orderId} успішно оновлено.
+        order-title: Мітка замовлення
+        waypoint-title: Мітка путівної точки
+        proof-of-delivery: Підтвердження доставки
+        notes-placeholder: Введіть примітки до замовлення тут...
+        save-order-note: Зберегти примітку до замовлення
+        order-notes-updated: Примітки до замовлення оновлено.
+  products:
+    index:
+      manage-addons: Керування надбудовами
+      manage-addons-dialog:
+        manage-addons-title: Керування категоріями та опціями надбудов товарів
+        manage-addons-accept-button: Зберегти зміни
+      done: Готово
+      create-new-product-category: Створити нову категорію товарів
+      product-category-created-success: Нову категорію товарів створено.
+      import-products-via-spreadsheets: Импортувати товари через електронні таблиці
+      start-upload: Розпочати завантаження
+      warning-no-file-upload: Немає файлів у черзі для завантаження!
+      products-success-message: Успішно імпортовано {resultsLength} товарів...
+      delete-product: Ви впевнені, що хочете видалити цей товар?
+      body-warning: Попередження! Після видалення цього товару він більше не буде доступний.
+      aside-scroller:
+        title: Категорії товарів
+        custom-top-item-text: Усі товари
+      import-products-success-message: Успішно імпортовано {resultsLength} товарів...
+      edit:
+        title: Товар не збережено!
+        body: Ви втратите всі незбережені зміни, ви впевнені, що хочете скасувати?
+        changes-saved: Зміни збережено!
+      new:
+        new-product-created-success: Новий товар успішно створено!
+        warning-only-select-an-image-file-to-be-primary: Ви можете обрати лише файл зображення як основний!
+        made-the-primary-success-image: >-
+          {fileName} зроблено основним зображенням.
+        title: Товар не збережено!
+        body: Повернення назад скасує створення цього товару. Якщо ви продовжите, усі введені поля будуть очищені!
+        select-addon-categories: Обрати категорії надбудов
+        add-new-product-variant: Додати новий варіант товару
+        edit-product-variant: Редагувати варіант товару
+        untitled-field: Поле без назви
+      category:
+        category: категорія
+        title: Товар не збережено!
+        body: Попередження! Видалення цієї категорії також вилучить усі товари, розміщені в ній.
+        edit-category: Редагувати категорію
+        save-changes: Зберегти зміни
+        category-changes-saved-success: Зміни категорії збережено.
+        delete-product: Ви впевнені, що хочете видалити цей товар?
+        body-warning: Попередження! Після видалення цього товару він більше не буде доступний.
+  settings:
+    api:
+      api-settings: Налаштування API
+      access-key-for-storefront-api-integrations: Ключ доступу для Storefront API та інтеграцій.
+      store-key: Ключ магазину
+      store-key-help-text: Це ключ вашого магазину, використовуйте його для підключення додатків та інтеграцій для вашої вітрини.
+    gateways:
+      geteway-settings: Налаштування шлюзів
+      add-or-manage-your-paymeny-gateway-settings-here: Додавайте або керуйте налаштуваннями платіжних шлюзів тут.
+      create-new-gateway: Створити новий шлюз
+      gateway-name: Назва шлюзу
+      gateway-help-text: Назвіть платіжний шлюз (використовується лише внутрішньо)
+      gateway-code: Код шлюзу
+      gateway-code-help-text: Ідентифікаційний код, який використовується для визначення шлюзу в SDK
+      callback-url: Callback URL
+      callback-url-help-text: URL зворотного виклику (якщо застосовно)
+      return-url: Return URL
+      return-url-help-text: URL повернення (якщо застосовно)
+      this-is-a-sandbox-gateway: Це тестовий шлюз (песочниця)
+      delete-payment-gateway: Видалити платіжний шлюз
+      create-new-payment-gateway: Створити новий платіжний шлюз
+      save-gateway: Зберегти шлюз
+      edit-payment-gateway: Редагувати платіжний шлюз
+      save-changes: Зберегти зміни
+      title-remove: Ви впевнені, що хочете видалити цей шлюз?
+      application-website-utilizing-gateway: Робота всіх додатків та веб-сайтів, що використовують цей шлюз у конфігурації, може бути порушена, якщо шлюз не замінити заздалегідь
+    index:
+      general-settings-header: Загальні налаштування
+      general-settings-message: Вкажіть загальні налаштування для вашої вітрини.
+      name-placeholder: Назва вітрини
+      name-help-text: Назва вашого магазину.
+      description-placeholder: Опис вітрини
+      description-help-text: Надайте короткий опис магазину, щоб користувачі знали, що ви продаєте.
+      tags-placeholder: Додати теги
+      contact-social: Контакти та соцмережі
+      website-help-text: URL-адреса вашого веб-сайту.
+      facebook-placeholder: Facebook ID
+      facebook-help-text: ID сторінки вашого бізнесу у Facebook.
+      instagram-placeholder: Ім'я користувача Instagram
+      instagram-help-text: Ім’я користувача вашого бізнесу в Instagram.
+      twitter-placeholder: Ім'я користувача Twitter
+      twitter-help-text: Ім’я користувача вашого бізнесу в Twitter.
+      logo-backdrop: Логотип та банер
+      logo-help-text: Логотип вашого магазину.
+      upload-new-logo: Завантажити новий логотип
+      backdrop-help-text: Додатковий баннер або фонове зображення для вашого магазину.
+      upload-new-backdrop: Завантажити новий банер
+      images-videos: Зображення та відео
+      drop-to-upload: Перетягніть для завантаження
+      ready-to-upload: готово до завантаження.
+      upload-image-video: Завантажити зображення та відео
+      drag-and-drop-image: Перетягніть файли зображень та відео в цю область
+      upload-queue: Черга завантаження
+      alerted-for-certain-event: Налаштуйте, хто повинен отримувати сповіщення про певні події.
+      new-order-alert: Сповіщення про нове замовлення
+      alert-placeholder: Оберіть користувачів для сповіщення про нове замовлення
+      enable-tax: Увімкнути податок
+      tax-percentage: Відсоток податку
+      tax-percentage-help-text: Відсоток податку з продажів, який застосовується до замовлень.
+      enable-minimum-order-amount: Увімкнути мінімальну суму замовлення
+      minimum-order-amount: Мінімальна сума замовлення
+      minimum-order-amount-help-text: Мінімальна сума замовлення, необхідна для оформлення.
+      auto-accept-incoming-order: Автоматично приймати вхідні замовлення
+      auto-dispatch-order: Автоматично відправляти замовлення
+      require-proof-of-delivery: Вимагати підтвердження доставки
+      proof-of-delivery-method: Метод підтвердження доставки
+      enable-cash-on-delivery: Увімкнути оплату при отриманні
+      enable-order-pickup: Увімкнути самовивіз
+      enable-tips: Увімкнути чайові
+      enable-delivery-tips: Увімкнути чайові кур'єру
+      enable-integrated-vendors: Увімкнути інтегрованих продавців
+      save-changes: Зберегти зміни
+    locations:
+      new-store-location: Нова локація магазину
+      add-new-location: Додати нову локацію
+      edit-store-location: Редагувати локацію магазину
+      save-changes: Зберегти зміни
+      remove-this-store-location: Ви впевнені, що хочете видалити цю локацію магазину?
+      solely-accosciated-location: Усі товари, пов'язані виключно з цією локацією, більше не будуть доступні.
+      new-store-hour: Додати новий робочий час магазину для {day}
+      add-hours: Додати години
+      store-hour-added: Додано новий робочий час магазину для {day}
+      remove-these-hour: Ви впевнені, що хочете видалити цей робочий час?
+      update-schedule-location: Видалення цього часу роботи може зробити ваш магазин неактивним відповідно до оновленого розкладу для цієї локації..
+      location-setting: Налаштування локації
+      manage-store: Керуйте робочими локаціями та годинами роботи ваших магазинів
+      text-location: Створити нову локацію
+      store-hour: Керувати годинами роботи магазину
+    notification:
+      create-new-notification-channel: Створити новий канал сповіщень
+      create-notification-channel: Створити канал сповіщень
+      edit-notification-channel: Редагувати канал сповіщень
+      save-changes: Зберегти зміни
+      new-notification-channel-added: Додано новий канал сповіщень
+      remove-this-notification-channel: Ви впевнені, що хочете видалити цей канал сповіщень?
+      application-websites-utillizing-channel: Робота всіх додатків та веб-сайтів, що використовують цей канал у конфігурації, може бути порушена, якщо канал не замінити заздалегідь
+      notification-settings: Налаштування сповіщень
+      notification-storefront: Налаштуйте канали сповіщень для вашої вітрини. Кожен канал додатково може мати власні правила та параметри.
+      new-channel: Новий канал
+  service:
+    storefront:
+      new-incoming-order: У вас нове вхідне замовлення!
+      accept-order: Прийняти замовлення
+      decline-order: Відхилити замовлення
+      create-first-storefront: Створіть свою першу вітрину
+      storefront-has-been-create-success: Вашу нову вітрину успішно створено!
+      create-new-storefront: Створити нову вітрину
+      storefront-create-success: Вашу нову вітрину успішно створено!
+  application:
+    launch-app: Запустити додаток
+  promotions:
+    title: Акції
+    push-notifications:
+      tab-title: Push-сповіщення
+      header: Надіслати Push-сповіщення
+      description: Насилайте рекламні push-сповіщення вашим клієнтам
+      title-label: Заголовок сповіщення
+      title-placeholder: Введіть заголовок сповіщення
+      title-help-text: Заголовок, який відображатиметься в push-сповіщенні
+      body-label: Текст сповіщення
+      body-placeholder: Введіть повідомлення сповіщення
+      body-help-text: Вміст повідомлення, яке буде надіслано клієнтам
+      select-all-customers: Обрати всіх клієнтів
+      select-all-customers-help-text: Надіслати сповіщення усім клієнтам цього магазину
+      customers-label: Обрати клієнтів
+      customers-placeholder: Оберіть клієнтів для надсилання сповіщення
+      send-button: Надіслати сповіщення
+      validation-title-body-required: Будь ласка, введіть заголовок і текст для сповіщення
+      validation-customers-required: Будь ласка, оберіть принаймні одного клієнта для надсилання сповіщення
+      notification-sent-success: Push-сповіщення успішно надіслано обраним клієнтам
+      notification-sent-error: Не вдалося надіслати push-сповіщення. Будь ласка, спробуйте знову.
