@@ -419,6 +419,7 @@
                             <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
                         </div>
                         <div class="flex items-center">
+                            <Button @size="xs" @type="default" @text={{t "storefront.settings.notification.send-test"}} @wrapperClass="mr-2" @onClick={{fn this.testChannel notificationChannel}} />
                             <Button @size="xs" @type="default" @text={{t "storefront.common.edit"}} @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
                             <Button @size="xs" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} />
                         </div>

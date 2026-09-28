@@ -20,6 +20,7 @@ use Fleetbase\Models\VerificationCode;
 use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
 use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
+use Fleetbase\Storefront\Push\StorefrontPushChannel;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -48,23 +49,92 @@ class CustomerController extends Controller
             return response()->apiError('Not authorized to register device for cutomer');
         }
 
-        $device = UserDevice::firstOrCreate(
-            [
-                'token'    => $request->input('token'),
-                'platform' => $request->or(['platform', 'os']),
-            ],
-            [
-                'user_uuid' => $customer->user_uuid,
-                'platform'  => $request->or(['platform', 'os']),
-                'token'     => $request->input('token'),
-                'status'    => 'active',
-            ]
-        );
+        $token    = trim((string) $request->input('token'));
+        $platform = StorefrontPushChannel::normalizePlatform($request->or(['platform', 'os']));
+
+        if ($token === '') {
+            return response()->apiError('A device token is required.');
+        }
+
+        if (!$platform) {
+            return response()->apiError('Device platform must be either ios or android.');
+        }
+
+        if (!$customer->user_uuid) {
+            return response()->apiError('Unable to register device for customer without a user account.');
+        }
+
+        // A token identifies one app install, so it always belongs to the customer who
+        // registered it most recently (e.g. after logging out and in as someone else).
+        $devices = UserDevice::withTrashed()->where('token', $token)->orderByDesc('updated_at')->get();
+        $device  = $devices->shift() ?? new UserDevice();
+        $devices->each(fn (UserDevice $duplicate) => $duplicate->forceDelete());
+
+        if ($device->exists && $device->trashed()) {
+            $device->restore();
+        }
+
+        $device->fill([
+            'user_uuid' => $customer->user_uuid,
+            'platform'  => $platform,
+            'token'     => $token,
+            'status'    => 'active',
+        ]);
+
+        $optionalAttributes = [
+            'environment'    => in_array($request->input('environment'), ['production', 'sandbox'], true) ? $request->input('environment') : null,
+            'app_identifier' => session('storefront_store') ?? session('storefront_network'),
+            'last_seen_at'   => now(),
+        ];
+        $columns = static::userDeviceColumns();
+        foreach ($optionalAttributes as $column => $value) {
+            if (in_array($column, $columns, true)) {
+                $device->forceFill([$column => $value]);
+            }
+        }
+
+        $device->save();
 
         return response()->json([
             'status' => 'OK',
             'device' => $device->public_id,
         ]);
+    }
+
+    /**
+     * Unregister a device token for the authenticated customer, e.g. on logout.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function unregisterDevice(Request $request)
+    {
+        $customer = Storefront::getCustomerFromToken();
+
+        if (!$customer) {
+            return response()->apiError('Not authorized to unregister device for customer');
+        }
+
+        $token = trim((string) $request->input('token'));
+        if ($token === '') {
+            return response()->apiError('A device token is required.');
+        }
+
+        $deleted = UserDevice::where('token', $token)->where('user_uuid', $customer->user_uuid)->get()->each(fn (UserDevice $device) => $device->delete())->count();
+
+        return response()->json([
+            'status'  => 'OK',
+            'deleted' => $deleted,
+        ]);
+    }
+
+    /**
+     * Newer core-api versions add push metadata columns to user_devices.
+     *
+     * @return string[]
+     */
+    protected static function userDeviceColumns(): array
+    {
+        return (new UserDevice())->getConnection()->getSchemaBuilder()->getColumnListing('user_devices');
     }
 
     /**
