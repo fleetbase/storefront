@@ -104,6 +104,18 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'PromotionController@query');
                     $router->get('{id}', 'PromotionController@find');
                 });
+                
+                // storefront/v1/notifications
+                $router->group(['prefix' => 'notifications'], function () use ($router) {
+                    $router->get('/', 'NotificationController@query');
+                    $router->get('unread-count', 'NotificationController@unreadCount');
+                    $router->get('preferences', 'NotificationController@getPreferences');
+                    $router->put('preferences', 'NotificationController@updatePreferences');
+                    $router->put('read-all', 'NotificationController@markAllAsRead');
+                    $router->get('{id}', 'NotificationController@find');
+                    $router->put('{id}/read', 'NotificationController@markAsRead');
+                    $router->delete('{id}', 'NotificationController@delete');
+                });
 
                 // storefront/v1/notifications
                 $router->group(['prefix' => 'notifications'], function () use ($router) {
