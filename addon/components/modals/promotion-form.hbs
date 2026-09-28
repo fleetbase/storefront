@@ -1,20 +1,20 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
-    <div class="modal-body-container space-y-4">
+    <div class="space-y-2">
         <ContentPanel @title={{t "storefront.promotions.form.basics"}} @open={{true}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.promotion.name}} @helpText={{t "storefront.promotions.form.name-help"}} @wrapperClass="md:col-span-2" />
-                <InputGroup @name={{t "storefront.promotions.common.description"}} @helpText={{t "storefront.promotions.form.description-help"}} @wrapperClass="md:col-span-2">
-                    <Textarea @value={{this.promotion.description}} class="form-input w-full" rows="2" />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.promotion.name}} @required={{true}} @placeholder={{t "storefront.promotions.form.name-placeholder"}} @helpText={{t "storefront.promotions.form.name-help"}} @wrapperClass="md:col-span-2" />
+                <InputGroup @name={{t "storefront.promotions.common.description"}} @helpText={{t "storefront.promotions.form.description-help"}} @wrapperClass="md:col-span-2" as |inputId|>
+                    <Textarea id={{inputId}} placeholder={{t "storefront.promotions.form.description-placeholder"}} @value={{this.promotion.description}} class="form-input w-full" rows="2" />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.list.type"}} @helpText={{t "storefront.promotions.form.type-help"}}>
-                    <select class="form-select w-full" {{on "change" (fn this.setField "type")}}>
+                <InputGroup @name={{t "storefront.promotions.list.type"}} @helpText={{t "storefront.promotions.form.type-help"}} as |inputId|>
+                    <select id={{inputId}} class="form-select w-full" {{on "change" (fn this.setField "type")}}>
                         {{#each this.types as |type|}}
                             <option value={{type}} selected={{eq type this.promotion.type}}>{{t (concat "storefront.promotions.types." type)}}</option>
                         {{/each}}
                     </select>
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.list.trigger"}} @helpText={{t "storefront.promotions.form.trigger-help"}}>
-                    <select class="form-select w-full" {{on "change" (fn this.setField "trigger")}}>
+                <InputGroup @name={{t "storefront.promotions.list.trigger"}} @helpText={{t "storefront.promotions.form.trigger-help"}} as |inputId|>
+                    <select id={{inputId}} class="form-select w-full" {{on "change" (fn this.setField "trigger")}}>
                         {{#each this.triggers as |trigger|}}
                             <option value={{trigger}} selected={{eq trigger this.promotion.trigger}}>{{t (concat "storefront.promotions.triggers." trigger)}}</option>
                         {{/each}}
@@ -22,30 +22,30 @@
                 </InputGroup>
 
                 {{#if (eq this.promotion.type "percentage")}}
-                    <InputGroup @name={{t "storefront.promotions.form.percent-off"}}>
-                        <Input @type="number" min="0" max="100" step="0.01" class="form-input w-full" @value={{this.promotion.value}} {{on "input" (fn this.setNumber "value")}} />
+                    <InputGroup @name={{t "storefront.promotions.form.percent-off"}} as |inputId|>
+                        <Input id={{inputId}} @type="number" min="0" max="100" step="0.01" class="form-input w-full" placeholder="10" @value={{this.promotion.value}} {{on "input" (fn this.setNumber "value")}} />
                     </InputGroup>
                 {{else if (eq this.promotion.type "fixed_amount")}}
-                    <InputGroup @name={{t "storefront.promotions.form.amount-off"}}>
-                        <MoneyInput class="w-full" @currency={{@options.currency}} @value={{this.promotion.value}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "value"}} />
+                    <InputGroup @name={{t "storefront.promotions.form.amount-off"}} as |inputId|>
+                        <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{@options.currency}} @value={{this.promotion.value}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "value"}} />
                     </InputGroup>
                 {{else if (eq this.promotion.type "bogo")}}
-                    <div class="md:col-span-2 grid grid-cols-3 gap-2">
-                        <InputGroup @name={{t "storefront.promotions.form.buy-quantity"}}>
-                            <Input @type="number" min="1" class="form-input w-full" @value={{this.bogo.buy_quantity}} {{on "input" (fn this.setBogo "buy_quantity")}} />
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+                        <InputGroup @name={{t "storefront.promotions.form.buy-quantity"}} as |inputId|>
+                            <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder="1" @value={{this.bogo.buy_quantity}} {{on "input" (fn this.setBogo "buy_quantity")}} />
                         </InputGroup>
-                        <InputGroup @name={{t "storefront.promotions.form.get-quantity"}}>
-                            <Input @type="number" min="1" class="form-input w-full" @value={{this.bogo.get_quantity}} {{on "input" (fn this.setBogo "get_quantity")}} />
+                        <InputGroup @name={{t "storefront.promotions.form.get-quantity"}} as |inputId|>
+                            <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder="1" @value={{this.bogo.get_quantity}} {{on "input" (fn this.setBogo "get_quantity")}} />
                         </InputGroup>
-                        <InputGroup @name={{t "storefront.promotions.form.get-discount-percent"}}>
-                            <Input @type="number" min="0" max="100" class="form-input w-full" @value={{this.bogo.discount_percent}} {{on "input" (fn this.setBogo "discount_percent")}} />
+                        <InputGroup @name={{t "storefront.promotions.form.get-discount-percent"}} as |inputId|>
+                            <Input id={{inputId}} @type="number" min="0" max="100" class="form-input w-full" placeholder="100" @value={{this.bogo.discount_percent}} {{on "input" (fn this.setBogo "discount_percent")}} />
                         </InputGroup>
-                        <p class="col-span-3 text-xs text-gray-500">{{t "storefront.promotions.form.bogo-help"}}</p>
+                        <p class="sm:col-span-3 text-xs text-gray-500 dark:text-gray-400">{{t "storefront.promotions.form.bogo-help"}}</p>
                     </div>
                 {{/if}}
 
-                <InputGroup @name={{t "storefront.promotions.common.status"}}>
-                    <select class="form-select w-full" {{on "change" (fn this.setField "status")}}>
+                <InputGroup @name={{t "storefront.promotions.common.status"}} as |inputId|>
+                    <select id={{inputId}} class="form-select w-full" {{on "change" (fn this.setField "status")}}>
                         {{#each this.statuses as |status|}}
                             <option value={{status}} selected={{eq status this.promotion.status}}>{{t (concat "storefront.promotions.statuses." status)}}</option>
                         {{/each}}
@@ -55,24 +55,24 @@
         </ContentPanel>
 
         <ContentPanel @title={{t "storefront.promotions.form.schedule"}} @open={{true}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
                 <InputGroup @name={{t "storefront.promotions.form.starts-at"}}>
-                    <DateTimeInput class="form-input w-full" @value={{this.promotion.starts_at}} @onUpdate={{fn (mut this.promotion.starts_at)}} />
+                    <DateTimeInput role="group" aria-label={{t "storefront.promotions.form.starts-at"}} class="form-input w-full" @value={{this.promotion.starts_at}} @onUpdate={{fn (mut this.promotion.starts_at)}} />
                 </InputGroup>
                 <InputGroup @name={{t "storefront.promotions.form.ends-at"}}>
-                    <DateTimeInput class="form-input w-full" @value={{this.promotion.ends_at}} @onUpdate={{fn (mut this.promotion.ends_at)}} />
+                    <DateTimeInput role="group" aria-label={{t "storefront.promotions.form.ends-at"}} class="form-input w-full" @value={{this.promotion.ends_at}} @onUpdate={{fn (mut this.promotion.ends_at)}} />
                 </InputGroup>
-                <p class="md:col-span-2 text-xs text-gray-500">{{t "storefront.promotions.form.schedule-help"}}</p>
+                <p class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400">{{t "storefront.promotions.form.schedule-help"}}</p>
             </div>
         </ContentPanel>
 
         <ContentPanel @title={{t "storefront.promotions.form.conditions"}} @open={{false}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <InputGroup @name={{t "storefront.promotions.form.min-subtotal"}}>
-                    <MoneyInput class="w-full" @currency={{@options.currency}} @value={{this.promotion.min_subtotal}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "min_subtotal"}} />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <InputGroup @name={{t "storefront.promotions.form.min-subtotal"}} as |inputId|>
+                    <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{@options.currency}} @value={{this.promotion.min_subtotal}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "min_subtotal"}} />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.form.min-items"}}>
-                    <Input @type="number" min="1" class="form-input w-full" @value={{this.promotion.min_items}} {{on "input" (fn this.setNumber "min_items")}} />
+                <InputGroup @name={{t "storefront.promotions.form.min-items"}} as |inputId|>
+                    <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-minimum"}} @value={{this.promotion.min_items}} {{on "input" (fn this.setNumber "min_items")}} />
                 </InputGroup>
                 <div class="md:col-span-2">
                     <Toggle
@@ -86,11 +86,13 @@
         </ContentPanel>
 
         <ContentPanel @title={{t "storefront.promotions.form.targeting"}} @open={{false}} @wrapperClass="bordered-top">
-            <p class="text-xs text-gray-500 mb-2">{{t "storefront.promotions.form.targeting-help"}}</p>
-            <InputGroup @name={{t "storefront.promotions.form.products"}}>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{t "storefront.promotions.form.targeting-help"}}</p>
+            <InputGroup @name={{t "storefront.promotions.form.products"}} as |inputId|>
                 <ModelSelectMultiple
+                    @triggerId={{inputId}}
                     @modelName="product"
                     @query={{hash store_uuid=@options.storeId}}
+                    @placeholder={{t "storefront.promotions.form.products-placeholder"}}
                     @selectedModel={{this.products}}
                     @onChange={{fn this.setTargets "products" "products"}}
                     @triggerClass="form-select form-input w-full"
@@ -101,10 +103,12 @@
                     {{model.name}}
                 </ModelSelectMultiple>
             </InputGroup>
-            <InputGroup @name={{t "storefront.promotions.form.categories"}}>
+            <InputGroup @name={{t "storefront.promotions.form.categories"}} as |inputId|>
                 <ModelSelectMultiple
+                    @triggerId={{inputId}}
                     @modelName="category"
                     @query={{hash for="storefront_product" owner_uuid=@options.storeId}}
+                    @placeholder={{t "storefront.promotions.form.categories-placeholder"}}
                     @selectedModel={{this.categories}}
                     @onChange={{fn this.setTargets "categories" "categories"}}
                     @triggerClass="form-select form-input w-full"
@@ -115,10 +119,12 @@
                     {{model.name}}
                 </ModelSelectMultiple>
             </InputGroup>
-            <InputGroup @name={{t "storefront.promotions.form.exclude-products"}}>
+            <InputGroup @name={{t "storefront.promotions.form.exclude-products"}} as |inputId|>
                 <ModelSelectMultiple
+                    @triggerId={{inputId}}
                     @modelName="product"
                     @query={{hash store_uuid=@options.storeId}}
+                    @placeholder={{t "storefront.promotions.form.exclude-products-placeholder"}}
                     @selectedModel={{this.excludedProducts}}
                     @onChange={{fn this.setTargets "exclude_products" "excludedProducts"}}
                     @triggerClass="form-select form-input w-full"
@@ -132,20 +138,20 @@
         </ContentPanel>
 
         <ContentPanel @title={{t "storefront.promotions.form.limits"}} @open={{false}} @wrapperClass="bordered-top">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <InputGroup @name={{t "storefront.promotions.form.usage-limit"}}>
-                    <Input @type="number" min="1" class="form-input w-full" @value={{this.promotion.usage_limit}} {{on "input" (fn this.setNumber "usage_limit")}} />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <InputGroup @name={{t "storefront.promotions.form.usage-limit"}} as |inputId|>
+                    <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-limit"}} @value={{this.promotion.usage_limit}} {{on "input" (fn this.setNumber "usage_limit")}} />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.form.usage-limit-per-customer"}}>
-                    <Input @type="number" min="1" class="form-input w-full" @value={{this.promotion.usage_limit_per_customer}} {{on "input" (fn this.setNumber "usage_limit_per_customer")}} />
+                <InputGroup @name={{t "storefront.promotions.form.usage-limit-per-customer"}} as |inputId|>
+                    <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-limit"}} @value={{this.promotion.usage_limit_per_customer}} {{on "input" (fn this.setNumber "usage_limit_per_customer")}} />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.form.budget-amount"}}>
-                    <MoneyInput class="w-full" @currency={{@options.currency}} @value={{this.promotion.budget_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "budget_amount"}} />
+                <InputGroup @name={{t "storefront.promotions.form.budget-amount"}} as |inputId|>
+                    <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{@options.currency}} @value={{this.promotion.budget_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "budget_amount"}} />
                 </InputGroup>
-                <InputGroup @name={{t "storefront.promotions.form.max-discount-amount"}}>
-                    <MoneyInput class="w-full" @currency={{@options.currency}} @value={{this.promotion.max_discount_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "max_discount_amount"}} />
+                <InputGroup @name={{t "storefront.promotions.form.max-discount-amount"}} as |inputId|>
+                    <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{@options.currency}} @value={{this.promotion.max_discount_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "max_discount_amount"}} />
                 </InputGroup>
-                <p class="md:col-span-2 text-xs text-gray-500">{{t "storefront.promotions.form.limits-help"}}</p>
+                <p class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400">{{t "storefront.promotions.form.limits-help"}}</p>
             </div>
         </ContentPanel>
 
@@ -157,8 +163,8 @@
                     @label={{t "storefront.promotions.form.stackable"}}
                     @helpText={{t "storefront.promotions.form.stackable-help"}}
                 />
-                <InputGroup @name={{t "storefront.promotions.form.priority"}} @helpText={{t "storefront.promotions.form.priority-help"}}>
-                    <Input @type="number" class="form-input w-full" @value={{this.promotion.priority}} {{on "input" (fn this.setNumber "priority")}} />
+                <InputGroup @name={{t "storefront.promotions.form.priority"}} @helpText={{t "storefront.promotions.form.priority-help"}} as |inputId|>
+                    <Input id={{inputId}} @type="number" class="form-input w-full" placeholder="0" @value={{this.promotion.priority}} {{on "input" (fn this.setNumber "priority")}} />
                 </InputGroup>
                 <Toggle @isToggled={{this.promotion.is_public}} @onToggle={{fn (mut this.promotion.is_public)}} @label={{t "storefront.promotions.form.is-public"}} />
             </div>

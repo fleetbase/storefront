@@ -717,6 +717,9 @@ storefront:
       none: None
       all-customers: All customers
       done: Done
+      no-results: No matching results
+      no-results-help: Try another search or return to the full list.
+      reset-filters: Show all
     statuses:
       draft: Draft
       active: Active
@@ -746,6 +749,9 @@ storefront:
       saved-success: Promotion saved.
       status-updated: Promotion status updated.
       empty: No promotions yet. Create one to offer discounts at checkout.
+      search-placeholder: Search promotions...
+      empty-title: No promotions yet
+      empty-help: Create a promotion to offer discounts at checkout.
     types:
       percentage: Percentage off
       fixed_amount: Amount off
@@ -756,7 +762,9 @@ storefront:
       code: Promo code
     form:
       basics: Basics
+      name-placeholder: e.g. Weekend offer
       name-help: Shown to customers at checkout and in the app.
+      description-placeholder: Describe the offer and any conditions
       description-help: Optional details shown with the deal in the app.
       type-help: How the discount is calculated.
       trigger-help: Automatic promotions apply to every eligible cart; code promotions need a promo code.
@@ -764,22 +772,27 @@ storefront:
       amount-off: Amount off
       buy-quantity: Buy quantity
       get-quantity: Get quantity
-      get-discount-percent: Discount on the free items (%)
+      get-discount-percent: Discount on the get items (%)
       bogo-help: For every group of "buy" + "get" eligible items, the cheapest "get" items are discounted.
       schedule: Schedule
       starts-at: Starts at
       ends-at: Ends at
-      schedule-help: Leave empty to run until paused.
+      schedule-help: Leave the start empty to make the promotion available as soon as it is active. Leave the end empty for no end date.
       conditions: Conditions
       min-subtotal: Minimum spend
       min-items: Minimum items
+      no-minimum: No minimum
+      no-limit: No limit
       first-order-only: First order only
       first-order-only-help: Only customers who have never ordered can use it.
       targeting: Targeting
       targeting-help: Limit the discount to these products or categories. Leave empty for the whole cart.
       products: Products
+      products-placeholder: Search and select products
       categories: Categories
+      categories-placeholder: Search and select categories
       exclude-products: Excluded products
+      exclude-products-placeholder: Search for products to exclude
       limits: Limits
       usage-limit: Total uses
       usage-limit-per-customer: Uses per customer
@@ -794,14 +807,20 @@ storefront:
       is-public: Show in the app's deals
     codes:
       title: Promo codes for {name}
+      help: Generate a batch of unique codes or enter one specific code to share with customers.
       generate: Generate codes
       count: How many
       prefix: Prefix
+      prefix-placeholder: e.g. SUMMER
       length: Code length
       usage-limit: Uses per code
       usage-limit-help: 1 for single-use codes. Leave empty for unlimited.
       specific-code: Or create a specific code
       specific-code-placeholder: e.g. SUMMER25
+      specific-code-help: When entered, only this code is created. The quantity, prefix, and code length above are ignored.
+      loading: Loading promo codes...
+      load-failed: Promo codes could not be loaded.
+      retry: Try again
       code: Code
       used: Used
       expires: Expires
@@ -815,16 +834,30 @@ storefront:
       segment: Audience
       segment-placeholder: All customers
       message-title: Notification title
+      title-placeholder: e.g. Your next order is on offer
       message-body: Notification message
+      body-placeholder: Tell customers about the offer
       send-at: Send at (optional)
+      send-at-help: Leave empty to send when the promotion starts, or immediately if it has already started.
       success: Announcement scheduled.
     campaigns:
       tab-title: Campaigns
       header: Campaigns
       new-campaign: New campaign
       edit-campaign: Edit campaign
+      view-campaign: View campaign
+      search-placeholder: Search campaigns...
+      empty-title: No campaigns yet
+      empty-help: Create a campaign to send updates and offers to your customers.
+      name-placeholder: e.g. Weekend specials announcement
+      name-help: Internal name to help your team identify this campaign.
+      title-placeholder: e.g. Your weekend offers are here
+      body-placeholder: Write the message your customers will receive.
+      read-only-help: This campaign can no longer be edited. Its message and audience are shown for reference.
       audience: Audience
+      audience-help: Select a segment to target a group, or leave empty to include all customers in your organization.
       channels: Channels
+      channels-help: Choose where customers should receive this campaign.
       channel-push: Push notification
       channel-inbox: In-app inbox
       send-at: Send at
@@ -839,11 +872,18 @@ storefront:
       body-label: Notification message
       promotion: Linked promotion
       promotion-help: Tapping the notification opens this promotion.
+      promotion-placeholder: Select a promotion (optional)
       link-url: Or link to a URL
+      link-help: Optional destination when the customer taps the notification.
+      link-placeholder: https://example.com/offers
       when: When to send
       when-draft: Save as draft
       when-now: Send now
       when-schedule: Schedule
+      required-fields: Enter a campaign name, notification title, and message.
+      required-channel: Select at least one delivery channel.
+      required-schedule: Choose a future date and time for this campaign.
+      schedule-help: Select a future date and time in your local time zone.
       saved-success: Campaign saved.
       sent-success: Campaign sent.
       canceled-success: Campaign canceled.
@@ -853,15 +893,26 @@ storefront:
       header: Customer segments
       new-segment: New segment
       edit-segment: Edit segment
+      search-placeholder: Search segments...
+      empty-title: No customer segments yet
+      empty-help: Group customers by their order history and activity to target campaigns.
+      name-placeholder: e.g. Frequent customers
+      description-placeholder: Describe who belongs in this segment (optional).
       rules: Rules
-      rules-help: Customers must match every rule you fill in.
+      rules-help: Customers must match every rule you fill in. Leave a rule empty to ignore it, or leave all rules empty to include every customer in your organization.
+      orders-placeholder: No order count limit
+      days-placeholder: No time limit
+      spend-placeholder: No minimum spend
       min-orders: At least this many orders
       max-orders: At most this many orders
       ordered-within-days: Ordered in the last (days)
       not-ordered-within-days: Has not ordered in the last (days)
       joined-within-days: Joined in the last (days)
       min-spent: Spent at least
+      min-spent-help: Minimum successful payment total across your organization. Leave empty or set to 0 for no minimum.
       has-push-device: Can receive push notifications
       matching: '{count} matching customers'
+      matching-loading: Counting matching customers...
+      matching-unavailable: Customer count is temporarily unavailable.
       saved-success: Segment saved.
       empty: No segments yet. Segments let you target campaigns at groups of customers.

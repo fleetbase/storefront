@@ -39,7 +39,7 @@ export default class ApplicationController extends Controller {
                         label: 'All Products',
                         description: 'Browse and manage product inventory.',
                         icon: 'box',
-                        route: 'console.storefront.products',
+                        route: 'console.storefront.products.index.index',
                         keywords: ['inventory', 'items', 'sku', 'create product', 'add product'],
                     },
                     ...this.productCategoryItems,
@@ -198,13 +198,16 @@ export default class ApplicationController extends Controller {
             .filter((category) => category?.slug)
             .map((category) => {
                 const description = category.description || category.slug;
+                const route = 'console.storefront.products.index.category';
 
                 return {
+                    id: `product-category:${category.id ?? category.slug}`,
                     label: category.name,
                     description,
                     icon: 'folder',
-                    route: 'console.storefront.products.index.category',
-                    models: [category.slug],
+                    // Route-only matching cannot distinguish categories sharing a dynamic route.
+                    activeWhen: () => this.hostRouter.isActive(route, category.slug),
+                    onClick: () => this.hostRouter.transitionTo(route, category.slug),
                     keywords: ['category', 'collection', category.slug, category.name, description].filter(Boolean),
                 };
             });

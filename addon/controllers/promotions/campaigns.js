@@ -95,6 +95,12 @@ export default class PromotionsCampaignsController extends Controller {
         this.page = 1;
     }
 
+    @action resetFilters() {
+        this.query = undefined;
+        this.status = undefined;
+        this.page = 1;
+    }
+
     @action createCampaign() {
         const campaign = this.store.createRecord('campaign', {
             owner_uuid: this.storefront.activeStore.id,
@@ -113,15 +119,36 @@ export default class PromotionsCampaignsController extends Controller {
 
     @action editCampaign(campaign, options = {}) {
         this.modalsManager.show('modals/campaign-form', {
-            title: this.intl.t('storefront.promotions.campaigns.edit-campaign'),
-            acceptButtonText: this.intl.t('storefront.promotions.common.save'),
-            acceptButtonIcon: 'save',
+            title: this.intl.t(campaign.isEditable ? 'storefront.promotions.campaigns.edit-campaign' : 'storefront.promotions.campaigns.view-campaign'),
+            acceptButtonText: this.intl.t(campaign.status === 'scheduled' ? 'storefront.promotions.campaigns.when-schedule' : 'storefront.promotions.campaigns.when-draft'),
+            acceptButtonIcon: campaign.status === 'scheduled' ? 'clock' : 'save',
             acceptButtonDisabled: !campaign.isEditable,
+            hideAcceptButton: !campaign.isEditable,
+            declineButtonText: this.intl.t(campaign.isEditable ? 'storefront.promotions.common.cancel' : 'storefront.promotions.common.done'),
             modalClass: 'modal-lg',
             campaign,
             when: campaign.status === 'scheduled' ? 'schedule' : 'draft',
+            decline: (modal) => {
+                campaign.rollbackAttributes();
+                modal.done();
+            },
             confirm: async (modal) => {
                 const when = modal.getOption('when');
+                if (!campaign.isEditable) {
+                    return;
+                }
+                if (![campaign.name, campaign.title, campaign.body].every((value) => value?.trim())) {
+                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-fields'));
+                    return;
+                }
+                if (!campaign.channels?.length) {
+                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-channel'));
+                    return;
+                }
+                if (when === 'schedule' && !(new Date(campaign.send_at).getTime() > Date.now())) {
+                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-schedule'));
+                    return;
+                }
                 modal.startLoading();
 
                 campaign.status = when === 'schedule' ? 'scheduled' : 'draft';

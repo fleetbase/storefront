@@ -149,16 +149,24 @@ module('Unit | Controller | application', function (hooks) {
             ['All Products', 'Pizza'],
             'products includes all products plus active store product categories'
         );
-        assert.deepEqual(
-            items[1].children.map((item) => item.route),
-            ['console.storefront.products', 'console.storefront.products.index.category'],
-            'product categories link to the category route'
-        );
-        assert.deepEqual(
-            items[1].children.map((item) => item.models ?? null),
-            [null, ['pizza']],
-            'product category route models use category slugs'
-        );
+        assert.strictEqual(items[1].children[0].route, 'console.storefront.products.index.index', 'all products does not match category routes');
+        const categoryItem = items[1].children[1];
+        assert.strictEqual(categoryItem.id, 'product-category:category_uuid', 'category navigation has a stable unique identifier');
+        assert.strictEqual(categoryItem.route, undefined, 'categories do not fall back to shared route-name matching');
+        const hostRouter = this.owner.lookup('service:host-router');
+        hostRouter.isActive = (route, slug) => {
+            assert.strictEqual(route, 'console.storefront.products.index.category');
+            assert.strictEqual(slug, 'pizza', 'category activation includes its slug');
+            return true;
+        };
+        assert.true(categoryItem.activeWhen(), 'the selected category is active');
+        hostRouter.isActive = () => false;
+        assert.false(categoryItem.activeWhen(), 'an unselected category stays inactive');
+        hostRouter.transitionTo = (route, slug) => {
+            assert.strictEqual(route, 'console.storefront.products.index.category');
+            assert.strictEqual(slug, 'pizza', 'category navigation includes its slug');
+        };
+        categoryItem.onClick();
         assert.deepEqual(
             items[8].children.map((item) => item.route),
             [

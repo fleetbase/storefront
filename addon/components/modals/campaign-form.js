@@ -9,15 +9,18 @@ import { action } from '@ember/object';
 export default class ModalsCampaignFormComponent extends Component {
     @service store;
     @service fetch;
+    @service intl;
     @service modalsManager;
     @tracked segment = null;
     @tracked promotion = null;
     @tracked audienceCount = null;
+    savedSegmentUuid = null;
 
     whenOptions = ['draft', 'now', 'schedule'];
 
     constructor() {
         super(...arguments);
+        this.savedSegmentUuid = this.campaign.segment_uuid;
         this.load();
     }
 
@@ -30,7 +33,11 @@ export default class ModalsCampaignFormComponent extends Component {
     }
 
     get hasAudienceCount() {
-        return this.audienceCount !== null;
+        return this.audienceCount !== null && this.campaign.segment_uuid === this.savedSegmentUuid;
+    }
+
+    get isReadOnly() {
+        return !this.campaign.isEditable;
     }
 
     get linkUrl() {
@@ -41,19 +48,36 @@ export default class ModalsCampaignFormComponent extends Component {
 
     async load() {
         if (this.campaign.segment_uuid) {
-            this.segment = await this.store.findRecord('customer-segment', this.campaign.segment_uuid).catch(() => null);
+            const segment = await this.store.findRecord('customer-segment', this.campaign.segment_uuid).catch(() => null);
+            if (this.isDestroying || this.isDestroyed) {
+                return;
+            }
+            if (this.campaign.segment_uuid === this.savedSegmentUuid) {
+                this.segment = segment;
+            }
         }
         if (this.campaign.promotion_uuid) {
-            this.promotion = await this.store.findRecord('promotion', this.campaign.promotion_uuid).catch(() => null);
+            const promotionUuid = this.campaign.promotion_uuid;
+            const promotion = await this.store.findRecord('promotion', promotionUuid).catch(() => null);
+            if (this.isDestroying || this.isDestroyed) {
+                return;
+            }
+            if (this.campaign.promotion_uuid === promotionUuid) {
+                this.promotion = promotion;
+            }
         }
         if (!this.campaign.isNew) {
             const { count } = await this.fetch.get(`campaigns/${this.campaign.id}/audience`, {}, { namespace: 'storefront/int/v1' }).catch(() => ({ count: null }));
-            this.audienceCount = count;
+            if (!this.isDestroying && !this.isDestroyed) {
+                this.audienceCount = count;
+            }
         }
     }
 
     @action setWhen(when) {
         this.modalsManager.setOption('when', when);
+        this.modalsManager.setOption('acceptButtonText', this.intl.t(`storefront.promotions.campaigns.when-${when}`));
+        this.modalsManager.setOption('acceptButtonIcon', when === 'now' ? 'paper-plane' : when === 'schedule' ? 'clock' : 'save');
     }
 
     @action setSegment(segment) {

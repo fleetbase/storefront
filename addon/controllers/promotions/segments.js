@@ -71,6 +71,11 @@ export default class PromotionsSegmentsController extends Controller {
         this.page = 1;
     }
 
+    @action resetFilters() {
+        this.query = undefined;
+        this.page = 1;
+    }
+
     @action createSegment() {
         const segment = this.store.createRecord('customer-segment', {
             owner_uuid: this.storefront.activeStore.id,
@@ -92,8 +97,13 @@ export default class PromotionsSegmentsController extends Controller {
             title: this.intl.t('storefront.promotions.segments.edit-segment'),
             acceptButtonText: this.intl.t('storefront.promotions.common.save'),
             acceptButtonIcon: 'save',
+            modalClass: 'modal-lg',
             segment,
             currency: this.storefront.activeStore?.currency,
+            decline: (modal) => {
+                segment.rollbackAttributes();
+                modal.done();
+            },
             confirm: async (modal) => {
                 modal.startLoading();
 

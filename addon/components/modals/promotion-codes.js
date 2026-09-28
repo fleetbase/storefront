@@ -18,6 +18,8 @@ export default class ModalsPromotionCodesComponent extends Component {
     @tracked usageLimit = 1;
     @tracked specificCode = '';
     @tracked isGenerating = false;
+    @tracked isLoading = false;
+    @tracked loadFailed = false;
 
     constructor() {
         super(...arguments);
@@ -28,8 +30,22 @@ export default class ModalsPromotionCodesComponent extends Component {
         return this.args.options.promotion;
     }
 
-    async loadCodes() {
-        this.codes = await this.store.query('promotion-code', { promotion: this.promotion.id, limit: 500, sort: '-created_at' });
+    get hasSpecificCode() {
+        return this.specificCode.trim().length > 0;
+    }
+
+    @action async loadCodes() {
+        this.isLoading = true;
+        this.loadFailed = false;
+
+        try {
+            this.codes = await this.store.query('promotion-code', { promotion: this.promotion.id, limit: 500, sort: '-created_at' });
+        } catch (error) {
+            this.loadFailed = true;
+            this.notifications.serverError(error);
+        } finally {
+            this.isLoading = false;
+        }
     }
 
     @action setValue(property, { target }) {
@@ -37,10 +53,14 @@ export default class ModalsPromotionCodesComponent extends Component {
     }
 
     @action async generate() {
+        if (this.isGenerating) {
+            return;
+        }
+
         this.isGenerating = true;
 
-        const body = this.specificCode
-            ? { code: this.specificCode, usage_limit: this.usageLimit || null }
+        const body = this.hasSpecificCode
+            ? { code: this.specificCode.trim(), usage_limit: this.usageLimit || null }
             : { count: Number(this.count) || 1, prefix: this.prefix, length: Number(this.length) || 8, usage_limit: this.usageLimit || null };
 
         try {

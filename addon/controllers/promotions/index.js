@@ -111,6 +111,12 @@ export default class PromotionsIndexController extends Controller {
         this.page = 1;
     }
 
+    @action resetFilters() {
+        this.query = undefined;
+        this.status = undefined;
+        this.page = 1;
+    }
+
     @action createPromotion() {
         const activeStore = this.storefront.activeStore;
         const promotion = this.store.createRecord('promotion', {
@@ -140,6 +146,10 @@ export default class PromotionsIndexController extends Controller {
             promotion,
             currency: promotion.currency ?? this.storefront.activeStore?.currency,
             storeId: this.storefront.activeStore?.id,
+            decline: (modal) => {
+                promotion.rollbackAttributes();
+                modal.done();
+            },
             confirm: async (modal) => {
                 modal.startLoading();
 

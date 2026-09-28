@@ -1,80 +1,131 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
-    <div class="modal-body-container space-y-3">
-        {{#if this.hasAudienceCount}}
-            <div class="text-sm text-gray-600 dark:text-gray-300">{{t "storefront.promotions.campaigns.audience-count" count=this.audienceCount}}</div>
+    <div class="p-4">
+        {{#if this.isReadOnly}}
+            <p class="mb-4 rounded-md bg-gray-50 p-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">{{t "storefront.promotions.campaigns.read-only-help"}}</p>
         {{/if}}
-        <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.campaign.name}} />
-        <InputGroup @name={{t "storefront.promotions.campaigns.title-label"}} @value={{this.campaign.title}} />
-        <InputGroup @name={{t "storefront.promotions.campaigns.body-label"}}>
-            <Textarea @value={{this.campaign.body}} class="form-input w-full" rows="3" />
-        </InputGroup>
-
-        <InputGroup @name={{t "storefront.promotions.campaigns.audience"}}>
-            <ModelSelect
-                @modelName="customer-segment"
-                @selectedModel={{this.segment}}
-                @query={{hash owner=this.campaign.owner_uuid}}
-                @placeholder={{t "storefront.promotions.common.all-customers"}}
-                @triggerClass="form-select form-input"
-                @renderInPlace={{true}}
-                @infiniteScroll={{false}}
-                @allowClear={{true}}
-                @onChange={{this.setSegment}}
-                as |segment|
-            >
-                {{segment.name}}
-            </ModelSelect>
-        </InputGroup>
-
-        <InputGroup @name={{t "storefront.promotions.campaigns.channels"}}>
-            <div class="flex space-x-6">
-                <Checkbox @value={{this.hasChannel "push"}} @label={{t "storefront.promotions.campaigns.channel-push"}} @onToggle={{fn this.toggleChannel "push"}} />
-                <Checkbox @value={{this.hasChannel "inbox"}} @label={{t "storefront.promotions.campaigns.channel-inbox"}} @onToggle={{fn this.toggleChannel "inbox"}} />
-            </div>
-        </InputGroup>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <InputGroup @name={{t "storefront.promotions.campaigns.promotion"}} @helpText={{t "storefront.promotions.campaigns.promotion-help"}}>
-                <ModelSelect
-                    @modelName="promotion"
-                    @selectedModel={{this.promotion}}
-                    @query={{hash owner=this.campaign.owner_uuid}}
-                    @placeholder={{t "storefront.promotions.common.none"}}
-                    @triggerClass="form-select form-input"
-                    @renderInPlace={{true}}
-                    @infiniteScroll={{false}}
-                    @allowClear={{true}}
-                    @onChange={{this.setPromotion}}
-                    as |promotion|
-                >
-                    {{promotion.name}}
-                </ModelSelect>
+        <fieldset disabled={{this.isReadOnly}} class="form-wrapper min-w-0">
+            <InputGroup
+                @name={{t "storefront.promotions.common.name"}}
+                @value={{this.campaign.name}}
+                @placeholder={{t "storefront.promotions.campaigns.name-placeholder"}}
+                @helpText={{t "storefront.promotions.campaigns.name-help"}}
+                @required={{true}}
+                maxlength="191"
+            />
+            <InputGroup
+                @name={{t "storefront.promotions.campaigns.title-label"}}
+                @value={{this.campaign.title}}
+                @placeholder={{t "storefront.promotions.campaigns.title-placeholder"}}
+                @required={{true}}
+                maxlength="191"
+            />
+            <InputGroup @name={{t "storefront.promotions.campaigns.body-label"}} @required={{true}} as |id|>
+                <Textarea
+                    id={{id}}
+                    @value={{this.campaign.body}}
+                    placeholder={{t "storefront.promotions.campaigns.body-placeholder"}}
+                    class="form-input w-full"
+                    rows="3"
+                    maxlength="2000"
+                    required
+                />
             </InputGroup>
-            {{#unless this.promotion}}
-                <InputGroup @name={{t "storefront.promotions.campaigns.link-url"}}>
-                    <Input class="form-input w-full" placeholder="https://" @value={{this.linkUrl}} {{on "change" this.setLinkUrl}} />
-                </InputGroup>
-            {{/unless}}
-        </div>
 
-        {{#if this.campaign.isEditable}}
-            <InputGroup @name={{t "storefront.promotions.campaigns.when"}}>
-                <div class="flex space-x-2">
-                    {{#each this.whenOptions as |option|}}
-                        <Button
-                            @size="sm"
-                            @type={{if (eq this.when option) "primary" "default"}}
-                            @text={{t (concat "storefront.promotions.campaigns.when-" option)}}
-                            @onClick={{fn this.setWhen option}}
+            <div class="border-t border-gray-200 pt-4 dark:border-gray-700 form-wrapper">
+                <InputGroup @name={{t "storefront.promotions.campaigns.audience"}} @helpText={{t "storefront.promotions.campaigns.audience-help"}} as |id|>
+                    <ModelSelect
+                        @modelName="customer-segment"
+                        @selectedModel={{this.segment}}
+                        @query={{hash owner=this.campaign.owner_uuid}}
+                        @placeholder={{t "storefront.promotions.common.all-customers"}}
+                        @triggerId={{id}}
+                        @triggerClass="form-select form-input"
+                        @renderInPlace={{true}}
+                        @infiniteScroll={{false}}
+                        @allowClear={{true}}
+                        @disabled={{this.isReadOnly}}
+                        @onChange={{this.setSegment}}
+                        as |segment|
+                    >
+                        {{segment.name}}
+                    </ModelSelect>
+                </InputGroup>
+                {{#if this.hasAudienceCount}}
+                    <p class="text-sm text-gray-600 dark:text-gray-300">{{t "storefront.promotions.campaigns.audience-count" count=this.audienceCount}}</p>
+                {{/if}}
+                <InputGroup @name={{t "storefront.promotions.campaigns.channels"}} @helpText={{t "storefront.promotions.campaigns.channels-help"}} @required={{true}}>
+                    <div class="flex flex-wrap gap-x-6 gap-y-3 py-1">
+                        <Checkbox
+                            @value={{this.hasChannel "push"}}
+                            @label={{t "storefront.promotions.campaigns.channel-push"}}
+                            @disabled={{this.isReadOnly}}
+                            @onToggle={{fn this.toggleChannel "push"}}
                         />
-                    {{/each}}
-                </div>
-            </InputGroup>
-            {{#if (eq this.when "schedule")}}
-                <InputGroup @name={{t "storefront.promotions.campaigns.send-at"}}>
-                    <DateTimeInput class="form-input w-full" @value={{this.campaign.send_at}} @onUpdate={{fn (mut this.campaign.send_at)}} />
+                        <Checkbox
+                            @value={{this.hasChannel "inbox"}}
+                            @label={{t "storefront.promotions.campaigns.channel-inbox"}}
+                            @disabled={{this.isReadOnly}}
+                            @onToggle={{fn this.toggleChannel "inbox"}}
+                        />
+                    </div>
                 </InputGroup>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 border-t border-gray-200 pt-4 dark:border-gray-700 md:grid-cols-2">
+                <InputGroup @name={{t "storefront.promotions.campaigns.promotion"}} @helpText={{t "storefront.promotions.campaigns.promotion-help"}} as |id|>
+                    <ModelSelect
+                        @modelName="promotion"
+                        @selectedModel={{this.promotion}}
+                        @query={{hash owner=this.campaign.owner_uuid}}
+                        @placeholder={{t "storefront.promotions.campaigns.promotion-placeholder"}}
+                        @triggerId={{id}}
+                        @triggerClass="form-select form-input"
+                        @renderInPlace={{true}}
+                        @infiniteScroll={{false}}
+                        @allowClear={{true}}
+                        @disabled={{this.isReadOnly}}
+                        @onChange={{this.setPromotion}}
+                        as |promotion|
+                    >
+                        {{promotion.name}}
+                    </ModelSelect>
+                </InputGroup>
+                {{#unless this.promotion}}
+                    <InputGroup @name={{t "storefront.promotions.campaigns.link-url"}} @helpText={{t "storefront.promotions.campaigns.link-help"}} as |id|>
+                        <Input
+                            id={{id}}
+                            @type="url"
+                            class="form-input w-full"
+                            placeholder={{t "storefront.promotions.campaigns.link-placeholder"}}
+                            @value={{this.linkUrl}}
+                            {{on "input" this.setLinkUrl}}
+                        />
+                    </InputGroup>
+                {{/unless}}
+            </div>
+
+            {{#if this.campaign.isEditable}}
+                <div class="border-t border-gray-200 pt-4 dark:border-gray-700 form-wrapper">
+                    <InputGroup @name={{t "storefront.promotions.campaigns.when"}}>
+                        <div class="flex flex-wrap gap-2">
+                            {{#each this.whenOptions as |option|}}
+                                <Button
+                                    @size="sm"
+                                    @type={{if (eq this.when option) "primary" "default"}}
+                                    @text={{t (concat "storefront.promotions.campaigns.when-" option)}}
+                                    @onClick={{fn this.setWhen option}}
+                                    aria-pressed={{if (eq this.when option) "true" "false"}}
+                                />
+                            {{/each}}
+                        </div>
+                    </InputGroup>
+                    {{#if (eq this.when "schedule")}}
+                        <InputGroup @name={{t "storefront.promotions.campaigns.send-at"}} @helpText={{t "storefront.promotions.campaigns.schedule-help"}} @required={{true}}>
+                            <DateTimeInput class="form-input w-full" @value={{this.campaign.send_at}} @onUpdate={{fn (mut this.campaign.send_at)}} />
+                        </InputGroup>
+                    {{/if}}
+                </div>
             {{/if}}
-        {{/if}}
+        </fieldset>
     </div>
 </Modal::Default>

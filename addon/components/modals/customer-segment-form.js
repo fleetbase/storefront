@@ -2,7 +2,7 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { debounce } from '@ember/runloop';
+import { cancel, debounce } from '@ember/runloop';
 
 /**
  * Create / edit a customer segment with a live count of matching customers.
@@ -10,15 +10,27 @@ import { debounce } from '@ember/runloop';
 export default class ModalsCustomerSegmentFormComponent extends Component {
     @service fetch;
     @tracked matching = null;
+    @tracked isLoadingCount = false;
+    @tracked countUnavailable = false;
+    countDebounce = null;
+    countRevision = 0;
 
     numberRules = ['min_orders', 'max_orders', 'ordered_within_days', 'not_ordered_within_days', 'joined_within_days'].map((key) => ({
         key,
         label: `storefront.promotions.segments.${key.replace(/_/g, '-')}`,
+        minimum: key.endsWith('_days') ? 1 : 0,
+        placeholder: key.endsWith('_days') ? 'storefront.promotions.segments.days-placeholder' : 'storefront.promotions.segments.orders-placeholder',
     }));
 
     constructor() {
         super(...arguments);
         this.refreshCount();
+    }
+
+    willDestroy() {
+        super.willDestroy(...arguments);
+        cancel(this.countDebounce);
+        this.countRevision++;
     }
 
     get segment() {
@@ -41,7 +53,11 @@ export default class ModalsCustomerSegmentFormComponent extends Component {
             rules[key] = value;
         }
         this.segment.rules = rules;
-        debounce(this, this.refreshCount, 400);
+        this.countRevision++;
+        this.matching = null;
+        this.countUnavailable = false;
+        this.isLoadingCount = true;
+        this.countDebounce = debounce(this, this.refreshCount, 400);
     }
 
     @action setNumberRule(key, { target }) {
@@ -49,7 +65,7 @@ export default class ModalsCustomerSegmentFormComponent extends Component {
     }
 
     @action setMoneyRule(key, value) {
-        this.setRule(key, value || null);
+        this.setRule(key, Number(value) === 0 ? null : value);
     }
 
     @action setBooleanRule(key, value) {
@@ -57,11 +73,27 @@ export default class ModalsCustomerSegmentFormComponent extends Component {
     }
 
     async refreshCount() {
+        if (this.isDestroying || this.isDestroyed) {
+            return;
+        }
+
+        const revision = ++this.countRevision;
+        this.isLoadingCount = true;
+        this.countUnavailable = false;
         try {
             const { count } = await this.fetch.post('customer-segments/preview', { owner_uuid: this.segment.owner_uuid, rules: this.rules }, { namespace: 'storefront/int/v1' });
-            this.matching = count;
+            if (!this.isDestroying && !this.isDestroyed && revision === this.countRevision) {
+                this.matching = count;
+            }
         } catch {
-            this.matching = null;
+            if (!this.isDestroying && !this.isDestroyed && revision === this.countRevision) {
+                this.matching = null;
+                this.countUnavailable = true;
+            }
+        } finally {
+            if (!this.isDestroying && !this.isDestroyed && revision === this.countRevision) {
+                this.isLoadingCount = false;
+            }
         }
     }
 }
