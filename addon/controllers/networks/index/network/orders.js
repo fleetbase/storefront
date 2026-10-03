@@ -1,11 +1,11 @@
-import Controller from '@ember/controller';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { inject as service } from '@ember/service';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
 import { action } from '@ember/object';
 
-export default class NetworksIndexNetworkOrdersController extends Controller {
+export default class NetworksIndexNetworkOrdersController extends BaseController {
     /**
      * Inject the `notifications` service
      *
@@ -55,7 +55,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
      *
      * @var {Array}
      */
-    queryParams = [];
+    queryParams = this.registeredQueryParams('network-order', []);
 
     @tracked page = 1;
     @tracked limit;
@@ -76,6 +76,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
 
     @tracked columns = [
         {
+            id: 'public-id',
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             width: '150px',
@@ -87,6 +88,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'internal-id',
             label: this.intl.t('storefront.orders.index.internal-id'),
             valuePath: 'internal_id',
             width: '125px',
@@ -96,6 +98,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'customer-name',
             label: this.intl.t('storefront.orders.index.customer'),
             valuePath: 'customer.name',
             cellComponent: 'table/cell/base',
@@ -110,6 +113,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             model: 'customer',
         },
         {
+            id: 'pickup-name',
             label: this.intl.t('storefront.common.pickup'),
             valuePath: 'pickupName',
             cellComponent: 'table/cell/base',
@@ -123,6 +127,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             model: 'place',
         },
         {
+            id: 'dropoff-name',
             label: this.intl.t('storefront.common.dropoff'),
             valuePath: 'dropoffName',
             cellComponent: 'table/cell/base',
@@ -136,6 +141,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             model: 'place',
         },
         {
+            id: 'scheduled-at',
             label: this.intl.t('storefront.orders.index.scheduled-at'),
             valuePath: 'scheduledAt',
             sortParam: 'scheduled_at',
@@ -147,6 +153,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/date',
         },
         {
+            id: 'item-count',
             label: '# Items',
             cellComponent: 'table/cell/base',
             valuePath: 'item_count',
@@ -155,6 +162,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             width: '50px',
         },
         {
+            id: 'transaction-amount',
             label: this.intl.t('storefront.orders.index.transaction-total'),
             cellComponent: 'table/cell/base',
             valuePath: 'transaction_amount',
@@ -164,6 +172,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             sortable: true,
         },
         {
+            id: 'tracking-number-tracking-number',
             label: this.intl.t('storefront.orders.index.tracking-number'),
             cellComponent: 'table/cell/base',
             valuePath: 'tracking_number.tracking_number',
@@ -174,6 +183,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'driver-assigned',
             label: this.intl.t('storefront.orders.index.driver-assigned'),
             cellComponent: 'table/cell/driver-name',
             valuePath: 'driver_assigned',
@@ -192,6 +202,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             },
         },
         {
+            id: 'type',
             label: this.intl.t('storefront.common.type'),
             cellComponent: 'cell/humanize',
             valuePath: 'type',
@@ -201,6 +212,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             sortable: true,
         },
         {
+            id: 'status',
             label: this.intl.t('storefront.common.status'),
             valuePath: 'status',
             cellComponent: 'table/cell/status',
@@ -212,6 +224,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             // filterOptions: this.statusOptions,
         },
         {
+            id: 'created-at',
             label: this.intl.t('storefront.orders.index.created-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
@@ -223,6 +236,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/date',
         },
         {
+            id: 'updated-at',
             label: this.intl.t('storefront.orders.index.updated-at'),
             valuePath: 'updatedAt',
             sortParam: 'updated_at',
@@ -235,6 +249,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             filterComponent: 'filter/date',
         },
         {
+            id: 'created-by-name',
             label: this.intl.t('storefront.orders.index.created-by'),
             valuePath: 'created_by_name',
             width: '125px',
@@ -247,6 +262,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             model: 'user',
         },
         {
+            id: 'updated-by-name',
             label: this.intl.t('storefront.orders.index.updated-by'),
             valuePath: 'updated_by_name',
             width: '125px',
@@ -259,6 +275,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             model: 'user',
         },
         {
+            id: 'row-actions',
             label: '',
             cellComponent: 'table/cell/dropdown',
             ddButtonText: false,
@@ -270,11 +287,13 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
             width: '12%',
             actions: [
                 {
+                    id: 'view-order',
                     label: this.intl.t('storefront.orders.index.view-order'),
                     icon: 'eye',
                     fn: this.viewOrder,
                 },
                 {
+                    id: 'cancel-order',
                     label: this.intl.t('storefront.orders.index.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
@@ -283,6 +302,7 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
                     separator: true,
                 },
                 {
+                    id: 'delete-order',
                     label: this.intl.t('storefront.orders.index.delete-order'),
                     icon: 'trash',
                     fn: this.deleteOrder,
@@ -321,5 +341,23 @@ export default class NetworksIndexNetworkOrdersController extends Controller {
 
     @action viewOrder(order) {
         return this.storefrontOrderActions.viewOrder(order);
+    }
+
+    /**
+     * The columns with what extensions registered under `storefront:table:network-order` merged in.
+     *
+     * @var {Array}
+     */
+    @cached get registeredColumns() {
+        return this.mergeRegisteredColumns('network-order', this.columns);
+    }
+
+    /**
+     * Toolbar buttons extensions registered under `storefront:table:network-order:actions`.
+     *
+     * @var {Array}
+     */
+    get registeredActionButtons() {
+        return this.registeredTableActions('network-order');
     }
 }

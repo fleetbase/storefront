@@ -33,7 +33,7 @@ export default class OrdersIndexController extends BaseController {
     @tracked status;
     @tracked currency = 'USD';
 
-    @tracked queryParams = [
+    @tracked queryParams = this.registeredQueryParams('order', [
         'page',
         'limit',
         'sort',
@@ -50,10 +50,61 @@ export default class OrdersIndexController extends BaseController {
         'created_by',
         'updated_by',
         'status',
-    ];
+    ]);
+
+    /**
+     * Header buttons. Extensions add to them through `storefront:table:order:actions`.
+     *
+     * @var {Array}
+     */
+    get actionButtons() {
+        return [
+            {
+                id: 'export',
+                icon: 'long-arrow-up',
+                iconClass: 'rotate-icon-45',
+                text: this.intl.t('storefront.common.export'),
+                permission: 'storefront export order',
+            },
+        ];
+    }
+
+    /**
+     * Bulk actions for the selected orders. Extensions add to them through `storefront:table:order:bulk-actions`.
+     *
+     * @var {Array}
+     */
+    get bulkActions() {
+        return [
+            {
+                id: 'bulk-cancel',
+                label: this.intl.t('storefront.component.widget.orders.cancel-orders'),
+                icon: 'ban',
+                fn: this.bulkCancelOrders,
+                permission: 'fleet-ops cancel order',
+            },
+            {
+                id: 'bulk-delete',
+                label: this.intl.t('fleet-ops.operations.orders.index.delete-orders'),
+                icon: 'trash',
+                class: 'text-red-500',
+                fn: this.bulkDeleteOrders,
+                permission: 'fleet-ops delete order',
+            },
+            { separator: true },
+            {
+                id: 'bulk-dispatch',
+                label: this.intl.t('fleet-ops.operations.orders.index.dispatch-orders'),
+                icon: 'rocket',
+                fn: this.bulkDispatchOrders,
+                permission: 'fleet-ops dispatch order',
+            },
+        ];
+    }
 
     @tracked columns = [
         {
+            id: 'public-id',
             sticky: true,
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
@@ -66,6 +117,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'internal-id',
             label: this.intl.t('storefront.orders.index.internal-id'),
             valuePath: 'internal_id',
             width: '125px',
@@ -76,6 +128,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'customer-name',
             label: this.intl.t('storefront.orders.index.customer'),
             valuePath: 'customer.name',
             cellComponent: 'table/cell/base',
@@ -90,6 +143,7 @@ export default class OrdersIndexController extends BaseController {
             model: 'customer',
         },
         {
+            id: 'meta-total',
             label: this.intl.t('storefront.orders.index.total'),
             cellComponent: 'table/cell/currency',
             currency: this.currency,
@@ -100,6 +154,7 @@ export default class OrdersIndexController extends BaseController {
             sortable: true,
         },
         {
+            id: 'pickup-name',
             label: this.intl.t('storefront.common.pickup'),
             valuePath: 'pickupName',
             cellComponent: 'table/cell/base',
@@ -113,6 +168,7 @@ export default class OrdersIndexController extends BaseController {
             model: 'place',
         },
         {
+            id: 'dropoff-name',
             label: this.intl.t('storefront.common.dropoff'),
             valuePath: 'dropoffName',
             cellComponent: 'table/cell/base',
@@ -126,6 +182,7 @@ export default class OrdersIndexController extends BaseController {
             model: 'place',
         },
         {
+            id: 'driver-assigned',
             label: this.intl.t('storefront.orders.index.driver-assigned'),
             cellComponent: 'table/cell/driver-name',
             valuePath: 'driver_assigned',
@@ -144,6 +201,7 @@ export default class OrdersIndexController extends BaseController {
             },
         },
         {
+            id: 'scheduled-at',
             label: this.intl.t('storefront.orders.index.scheduled-at'),
             valuePath: 'scheduledAt',
             sortParam: 'scheduled_at',
@@ -156,6 +214,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/date',
         },
         {
+            id: 'item-count',
             label: '# Items',
             cellComponent: 'table/cell/base',
             valuePath: 'item_count',
@@ -164,6 +223,7 @@ export default class OrdersIndexController extends BaseController {
             width: '50px',
         },
         {
+            id: 'tracking-number-tracking-number',
             label: this.intl.t('storefront.orders.index.tracking-number'),
             cellComponent: 'table/cell/base',
             valuePath: 'tracking_number.tracking_number',
@@ -174,6 +234,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'type',
             label: this.intl.t('storefront.common.type'),
             cellComponent: 'cell/humanize',
             valuePath: 'type',
@@ -183,6 +244,7 @@ export default class OrdersIndexController extends BaseController {
             sortable: true,
         },
         {
+            id: 'status',
             label: this.intl.t('storefront.common.status'),
             valuePath: 'status',
             cellComponent: 'table/cell/status',
@@ -194,6 +256,7 @@ export default class OrdersIndexController extends BaseController {
             // filterOptions: this.statusOptions,
         },
         {
+            id: 'created-at-short',
             label: this.intl.t('storefront.orders.index.created-at'),
             valuePath: 'createdAtShort',
             sortParam: 'created_at',
@@ -205,6 +268,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/date',
         },
         {
+            id: 'updated-at-short',
             label: this.intl.t('storefront.orders.index.updated-at'),
             valuePath: 'updatedAtShort',
             sortParam: 'updated_at',
@@ -217,6 +281,7 @@ export default class OrdersIndexController extends BaseController {
             filterComponent: 'filter/date',
         },
         {
+            id: 'created-by-name',
             label: this.intl.t('storefront.orders.index.created-by'),
             valuePath: 'created_by_name',
             width: '125px',
@@ -229,6 +294,7 @@ export default class OrdersIndexController extends BaseController {
             model: 'user',
         },
         {
+            id: 'updated-by-name',
             label: this.intl.t('storefront.orders.index.updated-by'),
             valuePath: 'updated_by_name',
             width: '125px',
@@ -241,6 +307,7 @@ export default class OrdersIndexController extends BaseController {
             model: 'user',
         },
         {
+            id: 'row-actions',
             label: '',
             cellComponent: 'table/cell/dropdown',
             ddButtonText: false,
@@ -253,12 +320,14 @@ export default class OrdersIndexController extends BaseController {
             width: 60,
             actions: [
                 {
+                    id: 'view-order',
                     label: this.intl.t('fleet-ops.operations.orders.index.view-order'),
                     icon: 'eye',
                     fn: this.viewOrder,
                     permission: 'fleet-ops view order',
                 },
                 {
+                    id: 'dispatch-order',
                     label: this.intl.t('fleet-ops.operations.orders.index.dispatch-order'),
                     icon: 'paper-plane',
                     fn: this.dispatchOrder,
@@ -266,6 +335,7 @@ export default class OrdersIndexController extends BaseController {
                     isVisible: (order) => order.canBeDispatched,
                 },
                 {
+                    id: 'cancel-order',
                     label: this.intl.t('storefront.component.widget.orders.cancel-order'),
                     icon: 'ban',
                     fn: this.cancelOrder,
@@ -275,6 +345,7 @@ export default class OrdersIndexController extends BaseController {
                     separator: true,
                 },
                 {
+                    id: 'delete-order',
                     label: this.intl.t('fleet-ops.operations.orders.index.delete-order'),
                     icon: 'trash',
                     fn: this.deleteOrder,

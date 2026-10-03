@@ -5,6 +5,7 @@
     @onSearch={{this.search}}
 >
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
+    <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
 <Layout::Section::Body>
@@ -12,7 +13,7 @@
         <Table
             @wrapperClass="overscroll-y-none"
             @rows={{@model}}
-            @columns={{this.columns}}
+            @columns={{this.registeredColumns}}
             @selectable={{false}}
             @canSelectAll={{false}}
             @pagination={{true}}

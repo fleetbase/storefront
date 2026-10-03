@@ -31,6 +31,7 @@ export default class StorefrontOrderActionsService extends Service {
             header: 'storefront/order/panel-header',
             tabs: this.tabsFor(hydratedOrder),
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
+            registry: 'storefront:details:order',
             width: '560px',
             size: 'sm',
             dismissible: false,
@@ -75,6 +76,7 @@ export default class StorefrontOrderActionsService extends Service {
     actionItemsFor(order, callback) {
         const isTerminal = this.storefrontOrderWorkflow.isTerminal(order);
         const workflowItems = this.storefrontOrderWorkflow.primaryActionDescriptorsFor(order).map((descriptor) => ({
+            id: 'perform-workflow-action',
             text: descriptor.text,
             icon: descriptor.icon,
             type: descriptor.type,
@@ -93,6 +95,7 @@ export default class StorefrontOrderActionsService extends Service {
                 separator: true,
             },
             {
+                id: 'cancel-order',
                 text: 'Cancel order',
                 icon: 'ban',
                 class: 'text-danger',
