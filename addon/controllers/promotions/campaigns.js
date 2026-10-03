@@ -230,7 +230,7 @@ export default class PromotionsCampaignsController extends BaseController {
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:campaign` merged in.
+     * The columns with what extensions registered under `storefront:campaign:table` merged in.
      *
      * @var {Array}
      */
@@ -239,7 +239,7 @@ export default class PromotionsCampaignsController extends BaseController {
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:campaign:actions`.
+     * Toolbar buttons extensions registered under `storefront:campaign:table:actions`.
      *
      * @var {Array}
      */

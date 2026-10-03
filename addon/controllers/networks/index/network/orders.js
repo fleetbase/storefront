@@ -344,7 +344,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:network-order` merged in.
+     * The columns with what extensions registered under `storefront:network-order:table` merged in.
      *
      * @var {Array}
      */
@@ -353,7 +353,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:network-order:actions`.
+     * Toolbar buttons extensions registered under `storefront:network-order:table:actions`.
      *
      * @var {Array}
      */

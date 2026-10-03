@@ -13,7 +13,7 @@ export default class BaseController extends Controller {
 
     /**
      * The query params an index controller declares, plus the filter params of
-     * columns extensions registered under `storefront:table:<resource>`.
+     * columns extensions registered under `storefront:<resource>:table`.
      *
      * @param {String} resource e.g. 'order'
      * @param {Array} baseQueryParams
@@ -25,7 +25,7 @@ export default class BaseController extends Controller {
 
     /**
      * `columns` with the columns and row actions extensions registered under
-     * `storefront:table:<resource>` merged in, for views that render their own `<Table>`.
+     * `storefront:<resource>:table` merged in, for views that render their own `<Table>`.
      *
      * @param {String} resource e.g. 'promotion'
      * @param {Array} columns
@@ -37,19 +37,19 @@ export default class BaseController extends Controller {
             return columns;
         }
 
-        const registry = `storefront:table:${resource}`;
+        const registry = `storefront:${resource}:table`;
         const context = { controller: this };
         return resourceView.mergeRowActions(registry, resourceView.mergeSlot(registry, 'columns', columns, context), context);
     }
 
     /**
-     * The toolbar buttons extensions registered under `storefront:table:<resource>:actions`,
+     * The toolbar buttons extensions registered under `storefront:<resource>:table:actions`,
      * for views that lay out their own header.
      *
      * @param {String} resource
      * @returns {Array}
      */
     registeredTableActions(resource) {
-        return mergeHeaderButtons(lookupResourceView(getOwner(this)), `storefront:table:${resource}`, [], { controller: this });
+        return mergeHeaderButtons(lookupResourceView(getOwner(this)), `storefront:${resource}:table`, [], { controller: this });
     }
 }

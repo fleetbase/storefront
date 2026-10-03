@@ -659,7 +659,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:network-store` merged in.
+     * The columns with what extensions registered under `storefront:network-store:table` merged in.
      *
      * @var {Array}
      */
@@ -668,7 +668,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:network-store:actions`.
+     * Toolbar buttons extensions registered under `storefront:network-store:table:actions`.
      *
      * @var {Array}
      */

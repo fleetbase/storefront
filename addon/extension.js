@@ -236,7 +236,7 @@ export default {
         );
 
         // Declare the registries extensions can add table columns, actions and
-        // buttons to, e.g. `storefront:table:order:columns` or `storefront:details:order:menu`.
+        // buttons to, e.g. `storefront:order:table:columns` or `storefront:order:details:menu`.
         universe
             .getService('universe/resource-view-service')
             ?.declare('storefront', ['campaign', 'customer', 'customer-segment', 'network-customer', 'network-order', 'network-store', 'order', 'promotion']);

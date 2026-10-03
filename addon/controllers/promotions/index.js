@@ -259,7 +259,7 @@ export default class PromotionsIndexController extends BaseController {
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:promotion` merged in.
+     * The columns with what extensions registered under `storefront:promotion:table` merged in.
      *
      * @var {Array}
      */
@@ -268,7 +268,7 @@ export default class PromotionsIndexController extends BaseController {
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:promotion:actions`.
+     * Toolbar buttons extensions registered under `storefront:promotion:table:actions`.
      *
      * @var {Array}
      */

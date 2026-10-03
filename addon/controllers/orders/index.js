@@ -53,7 +53,7 @@ export default class OrdersIndexController extends BaseController {
     ]);
 
     /**
-     * Header buttons. Extensions add to them through `storefront:table:order:actions`.
+     * Header buttons. Extensions add to them through `storefront:order:table:actions`.
      *
      * @var {Array}
      */
@@ -70,7 +70,7 @@ export default class OrdersIndexController extends BaseController {
     }
 
     /**
-     * Bulk actions for the selected orders. Extensions add to them through `storefront:table:order:bulk-actions`.
+     * Bulk actions for the selected orders. Extensions add to them through `storefront:order:table:bulk-actions`.
      *
      * @var {Array}
      */

@@ -73,7 +73,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:network-customer` merged in.
+     * The columns with what extensions registered under `storefront:network-customer:table` merged in.
      *
      * @var {Array}
      */
@@ -82,7 +82,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:network-customer:actions`.
+     * Toolbar buttons extensions registered under `storefront:network-customer:table:actions`.
      *
      * @var {Array}
      */

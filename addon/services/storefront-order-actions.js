@@ -31,7 +31,7 @@ export default class StorefrontOrderActionsService extends Service {
             header: 'storefront/order/panel-header',
             tabs: this.tabsFor(hydratedOrder),
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
-            registry: 'storefront:details:order',
+            registry: 'storefront:order:details',
             width: '560px',
             size: 'sm',
             dismissible: false,

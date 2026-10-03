@@ -133,7 +133,7 @@ export default class PromotionsSegmentsController extends BaseController {
     }
 
     /**
-     * The columns with what extensions registered under `storefront:table:customer-segment` merged in.
+     * The columns with what extensions registered under `storefront:customer-segment:table` merged in.
      *
      * @var {Array}
      */
@@ -142,7 +142,7 @@ export default class PromotionsSegmentsController extends BaseController {
     }
 
     /**
-     * Toolbar buttons extensions registered under `storefront:table:customer-segment:actions`.
+     * Toolbar buttons extensions registered under `storefront:customer-segment:table:actions`.
      *
      * @var {Array}
      */
