@@ -1,11 +1,19 @@
-> v0.4.23 ~ "A busy store can no longer rate-limit every other store"
+> v0.4.24 ~ "Extensions can add columns, actions and buttons to storefront tables and panels"
 
 ---
 ## Highlights
 
-The Storefront API rate limiter is isolated per store and per device. It ran before the storefront session was set up, so it keyed every bucket on the client IP. Behind a load balancer that is the balancer's address, so every store shared one bucket, and the key was identical to core-api's API limiter. One busy store, or one busy integration on the core API, could return `429 Too many requests` to every Storefront app on the platform. The limiter now keys on the store key plus the client IP, so each device of each store has its own limit. (#108)
+- **Resource view registries.** Extensions can add the following through `storefront:table:<resource>:<slot>` and `storefront:details:<resource>:<slot>`:
+  - columns, row actions, bulk actions and toolbar buttons on the orders, customers, promotions, campaigns, segments and network tables;
+  - buttons and menu items on the order and customer panels.
+- **Orders use the standard table layout.**
 
 ---
-## Upgrade Steps
+## Upgrading
+Needs fleetbase/ember-core v0.3.25 and fleetbase/ember-ui v0.4.5.
 
-No migrations. Deploy alongside Fleetbase `0.7.66` (Core API `1.6.66`), which also moves the core API limiter to per-consumer buckets and resolves the real client IP behind proxies (`TRUSTED_PROXIES`).
+---
+## Need help?
+- [GitHub Discussions](https://github.com/fleetbase/fleetbase/discussions)
+- [Discord](https://discord.gg/HnTqQ6zAVn)
+---
