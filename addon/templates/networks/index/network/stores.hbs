@@ -16,6 +16,7 @@
         @text={{t "storefront.networks.index.network.stores.invite-stores-button-text"}}
         @onClick={{this.invite}}
     />
+    <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
 <Layout::Section::Body>
@@ -34,5 +35,5 @@
             <Button @icon="trash" @text="Delete Category" @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
         {{/if}}
     </div>
-    <Table @rows={{@model}} @columns={{this.columns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
+    <Table @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
 </Layout::Section::Body>

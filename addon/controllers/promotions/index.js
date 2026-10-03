@@ -1,10 +1,10 @@
-import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked, cached } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { debounce } from '@ember/runloop';
 
-export default class PromotionsIndexController extends Controller {
+export default class PromotionsIndexController extends BaseController {
     @service store;
     @service intl;
     @service storefront;
@@ -13,7 +13,7 @@ export default class PromotionsIndexController extends Controller {
     @service crud;
     @service fetch;
     @service hostRouter;
-    queryParams = ['query', 'status', 'page'];
+    queryParams = this.registeredQueryParams('promotion', ['query', 'status', 'page']);
 
     @tracked query;
     @tracked status;
@@ -22,6 +22,7 @@ export default class PromotionsIndexController extends Controller {
     get columns() {
         return [
             {
+                id: 'name',
                 label: this.intl.t('storefront.promotions.common.name'),
                 valuePath: 'name',
                 width: '22%',
@@ -30,6 +31,7 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'type',
                 label: this.intl.t('storefront.promotions.list.type'),
                 valuePath: 'type',
                 width: '14%',
@@ -37,6 +39,7 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'trigger',
                 label: this.intl.t('storefront.promotions.list.trigger'),
                 valuePath: 'trigger',
                 width: '10%',
@@ -44,6 +47,7 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'status',
                 label: this.intl.t('storefront.promotions.common.status'),
                 valuePath: 'status',
                 width: '10%',
@@ -51,6 +55,7 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'runs-from',
                 label: this.intl.t('storefront.promotions.list.runs'),
                 valuePath: 'runsFrom',
                 width: '18%',
@@ -58,12 +63,14 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'redemptions-count',
                 label: this.intl.t('storefront.promotions.list.redemptions'),
                 valuePath: 'redemptionsCount',
                 width: '10%',
                 resizable: true,
             },
             {
+                id: 'discount-given',
                 label: this.intl.t('storefront.promotions.list.discount-given'),
                 valuePath: 'discountGiven',
                 width: '12%',
@@ -72,6 +79,7 @@ export default class PromotionsIndexController extends Controller {
                 resizable: true,
             },
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -83,15 +91,31 @@ export default class PromotionsIndexController extends Controller {
                 sticky: 'right',
                 width: 60,
                 actions: [
-                    { label: this.intl.t('storefront.promotions.common.edit'), fn: this.editPromotion, permission: 'storefront update promotion' },
-                    { label: this.intl.t('storefront.promotions.list.manage-codes'), fn: this.manageCodes, permission: 'storefront generate-codes promotion' },
-                    { label: this.intl.t('storefront.promotions.list.announce'), fn: this.announce, permission: 'storefront announce promotion' },
-                    { separator: true },
-                    { label: this.intl.t('storefront.promotions.list.activate'), fn: (promotion) => this.setStatus(promotion, 'active'), permission: 'storefront update promotion' },
-                    { label: this.intl.t('storefront.promotions.list.pause'), fn: (promotion) => this.setStatus(promotion, 'paused'), permission: 'storefront update promotion' },
-                    { label: this.intl.t('storefront.promotions.list.end'), fn: (promotion) => this.setStatus(promotion, 'ended'), permission: 'storefront update promotion' },
+                    { id: 'edit-promotion', label: this.intl.t('storefront.promotions.common.edit'), fn: this.editPromotion, permission: 'storefront update promotion' },
+                    { id: 'manage-codes', label: this.intl.t('storefront.promotions.list.manage-codes'), fn: this.manageCodes, permission: 'storefront generate-codes promotion' },
+                    { id: 'announce', label: this.intl.t('storefront.promotions.list.announce'), fn: this.announce, permission: 'storefront announce promotion' },
                     { separator: true },
                     {
+                        id: 'activate',
+                        label: this.intl.t('storefront.promotions.list.activate'),
+                        fn: (promotion) => this.setStatus(promotion, 'active'),
+                        permission: 'storefront update promotion',
+                    },
+                    {
+                        id: 'pause',
+                        label: this.intl.t('storefront.promotions.list.pause'),
+                        fn: (promotion) => this.setStatus(promotion, 'paused'),
+                        permission: 'storefront update promotion',
+                    },
+                    {
+                        id: 'end',
+                        label: this.intl.t('storefront.promotions.list.end'),
+                        fn: (promotion) => this.setStatus(promotion, 'ended'),
+                        permission: 'storefront update promotion',
+                    },
+                    { separator: true },
+                    {
+                        id: 'delete-promotion',
                         label: this.intl.t('storefront.promotions.common.delete'),
                         fn: this.deletePromotion,
                         class: 'text-red-700 hover:text-red-800',
@@ -232,5 +256,23 @@ export default class PromotionsIndexController extends Controller {
         this.crud.delete(promotion, {
             onSuccess: () => this.hostRouter.refresh(),
         });
+    }
+
+    /**
+     * The columns with what extensions registered under `storefront:promotion:table` merged in.
+     *
+     * @var {Array}
+     */
+    @cached get registeredColumns() {
+        return this.mergeRegisteredColumns('promotion', this.columns);
+    }
+
+    /**
+     * Toolbar buttons extensions registered under `storefront:promotion:table:actions`.
+     *
+     * @var {Array}
+     */
+    get registeredActionButtons() {
+        return this.registeredTableActions('promotion');
     }
 }

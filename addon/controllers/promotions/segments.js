@@ -1,10 +1,10 @@
-import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked, cached } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { debounce } from '@ember/runloop';
 
-export default class PromotionsSegmentsController extends Controller {
+export default class PromotionsSegmentsController extends BaseController {
     @service store;
     @service intl;
     @service storefront;
@@ -12,7 +12,7 @@ export default class PromotionsSegmentsController extends Controller {
     @service notifications;
     @service crud;
     @service hostRouter;
-    queryParams = ['query', 'page'];
+    queryParams = this.registeredQueryParams('customer-segment', ['query', 'page']);
 
     @tracked query;
     @tracked page = 1;
@@ -20,6 +20,7 @@ export default class PromotionsSegmentsController extends Controller {
     get columns() {
         return [
             {
+                id: 'name',
                 label: this.intl.t('storefront.promotions.common.name'),
                 valuePath: 'name',
                 width: '30%',
@@ -28,18 +29,21 @@ export default class PromotionsSegmentsController extends Controller {
                 resizable: true,
             },
             {
+                id: 'description',
                 label: this.intl.t('storefront.promotions.common.description'),
                 valuePath: 'description',
                 width: '40%',
                 resizable: true,
             },
             {
+                id: 'rule-count',
                 label: this.intl.t('storefront.promotions.segments.rules'),
                 valuePath: 'ruleCount',
                 width: '15%',
                 resizable: true,
             },
             {
+                id: 'row-actions',
                 label: '',
                 cellComponent: 'table/cell/dropdown',
                 ddButtonText: false,
@@ -50,8 +54,9 @@ export default class PromotionsSegmentsController extends Controller {
                 sticky: 'right',
                 width: 60,
                 actions: [
-                    { label: this.intl.t('storefront.promotions.common.edit'), fn: this.editSegment, permission: 'storefront update customer-segment' },
+                    { id: 'edit-segment', label: this.intl.t('storefront.promotions.common.edit'), fn: this.editSegment, permission: 'storefront update customer-segment' },
                     {
+                        id: 'delete-segment',
                         label: this.intl.t('storefront.promotions.common.delete'),
                         fn: this.deleteSegment,
                         class: 'text-red-700 hover:text-red-800',
@@ -125,5 +130,23 @@ export default class PromotionsSegmentsController extends Controller {
         this.crud.delete(segment, {
             onSuccess: () => this.hostRouter.refresh(),
         });
+    }
+
+    /**
+     * The columns with what extensions registered under `storefront:customer-segment:table` merged in.
+     *
+     * @var {Array}
+     */
+    @cached get registeredColumns() {
+        return this.mergeRegisteredColumns('customer-segment', this.columns);
+    }
+
+    /**
+     * Toolbar buttons extensions registered under `storefront:customer-segment:table:actions`.
+     *
+     * @var {Array}
+     */
+    get registeredActionButtons() {
+        return this.registeredTableActions('customer-segment');
     }
 }
