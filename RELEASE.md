@@ -3,7 +3,7 @@
 ---
 ## Highlights
 
-- **Resource view registries.** Extensions can add the following through `storefront:table:<resource>:<slot>` and `storefront:details:<resource>:<slot>`:
+- **Resource view registries.** Extensions can add the following through `storefront:<resource>:table:<slot>` and `storefront:<resource>:details:<slot>`:
   - columns, row actions, bulk actions and toolbar buttons on the orders, customers, promotions, campaigns, segments and network tables;
   - buttons and menu items on the order and customer panels.
 - **Orders use the standard table layout.**
