@@ -1,10 +1,12 @@
-<Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} />
+<Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
+</Layout::Section::Header>
 
 <Layout::Section::Body>
     <Table
         @wrapperClass="overscroll-y-none"
         @rows={{@model}}
-        @columns={{this.columns}}
+        @columns={{this.registeredColumns}}
         @selectable={{true}}
         @canSelectAll={{true}}
         @onSetup={{fn (mut this.table)}}

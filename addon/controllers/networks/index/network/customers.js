@@ -1,6 +1,6 @@
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import CustomersIndexController from '../../../customers';
 
 /**
@@ -11,6 +11,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
 
     @tracked columns = [
         {
+            id: 'name',
             label: this.intl.t('storefront.common.name'),
             valuePath: 'name',
             width: '25%',
@@ -22,6 +23,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
             filterComponent: 'filter/string',
         },
         {
+            id: 'public-id',
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             cellComponent: 'click-to-copy',
@@ -32,6 +34,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
             filterComponent: 'filter/string',
         },
         {
+            id: 'email',
             label: this.intl.t('storefront.common.email'),
             valuePath: 'email',
             cellComponent: 'table/cell/base',
@@ -42,6 +45,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
             filterComponent: 'filter/string',
         },
         {
+            id: 'phone',
             label: this.intl.t('storefront.common.phone'),
             valuePath: 'phone',
             cellComponent: 'table/cell/base',
@@ -52,6 +56,7 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
             filterComponent: 'filter/string',
         },
         {
+            id: 'created-at',
             label: this.intl.t('storefront.customers.index.create-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
@@ -65,5 +70,23 @@ export default class NetworksIndexNetworkCustomersController extends CustomersIn
 
     @action viewCustomer(customer) {
         this.contextPanel.focus(customer, 'viewing');
+    }
+
+    /**
+     * The columns with what extensions registered under `storefront:network-customer:table` merged in.
+     *
+     * @var {Array}
+     */
+    @cached get registeredColumns() {
+        return this.mergeRegisteredColumns('network-customer', this.columns);
+    }
+
+    /**
+     * Toolbar buttons extensions registered under `storefront:network-customer:table:actions`.
+     *
+     * @var {Array}
+     */
+    get registeredActionButtons() {
+        return this.registeredTableActions('network-customer');
     }
 }

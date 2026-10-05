@@ -1,5 +1,5 @@
-import Controller from '@ember/controller';
-import { tracked } from '@glimmer/tracking';
+import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { tracked, cached } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
@@ -8,7 +8,7 @@ import createShareableLink from '../../../../utils/create-shareable-link';
 import isEmail from '@fleetbase/ember-core/utils/is-email';
 import isModel from '@fleetbase/ember-core/utils/is-model';
 
-export default class NetworksIndexNetworkStoresController extends Controller {
+export default class NetworksIndexNetworkStoresController extends BaseController {
     @service notifications;
     @service intl;
     @service modalsManager;
@@ -23,7 +23,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      * @var {Array}
      * @memberof NetworksIndexNetworkStoresController
      */
-    queryParams = ['category', 'status', 'storeQuery'];
+    queryParams = this.registeredQueryParams('network-store', ['category', 'status', 'storeQuery']);
 
     /**
      * The current page of data being viewed
@@ -100,6 +100,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
      */
     @tracked columns = [
         {
+            id: 'name',
             label: this.intl.t('storefront.networks.index.network.stores.store'),
             valuePath: 'name',
             width: '130px',
@@ -111,6 +112,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             cellClassNames: 'network-store-name-column',
         },
         {
+            id: 'public-id',
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             cellComponent: 'click-to-copy',
@@ -121,6 +123,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'category-name',
             label: this.intl.t('storefront.common.category'),
             valuePath: 'category.name',
             cellComponent: 'table/cell/base',
@@ -131,6 +134,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'currency',
             label: this.intl.t('storefront.common.currency'),
             valuePath: 'currency',
             cellComponent: 'table/cell/base',
@@ -141,6 +145,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/string',
         },
         {
+            id: 'created-at-short',
             label: this.intl.t('storefront.networks.index.network.stores.created-at'),
             valuePath: 'createdAtShort',
             sortParam: 'created_at',
@@ -151,6 +156,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             filterComponent: 'filter/date',
         },
         {
+            id: 'row-actions',
             label: '',
             cellComponent: 'table/cell/dropdown',
             ddButtonText: false,
@@ -162,18 +168,22 @@ export default class NetworksIndexNetworkStoresController extends Controller {
             width: '50px',
             actions: [
                 {
+                    id: 'view-store-details',
                     label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
                     fn: this.viewStoreDetails,
                 },
                 {
+                    id: 'edit-store',
                     label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
                     fn: this.editStore,
                 },
                 {
+                    id: 'assign-store-to-category',
                     label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
                     fn: this.assignStoreToCategory,
                 },
                 {
+                    id: 'remove-store-category',
                     label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
                     fn: this.removeStoreCategory,
                     isVisible: (store) => store.category,
@@ -182,6 +192,7 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                     separator: true,
                 },
                 {
+                    id: 'remove-store',
                     label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
                     fn: this.removeStore,
                 },
@@ -645,5 +656,23 @@ export default class NetworksIndexNetworkStoresController extends Controller {
                 });
             },
         });
+    }
+
+    /**
+     * The columns with what extensions registered under `storefront:network-store:table` merged in.
+     *
+     * @var {Array}
+     */
+    @cached get registeredColumns() {
+        return this.mergeRegisteredColumns('network-store', this.columns);
+    }
+
+    /**
+     * Toolbar buttons extensions registered under `storefront:network-store:table:actions`.
+     *
+     * @var {Array}
+     */
+    get registeredActionButtons() {
+        return this.registeredTableActions('network-store');
     }
 }

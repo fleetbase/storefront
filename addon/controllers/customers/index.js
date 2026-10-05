@@ -53,7 +53,7 @@ export default class CustomersIndexController extends BaseController {
      *
      * @var {Array}
      */
-    queryParams = ['page', 'limit', 'sort', 'query', 'public_id', 'internal_id', 'phone', 'email', 'address', 'created_by', 'updated_by', 'status'];
+    queryParams = this.registeredQueryParams('customer', ['page', 'limit', 'sort', 'query', 'public_id', 'internal_id', 'phone', 'email', 'address', 'created_by', 'updated_by', 'status']);
 
     /**
      * The current page of data being viewed
@@ -118,6 +118,7 @@ export default class CustomersIndexController extends BaseController {
      */
     @tracked columns = [
         {
+            id: 'name',
             sticky: true,
             label: this.intl.t('storefront.common.name'),
             valuePath: 'name',
@@ -130,6 +131,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'public-id',
             label: this.intl.t('storefront.common.id'),
             valuePath: 'public_id',
             cellComponent: 'click-to-copy',
@@ -140,6 +142,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'internal-id',
             label: this.intl.t('storefront.customers.index.internal-id'),
             valuePath: 'internal_id',
             cellComponent: 'click-to-copy',
@@ -150,6 +153,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'email',
             label: this.intl.t('storefront.common.email'),
             valuePath: 'email',
             cellComponent: 'table/cell/base',
@@ -160,6 +164,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'phone',
             label: this.intl.t('storefront.common.phone'),
             valuePath: 'phone',
             cellComponent: 'table/cell/base',
@@ -170,6 +175,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'address',
             label: this.intl.t('storefront.common.address'),
             valuePath: 'address',
             cellComponent: 'table/cell/anchor',
@@ -182,6 +188,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'country',
             label: this.intl.t('storefront.common.country'),
             valuePath: 'country',
             cellComponent: 'table/cell/base',
@@ -194,6 +201,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/string',
         },
         {
+            id: 'created-at',
             label: this.intl.t('storefront.customers.index.create-at'),
             valuePath: 'createdAt',
             sortParam: 'created_at',
@@ -204,6 +212,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/date',
         },
         {
+            id: 'updated-at',
             label: this.intl.t('storefront.customers.index.update-at'),
             valuePath: 'updatedAt',
             sortParam: 'updated_at',
@@ -215,6 +224,7 @@ export default class CustomersIndexController extends BaseController {
             filterComponent: 'filter/date',
         },
         {
+            id: 'row-actions',
             label: '',
             cellComponent: 'table/cell/dropdown',
             ddButtonText: false,
@@ -227,6 +237,7 @@ export default class CustomersIndexController extends BaseController {
             width: 60,
             actions: [
                 {
+                    id: 'view-customer',
                     label: this.intl.t('storefront.customers.index.view-customer-details'),
                     fn: this.viewCustomer,
                 },
