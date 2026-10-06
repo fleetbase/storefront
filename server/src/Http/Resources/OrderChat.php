@@ -37,7 +37,8 @@ class OrderChat extends FleetbaseResource
 
         return [
             'id'           => $this->public_id,
-            'channel'      => 'chat_channel.' . $this->uuid,
+            // Core broadcasts chat messages on `chat.{public_id}` (and `chat.{uuid}`).
+            'channel'      => 'chat.' . $this->public_id,
             'order'        => $this->order->public_id,
             'status'       => $closed ? 'closed' : 'open',
             'me'           => data_get($me, 'public_id'),

@@ -489,7 +489,7 @@ test('opening an order chat creates one channel with the customer and driver', f
         ->and(data_get($channel->meta, 'storefront_order_uuid'))->toBe('order_active_uuid')
         ->and(data_get($channel->meta, 'storefront_order_id'))->toBe('order_active')
         ->and($first['id'])->toBe($channel->public_id)
-        ->and($first['channel'])->toBe('chat_channel.' . $channel->uuid)
+        ->and($first['channel'])->toBe('chat.' . $channel->public_id)
         ->and($first['order'])->toBe('order_active')
         ->and($first['status'])->toBe('open')
         ->and($first['me'])->toBe(OrderChat::participantFor($channel, 'customer_user_uuid')->public_id)
