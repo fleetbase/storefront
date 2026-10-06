@@ -192,10 +192,10 @@ test('internal product resource includes database identities and raw files', fun
     ])->and($data)->toHaveKey('files')
         ->and($data)->not->toHaveKeys(['images', 'videos'])
         ->and($data['addon_categories'][0])->toMatchArray([
-            'id'            => 20,
-            'uuid'          => 'product_addon_category_uuid',
-            'product_uuid'  => 'product_uuid',
-            'category_uuid' => 'addon_category_uuid',
+            'id'             => 20,
+            'uuid'           => 'product_addon_category_uuid',
+            'product_uuid'   => 'product_uuid',
+            'category_uuid'  => 'addon_category_uuid',
             'public_id'      => 'addon_category_123',
             'is_required'    => true,
             'max_selectable' => '2',
