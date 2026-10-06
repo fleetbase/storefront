@@ -258,8 +258,8 @@ class ReviewController extends Controller
                 $extension  = File::getExtensionFromMimeType($mimeType);
                 $bucketPath = 'hyperstore/' . $about->public_id . '/review-photos/' . $review->uuid . '/' . File::randomFileName($extension);
 
-                // upload file to path
-                $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data), 'public');
+                // upload file to path; no 'public' ACL, the S3 media bucket is private and rejects ACLs
+                $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data));
 
                 // create the file
                 $uploadedFiles->push(File::create([

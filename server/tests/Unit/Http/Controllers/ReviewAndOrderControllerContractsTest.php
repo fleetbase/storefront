@@ -774,17 +774,22 @@ test('authenticated review creation persists customer and store subject contract
         'uuid'      => 'owned_review_uuid',
         'public_id' => 'review_owned',
     ]);
-    Illuminate\Support\Facades\Storage::swap(new class {
+    $reviewStorage = new class {
         public function disk(string $disk): self
         {
             return $this;
         }
 
-        public function put(string $path, string $contents, string $visibility): bool
+        public array $writes = [];
+
+        public function put(string $path, string $contents, mixed $options = []): bool
         {
+            $this->writes[] = [$path, $options];
+
             return true;
         }
-    });
+    };
+    Illuminate\Support\Facades\Storage::swap($reviewStorage);
     session(['storefront_key' => 'store_key']);
     $withPhoto = $controller->create(
         Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
@@ -820,6 +825,9 @@ test('authenticated review creation persists customer and store subject contract
         ->and($photo->bucket)->toBe('review-bucket')
         ->and($photo->file_size)->toBe(strlen('image-bytes'))
         ->and($photo->type)->toBe('storefront_review_upload')
+        // review photos are written without a 'public' visibility/ACL
+        ->and($reviewStorage->writes)->toHaveCount(1)
+        ->and($reviewStorage->writes[0][1])->toBe([])
         ->and($deleted->resource->uuid)->toBe('owned_review_uuid')
         ->and($connection->table('reviews')->where('uuid', 'owned_review_uuid')->value('deleted_at'))->not->toBeNull();
 });
