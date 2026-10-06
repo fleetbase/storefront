@@ -96,5 +96,7 @@ test('storefront route file registers public consumable and internal API contrac
         ['FLEETBASE', 'orders', null],
         ['FLEETBASE', 'products', null],
         ['GET', '/', 'MetricsController@all'],
-    )->and(count($router->routes))->toBeGreaterThan(50);
+        ['GET', 'eligibility', 'ReviewController@eligibility'],
+        ['DELETE', '{id}', 'ReviewController@delete'],
+    )->and($router->routes)->not->toContain(['DELETE', '{id}', 'ReviewController@find'])->and(count($router->routes))->toBeGreaterThan(50);
 });

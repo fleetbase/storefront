@@ -11,6 +11,7 @@ use Fleetbase\Storefront\Http\Resources\Review as StorefrontReview;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Support\ReviewEligibility;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -217,6 +218,29 @@ class ReviewController extends Controller
     }
 
     /**
+     * Whether the signed-in customer can review a store or product, and why not.
+     *
+     * The app calls this before showing "Write a review", so a customer who has not completed
+     * an order, or has already reviewed every completed one, sees an explanation instead.
+     */
+    public function eligibility(Request $request)
+    {
+        $subjectId = $request->input('subject');
+        if (!is_string($subjectId) || $subjectId === '') {
+            return response()->error('A subject is required.');
+        }
+
+        $subject = Utils::resolveSubject($subjectId);
+        if (!$subject || !$this->subjectBelongsToContext($subject)) {
+            return response()->error('Invalid subject for review');
+        }
+
+        $eligibility = ReviewEligibility::check(Storefront::getCustomerFromToken(), $subject, $request->input('order'));
+
+        return response()->json($eligibility->toArray());
+    }
+
+    /**
      * Create a review.
      *
      * @return \Fleetbase\Http\Response
@@ -238,9 +262,15 @@ class ReviewController extends Controller
             return response()->error('Invalid subject for review');
         }
 
+        $eligibility = ReviewEligibility::check($customer, $subject, $request->input('order'));
+        if (!$eligibility->allowed) {
+            return response()->json(['error' => $eligibility->message(), 'reason' => $eligibility->reason], 403);
+        }
+
         $review = Review::create([
             'created_by_uuid' => $customer->user_uuid,
             'customer_uuid'   => $customer->uuid,
+            'order_uuid'      => $eligibility->order->uuid,
             'subject_uuid'    => $subject->uuid,
             'subject_type'    => Utils::getMutationType($subject),
             'rating'          => $request->input('rating'),
