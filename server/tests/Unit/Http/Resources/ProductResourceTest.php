@@ -53,6 +53,8 @@ function storefrontProductResourceFixture(): ProductModel
         'category_uuid'   => 'addon_category_uuid',
         'name'            => 'Packaging',
         'excluded_addons' => [],
+        'is_required'     => 1,
+        'max_selectable'  => '2',
         'category'        => (object) [
             'public_id'  => 'addon_category_123',
             'description'=> 'Packaging choices',
@@ -155,9 +157,11 @@ test('public product resource exposes purchasable shape and filters media types'
             'files',
             'type',
         ])->and($data['addon_categories'][0])->toMatchArray([
-            'id'          => 'addon_category_123',
-            'name'        => 'Packaging',
-            'description' => 'Packaging choices',
+            'id'             => 'addon_category_123',
+            'name'           => 'Packaging',
+            'description'    => 'Packaging choices',
+            'is_required'    => true,
+            'max_selectable' => 2,
         ])->and($data['addon_categories'][0]['addons'][0])->toMatchArray([
             'id'   => 'addon_123',
             'name' => 'Gift wrap',
@@ -192,7 +196,9 @@ test('internal product resource includes database identities and raw files', fun
             'uuid'          => 'product_addon_category_uuid',
             'product_uuid'  => 'product_uuid',
             'category_uuid' => 'addon_category_uuid',
-            'public_id'     => 'addon_category_123',
+            'public_id'      => 'addon_category_123',
+            'is_required'    => true,
+            'max_selectable' => '2',
         ])->and($data['addon_categories'][0])->not->toHaveKey('addons')
         ->and($data['variants'][0])->toMatchArray([
             'id'        => 40,
@@ -242,5 +248,23 @@ test('product mapping helpers accept arrays collections exclusions and empty inp
         'uuid'      => 'addon_uuid',
         'public_id' => 'addon_123',
         'name'      => 'Gift wrap',
+    ]);
+});
+
+test('public add-on categories report optional unlimited choices when limits are unset', function () {
+    setStorefrontResourceRoute('v1/storefront/products');
+
+    $category = (object) [
+        'name'            => 'Extras',
+        'excluded_addons' => null,
+        'is_required'     => null,
+        'max_selectable'  => null,
+        'category'        => (object) ['public_id' => 'addon_category_456', 'description' => null, 'addons' => collect()],
+    ];
+
+    expect((new ProductResource((object) []))->mapAddonCategories([$category])->first())->toMatchArray([
+        'id'             => 'addon_category_456',
+        'is_required'    => false,
+        'max_selectable' => null,
     ]);
 });
