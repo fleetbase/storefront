@@ -423,3 +423,65 @@ test('store order config falls back to the company default and fails clearly wit
     expect(fn () => $missing->getOrderConfig())
         ->toThrow(RuntimeException::class, 'No default OrderConfig is configured.');
 });
+
+test('store rating uses a preloaded review average without querying reviews', function () {
+    // No reviews table: any aggregate query would throw.
+    Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder()->dropIfExists('reviews');
+
+    $decimal = new Store();
+    $decimal->setRawAttributes(['uuid' => 'store_uuid', 'reviews_avg_rating' => '4.5000']);
+    $whole = new Store();
+    $whole->setRawAttributes(['uuid' => 'store_uuid', 'reviews_avg_rating' => 4]);
+    $unrated = new Store();
+    $unrated->setRawAttributes(['uuid' => 'store_uuid', 'reviews_avg_rating' => null]);
+
+    expect($decimal->rating)->toBe(4.5)
+        ->and($whole->rating)->toBe(4)
+        ->and($unrated->rating)->toBe(0);
+});
+
+test('store network category uses eager loaded networks', function () {
+    createStoreBehaviorSchema();
+    $connection = Capsule::connection('mysql');
+    $connection->table('categories')->insert(['uuid' => 'category_uuid', 'name' => 'Electronics']);
+
+    $member = new Network();
+    $member->forceFill(['uuid' => 'network_uuid']);
+    $member->setRelation('pivot', (object) ['category_uuid' => 'category_uuid']);
+    $other = new Network();
+    $other->forceFill(['uuid' => 'other_network_uuid']);
+
+    $store = new Store();
+    $store->forceFill(['uuid' => 'store_uuid']);
+    $store->setRelation('networks', new Illuminate\Database\Eloquent\Collection([$member]));
+
+    // network_stores is empty, so a match can only come from the loaded relation.
+    expect($store->getNetworkCategory($member)?->uuid)->toBe('category_uuid')
+        ->and($store->getNetworkCategory($other))->toBeNull();
+});
+
+test('store resolves each network id once', function () {
+    createStoreBehaviorSchema();
+    Store::flushResolvedNetworkIds();
+    $connection = Capsule::connection('mysql');
+    $connection->table('stores')->insert(['uuid' => 'store_uuid', 'name' => 'Store']);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'public_id' => 'network_public', 'name' => 'Network']);
+    $connection->table('categories')->insert(['uuid' => 'category_uuid', 'name' => 'Flowers']);
+    $connection->table('network_stores')->insert([
+        'network_uuid'  => 'network_uuid',
+        'store_uuid'    => 'store_uuid',
+        'category_uuid' => 'category_uuid',
+    ]);
+    $store = Store::where('uuid', 'store_uuid')->firstOrFail();
+
+    expect($store->getNetworkCategoryUsingId('network_public')?->uuid)->toBe('category_uuid');
+
+    // The id is not looked up again: it still resolves after the public id changes.
+    $connection->table('networks')->update(['public_id' => 'network_renamed']);
+    expect($store->getNetworkCategoryUsingId('network_public')?->uuid)->toBe('category_uuid');
+
+    Store::flushResolvedNetworkIds();
+    expect($store->getNetworkCategoryUsingId('network_public'))->toBeNull();
+
+    Store::flushResolvedNetworkIds();
+});
