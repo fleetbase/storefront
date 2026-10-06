@@ -97,5 +97,9 @@ test('storefront route file registers public consumable and internal API contrac
         ['FLEETBASE', 'orders', null],
         ['FLEETBASE', 'products', null],
         ['GET', '/', 'MetricsController@all'],
+        ['GET', '{id}/chat', 'OrderChatController@show'],
+        ['GET', '{id}/chat/messages', 'OrderChatController@messages'],
+        ['POST', '{id}/chat/messages', 'OrderChatController@send'],
+        ['POST', '{id}/chat/read', 'OrderChatController@read'],
     )->and(count($router->routes))->toBeGreaterThan(50);
 });

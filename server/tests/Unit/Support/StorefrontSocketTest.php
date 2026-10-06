@@ -118,8 +118,8 @@ function storefrontSocketSchema(): void
         ['uuid' => 'network-a', 'public_id' => 'network_aaaaaaa', 'company_uuid' => 'company-a', 'key' => 'network_key_a'],
     ]);
     $connection->table('contacts')->insert([
-        ['uuid' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'public_id' => 'contact_aaaaaaa', 'company_uuid' => 'company-a', 'type' => 'customer'],
-        ['uuid' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'public_id' => 'contact_bbbbbbb', 'company_uuid' => 'company-b', 'type' => 'customer'],
+        ['uuid' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'public_id' => 'contact_aaaaaaa', 'company_uuid' => 'company-a', 'user_uuid' => 'user-a', 'type' => 'customer'],
+        ['uuid' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'public_id' => 'contact_bbbbbbb', 'company_uuid' => 'company-b', 'user_uuid' => null, 'type' => 'customer'],
     ]);
     $connection->table('checkouts')->insert([
         ['uuid' => 'checkout-a', 'public_id' => 'chkt_aaaaaaa', 'company_uuid' => 'company-a', 'store_uuid' => 'store-a', 'network_uuid' => null, 'owner_uuid' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'token' => 'checkout_a'],
@@ -202,7 +202,9 @@ test('customer socket token mints a customer principal scoped to the store', fun
         ->and($claims)->toBeInstanceOf(SocketPrincipal::class)
         ->and($claims->kind)->toBe('customer')
         ->and($claims->sub)->toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
-        ->and($claims->ids)->toBe(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'contact_aaaaaaa'])
+        // The user uuid lets the customer join chats they take part in (core authorizes
+        // chat channels by participant user).
+        ->and($claims->ids)->toBe(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'contact_aaaaaaa', 'user-a'])
         ->and($claims->cid)->toBe('company-a')
         ->and($claims->cpid)->toBe('company_aaaaaaa')
         ->and($claims->sid)->toBe('store-a')
@@ -343,8 +345,11 @@ test('customer principal is built from the customer and the storefront of the ke
         'cid'  => 'company-a',
         'cpid' => 'company_aaaaaaa',
         'env'  => 'live',
-        'ids'  => ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'contact_aaaaaaa'],
+        'ids'  => ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'contact_aaaaaaa', 'user-a'],
         'adm'  => false,
         'sid'  => 'store-a',
-    ])->and($forNetwork->sid)->toBe('network-a');
+    ])->and($forNetwork->sid)->toBe('network-a')
+        // A customer without a user account has only its contact ids.
+        ->and(StorefrontSocket::customerPrincipal(Contact::where('uuid', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')->firstOrFail(), $store)->ids)
+        ->toBe(['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'contact_bbbbbbb']);
 });

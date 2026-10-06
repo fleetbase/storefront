@@ -38,7 +38,9 @@ class StorefrontSocket
             'cid'  => $storefront->company_uuid,
             'cpid' => static::companyPublicId($storefront->company_uuid),
             'env'  => static::ENV,
-            'ids'  => [$customer->uuid, $customer->public_id],
+            // The user uuid lets the customer join chats they take part in, such as their
+            // order chat with the driver: core authorizes chat channels by participant user.
+            'ids'  => array_values(array_filter([$customer->uuid, $customer->public_id, $customer->user_uuid])),
             'adm'  => false,
             'scp'  => null,
             'sid'  => $storefront->uuid,
