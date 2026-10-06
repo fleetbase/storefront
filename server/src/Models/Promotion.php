@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\Casts\Json;
 use Fleetbase\Casts\PolymorphicType;
 use Fleetbase\FleetOps\Support\Utils;
+use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicId;
@@ -35,6 +36,15 @@ class Promotion extends StorefrontModel
     public const STATUS_ENDED  = 'ended';
 
     public const STATUSES = [self::STATUS_DRAFT, self::STATUS_ACTIVE, self::STATUS_PAUSED, self::STATUS_ENDED];
+
+    /**
+     * Customer-facing availability: running now, running later (outside its weekly hours or
+     * before its start date), over, or not offered at all (draft or paused).
+     */
+    public const AVAILABILITY_LIVE      = 'live';
+    public const AVAILABILITY_SCHEDULED = 'scheduled';
+    public const AVAILABILITY_ENDED     = 'ended';
+    public const AVAILABILITY_INACTIVE  = 'inactive';
 
     protected $publicIdType = 'promotion';
 
@@ -163,6 +173,151 @@ class Promotion extends StorefrontModel
         }
 
         return false;
+    }
+
+    /**
+     * Customer-facing availability at the given moment.
+     */
+    public function availabilityAt(?Carbon $moment = null): string
+    {
+        $moment ??= Carbon::now();
+
+        if ($this->status === self::STATUS_ENDED || ($this->ends_at && $moment->gte($this->ends_at))) {
+            return self::AVAILABILITY_ENDED;
+        }
+
+        if ($this->status !== self::STATUS_ACTIVE) {
+            return self::AVAILABILITY_INACTIVE;
+        }
+
+        return $this->isLiveAt($moment) ? self::AVAILABILITY_LIVE : self::AVAILABILITY_SCHEDULED;
+    }
+
+    /**
+     * When a scheduled promotion next starts applying, looking up to a week ahead; null when it
+     * is live now, has ended, is not active, or has no start inside that week.
+     */
+    public function nextLiveAt(?Carbon $moment = null): ?Carbon
+    {
+        $moment ??= Carbon::now();
+
+        if ($this->availabilityAt($moment) !== self::AVAILABILITY_SCHEDULED) {
+            return null;
+        }
+
+        $timezone = $this->timezone ?: config('app.timezone', 'UTC');
+        $from     = ($this->starts_at && $this->starts_at->gt($moment) ? $this->starts_at : $moment)->copy()->setTimezone($timezone);
+        $windows  = array_values(array_filter((array) ($this->schedule ?? []), 'is_array'));
+        if (empty($windows)) {
+            $windows = [['days' => [1, 2, 3, 4, 5, 6, 7], 'start' => '00:00', 'end' => '24:00']];
+        }
+
+        $next = null;
+        for ($offset = -1; $offset <= 7; $offset++) {
+            $day = $from->copy()->startOfDay()->addDays($offset);
+            foreach ($windows as $window) {
+                if (!in_array($day->dayOfWeekIso, array_map('intval', (array) ($window['days'] ?? [1, 2, 3, 4, 5, 6, 7])), true)) {
+                    continue;
+                }
+
+                $start = static::minutesOfDay($window['start'] ?? '00:00');
+                $end   = static::minutesOfDay($window['end'] ?? '24:00');
+                $opens = $day->copy()->addMinutes($start);
+                $shuts = $day->copy()->addMinutes($end <= $start ? $end + 1440 : $end);
+
+                $candidate = $opens->lt($from) ? $from->copy() : $opens;
+                if ($candidate->gte($shuts) || ($this->ends_at && $candidate->gte($this->ends_at))) {
+                    continue;
+                }
+
+                if (!$next || $candidate->lt($next)) {
+                    $next = $candidate;
+                }
+            }
+        }
+
+        return $next?->setTimezone(config('app.timezone', 'UTC'));
+    }
+
+    /**
+     * The code a customer can type for a code-triggered promotion: an active code that is not
+     * assigned to one customer, has not expired and can be used more than once. Batches of
+     * single-use codes are handed out individually (for example by a campaign), so they are
+     * never shown publicly.
+     */
+    public function shareableCode(?Carbon $moment = null): ?string
+    {
+        if ($this->trigger !== self::TRIGGER_CODE) {
+            return null;
+        }
+
+        $moment ??= Carbon::now();
+        $codes = $this->relationLoaded('codes') ? $this->codes : $this->codes()->get();
+
+        $code = $codes
+            ->filter(fn (PromotionCode $code) => $code->status === PromotionCode::STATUS_ACTIVE
+                && empty($code->customer_uuid)
+                && (!$code->expires_at || $moment->lt($code->expires_at))
+                && ($code->usage_limit === null || $code->usage_limit > 1))
+            ->sortByDesc('created_at')
+            ->first();
+
+        return $code?->code;
+    }
+
+    /**
+     * The store or network running the promotion, as customers see it.
+     *
+     * @return array{type: string, id: ?string, name: ?string, logo_url: ?string}|null
+     */
+    public function ownerSummary(): ?array
+    {
+        $owner = $this->owner;
+        if (!$owner instanceof Store && !$owner instanceof Network) {
+            return null;
+        }
+
+        return [
+            'type'     => $owner instanceof Store ? 'store' : 'network',
+            'id'       => $owner->public_id,
+            'name'     => $owner->name,
+            'logo_url' => data_get($owner, 'logo.url'),
+        ];
+    }
+
+    /**
+     * `applies_to` with every product, category and store named by its public id, so the app
+     * can link "Shop the offer" to them. Ids that no longer resolve are dropped.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function publicAppliesTo(): array
+    {
+        $appliesTo = (array) ($this->applies_to ?? []);
+        $models    = [
+            'products'           => Product::class,
+            'exclude_products'   => Product::class,
+            'stores'             => Store::class,
+            'categories'         => Category::class,
+            'exclude_categories' => Category::class,
+        ];
+
+        $public = [];
+        foreach ($models as $key => $model) {
+            $ids = array_values(array_filter((array) ($appliesTo[$key] ?? []), 'is_string'));
+            if (empty($ids)) {
+                continue;
+            }
+
+            $public[$key] = $model::query()
+                ->where(fn ($query) => $query->whereIn('uuid', $ids)->orWhereIn('public_id', $ids))
+                ->pluck('public_id')
+                ->filter()
+                ->values()
+                ->all();
+        }
+
+        return $public;
     }
 
     protected static function minutesOfDay(string $time): int
