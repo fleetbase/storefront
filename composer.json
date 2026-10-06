@@ -22,7 +22,7 @@
     ],
     "require": {
         "php": "^8.0",
-        "fleetbase/core-api": "*",
+        "fleetbase/core-api": "^1.6.69",
         "fleetbase/fleetops-api": "*",
         "geocoder-php/google-maps-places-provider": "^1.4",
         "laravel-notification-channels/apn": "^5.0",

@@ -135,6 +135,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
                     $router->post('unregister-device', 'CustomerController@unregisterDevice');
+                    $router->post('socket-token', 'CustomerController@socketToken');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');

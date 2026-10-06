@@ -100,6 +100,11 @@ test('storefront provider boot wires commands schedules observers middleware and
         {
             $this->calls[] = $key;
         }
+
+        public function registerStorefrontSocketChannels(): void
+        {
+            $this->calls[] = 'socket-channels';
+        }
     };
 
     $provider->boot();
@@ -119,5 +124,17 @@ test('storefront provider boot wires commands schedules observers middleware and
         'database.connections',
         'storefront',
         'storefront.api',
+        'socket-channels',
     ]);
+});
+
+test('storefront provider registers its socket channel resolvers with the core registry', function () {
+    $app      = new Fleetbase\TestSupport\ApplicationContainer();
+    $registry = new Fleetbase\Support\SocketCluster\SocketChannelRegistry();
+    $app->instance(Fleetbase\Support\SocketCluster\SocketChannelRegistry::class, $registry);
+
+    (new StorefrontServiceProvider($app))->registerStorefrontSocketChannels();
+
+    expect($registry->resolve('storefront'))->toBeInstanceOf(Closure::class)
+        ->and($registry->resolve('checkout'))->toBeInstanceOf(Closure::class);
 });

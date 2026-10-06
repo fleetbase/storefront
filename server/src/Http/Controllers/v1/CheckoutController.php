@@ -32,6 +32,7 @@ use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Storefront\Support\StripeUtils;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\JsonResponse;
@@ -385,7 +386,7 @@ class CheckoutController extends Controller
         // GET /checkouts/status needs BOTH, and only initializeQPayCheckout was returning
         // the id — so a cash or card client could never reach its own checkout's status.
         // The checkout is discarded instead if one of its promotions ran out meanwhile.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
         ]);
@@ -486,7 +487,7 @@ class CheckoutController extends Controller
 
         // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
         // requires alongside the token, and nothing but the QPay path used to return it.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -718,7 +719,7 @@ class CheckoutController extends Controller
 
         // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
         // the chkt_* public id GET /checkouts/status requires alongside the token.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -842,7 +843,7 @@ class CheckoutController extends Controller
         // Update checkout with invoice id
         $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
 
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'invoice'  => $invoice,
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
@@ -861,7 +862,7 @@ class CheckoutController extends Controller
      *   response for either success or error scenarios.
      * - Initializes a QPay instance with the gateway configuration and sets the authentication token.
      * - Retrieves the invoice ID from the checkout options and performs a payment check using QPay's API.
-     * - Publishes the payment data or error response to the SocketCluster channel.
+     * - Publishes the checkout status, its order and any error to the checkout's realtime channel.
      *
      * Depending on the 'respond' flag from the request, the method returns a JSON response
      * or completes the processing without returning data.
@@ -925,7 +926,7 @@ class CheckoutController extends Controller
                     ];
                 }
 
-                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+                static::publishCheckoutUpdate($checkout, $testScenario === 'success', $data['error']);
 
                 return $shouldRespond ? response()->json($data) : response()->json();
             }
@@ -978,7 +979,7 @@ class CheckoutController extends Controller
                     'error'    => null,
                 ];
 
-                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+                static::publishCheckoutUpdate($checkout, true);
 
                 return $shouldRespond ? response()->json($data) : response()->json();
             }
@@ -2141,6 +2142,74 @@ class CheckoutController extends Controller
         }
 
         return array_values(array_unique(array_filter(array_merge((array) $codes, $cart->getPromotionCodes()), 'is_string')));
+    }
+
+    /**
+     * The JSON response for an initialized checkout.
+     *
+     * When realtime socket authentication is enabled it carries `socket_token`: a
+     * `checkout` token whose scope is exactly this checkout's channel, so a client
+     * (a guest included) can listen for its own payment confirmation. The field is
+     * absent while socket authentication is disabled.
+     */
+    protected static function checkoutResponse(Checkout $checkout, array $data): JsonResponse
+    {
+        $socketToken = StorefrontSocket::checkoutToken($checkout);
+        if ($socketToken) {
+            $data['socket_token'] = $socketToken;
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * Publishes a checkout's progress on its realtime channel.
+     *
+     * The payload is what a storefront client acts on — the checkout, its status, the
+     * order once one exists (serialized exactly as GET checkouts/status returns it) and
+     * any error — never the raw gateway payment record. A publish failure is logged and
+     * swallowed: by now the payment is recorded, and clients still recover the outcome
+     * through GET checkouts/status.
+     *
+     * @return array|null the published payload, or null when publishing failed
+     */
+    protected static function publishCheckoutUpdate(Checkout $checkout, bool $paid, ?array $error = null): ?array
+    {
+        try {
+            // A failed payment carries no order, so a client never completes on an error event.
+            $order  = !$error && $checkout->order_uuid ? Order::where('uuid', $checkout->order_uuid)->first() : null;
+            $status = 'pending';
+            if ($error) {
+                $status = 'failed';
+            } elseif ($order) {
+                $status = 'completed';
+            } elseif ($paid) {
+                $status = 'paid';
+            }
+
+            $data = [
+                'checkout' => $checkout->public_id,
+                'status'   => $status,
+                'order'    => $order ? static::checkoutChannelOrder($order) : null,
+                'error'    => $error,
+            ];
+
+            SocketClusterService::publish(StorefrontSocket::checkoutChannel($checkout), $data);
+
+            return $data;
+        } catch (\Throwable $e) {
+            Log::warning('[CHECKOUT SOCKET PUBLISH FAILED]: ' . $e->getMessage(), ['checkout' => $checkout->public_id]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Serializes a checkout's order for its realtime channel, as GET checkouts/status does.
+     */
+    protected static function checkoutChannelOrder(Order $order): array
+    {
+        return json_decode(json_encode(new OrderResource($order)), true);
     }
 
     /**
