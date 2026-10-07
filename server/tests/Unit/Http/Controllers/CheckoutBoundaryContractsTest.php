@@ -468,6 +468,34 @@ class TestableCheckoutController extends CheckoutController
     }
 }
 
+class CheckoutChannelPayloadStub extends TestableCheckoutController
+{
+    public static bool $failSerialization = false;
+
+    protected static function checkoutChannelOrder(Fleetbase\FleetOps\Models\Order $order): array
+    {
+        if (static::$failSerialization) {
+            throw new RuntimeException('Order serialization failed');
+        }
+
+        return ['id' => $order->public_id];
+    }
+
+    public static function initializedCheckoutResponse(Checkout $checkout, array $data)
+    {
+        return static::checkoutResponse($checkout, $data);
+    }
+}
+
+function enableCheckoutSocketAuth(bool $enabled = true): void
+{
+    config(['broadcasting.connections.socketcluster.auth_key' => $enabled ? 'checkout-socket-test-key-0123456789abcdef' : null]);
+}
+
+afterEach(function () {
+    enableCheckoutSocketAuth(false);
+});
+
 function createCheckoutBoundarySchema(): void
 {
     $connection = Model::getConnectionResolver()->connection('mysql');
@@ -2794,7 +2822,8 @@ test('qpay callback handles invoice payment sandbox and provider failure states 
     CheckoutQPayStub::$sandboxUsed                                   = false;
     CheckoutQPayStub::$authenticated                                 = false;
     Fleetbase\Support\SocketCluster\SocketClusterService::$published = [];
-    $controller                                                      = new TestableCheckoutController();
+    CheckoutChannelPayloadStub::$failSerialization                   = false;
+    $controller                                                      = new CheckoutChannelPayloadStub();
 
     $missingInvoice = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
         'checkout' => 'checkout_abcdefgh',
@@ -2857,7 +2886,243 @@ test('qpay callback handles invoice payment sandbox and provider failure states 
         ->and($sandboxError->getData(true)['error']['error'])->toBe('PAYMENT_NOT_PAID')
         ->and(CheckoutQPayStub::$sandboxUsed)->toBeTrue()
         ->and(CheckoutQPayStub::$authenticated)->toBeTrue()
-        ->and(Fleetbase\Support\SocketCluster\SocketClusterService::$published)->toHaveCount(3);
+        ->and(Fleetbase\Support\SocketCluster\SocketClusterService::$published)->toBe([
+            // The realtime payload carries what a storefront client acts on — never the raw payment row.
+            ['checkout.checkout_abcdefgh', [
+                'checkout' => 'checkout_abcdefgh',
+                'status'   => 'completed',
+                'order'    => ['id' => 'order_abcdefgh'],
+                'error'    => null,
+            ]],
+            ['checkout.checkout_abcdefgh', [
+                'checkout' => 'checkout_abcdefgh',
+                'status'   => 'completed',
+                'order'    => ['id' => 'order_abcdefgh'],
+                'error'    => null,
+            ]],
+            ['checkout.checkout_abcdefgh', [
+                'checkout' => 'checkout_abcdefgh',
+                'status'   => 'failed',
+                'order'    => null,
+                'error'    => [
+                    'error'   => 'PAYMENT_NOT_PAID',
+                    'message' => 'Payment has not been paid!',
+                ],
+            ]],
+        ]);
+});
+
+test('qpay callback publishes paid before an order exists and survives a failed publish', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('gateways')->insert([
+        'uuid'         => 'qpay_gateway_uuid',
+        'code'         => 'qpay',
+        'owner_uuid'   => 'store_uuid',
+        'type'         => 'qpay',
+        'sandbox'      => true,
+        'callback_url' => 'https://storefront.test/qpay',
+        'config'       => json_encode(['username' => 'merchant', 'password' => 'secret']),
+    ]);
+    $connection->table('orders')->insert([
+        'uuid'      => 'order_uuid',
+        'public_id' => 'order_abcdefgh',
+    ]);
+    $connection->table('checkouts')->insert([
+        [
+            'uuid'         => 'checkout_pending_uuid',
+            'public_id'    => 'checkout_pending',
+            'gateway_uuid' => 'qpay_gateway_uuid',
+            'order_uuid'   => null,
+            'options'      => '{}',
+            'token'        => 'checkout-token-pending',
+        ],
+        [
+            'uuid'         => 'checkout_ordered_uuid',
+            'public_id'    => 'checkout_ordered',
+            'gateway_uuid' => 'qpay_gateway_uuid',
+            'order_uuid'   => 'order_uuid',
+            'options'      => '{}',
+            'token'        => 'checkout-token-ordered',
+        ],
+    ]);
+    Fleetbase\Support\SocketCluster\SocketClusterService::$published = [];
+    CheckoutChannelPayloadStub::$failSerialization                   = false;
+    $controller                                                      = new CheckoutChannelPayloadStub();
+
+    $paidWithoutOrder = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
+        'checkout' => 'checkout_pending',
+        'respond'  => true,
+        'test'     => 'success',
+    ]));
+    CheckoutChannelPayloadStub::$failSerialization = true;
+    $publishFailed                                 = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
+        'checkout' => 'checkout_ordered',
+        'respond'  => true,
+        'test'     => 'success',
+    ]));
+    CheckoutChannelPayloadStub::$failSerialization = false;
+
+    expect($paidWithoutOrder->getData(true)['payment']['payment_status'])->toBe('PAID')
+        // A failed publish never turns a recorded payment into an error response.
+        ->and($publishFailed->getStatusCode())->toBe(200)
+        ->and($publishFailed->getData(true)['payment']['payment_status'])->toBe('PAID')
+        ->and(Fleetbase\Support\SocketCluster\SocketClusterService::$published)->toBe([
+            ['checkout.checkout_pending', [
+                'checkout' => 'checkout_pending',
+                'status'   => 'paid',
+                'order'    => null,
+                'error'    => null,
+            ]],
+        ]);
+});
+
+test('qpay callback publishes the order serialized as checkout status returns it', function () {
+    createCheckoutCaptureExecutionSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('gateways')->insert([
+        'uuid'         => 'qpay_gateway_uuid',
+        'code'         => 'qpay',
+        'owner_uuid'   => 'store_uuid',
+        'type'         => 'qpay',
+        'sandbox'      => true,
+        'callback_url' => 'https://storefront.test/qpay',
+        'config'       => json_encode(['username' => 'merchant', 'password' => 'secret']),
+    ]);
+    $connection->table('orders')->insert([
+        'uuid'      => 'status_order_uuid',
+        'public_id' => 'order_status',
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'         => 'checkout_uuid',
+        'public_id'    => 'checkout_abcdefgh',
+        'gateway_uuid' => 'qpay_gateway_uuid',
+        'order_uuid'   => 'status_order_uuid',
+        'options'      => json_encode(['qpay_invoice_id' => 'invoice_checkout']),
+        'token'        => 'checkout-token',
+        'captured'     => true,
+    ]);
+    session(['storefront_key' => null]);
+    CheckoutQPayStub::$failure                                       = null;
+    CheckoutQPayStub::$paymentCheckResult                            = (object) [
+        'count' => 1,
+        'rows'  => [
+            (object) [
+                'payment_id'     => 'payment_checkout',
+                'payment_status' => 'PAID',
+                'payment_amount' => 2500,
+                'payment_wallet' => 'QPay',
+            ],
+        ],
+    ];
+    TestableCheckoutController::$statusFallbackOrder                 = null;
+    TestableCheckoutController::$statusFallbackFailure               = null;
+    Fleetbase\Support\SocketCluster\SocketClusterService::$published = [];
+
+    (new TestableCheckoutController())->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
+        'checkout' => 'checkout_abcdefgh',
+    ]));
+    $published = Fleetbase\Support\SocketCluster\SocketClusterService::$published;
+
+    expect($published)->toHaveCount(1)
+        ->and($published[0][0])->toBe('checkout.checkout_abcdefgh')
+        ->and(array_keys($published[0][1]))->toBe(['checkout', 'status', 'order', 'error'])
+        ->and($published[0][1]['status'])->toBe('completed')
+        ->and($published[0][1]['order']['id'])->toBe('order_status')
+        ->and($published[0][1]['error'])->toBeNull();
+});
+
+test('initialized checkouts carry a checkout-scoped socket token only while socket auth is enabled', function () {
+    createCheckoutBoundarySchema();
+    $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
+    $schema->dropIfExists('companies');
+    $schema->create('companies', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    Model::getConnectionResolver()->connection('mysql')->table('companies')->insert([
+        'uuid'      => 'company_uuid',
+        'public_id' => 'company_public',
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => 'store_uuid',
+        'storefront_network' => null,
+    ]);
+    $initialize = function () {
+        $cart = new Cart();
+        $cart->forceFill([
+            'uuid'     => 'cart_uuid',
+            'currency' => 'USD',
+            'items'    => [['id' => 'line_one', 'quantity' => 1, 'subtotal' => 1000]],
+            'events'   => [],
+        ]);
+        $customer = new Fleetbase\Storefront\Models\Customer();
+        $customer->forceFill(['uuid' => 'customer_uuid']);
+        $gateway = Gateway::cash();
+        $gateway->forceFill(['uuid' => 'gateway_uuid']);
+
+        return CheckoutController::initializeCashCheckout(
+            $customer,
+            $gateway,
+            null,
+            $cart,
+            (object) ['is_pickup' => true, 'tip' => false, 'delivery_tip' => false],
+            Request::create('/checkout')
+        );
+    };
+
+    $disabled = $initialize();
+    enableCheckoutSocketAuth();
+    $enabled  = $initialize();
+    $checkout = Checkout::where('public_id', $enabled->getData(true)['checkout'])->firstOrFail();
+    $socket   = $enabled->getData(true)['socket_token'];
+    $claims   = Fleetbase\Support\SocketCluster\SocketToken::verify($socket['token']);
+
+    expect(array_keys($disabled->getData(true)))->toBe(['checkout', 'token'])
+        ->and(array_keys($enabled->getData(true)))->toBe(['checkout', 'token', 'socket_token'])
+        ->and(array_keys($socket))->toBe(['token', 'expires_in', 'expires_at'])
+        ->and($claims->kind)->toBe('checkout')
+        ->and($claims->sub)->toBe($checkout->uuid)
+        ->and($claims->ids)->toBe([$checkout->uuid, $checkout->public_id])
+        ->and($claims->scp)->toBe(['checkout.' . $checkout->public_id])
+        ->and($claims->cid)->toBe('company_uuid')
+        ->and($claims->cpid)->toBe('company_public')
+        ->and($claims->sid)->toBe('store_uuid')
+        ->and($claims->env)->toBe('live');
+});
+
+test('checkout response helper adds the socket token beside the existing fields', function () {
+    createCheckoutBoundarySchema();
+    $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
+    $schema->dropIfExists('companies');
+    $schema->create('companies', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    Model::getConnectionResolver()->connection('mysql')->table('checkouts')->insert([
+        'uuid'         => 'checkout_uuid',
+        'public_id'    => 'checkout_network',
+        'company_uuid' => 'company_uuid',
+        'network_uuid' => 'network_uuid',
+        'token'        => 'checkout-token',
+    ]);
+    $checkout = Checkout::where('uuid', 'checkout_uuid')->firstOrFail();
+    enableCheckoutSocketAuth();
+
+    $data   = CheckoutChannelPayloadStub::initializedCheckoutResponse($checkout, ['invoice' => ['invoice_id' => 'inv'], 'checkout' => 'checkout_network', 'token' => 'checkout-token'])->getData(true);
+    $claims = Fleetbase\Support\SocketCluster\SocketToken::verify($data['socket_token']['token']);
+
+    expect($data['invoice'])->toBe(['invoice_id' => 'inv'])
+        ->and($claims->scp)->toBe(['checkout.checkout_network'])
+        ->and($claims->sid)->toBe('network_uuid')
+        ->and($claims->cpid)->toBeNull();
 });
 
 test('single and multiple order capture reject invalid checkout tokens safely', function () {

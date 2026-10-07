@@ -22,6 +22,8 @@ use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Support\StorefrontSocket;
+use Fleetbase\Support\SocketCluster\SocketToken;
 use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -125,6 +127,36 @@ class CustomerController extends Controller
             'status'  => 'OK',
             'deleted' => $deleted,
         ]);
+    }
+
+    /**
+     * Mints a realtime socket token for the signed-in customer.
+     *
+     * POST storefront/v1/customers/socket-token — authenticated like every other
+     * customer endpoint: the storefront key plus a Customer-Token header. The token
+     * is a `customer` principal scoped to the store or network the key belongs to;
+     * the socket server only lets it subscribe to channels the customer owns.
+     * Returns 404 while socket authentication is not configured on this instance.
+     */
+    public function socketToken(Request $request)
+    {
+        if (!SocketToken::enabled()) {
+            return response()->apiError('Not found.', 404);
+        }
+
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+        }
+
+        // A customer's token is only honoured by the storefront whose company the
+        // customer belongs to, so a token minted against another company's key is refused.
+        $storefront = Storefront::about();
+        if (!$storefront || $storefront->company_uuid !== $customer->company_uuid) {
+            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+        }
+
+        return response()->json(SocketToken::issue(StorefrontSocket::customerPrincipal($customer, $storefront)));
     }
 
     /**

@@ -4,6 +4,8 @@ namespace Fleetbase\Storefront\Providers;
 
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
+use Fleetbase\Storefront\Support\StorefrontSocket;
+use Fleetbase\Support\SocketCluster\SocketChannelRegistry;
 
 // These dependency guards are only reachable before Composer can load this provider.
 // The test runtime necessarily has both parent providers loaded, so the throw paths cannot execute.
@@ -33,6 +35,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Models\Catalog::class   => \Fleetbase\Storefront\Observers\CatalogObserver::class,
         \Fleetbase\Storefront\Models\FoodTruck::class => \Fleetbase\Storefront\Observers\FoodTruckObserver::class,
         \Fleetbase\Models\Company::class              => \Fleetbase\Storefront\Observers\CompanyObserver::class,
+        \Fleetbase\Models\ChatMessage::class          => \Fleetbase\Storefront\Observers\ChatMessageObserver::class,
     ];
 
     /**
@@ -111,5 +114,15 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/database.connections.php', 'database.connections');
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
+        $this->registerStorefrontSocketChannels();
+    }
+
+    /**
+     * Registers the realtime channel prefixes storefront owns (`storefront`, `checkout`)
+     * with core-api's socket channel registry, so the socket server can authorize them.
+     */
+    public function registerStorefrontSocketChannels(): void
+    {
+        StorefrontSocket::registerChannels($this->app->make(SocketChannelRegistry::class));
     }
 }

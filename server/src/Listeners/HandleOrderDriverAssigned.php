@@ -5,6 +5,8 @@ namespace Fleetbase\Storefront\Listeners;
 use Fleetbase\FleetOps\Events\OrderDriverAssigned;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderDriverAssigned;
+use Fleetbase\Storefront\Support\OrderChat;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -35,6 +37,13 @@ class HandleOrderDriverAssigned implements ShouldQueue
 
             if ($order->customer) {
                 $order->customer->notify(new StorefrontOrderDriverAssigned($order));
+            }
+
+            // Start the order chat so it is waiting in the driver's chat list.
+            try {
+                OrderChat::open($order);
+            } catch (\Throwable $e) {
+                app(ExceptionHandler::class)->report($e);
             }
         }
     }
