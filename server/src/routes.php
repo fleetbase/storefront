@@ -88,9 +88,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'reviews'], function () use ($router) {
                     $router->get('/', 'ReviewController@query');
                     $router->get('count', 'ReviewController@count');
+                    $router->get('eligibility', 'ReviewController@eligibility');
                     $router->get('{id}', 'ReviewController@find');
                     $router->post('/', 'ReviewController@create');
-                    $router->delete('{id}', 'ReviewController@find');
+                    $router->delete('{id}', 'ReviewController@delete');
                 });
 
                 // storefront/v1/orders
