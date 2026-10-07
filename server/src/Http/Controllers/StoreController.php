@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\Storefront\Models\Store;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class StoreController extends StorefrontController
@@ -13,6 +14,19 @@ class StoreController extends StorefrontController
      * @var string
      */
     public $resource = 'store';
+
+    /**
+     * Eager-load what the store resource always serializes, so listing stores
+     * does not run logo, backdrop and rating queries for every store.
+     */
+    public function onQueryRecord(Builder $builder, Request $request)
+    {
+        $builder->with(['logo', 'backdrop'])->withAvg('reviews', 'rating');
+
+        if ($request->filled('network') && ($request->has('with_category') || $request->inArray('with', 'category'))) {
+            $builder->with('networks');
+        }
+    }
 
     public function allStores(Request $request)
     {
