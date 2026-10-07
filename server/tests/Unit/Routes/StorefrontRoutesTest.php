@@ -101,5 +101,7 @@ test('storefront route file registers public consumable and internal API contrac
         ['GET', '{id}/chat/messages', 'OrderChatController@messages'],
         ['POST', '{id}/chat/messages', 'OrderChatController@send'],
         ['POST', '{id}/chat/read', 'OrderChatController@read'],
-    )->and(count($router->routes))->toBeGreaterThan(50);
+        ['GET', 'eligibility', 'ReviewController@eligibility'],
+        ['DELETE', '{id}', 'ReviewController@delete'],
+    )->and($router->routes)->not->toContain(['DELETE', '{id}', 'ReviewController@find'])->and(count($router->routes))->toBeGreaterThan(50);
 });

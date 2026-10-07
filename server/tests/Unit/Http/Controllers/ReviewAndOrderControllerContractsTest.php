@@ -281,6 +281,33 @@ class DriverAssignmentStub extends Model
     }
 }
 
+function createReviewOrderSchema(): void
+{
+    $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
+    $schema->dropIfExists('orders');
+    $schema->dropIfExists('entities');
+    $schema->create('orders', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('customer_uuid')->nullable();
+        $table->string('payload_uuid')->nullable();
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('created_at')->nullable();
+        $table->timestamp('updated_at')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('entities', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('payload_uuid')->nullable();
+        $table->string('internal_id')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+}
+
 function createReviewControllerSchema(): void
 {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
@@ -292,6 +319,7 @@ function createReviewControllerSchema(): void
         $table->string('public_id')->nullable();
         $table->string('created_by_uuid')->nullable();
         $table->string('customer_uuid')->nullable();
+        $table->string('order_uuid')->nullable();
         $table->string('subject_uuid')->nullable();
         $table->string('subject_type')->nullable();
         $table->integer('rating')->nullable();
@@ -637,9 +665,10 @@ test('authenticated review creation persists customer and store subject contract
     createReviewControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
-    foreach (['personal_access_tokens', 'files', 'contacts', 'stores'] as $table) {
+    foreach (['personal_access_tokens', 'files', 'contacts', 'stores', 'orders', 'entities'] as $table) {
         $schema->dropIfExists($table);
     }
+    createReviewOrderSchema();
     $schema->create('personal_access_tokens', function ($table) {
         $table->increments('id');
         $table->string('tokenable_type')->nullable();
@@ -728,6 +757,14 @@ test('authenticated review creation persists customer and store subject contract
         ['uuid' => 'product_uuid', 'public_id' => 'product_abcdefgh', 'store_uuid' => 'store_uuid'],
         ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'store_uuid' => 'foreign_store_uuid'],
     ]);
+    // Two completed orders from the store and one containing the product: each order can be
+    // reviewed once per subject, newest first.
+    $connection->table('orders')->insert([
+        ['uuid' => 'older_store_order_uuid', 'public_id' => 'order_older', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => null, 'meta' => json_encode(['storefront_id' => 'store_abcdefgh']), 'created_at' => now()->subDays(3)],
+        ['uuid' => 'newer_store_order_uuid', 'public_id' => 'order_newer', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => null, 'meta' => json_encode(['storefront_id' => 'store_abcdefgh']), 'created_at' => now()->subDay()],
+        ['uuid' => 'product_order_uuid', 'public_id' => 'order_product', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => 'payload_uuid', 'meta' => json_encode(['storefront_id' => 'other_store']), 'created_at' => now()->subDays(2)],
+    ]);
+    $connection->table('entities')->insert(['uuid' => 'entity_uuid', 'payload_uuid' => 'payload_uuid', 'internal_id' => 'product_abcdefgh']);
     $boundRequest = Request::create('/reviews');
     $boundRequest->headers->set('Customer-Token', 'review-customer-secret');
     $boundRequest->setLaravelSession(new Illuminate\Session\Store(
@@ -774,17 +811,22 @@ test('authenticated review creation persists customer and store subject contract
         'uuid'      => 'owned_review_uuid',
         'public_id' => 'review_owned',
     ]);
-    Illuminate\Support\Facades\Storage::swap(new class {
+    $reviewStorage = new class {
         public function disk(string $disk): self
         {
             return $this;
         }
 
-        public function put(string $path, string $contents, string $visibility): bool
+        public array $writes = [];
+
+        public function put(string $path, string $contents, mixed $options = []): bool
         {
+            $this->writes[] = [$path, $options];
+
             return true;
         }
-    });
+    };
+    Illuminate\Support\Facades\Storage::swap($reviewStorage);
     session(['storefront_key' => 'store_key']);
     $withPhoto = $controller->create(
         Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
@@ -801,7 +843,14 @@ test('authenticated review creation persists customer and store subject contract
             ],
         ])
     );
-    $photo = $connection->table('files')->first();
+    $photo           = $connection->table('files')->first();
+    $alreadyReviewed = $controller->create(
+        Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
+            'subject' => 'store_abcdefgh',
+            'rating'  => 3,
+            'content' => 'Third review',
+        ])
+    );
     session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
     $deleted = $controller->delete('review_owned');
 
@@ -814,12 +863,23 @@ test('authenticated review creation persists customer and store subject contract
         ->and($review->subject_uuid)->toBe('store_uuid')
         ->and($review->rating)->toBe(5)
         ->and($review->content)->toBe('Excellent service')
+        ->and($review->order_uuid)->toBe('newer_store_order_uuid')
+        ->and($createdProduct->resource->order_uuid)->toBe('product_order_uuid')
+        ->and($withPhoto->resource->order_uuid)->toBe('older_store_order_uuid')
+        ->and($alreadyReviewed->getStatusCode())->toBe(403)
+        ->and($alreadyReviewed->getData(true))->toBe([
+            'error'  => 'You have already reviewed this for your completed orders.',
+            'reason' => 'already_reviewed',
+        ])
         ->and($withPhoto->resource->files)->toHaveCount(1)
         ->and($photo->subject_uuid)->toBe($withPhoto->resource->uuid)
         ->and($photo->content_type)->toBe('image/png')
         ->and($photo->bucket)->toBe('review-bucket')
         ->and($photo->file_size)->toBe(strlen('image-bytes'))
         ->and($photo->type)->toBe('storefront_review_upload')
+        // review photos are written without a 'public' visibility/ACL
+        ->and($reviewStorage->writes)->toHaveCount(1)
+        ->and($reviewStorage->writes[0][1])->toBe([])
         ->and($deleted->resource->uuid)->toBe('owned_review_uuid')
         ->and($connection->table('reviews')->where('uuid', 'owned_review_uuid')->value('deleted_at'))->not->toBeNull();
 });

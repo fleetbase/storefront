@@ -15,6 +15,28 @@ use Illuminate\Http\Request;
 class NetworkController extends Controller
 {
     /**
+     * The point to measure store distances from, or null when the request has no usable location.
+     *
+     * The coordinate parser falls back to (0, 0) for missing or invalid input. Treating that as a
+     * location made every store's distance be measured from the Gulf of Guinea, filtered out every
+     * store when maximum_distance was set, and loaded the whole network for in-memory sorting.
+     */
+    protected static function resolveReferencePoint($location): ?Point
+    {
+        if (blank($location)) {
+            return null;
+        }
+
+        $point = Utils::getPointFromCoordinates($location);
+
+        if ((float) $point->getLat() === 0.0 && (float) $point->getLng() === 0.0) {
+            return null;
+        }
+
+        return $point;
+    }
+
+    /**
      * Returns all stores within the network.
      *
      * @return \Illuminate\Http\Response
@@ -34,7 +56,7 @@ class NetworkController extends Controller
         $location                       = $request->input('location');
         $maxDistance                    = $request->input('maximum_distance', null);
         $exclude                        = $request->input('exclude', []);
-        $coordinates                    = Utils::getPointFromCoordinates($location);
+        $coordinates                    = static::resolveReferencePoint($location);
         $requiresDistancePostProcessing = $coordinates instanceof Point && ($sort === 'nearest' || is_numeric($maxDistance));
 
         if (is_string($tagged)) {
@@ -52,6 +74,7 @@ class NetworkController extends Controller
         /** @var \Illuminate\Database\Query\Builder $query */
         $query = Store::select('*')
             ->with(['logo', 'backdrop', 'media', 'locations.place'])
+            ->withAvg('reviews', 'rating')
             ->whereHas('locations')
             ->whereHas('networks', function ($q) use ($request) {
                 $q->where('network_uuid', session('storefront_network'));
@@ -114,10 +137,10 @@ class NetworkController extends Controller
 
         switch ($sort) {
             case 'highest_rated':
-                $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating');
+                $query->orderByDesc('reviews_avg_rating');
                 break;
             case 'lowest_rated':
-                $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating');
+                $query->orderBy('reviews_avg_rating');
                 break;
             case 'newest':
                 $query->orderByDesc('created_at');
