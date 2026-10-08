@@ -39,6 +39,7 @@ use Fleetbase\Storefront\Models\StoreHour;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -79,6 +80,15 @@ trait SeedsStorefrontFixtures
     /** @var array<string, Place> dropoff place per seeded customer uuid */
     protected array $customerPlaces = [];
 
+    /**
+     * uuid, public id and key of the stores and networks this seeder created before, by
+     * class and seed id, so re-seeding keeps them. Apps are built against a storefront key,
+     * so a new key would need an app rebuild.
+     *
+     * @var array<string, array<string, array{uuid: string, public_id: ?string, key: ?string}>>
+     */
+    protected array $seededIdentities = [];
+
     /*
     |--------------------------------------------------------------------------
     | Purging
@@ -91,6 +101,8 @@ trait SeedsStorefrontFixtures
      */
     protected function purgeStorefrontFixtures(): void
     {
+        $this->rememberSeededIdentities();
+
         $storeUuids           = $this->seededUuids(Store::class);
         $networkUuids         = $this->seededUuids(Network::class);
         $productUuids         = $this->seededUuids(Product::class);
@@ -160,6 +172,55 @@ trait SeedsStorefrontFixtures
         $this->customerPlaces = [];
     }
 
+    /**
+     * Record the identity of every store and network this seeder created, before purging.
+     */
+    protected function rememberSeededIdentities(): void
+    {
+        $this->seededIdentities = [];
+
+        foreach ([Store::class => 'meta', Network::class => 'options'] as $modelClass => $column) {
+            foreach ($this->seededQuery($modelClass)->get() as $model) {
+                $tag    = (array) $model->{$column};
+                $seedId = $tag['seed_id'] ?? null;
+                if (!$seedId || ($tag['seed'] ?? null) !== $this->seedName()) {
+                    continue;
+                }
+
+                $this->seededIdentities[$modelClass][$seedId] = [
+                    'uuid'      => $model->uuid,
+                    'public_id' => $model->public_id,
+                    'key'       => $model->key,
+                ];
+            }
+        }
+    }
+
+    /**
+     * Create a store or network, keeping the uuid, public id and key it had when this
+     * seeder last created it. The models generate a new key on every create, so the
+     * remembered key and public id are written back straight after the insert.
+     */
+    protected function createWithSeededIdentity(string $modelClass, string $seedId, array $attributes): Model
+    {
+        $previous = $this->seededIdentities[$modelClass][$seedId] ?? null;
+        if ($previous) {
+            $attributes['uuid'] = $previous['uuid'];
+        }
+
+        $model = $this->createRecord($modelClass, $attributes);
+
+        if ($previous) {
+            $identity = array_filter(['public_id' => $previous['public_id'], 'key' => $previous['key']]);
+            if ($identity) {
+                $model->getConnection()->table($model->getTable())->where('uuid', $model->uuid)->update($identity);
+                $model->forceFill($identity)->syncOriginal();
+            }
+        }
+
+        return $model;
+    }
+
     protected function purgeSeededLedgerJournals(array $orderUuids): void
     {
         if (!Schema::connection($this->fleetbaseConnection())->hasTable('ledger_journals')) {
@@ -197,7 +258,7 @@ trait SeedsStorefrontFixtures
         $storeKey = $definition['key'];
         $seedId   = 'store:' . $storeKey;
 
-        $store = $this->createRecord(Store::class, [
+        $store = $this->createWithSeededIdentity(Store::class, $seedId, [
             'company_uuid'      => $company->uuid,
             'created_by_uuid'   => session('user'),
             'order_config_uuid' => Storefront::getOrderConfig($company)->uuid,
@@ -687,7 +748,7 @@ trait SeedsStorefrontFixtures
 
     protected function createNetwork(Company $company, array $definition): Network
     {
-        $network = $this->createRecord(Network::class, [
+        $network = $this->createWithSeededIdentity(Network::class, 'network:' . $definition['key'], [
             'company_uuid'      => $company->uuid,
             'created_by_uuid'   => session('user'),
             'order_config_uuid' => Storefront::getOrderConfig($company)->uuid,
