@@ -52,7 +52,7 @@ class NetworkSeeder extends Seeder
         $this->withoutForeignKeyConstraints(fn () => $this->purgeSeedData());
 
         $network = $this->createNetwork($company, $this->networkDefinition());
-        $this->createDeliveryServiceRate($company, 'service-rate:' . static::NETWORK_KEY);
+        $this->createDeliveryServiceRate($company, 'service-rate:' . static::NETWORK_KEY, $network->currency);
         $gateway = $this->createStripeGateway($company, $network, 'storefront:network', 'gateway:' . static::NETWORK_KEY . ':stripe');
 
         $categories = [];
@@ -108,7 +108,7 @@ class NetworkSeeder extends Seeder
             'phone'       => '+65 6100 0200',
             'website'     => 'https://example.test/fleetbase-marketplace',
             'tags'        => ['marketplace', 'testing'],
-            'currency'    => 'USD',
+            'currency'    => $this->seedCurrency(),
             'timezone'    => 'Asia/Singapore',
             'pod_method'  => 'scan',
             'options'     => [

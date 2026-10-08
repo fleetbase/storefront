@@ -44,7 +44,7 @@ class StoreSeeder extends Seeder
         $this->withoutForeignKeyConstraints(fn () => $this->purgeSeedData());
 
         $bundle    = $this->seedStore($company, $this->storeDefinition());
-        $this->createDeliveryServiceRate($company, 'service-rate:' . static::STORE_KEY);
+        $this->createDeliveryServiceRate($company, 'service-rate:' . static::STORE_KEY, $bundle['store']->currency);
         $customers = $this->seedCustomers($company, $this->customerFixtures());
         $orders    = $this->seedStoreActivity($company, $bundle, $customers, null, 30);
         $marketing = $this->seedMarketing($company, $bundle['store'], static::STORE_KEY, $this->marketingDefinition(), [static::STORE_KEY => $bundle]);
@@ -81,7 +81,7 @@ class StoreSeeder extends Seeder
             'phone'       => '+65 6100 0100',
             'website'     => 'https://example.test/fleetbase-market',
             'tags'        => ['groceries', 'local', 'testing'],
-            'currency'    => 'USD',
+            'currency'    => $this->seedCurrency(),
             'timezone'    => 'Asia/Singapore',
             'pod_method'  => 'scan',
             'gateway'     => 'stripe',

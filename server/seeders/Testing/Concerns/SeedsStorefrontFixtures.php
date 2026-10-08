@@ -60,7 +60,7 @@ use Illuminate\Support\Str;
  *     'description' => '...',
  *     'email'       => '...', 'phone' => '...', 'website' => '...',
  *     'tags'        => ['groceries'],
- *     'currency'    => 'USD', 'timezone' => 'Asia/Singapore', 'pod_method' => 'scan',
+ *     'currency'    => 'SGD', 'timezone' => 'Asia/Singapore', 'pod_method' => 'scan',
  *     'options'     => ['auto_accept_orders' => false, ...],
  *     'gateway'     => 'stripe' | null,
  *     'location'    => ['name' => ..., 'street1' => ..., 'city' => ..., 'country' => 'SG', 'postal_code' => ..., 'lat' => 1.28, 'lng' => 103.85],
@@ -287,7 +287,7 @@ trait SeedsStorefrontFixtures
             'phone'             => $definition['phone'] ?? null,
             'website'           => $definition['website'] ?? null,
             'tags'              => $definition['tags'] ?? [],
-            'currency'          => $definition['currency'] ?? 'USD',
+            'currency'          => $definition['currency'] ?? $this->seedCurrency(),
             'timezone'          => $definition['timezone'] ?? 'Asia/Singapore',
             'pod_method'        => $definition['pod_method'] ?? 'scan',
             'options'           => array_merge([
@@ -428,11 +428,21 @@ trait SeedsStorefrontFixtures
     }
 
     /**
+     * The test stores and network are in Singapore, so everything they sell, quote and
+     * charge is in Singapore dollars. Rates only quote carts in their own currency.
+     */
+    protected function seedCurrency(): string
+    {
+        return 'SGD';
+    }
+
+    /**
      * A storefront delivery rate for the company, without a service area so every address
      * gets a quote: a base fee plus a fee per kilometre, in the seeded stores' currency.
      */
-    protected function createDeliveryServiceRate(Company $company, string $seedId, string $currency = 'USD'): ServiceRate
+    protected function createDeliveryServiceRate(Company $company, string $seedId, ?string $currency = null): ServiceRate
     {
+        $currency ??= $this->seedCurrency();
         $orderConfig = Storefront::getOrderConfig($company);
 
         return $this->createRecord(ServiceRate::class, [
@@ -728,7 +738,7 @@ trait SeedsStorefrontFixtures
             'type'                     => $promotion['type'],
             'value'                    => $promotion['value'] ?? null,
             'max_discount_amount'      => $promotion['max_discount_amount'] ?? null,
-            'currency'                 => $promotion['currency'] ?? $owner->currency ?? 'USD',
+            'currency'                 => $promotion['currency'] ?? $owner->currency ?? $this->seedCurrency(),
             'min_subtotal'             => $promotion['min_subtotal'] ?? null,
             'min_items'                => $promotion['min_items'] ?? null,
             'applies_to'               => $appliesTo ?: null,
@@ -820,7 +830,7 @@ trait SeedsStorefrontFixtures
             'phone'             => $definition['phone'] ?? null,
             'website'           => $definition['website'] ?? null,
             'tags'              => $definition['tags'] ?? [],
-            'currency'          => $definition['currency'] ?? 'USD',
+            'currency'          => $definition['currency'] ?? $this->seedCurrency(),
             'timezone'          => $definition['timezone'] ?? 'Asia/Singapore',
             'pod_method'        => $definition['pod_method'] ?? 'scan',
             'options'           => array_merge([
