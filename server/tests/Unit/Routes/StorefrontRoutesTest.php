@@ -92,6 +92,7 @@ test('storefront route file registers public consumable and internal API contrac
         ['GET', 'about', 'StoreController@about'],
         ['POST', '/', 'ProductController@create'],
         ['POST', 'receipt', 'OrderController@getReceipt'],
+        ['GET', '{id}/activity-flow', 'OrderController@getActivityFlow'],
         ['POST', 'socket-token', 'CustomerController@socketToken'],
         ['POST', 'send-push-notification', 'ActionController@sendPushNotification'],
         ['FLEETBASE', 'orders', null],

@@ -1412,3 +1412,120 @@ test('internal preparing completed rejected and driver-unassignment actions pres
         'order' => 'order_uuid',
     ]))['status'])->toBe('canceled');
 });
+
+test('a customer gets their own order as steps from its order config', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['personal_access_tokens', 'contacts', 'orders', 'order_configs', 'tracking_statuses'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('personal_access_tokens', function ($table) {
+        $table->increments('id');
+        $table->string('tokenable_type')->nullable();
+        $table->integer('tokenable_id')->nullable();
+        $table->string('name');
+        $table->string('token');
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('type')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('orders', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('customer_uuid')->nullable();
+        $table->string('order_config_uuid')->nullable();
+        $table->string('tracking_number_uuid')->nullable();
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('order_configs', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('key')->nullable();
+        $table->string('name')->nullable();
+        $table->text('flow')->nullable();
+    });
+    $schema->create('tracking_statuses', function ($table) {
+        $table->increments('id');
+        $table->string('tracking_number_uuid')->nullable();
+        $table->string('code')->nullable();
+        $table->string('status')->nullable();
+        $table->timestamp('created_at')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('contacts')->insert(['uuid' => '11111111-1111-4111-8111-111111111111', 'public_id' => 'contact_customer', 'type' => 'customer']);
+    $connection->table('personal_access_tokens')->insert([
+        'name'       => '11111111-1111-4111-8111-111111111111',
+        'token'      => hash('sha256', 'customer-secret'),
+        'abilities'  => '["*"]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    // A branch whose condition can't be evaluated is skipped rather than failing the request.
+    $connection->table('order_configs')->insert([
+        'uuid'      => 'config_uuid',
+        'public_id' => 'order_config_olimax',
+        'key'       => 'olimax',
+        'name'      => 'Oli Max delivery',
+        'flow'      => json_encode([
+            'created'    => ['code' => 'created', 'status' => 'Created', 'activities' => ['dispatched']],
+            'dispatched' => ['code' => 'dispatched', 'status' => 'Dispatched', 'details' => 'Sent from {storefront.name}', 'activities' => ['unsupported', 'started']],
+            'unsupported' => ['code' => 'unsupported', 'status' => 'Unsupported', 'logic' => [['type' => 'not-a-logic-type', 'conditions' => []]]],
+            'started'    => ['code' => 'started', 'status' => 'Started', 'activities' => ['completed']],
+            'completed'  => ['code' => 'completed', 'status' => 'Completed', 'complete' => true],
+        ]),
+    ]);
+    $connection->table('orders')->insert([
+        ['uuid' => 'mine_uuid', 'public_id' => 'order_mine', 'customer_uuid' => '11111111-1111-4111-8111-111111111111', 'order_config_uuid' => 'config_uuid', 'tracking_number_uuid' => 'tracking_uuid', 'status' => 'dispatched', 'meta' => json_encode(['storefront' => 'Oli Max']), 'created_at' => '2026-10-08 10:00:00', 'updated_at' => now(), 'deleted_at' => null],
+        ['uuid' => 'bare_uuid', 'public_id' => 'order_bare', 'customer_uuid' => '11111111-1111-4111-8111-111111111111', 'order_config_uuid' => null, 'tracking_number_uuid' => null, 'status' => 'created', 'meta' => '{}', 'created_at' => null, 'updated_at' => null, 'deleted_at' => null],
+        ['uuid' => 'theirs_uuid', 'public_id' => 'order_theirs', 'customer_uuid' => '22222222-2222-4222-8222-222222222222', 'order_config_uuid' => null, 'tracking_number_uuid' => null, 'status' => 'created', 'meta' => '{}', 'created_at' => null, 'updated_at' => null, 'deleted_at' => null],
+    ]);
+    $connection->table('tracking_statuses')->insert([
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'CREATED', 'status' => 'Created', 'created_at' => '2026-10-08 10:00:00', 'deleted_at' => null],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'DISPATCHED', 'status' => 'Dispatched', 'created_at' => '2026-10-08 10:05:00', 'deleted_at' => null],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'REMOVED', 'status' => 'Removed', 'created_at' => '2026-10-08 10:06:00', 'deleted_at' => now()],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'NO_TIME', 'status' => 'No time', 'created_at' => null, 'deleted_at' => null],
+    ]);
+
+    $signedOut = Request::create('/orders');
+    $signedOut->setLaravelSession(new Illuminate\Session\Store('activity-flow-signed-out', new Illuminate\Session\ArraySessionHandler(120)));
+    app()->instance('request', $signedOut);
+    $unauthenticated = (new OrderController())->getActivityFlow('order_mine');
+
+    $boundRequest = Request::create('/orders');
+    $boundRequest->headers->set('Customer-Token', 'customer-secret');
+    $boundRequest->setLaravelSession(new Illuminate\Session\Store('activity-flow-test', new Illuminate\Session\ArraySessionHandler(120)));
+    app()->instance('request', $boundRequest);
+    $controller = new OrderController();
+
+    $missing      = $controller->getActivityFlow('order_missing');
+    $unauthorized = $controller->getActivityFlow('order_theirs');
+    $flow         = $controller->getActivityFlow('order_mine')->getData(true);
+    $bare         = $controller->getActivityFlow('order_bare')->getData(true);
+
+    expect($unauthenticated->getData(true))->toBe(['error' => 'Customer is not authenticated.'])
+        ->and($missing->getStatusCode())->toBe(404)
+        ->and($unauthorized->getStatusCode())->toBe(403)
+        ->and($unauthorized->getData(true))->toBe(['error' => 'Not authorized to view this order.'])
+        ->and($flow['order'])->toBe('order_mine')
+        ->and($flow['order_config'])->toBe(['id' => 'order_config_olimax', 'key' => 'olimax', 'name' => 'Oli Max delivery'])
+        // History without a time sorts first; deleted history is left out.
+        ->and(array_map(fn ($step) => $step['code'] . ':' . $step['state'], $flow['steps']))->toBe(['no_time:done', 'created:done', 'dispatched:current', 'started:upcoming', 'completed:upcoming'])
+        ->and($flow['steps'][2]['details'])->toBe('Sent from Oli Max')
+        ->and($flow['steps'][2]['reached_at'])->toStartWith('2026-10-08T10:05:00')
+        ->and($flow['steps'][0]['reached_at'])->toBeNull()
+        ->and($bare['order_config'])->toBeNull()
+        ->and(array_map(fn ($step) => $step['code'] . ':' . $step['state'], $bare['steps']))->toBe(['created:current']);
+});

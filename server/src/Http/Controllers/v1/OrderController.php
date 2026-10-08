@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Support\OrderActivityFlow;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\JsonResponse;
@@ -55,6 +56,34 @@ class OrderController extends Controller
     protected function updateOrderStatus(Order $order, string $status)
     {
         return $order->updateStatus($status);
+    }
+
+    /**
+     * The customer's order as a line of steps from its own order config: where it has been,
+     * where it is, and where it is expected to go (see OrderActivityFlow).
+     *
+     * GET storefront/v1/orders/{id}/activity-flow
+     */
+    public function getActivityFlow(string $id)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->apiError('Customer is not authenticated.');
+        }
+
+        $order = Order::where('public_id', $id)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$order) {
+            return response()->apiError('No order found.', 404);
+        }
+
+        if ($order->customer_uuid !== $customer->uuid) {
+            return response()->apiError('Not authorized to view this order.', 403);
+        }
+
+        return response()->json(OrderActivityFlow::forOrder($order));
     }
 
     /**
