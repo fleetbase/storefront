@@ -1062,12 +1062,13 @@ class CustomerController extends Controller
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
-        // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
-        }
-
         try {
+            // Ensure customer has a stripe_id. Inside the try: Stripe refusing the gateway's key
+            // must come back as an error, not an uncaught exception rendered as 401.
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+
             // Create Ephemeral Key
             $ephemeralKey = \Stripe\EphemeralKey::create(
                 ['customer' => $customer->getMeta('stripe_id')],
@@ -1097,12 +1098,13 @@ class CustomerController extends Controller
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
-        // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
-        }
-
         try {
+            // Ensure customer has a stripe_id. Inside the try: Stripe refusing the gateway's key
+            // must come back as an error, not an uncaught exception rendered as 401.
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+
             // Create SetupIntent
             $setupIntent = \Stripe\SetupIntent::create([
                 'customer' => $customer->getMeta('stripe_id'),

@@ -129,28 +129,30 @@ class ReviewController extends Controller
     public function applySort($request, $sort)
     {
         if ($sort) {
+            // Core's query builder reads the direction from a "-" prefix on each column (it has no
+            // sort_direction parameter). Equal ratings list the newest review first.
             switch ($sort) {
                 case 'highest':
                 case 'highest rated':
-                    $request->merge(['sort' => 'rating', 'sort_direction' => 'desc']);
+                    $request->merge(['sort' => ['-rating', '-created_at']]);
 
                     break;
 
                 case 'lowest':
                 case 'lowest rated':
-                    $request->merge(['sort' => 'rating', 'sort_direction' => 'asc']);
+                    $request->merge(['sort' => ['rating', '-created_at']]);
 
                     break;
 
                 case 'newest':
                 case 'newest first':
-                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'desc']);
+                    $request->merge(['sort' => ['-created_at']]);
 
                     break;
 
                 case 'oldest':
                 case 'oldest first':
-                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'asc']);
+                    $request->merge(['sort' => ['created_at']]);
 
                     break;
 

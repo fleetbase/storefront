@@ -337,7 +337,7 @@ function createReviewControllerSchema(): void
     });
 }
 
-test('review sort aliases map to stable API sort fields and directions', function (string $sort, ?array $expected) {
+test('review sort aliases map to the sort columns core understands, with "-" for descending', function (string $sort, ?array $expected) {
     $request = Request::create('/reviews');
 
     (new ReviewController())->applySort($request, $sort);
@@ -345,13 +345,14 @@ test('review sort aliases map to stable API sort fields and directions', functio
     if ($expected === null) {
         expect($request->has('sort'))->toBeFalse();
     } else {
-        expect($request->only(['sort', 'sort_direction']))->toBe($expected);
+        expect($request->input('sort'))->toBe($expected)
+            ->and($request->has('sort_direction'))->toBeFalse();
     }
 })->with([
-    'highest' => ['highest rated', ['sort' => 'rating', 'sort_direction' => 'desc']],
-    'lowest'  => ['lowest', ['sort' => 'rating', 'sort_direction' => 'asc']],
-    'newest'  => ['newest first', ['sort' => 'created_at', 'sort_direction' => 'desc']],
-    'oldest'  => ['oldest', ['sort' => 'created_at', 'sort_direction' => 'asc']],
+    'highest' => ['highest rated', ['-rating', '-created_at']],
+    'lowest'  => ['lowest', ['rating', '-created_at']],
+    'newest'  => ['newest first', ['-created_at']],
+    'oldest'  => ['oldest', ['created_at']],
     'unknown' => ['featured', null],
 ]);
 
@@ -446,8 +447,7 @@ test('review listing applies storefront ownership sorting limits and offsets', f
 
     $resource = (new ReviewController())->query($request);
 
-    expect($request->input('sort'))->toBe('rating')
-        ->and($request->input('sort_direction'))->toBe('desc')
+    expect($request->input('sort'))->toBe(['-rating', '-created_at'])
         ->and($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('review_two_uuid');
 });
