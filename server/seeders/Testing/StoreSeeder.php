@@ -241,7 +241,7 @@ class StoreSeeder extends Seeder
         return [
             'promotions' => [
                 'coffee-hour'   => ['name' => 'Coffee hour', 'description' => '20% off beverages, every morning 7 to 10.', 'type' => 'percentage', 'value' => 20, 'applies_to' => ['categories' => [$key . ':beverages']], 'schedule' => [['days' => [1, 2, 3, 4, 5, 6, 7], 'start' => '07:00', 'end' => '10:00']], 'starts_in_days' => -14, 'ends_in_days' => 60],
-                'market-five'   => ['name' => '$5 off $30', 'description' => 'Use MARKET5 on orders of $30 or more.', 'type' => 'fixed_amount', 'value' => 500, 'min_subtotal' => 3000, 'code' => 'MARKET5', 'usage_limit_per_customer' => 3, 'starts_in_days' => -7, 'ends_in_days' => 30],
+                'market-five'   => ['name' => 'S$5 off S$30', 'description' => 'Use MARKET5 on orders of S$30 or more.', 'type' => 'fixed_amount', 'value' => 500, 'min_subtotal' => 3000, 'code' => 'MARKET5', 'usage_limit_per_customer' => 3, 'starts_in_days' => -7, 'ends_in_days' => 30],
                 'free-delivery' => ['name' => 'Free delivery for first orders', 'description' => 'Your first delivery is free.', 'type' => 'free_delivery', 'first_order_only' => true, 'starts_in_days' => -30, 'ends_in_days' => 90],
                 'harvest'       => ['name' => 'Harvest week', 'description' => '15% off fresh produce (coming soon).', 'type' => 'percentage', 'value' => 15, 'applies_to' => ['categories' => [$key . ':produce']], 'starts_in_days' => 5, 'ends_in_days' => 12],
             ],
@@ -252,7 +252,7 @@ class StoreSeeder extends Seeder
             'campaigns' => [
                 'coffee-sent'    => ['name' => 'Coffee hour', 'title' => '20% off coffee before 10', 'body' => 'Cold brew and lattes, every morning.', 'status' => 'sent', 'segment' => 'regulars', 'promotion' => 'coffee-hour', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 2, 'stats' => ['targeted' => 6, 'batches' => 1]],
                 'harvest-soon'   => ['name' => 'Harvest week', 'title' => 'Harvest week starts soon', 'body' => '15% off fresh produce all week.', 'status' => 'scheduled', 'promotion' => 'harvest', 'action' => ['type' => 'promotion'], 'send_in_days' => 5],
-                'winback-draft'  => ['name' => 'Win back (draft)', 'title' => '$5 off your next order', 'body' => 'Use MARKET5 on orders of $30 or more.', 'status' => 'draft', 'segment' => 'lapsed', 'promotion' => 'market-five'],
+                'winback-draft'  => ['name' => 'Win back (draft)', 'title' => 'S$5 off your next order', 'body' => 'Use MARKET5 on orders of S$30 or more.', 'status' => 'draft', 'segment' => 'lapsed', 'promotion' => 'market-five'],
             ],
         ];
     }

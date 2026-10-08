@@ -329,9 +329,9 @@ class NetworkSeeder extends Seeder
     {
         return [
             'promotions' => [
-                'welcome'         => ['name' => 'Welcome to Fleetbase Marketplace', 'description' => '15% off your first order, up to $10.', 'type' => 'percentage', 'value' => 15, 'max_discount_amount' => 1000, 'min_subtotal' => 2000, 'first_order_only' => true, 'code' => 'WELCOME15', 'usage_limit_per_customer' => 1, 'starts_in_days' => -30, 'ends_in_days' => 60],
-                'free-delivery'   => ['name' => 'Free delivery over $40', 'description' => 'Delivery is on us when your basket is $40 or more.', 'type' => 'free_delivery', 'min_subtotal' => 4000, 'starts_in_days' => -14, 'ends_in_days' => 30, 'priority' => 5],
-                'weekend-five'    => ['name' => '$5 off weekend orders', 'description' => 'Every Saturday and Sunday, $5 off orders of $25 or more.', 'type' => 'fixed_amount', 'value' => 500, 'min_subtotal' => 2500, 'schedule' => [['days' => [6, 7], 'start' => '00:00', 'end' => '23:59']], 'starts_in_days' => -7, 'ends_in_days' => 45],
+                'welcome'         => ['name' => 'Welcome to Fleetbase Marketplace', 'description' => '15% off your first order, up to S$10.', 'type' => 'percentage', 'value' => 15, 'max_discount_amount' => 1000, 'min_subtotal' => 2000, 'first_order_only' => true, 'code' => 'WELCOME15', 'usage_limit_per_customer' => 1, 'starts_in_days' => -30, 'ends_in_days' => 60],
+                'free-delivery'   => ['name' => 'Free delivery over S$40', 'description' => 'Delivery is on us when your basket is S$40 or more.', 'type' => 'free_delivery', 'min_subtotal' => 4000, 'starts_in_days' => -14, 'ends_in_days' => 30, 'priority' => 5],
+                'weekend-five'    => ['name' => 'S$5 off weekend orders', 'description' => 'Every Saturday and Sunday, S$5 off orders of S$25 or more.', 'type' => 'fixed_amount', 'value' => 500, 'min_subtotal' => 2500, 'schedule' => [['days' => [6, 7], 'start' => '00:00', 'end' => '23:59']], 'starts_in_days' => -7, 'ends_in_days' => 45],
                 'services-launch' => ['name' => 'Home & Wellness launch', 'description' => '20% off any booked service.', 'type' => 'percentage', 'value' => 20, 'max_discount_amount' => 3000, 'applies_to' => ['stores' => ['lion-city-cleaning', 'tiong-bahru-wellness']], 'starts_in_days' => 3, 'ends_in_days' => 33],
                 'spring-sale'     => ['name' => 'Spring sale', 'description' => '10% off everything (ended).', 'type' => 'percentage', 'value' => 10, 'starts_in_days' => -40, 'ends_in_days' => -10],
                 'vip-preview'     => ['name' => 'VIP preview (draft)', 'description' => 'Not published yet.', 'type' => 'percentage', 'value' => 25, 'status' => 'draft', 'is_public' => false, 'code' => 'VIPPREVIEW'],
@@ -345,9 +345,9 @@ class NetworkSeeder extends Seeder
             ],
             'campaigns' => [
                 'welcome-sent'   => ['name' => 'Welcome offer', 'title' => '15% off your first order', 'body' => 'Use WELCOME15 at checkout. Ends soon.', 'status' => 'sent', 'segment' => 'never', 'promotion' => 'welcome', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 3, 'stats' => ['targeted' => 0, 'batches' => 0]],
-                'delivery-sent'  => ['name' => 'Free delivery week', 'title' => 'Free delivery over $40', 'body' => 'Stock up this week, delivery is on us.', 'status' => 'sent', 'segment' => 'loyal', 'promotion' => 'free-delivery', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 1, 'stats' => ['targeted' => 12, 'batches' => 1]],
+                'delivery-sent'  => ['name' => 'Free delivery week', 'title' => 'Free delivery over S$40', 'body' => 'Stock up this week, delivery is on us.', 'status' => 'sent', 'segment' => 'loyal', 'promotion' => 'free-delivery', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 1, 'stats' => ['targeted' => 12, 'batches' => 1]],
                 'services-soon'  => ['name' => 'Home & Wellness launch', 'title' => 'Book a clean or a massage', 'body' => 'New on Fleetbase Marketplace: 20% off booked services.', 'status' => 'scheduled', 'segment' => 'recent', 'promotion' => 'services-launch', 'action' => ['type' => 'store', 'ref' => 'lion-city-cleaning'], 'send_in_days' => 14],
-                'winback-draft'  => ['name' => 'We miss you (draft)', 'title' => 'Come back for $5 off', 'body' => 'Here is $5 off your next weekend order.', 'status' => 'draft', 'segment' => 'lapsed', 'promotion' => 'weekend-five'],
+                'winback-draft'  => ['name' => 'We miss you (draft)', 'title' => 'Come back for S$5 off', 'body' => 'Here is S$5 off your next weekend order.', 'status' => 'draft', 'segment' => 'lapsed', 'promotion' => 'weekend-five'],
             ],
         ];
     }
@@ -373,7 +373,7 @@ class NetworkSeeder extends Seeder
             ],
             'lion-city-cleaning' => [
                 'promotions' => [
-                    'first-clean' => ['name' => '$20 off your first clean', 'description' => 'For new customers, on any home clean.', 'type' => 'fixed_amount', 'value' => 2000, 'min_subtotal' => 6000, 'first_order_only' => true, 'code' => 'FIRSTCLEAN', 'applies_to' => ['categories' => ['lion-city-cleaning:cleaning']], 'starts_in_days' => -20, 'ends_in_days' => 70],
+                    'first-clean' => ['name' => 'S$20 off your first clean', 'description' => 'For new customers, on any home clean.', 'type' => 'fixed_amount', 'value' => 2000, 'min_subtotal' => 6000, 'first_order_only' => true, 'code' => 'FIRSTCLEAN', 'applies_to' => ['categories' => ['lion-city-cleaning:cleaning']], 'starts_in_days' => -20, 'ends_in_days' => 70],
                 ],
             ],
         ];
