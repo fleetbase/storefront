@@ -390,7 +390,8 @@ trait SeedsStorefrontFixtures
 
             $this->createRecord(StoreHour::class, [
                 'store_location_uuid' => $storeLocation->uuid,
-                'day_of_week'         => $day,
+                // Capitalised like the console writes them ("Monday"); clients match on it.
+                'day_of_week'         => ucfirst($day),
                 'start'               => $start,
                 'end'                 => $end,
             ]);
