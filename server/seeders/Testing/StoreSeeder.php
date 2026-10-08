@@ -44,6 +44,7 @@ class StoreSeeder extends Seeder
         $this->withoutForeignKeyConstraints(fn () => $this->purgeSeedData());
 
         $bundle    = $this->seedStore($company, $this->storeDefinition());
+        $this->createDeliveryServiceRate($company, 'service-rate:' . static::STORE_KEY);
         $customers = $this->seedCustomers($company, $this->customerFixtures());
         $orders    = $this->seedStoreActivity($company, $bundle, $customers, null, 30);
         $marketing = $this->seedMarketing($company, $bundle['store'], static::STORE_KEY, $this->marketingDefinition(), [static::STORE_KEY => $bundle]);

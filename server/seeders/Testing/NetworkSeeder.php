@@ -52,6 +52,7 @@ class NetworkSeeder extends Seeder
         $this->withoutForeignKeyConstraints(fn () => $this->purgeSeedData());
 
         $network = $this->createNetwork($company, $this->networkDefinition());
+        $this->createDeliveryServiceRate($company, 'service-rate:' . static::NETWORK_KEY);
         $gateway = $this->createStripeGateway($company, $network, 'storefront:network', 'gateway:' . static::NETWORK_KEY . ':stripe');
 
         $categories = [];

@@ -8,6 +8,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Payload;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Support\Utils as FleetOpsUtils;
 use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Models\Category;
@@ -89,6 +90,14 @@ trait SeedsStorefrontFixtures
      */
     protected array $seededIdentities = [];
 
+    /**
+     * Config (Stripe keys) of the gateways this seeder created before, by seed id, so real
+     * keys set on a seeded gateway survive re-seeding.
+     *
+     * @var array<string, array>
+     */
+    protected array $seededGatewayConfigs = [];
+
     /*
     |--------------------------------------------------------------------------
     | Purging
@@ -158,8 +167,9 @@ trait SeedsStorefrontFixtures
         $this->purgeModel(AddonCategory::class);
         $this->purgeModel(Category::class);
 
-        // Payments
+        // Payments and delivery pricing
         $this->purgeModel(Gateway::class);
+        $this->purgeModel(ServiceRate::class);
         $this->deleteFrom($this->storefrontConnection(), 'payment_methods', fn ($query) => $query->whereIn('owner_uuid', $customerUuids));
 
         // Stores, locations and networks
@@ -192,6 +202,14 @@ trait SeedsStorefrontFixtures
                     'public_id' => $model->public_id,
                     'key'       => $model->key,
                 ];
+            }
+        }
+
+        $this->seededGatewayConfigs = [];
+        foreach ($this->seededQuery(Gateway::class)->get() as $gateway) {
+            $tag = (array) $gateway->meta;
+            if (($tag['seed'] ?? null) === $this->seedName() && !empty($tag['seed_id'])) {
+                $this->seededGatewayConfigs[$tag['seed_id']] = (array) $gateway->config;
             }
         }
     }
@@ -389,6 +407,52 @@ trait SeedsStorefrontFixtures
      * are stored so the gateway is selectable and the "missing secret" checkout path
      * can be exercised.
      */
+    /**
+     * Stripe keys for a seeded gateway: SEED_STRIPE_* when set, else the real keys already on
+     * this gateway from an earlier run (set in the console), else placeholders.
+     */
+    protected function stripeGatewayConfig(string $seedId): array
+    {
+        $placeholder = ['secret_key' => 'sk_test_storefront_seed_placeholder', 'publishable_key' => 'pk_test_storefront_seed_placeholder'];
+        if (env('SEED_STRIPE_SECRET_KEY')) {
+            return ['secret_key' => env('SEED_STRIPE_SECRET_KEY'), 'publishable_key' => env('SEED_STRIPE_PUBLISHABLE_KEY') ?: $placeholder['publishable_key']];
+        }
+
+        $previous = $this->seededGatewayConfigs[$seedId] ?? [];
+        $secret   = $previous['secret_key'] ?? null;
+        if (is_string($secret) && $secret !== '' && $secret !== $placeholder['secret_key']) {
+            return $previous;
+        }
+
+        return $placeholder;
+    }
+
+    /**
+     * A storefront delivery rate for the company, without a service area so every address
+     * gets a quote: a base fee plus a fee per kilometre, in the seeded stores' currency.
+     */
+    protected function createDeliveryServiceRate(Company $company, string $seedId, string $currency = 'USD'): ServiceRate
+    {
+        $orderConfig = Storefront::getOrderConfig($company);
+
+        return $this->createRecord(ServiceRate::class, [
+            '_key'                    => $this->fixtureKey($seedId),
+            'company_uuid'            => $company->uuid,
+            'created_by_uuid'         => session('user'),
+            'order_config_uuid'       => $orderConfig?->uuid,
+            'service_name'            => 'Storefront Delivery',
+            'service_type'            => data_get($orderConfig, 'key', 'storefront'),
+            'rate_calculation_method' => 'per_meter',
+            'base_fee'                => 299,
+            'per_meter_flat_rate_fee' => 60,
+            'per_meter_unit'          => 'km',
+            'currency'                => $currency,
+            'duration_terms'          => 'Delivered within the hour',
+            'estimated_days'          => 0,
+            'has_cod_fee'             => false,
+        ]);
+    }
+
     protected function createStripeGateway(Company $company, Store|Network $owner, string $ownerType, string $seedId): Gateway
     {
         return $this->createRecord(Gateway::class, [
@@ -401,10 +465,7 @@ trait SeedsStorefrontFixtures
             'code'            => 'stripe',
             'type'            => 'stripe',
             'sandbox'         => true,
-            'config'          => [
-                'secret_key'      => env('SEED_STRIPE_SECRET_KEY') ?: 'sk_test_storefront_seed_placeholder',
-                'publishable_key' => env('SEED_STRIPE_PUBLISHABLE_KEY') ?: 'pk_test_storefront_seed_placeholder',
-            ],
+            'config'          => $this->stripeGatewayConfig($seedId),
             'return_url'      => null,
             'callback_url'    => null,
             'meta'            => $this->meta($seedId),
