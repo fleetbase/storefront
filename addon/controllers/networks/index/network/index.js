@@ -152,13 +152,17 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         this.editGateway(gateway, {
             title: this.intl.t('storefront.networks.index.network.index.create-new-payment-gateway'),
             acceptButtonText: this.intl.t('storefront.networks.index.network.index.save-gateway'),
-            confirm: (modal) => {
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                return gateway.save().then((gateway) => {
+                try {
+                    await gateway.save();
                     this.notifications.success(this.intl.t('storefront.networks.index.network.index.new-gateway-add-network'));
                     this.gateways.pushObject(gateway);
-                });
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
             },
             decline: (modal) => {
                 gateway.destroyRecord();
@@ -180,14 +184,9 @@ export default class NetworksIndexNetworkIndexController extends Controller {
             options = {};
         }
 
-        if (!options.confirm) {
-            options.confirm = (modal) => {
-                modal.startLoading();
-
-                return gateway.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.payment-gateway-changes-success'));
-                });
-            };
+        // The settings controller's modal saves the gateway and reports errors; only the message differs.
+        if (!options.successNotification) {
+            options.successNotification = this.intl.t('storefront.networks.index.network.index.payment-gateway-changes-success');
         }
 
         return this.gatewaysController.editGateway(gateway, options);
