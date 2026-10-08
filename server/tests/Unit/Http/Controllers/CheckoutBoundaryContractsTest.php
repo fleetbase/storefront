@@ -501,7 +501,7 @@ function createCheckoutBoundarySchema(): void
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
 
-    foreach (['carts', 'gateways', 'contacts', 'service_quotes', 'integrated_vendors', 'checkouts', 'networks', 'stores', 'orders'] as $table) {
+    foreach (['carts', 'gateways', 'contacts', 'service_quotes', 'integrated_vendors', 'checkouts', 'promotion_redemptions', 'networks', 'stores', 'orders'] as $table) {
         $schema->dropIfExists($table);
     }
 
@@ -590,6 +590,14 @@ function createCheckoutBoundarySchema(): void
         $table->boolean('captured')->default(false);
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('promotion_redemptions', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('promotion_uuid')->nullable();
+        $table->string('checkout_uuid')->nullable();
+        $table->string('status')->default('reserved');
+        $table->timestamps();
     });
     $schema->create('stores', function ($table) {
         $table->increments('id');
@@ -2482,7 +2490,35 @@ test('stripe payment updates enforce modifiable states and persist refreshed che
         'PUT',
         $input
     ));
+    $checkout = Checkout::query()->first();
+
+    // Updating the same PaymentIntent again (another payment method chosen) updates that
+    // checkout instead of adding one capture couldn't verify.
+    $again = $controller->updateStripePaymentIntent(Request::create(
+        '/checkout/stripe-update',
+        'PUT',
+        [...$input, 'pickup' => false]
+    ));
+    $againData = $again->getData(true);
+
+    // Another customer's checkout keeps its PaymentIntent.
+    $connection->table('checkouts')->where('uuid', $checkout->uuid)->update(['owner_uuid' => 'other_customer_uuid']);
+    $foreign = $controller->updateStripePaymentIntent(Request::create(
+        '/checkout/stripe-update',
+        'PUT',
+        $input
+    ));
+    $connection->table('checkouts')->where('uuid', $checkout->uuid)->update(['owner_uuid' => 'customer_uuid', 'is_pickup' => true]);
     Stripe\ApiRequestor::setHttpClient(new Stripe\HttpClient\CurlClient());
+
+    expect(Checkout::query()->count())->toBe(1)
+        ->and($againData['checkout'])->toBe($checkout->public_id)
+        ->and($againData['token'])->toBe($checkout->token)
+        ->and($checkout->stripe_payment_intent_id)->toBe('pi_checkout')
+        ->and(Checkout::query()->first()->stripe_payment_intent_id)->toBe('pi_checkout')
+        ->and($foreign->getStatusCode())->toBe(422)
+        ->and($foreign->getData(true))->toBe(['error' => 'PaymentIntent belongs to another checkout.']);
+
     $checkout    = Checkout::query()->first();
     $meta        = json_decode($connection->table('contacts')->where('uuid', 'customer_uuid')->value('meta'), true);
     $updatedData = $updated->getData(true);

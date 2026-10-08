@@ -206,6 +206,22 @@ test('captured orders redeem reservations, or record the use when the reservatio
     ]);
 });
 
+test("a checkout's own reservations can be released before it is reserved again", function () {
+    $promotion = makePromotion();
+    promotionDb()->table('promotion_redemptions')->insert([
+        ['uuid' => 'mine', 'promotion_uuid' => $promotion->uuid, 'checkout_uuid' => 'checkout_uuid', 'status' => 'reserved', 'created_at' => now()],
+        ['uuid' => 'used', 'promotion_uuid' => $promotion->uuid, 'checkout_uuid' => 'checkout_uuid', 'status' => 'redeemed', 'created_at' => now()],
+        ['uuid' => 'theirs', 'promotion_uuid' => $promotion->uuid, 'checkout_uuid' => 'other_checkout_uuid', 'status' => 'reserved', 'created_at' => now()],
+    ]);
+
+    expect(PromotionRedemptions::releaseFor(promotionCheckout()))->toBe(1)
+        ->and(promotionDb()->table('promotion_redemptions')->orderBy('uuid')->pluck('status', 'uuid')->all())->toBe([
+            'mine'   => 'released',
+            'theirs' => 'reserved',
+            'used'   => 'redeemed',
+        ]);
+});
+
 test('stale reservations are released by the scheduled command', function () {
     $promotion = makePromotion();
     promotionDb()->table('promotion_redemptions')->insert([

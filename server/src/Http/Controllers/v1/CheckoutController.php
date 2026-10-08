@@ -700,8 +700,7 @@ class CheckoutController extends Controller
             return response()->apiError('Failed to create ephemeral key: ' . $e->getMessage());
         }
 
-        // Create a new checkout token
-        $checkout = Checkout::create([
+        $attributes = [
             'company_uuid'       => session('company'),
             'store_uuid'         => session('storefront_store'),
             'network_uuid'       => session('storefront_network'),
@@ -715,7 +714,22 @@ class CheckoutController extends Controller
             'is_pickup'          => $isPickup,
             'options'            => $checkoutOptions,
             'cart_state'         => $cart->toArray(),
-        ]);
+        ];
+
+        // Capture verifies the payment against the checkout's PaymentIntent, and a
+        // PaymentIntent belongs to one checkout, so update the checkout that started it
+        // rather than adding an unlinked one.
+        $checkout = Checkout::where('stripe_payment_intent_id', $paymentIntent->id)->first();
+        if ($checkout && $checkout->owner_uuid !== $customer->uuid) {
+            return response()->apiError('PaymentIntent belongs to another checkout.', 422);
+        }
+        if ($checkout) {
+            // Its promotion uses are reserved again below at the new price.
+            PromotionRedemptions::releaseFor($checkout);
+            $checkout->update($attributes);
+        } else {
+            $checkout = Checkout::create([...$attributes, 'stripe_payment_intent_id' => $paymentIntent->id]);
+        }
 
         // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
         // the chkt_* public id GET /checkouts/status requires alongside the token.
