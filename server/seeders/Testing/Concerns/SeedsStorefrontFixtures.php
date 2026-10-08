@@ -15,11 +15,13 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
 use Fleetbase\Storefront\Models\AddonCategory;
+use Fleetbase\Storefront\Models\Campaign;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Catalog;
 use Fleetbase\Storefront\Models\CatalogCategory;
 use Fleetbase\Storefront\Models\CatalogProduct;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\CustomerSegment;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NetworkStore;
@@ -29,6 +31,8 @@ use Fleetbase\Storefront\Models\ProductAddonCategory;
 use Fleetbase\Storefront\Models\ProductStatus;
 use Fleetbase\Storefront\Models\ProductVariant;
 use Fleetbase\Storefront\Models\ProductVariantOption;
+use Fleetbase\Storefront\Models\Promotion;
+use Fleetbase\Storefront\Models\PromotionCode;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreHour;
@@ -62,6 +66,7 @@ use Illuminate\Support\Str;
  *     'categories'  => ['produce' => ['name' => 'Fresh Produce', 'description' => '...']],
  *     'addon_categories' => ['gift' => ['name' => ..., 'description' => ..., 'max_selectable' => 2, 'is_required' => false, 'addons' => [['Gift Wrap', 'desc', 350]]]],
  *     'products'    => ['orchard-box' => ['name' => ..., 'description' => ..., 'price' => 2850, 'category' => 'produce', 'tags' => [], 'recommended' => true,
+ *                                          'is_service' => false, 'is_bookable' => false, 'meta' => ['duration' => 60],  // services: duration in minutes
  *                                          'variants' => [['name' => 'Box Size', 'required' => true, 'multiselect' => false, 'options' => [['Small', 0], ['Family', 1200]]]],
  *                                          'addon_categories' => ['gift']]],
  *     'catalog'     => ['name' => ..., 'description' => ..., 'categories' => ['Fresh Picks' => ['orchard-box', 'market-veg']]],
@@ -97,9 +102,17 @@ trait SeedsStorefrontFixtures
         $orderUuids           = $this->seededUuids(Order::class);
         $transactionUuids     = $this->seededUuids(Transaction::class);
         $customerUuids        = $this->seededUuids(Contact::class);
+        $promotionUuids       = $this->seededUuids(Promotion::class);
         $storeLocationUuids   = Schema::connection($this->storefrontConnection())->hasTable('store_locations')
             ? DB::connection($this->storefrontConnection())->table('store_locations')->whereIn('store_uuid', $storeUuids)->pluck('uuid')->all()
             : [];
+
+        // Marketing: campaigns point at segments and promotions; codes and redemptions at promotions
+        $this->purgeModel(Campaign::class);
+        $this->deleteFrom($this->storefrontConnection(), 'promotion_redemptions', fn ($query) => $query->whereIn('promotion_uuid', $promotionUuids));
+        $this->deleteFrom($this->storefrontConnection(), 'promotion_codes', fn ($query) => $query->whereIn('promotion_uuid', $promotionUuids)->orWhereIn('meta->seed', $this->seedNames()));
+        $this->purgeModel(Promotion::class);
+        $this->purgeModel(CustomerSegment::class);
 
         // Orders, payments and logistics records
         $this->purgeSeededLedgerJournals($orderUuids);
@@ -177,7 +190,7 @@ trait SeedsStorefrontFixtures
      * a location with opening hours, product categories, products with variants and
      * addons, a published catalog and (optionally) a Stripe gateway.
      *
-     * @return array{store: Store, location: StoreLocation|null, place: Place|null, products: array<string, Product>, gateway: Gateway|null}
+     * @return array{store: Store, location: StoreLocation|null, place: Place|null, products: array<string, Product>, categories: array<string, Category>, gateway: Gateway|null}
      */
     protected function seedStore(Company $company, array $definition): array
     {
@@ -248,11 +261,12 @@ trait SeedsStorefrontFixtures
         }
 
         return [
-            'store'    => $store,
-            'location' => $location,
-            'place'    => $place,
-            'products' => $products,
-            'gateway'  => $gateway,
+            'store'      => $store,
+            'location'   => $location,
+            'place'      => $place,
+            'products'   => $products,
+            'categories' => $categories,
+            'gateway'    => $gateway,
         ];
     }
 
@@ -369,7 +383,7 @@ trait SeedsStorefrontFixtures
             'name'            => $product['name'],
             'description'     => $product['description'] ?? null,
             'tags'            => $product['tags'] ?? [],
-            'meta'            => $this->meta('product:' . $storeKey . ':' . $productKey),
+            'meta'            => $this->meta('product:' . $storeKey . ':' . $productKey, $product['meta'] ?? []),
             'sku'             => $product['sku'] ?? 'SF-' . Str::upper(Str::slug($storeKey . '-' . $productKey)),
             'price'           => (int) $product['price'],
             'currency'        => $product['currency'] ?? $store->currency,
@@ -495,6 +509,178 @@ trait SeedsStorefrontFixtures
 
     /*
     |--------------------------------------------------------------------------
+    | Marketing
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Seed promotions (with their codes), customer segments and campaigns for a store or
+     * network. Product and category references are "<store key>:<product or category key>"
+     * against the seeded store bundles; dates are relative to now:
+     *
+     * [
+     *     'promotions' => ['welcome' => ['name' => ..., 'type' => 'percentage', 'value' => 15, 'trigger' => 'code', 'code' => 'WELCOME15',
+     *                                     'starts_in_days' => -30, 'ends_in_days' => 30, 'applies_to' => ['products' => ['store:product']], ...]],
+     *     'segments'   => ['loyal' => ['name' => ..., 'description' => ..., 'rules' => ['min_orders' => 3]]],
+     *     'campaigns'  => ['launch' => ['name' => ..., 'title' => ..., 'body' => ..., 'status' => 'sent', 'segment' => 'loyal', 'promotion' => 'welcome',
+     *                                    'action' => ['type' => 'promotion'], 'sent_days_ago' => 2]],
+     * ]
+     *
+     * @param array<int, array{store: Store, products: array<string, Product>, categories: array<string, Category>}> $bundles
+     *
+     * @return array{promotions: array<string, Promotion>, segments: array<string, CustomerSegment>, campaigns: array<string, Campaign>}
+     */
+    protected function seedMarketing(Company $company, Store|Network $owner, string $ownerKey, array $definition, array $bundles): array
+    {
+        $ownerType = $owner instanceof Network ? 'storefront:network' : 'storefront:store';
+        $refs      = $this->marketingReferences($bundles);
+
+        $promotions = [];
+        foreach ($definition['promotions'] ?? [] as $key => $promotion) {
+            $promotions[$key] = $this->createPromotion($company, $owner, $ownerType, $ownerKey, $key, $promotion, $refs);
+        }
+
+        $segments = [];
+        foreach ($definition['segments'] ?? [] as $key => $segment) {
+            $segments[$key] = $this->createRecord(CustomerSegment::class, [
+                'company_uuid'    => $company->uuid,
+                'created_by_uuid' => session('user'),
+                'owner_uuid'      => $owner->uuid,
+                'owner_type'      => $ownerType,
+                'name'            => $segment['name'],
+                'description'     => $segment['description'] ?? null,
+                'rules'           => $segment['rules'] ?? [],
+                'meta'            => $this->meta('segment:' . $ownerKey . ':' . $key),
+            ]);
+        }
+
+        $campaigns = [];
+        foreach ($definition['campaigns'] ?? [] as $key => $campaign) {
+            $campaigns[$key] = $this->createCampaign($company, $owner, $ownerType, $ownerKey, $key, $campaign, $promotions, $segments, $refs);
+        }
+
+        return ['promotions' => $promotions, 'segments' => $segments, 'campaigns' => $campaigns];
+    }
+
+    /**
+     * Seeded stores, products and categories by reference ("<store key>" and "<store key>:<key>").
+     *
+     * @return array{stores: array<string, Store>, products: array<string, Product>, categories: array<string, Category>}
+     */
+    protected function marketingReferences(array $bundles): array
+    {
+        $refs = ['stores' => [], 'products' => [], 'categories' => []];
+        foreach ($bundles as $storeKey => $bundle) {
+            $refs['stores'][$storeKey] = $bundle['store'];
+            foreach ($bundle['products'] ?? [] as $key => $product) {
+                $refs['products'][$storeKey . ':' . $key] = $product;
+            }
+            foreach ($bundle['categories'] ?? [] as $key => $category) {
+                $refs['categories'][$storeKey . ':' . $key] = $category;
+            }
+        }
+
+        return $refs;
+    }
+
+    protected function createPromotion(Company $company, Store|Network $owner, string $ownerType, string $ownerKey, string $key, array $promotion, array $refs): Promotion
+    {
+        $uuids = fn (string $kind, array $keys) => array_values(array_filter(array_map(fn ($ref) => ($refs[$kind][$ref] ?? null)?->uuid, $keys)));
+
+        $appliesTo = [];
+        foreach (['products' => 'products', 'categories' => 'categories', 'stores' => 'stores', 'exclude_products' => 'products', 'exclude_categories' => 'categories'] as $field => $kind) {
+            if (!empty($promotion['applies_to'][$field])) {
+                $appliesTo[$field] = $uuids($kind, (array) $promotion['applies_to'][$field]);
+            }
+        }
+
+        $record = $this->createRecord(Promotion::class, [
+            'company_uuid'             => $company->uuid,
+            'created_by_uuid'          => session('user'),
+            'owner_uuid'               => $owner->uuid,
+            'owner_type'               => $ownerType,
+            'name'                     => $promotion['name'],
+            'description'              => $promotion['description'] ?? null,
+            'status'                   => $promotion['status'] ?? Promotion::STATUS_ACTIVE,
+            'trigger'                  => isset($promotion['code']) ? Promotion::TRIGGER_CODE : Promotion::TRIGGER_AUTOMATIC,
+            'type'                     => $promotion['type'],
+            'value'                    => $promotion['value'] ?? null,
+            'max_discount_amount'      => $promotion['max_discount_amount'] ?? null,
+            'currency'                 => $promotion['currency'] ?? $owner->currency ?? 'USD',
+            'min_subtotal'             => $promotion['min_subtotal'] ?? null,
+            'min_items'                => $promotion['min_items'] ?? null,
+            'applies_to'               => $appliesTo ?: null,
+            'bogo_config'              => $promotion['bogo_config'] ?? null,
+            'first_order_only'         => $promotion['first_order_only'] ?? false,
+            'usage_limit'              => $promotion['usage_limit'] ?? null,
+            'usage_limit_per_customer' => $promotion['usage_limit_per_customer'] ?? null,
+            'budget_amount'            => $promotion['budget_amount'] ?? null,
+            'stackable'                => $promotion['stackable'] ?? false,
+            'priority'                 => $promotion['priority'] ?? 0,
+            'is_public'                => $promotion['is_public'] ?? true,
+            'starts_at'                => isset($promotion['starts_in_days']) ? now()->addDays($promotion['starts_in_days'])->startOfDay() : null,
+            'ends_at'                  => isset($promotion['ends_in_days']) ? now()->addDays($promotion['ends_in_days'])->endOfDay() : null,
+            'schedule'                 => $promotion['schedule'] ?? null,
+            'timezone'                 => $promotion['timezone'] ?? $owner->timezone ?? null,
+            'meta'                     => $this->meta('promotion:' . $ownerKey . ':' . $key),
+        ]);
+
+        if (isset($promotion['code'])) {
+            $this->createRecord(PromotionCode::class, [
+                'company_uuid'   => $company->uuid,
+                'promotion_uuid' => $record->uuid,
+                'code'           => $promotion['code'],
+                'status'         => 'active',
+                'meta'           => $this->meta('promotion-code:' . $ownerKey . ':' . $key),
+            ]);
+        }
+
+        return $record;
+    }
+
+    /**
+     * A campaign in any state. Sent campaigns get `sent_at` and stats; scheduled ones are
+     * due `send_in_days` from now, far enough out that the scheduler leaves them alone.
+     */
+    protected function createCampaign(Company $company, Store|Network $owner, string $ownerType, string $ownerKey, string $key, array $campaign, array $promotions, array $segments, array $refs): Campaign
+    {
+        $status    = $campaign['status'] ?? Campaign::STATUS_DRAFT;
+        $promotion = isset($campaign['promotion']) ? ($promotions[$campaign['promotion']] ?? null) : null;
+        $action    = $campaign['action'] ?? null;
+        if ($action) {
+            $target = match ($action['type'] ?? null) {
+                'promotion' => $promotion,
+                'store'     => $refs['stores'][$action['ref'] ?? ''] ?? null,
+                'product'   => $refs['products'][$action['ref'] ?? ''] ?? null,
+                default     => null,
+            };
+            $action = array_filter(['type' => $action['type'], 'id' => $target?->public_id, 'url' => $action['url'] ?? null]);
+        }
+        $sentAt = $status === Campaign::STATUS_SENT ? now()->subDays($campaign['sent_days_ago'] ?? 1)->setTime(10, 0) : null;
+
+        return $this->createRecord(Campaign::class, [
+            'company_uuid'    => $company->uuid,
+            'created_by_uuid' => session('user'),
+            'owner_uuid'      => $owner->uuid,
+            'owner_type'      => $ownerType,
+            'segment_uuid'    => isset($campaign['segment']) ? ($segments[$campaign['segment']] ?? null)?->uuid : null,
+            'promotion_uuid'  => $promotion?->uuid,
+            'name'            => $campaign['name'],
+            'status'          => $status,
+            'channels'        => $campaign['channels'] ?? [Campaign::CHANNEL_PUSH, Campaign::CHANNEL_INBOX],
+            'title'           => $campaign['title'],
+            'body'            => $campaign['body'],
+            'action'          => $action ?: null,
+            'send_at'         => $status === Campaign::STATUS_SCHEDULED ? now()->addDays($campaign['send_in_days'] ?? 7)->setTime(10, 0) : $sentAt,
+            'started_at'      => $sentAt,
+            'sent_at'         => $sentAt,
+            'stats'           => $status === Campaign::STATUS_SENT ? ($campaign['stats'] ?? ['targeted' => 0, 'batches' => 0]) : null,
+            'meta'            => $this->meta('campaign:' . $ownerKey . ':' . $key),
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Networks
     |--------------------------------------------------------------------------
     */
@@ -561,7 +747,19 @@ trait SeedsStorefrontFixtures
      */
     protected function seedCustomers(Company $company, array $fixtures): array
     {
-        return array_values(array_map(fn (array $fixture) => $this->createCustomer($company, ...$fixture), $fixtures));
+        return array_values(array_map(fn (array $fixture) => $this->createCustomer($company, ...$this->customerIdentity($fixture)), $fixtures));
+    }
+
+    /**
+     * The [name, email, phone] a seeder gives one of the shared customer fixtures.
+     *
+     * Fleet-Ops allows one customer profile per account (matched by email or phone) in a
+     * company, and both seeders run in the same company, so a seeder sharing the fixtures
+     * must give its customers identities of their own.
+     */
+    protected function customerIdentity(array $fixture): array
+    {
+        return $fixture;
     }
 
     protected function createCustomer(Company $company, string $name, string $email, string $phone): Contact
