@@ -1688,6 +1688,14 @@ class CheckoutController extends Controller
             $integratedVendorOrder = $vendorResult['order'];
         }
 
+        // Find each pickup's store before anything is created: an order that cannot be built
+        // fails here, without a payment record or half the orders left behind.
+        $originPlaces = collect($origins)->map(fn ($publicId) => Place::createFromMixed($publicId))->values();
+        $originStores = $originPlaces->map(fn ($pickup) => $pickup instanceof Place ? Storefront::getStoreFromLocation($pickup->uuid) : null)->values();
+        if ($originPlaces->isEmpty() || $originStores->contains(fn ($store) => !$store)) {
+            return response()->apiError('A store in this order could not be found, so it was not placed. Your payment has not been used.');
+        }
+
         // setup transaction meta
         $transactionMeta = [
             'storefront_network'    => $about->name,
@@ -1695,145 +1703,238 @@ class CheckoutController extends Controller
             ...$transactionDetails,
         ];
 
-        // create transactions for cart
-        $transaction = Transaction::create([
-            'company_uuid'           => session('company'),
-            'customer_uuid'          => $customer->uuid,
-            'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
-            'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
-            'gateway'                => $gateway->code,
-            'gateway_uuid'           => $gateway->uuid,
-            'amount'                 => $amount,
-            'currency'               => $currency,
-            'description'            => 'Storefront network order',
-            'type'                   => 'storefront',
-            'status'                 => Transaction::STATUS_SUCCESS,
-            'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
-            'settled_at'             => now(),
-            'settled_amount'         => $amount,
-            'settled_currency'       => $currency,
-            'meta'                   => $transactionMeta,
-        ]);
-
-        // create transaction items
-        foreach ($cart->items as $cartItem) {
-            $store = Storefront::findAbout($cartItem->store_id);
-
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => $cartItem->subtotal,
-                'currency'         => $checkout->currency,
-                'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
-                'code'             => 'product',
-                'meta'             => [
-                    'storefront_network'    => $about->name,
-                    'storefront_network_id' => $about->public_id,
-                    'storefront'            => $store->name ?? null,
-                    'storefront_id'         => $store->public_id ?? null,
-                ],
-            ]);
-        }
-
-        // create transaction item for service quote
-        if (!$checkout->is_pickup) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => $serviceQuote->amount,
-                'currency'         => $serviceQuote->currency,
-                'details'          => 'Delivery fee',
-                'code'             => 'delivery_fee',
-            ]);
-        }
-
-        // if tip create transaction item for tip
-        if ($checkout->hasOption('tip')) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
-                'currency'         => $checkout->currency,
-                'details'          => 'Tip',
-                'code'             => 'tip',
-            ]);
-        }
-
-        // if delivery tip create transaction item for tip
-        if ($checkout->hasOption('delivery_tip')) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
-                'currency'         => $checkout->currency,
-                'details'          => 'Delivery Tip',
-                'code'             => 'delivery_tip',
-            ]);
-        }
-
-        // if promotions were applied create a (credit) transaction item for the discount
-        $promotions          = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
-        $discountAllocations = $promotions->allocationsByStore();
-        static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
-
-        // convert payload destinations to Place
-        $origins = collect($origins)->map(function ($publicId) {
-            return Place::createFromMixed($publicId);
-        });
-        $destination = Place::createFromMixed($destination);
-
-        // The store tip goes to the network that runs the app, unless the network splits it
-        // across the stores, each by its share of the order.
-        $splitTips = $checkout->hasOption('tip') && $about->isOption('split_tips_across_stores');
-        $tipShares = [];
-        if ($splitTips) {
-            $storeSubtotals = $origins
-                ->map(fn ($pickup) => Storefront::getStoreFromLocation($pickup->uuid))
-                ->filter()
-                ->unique('public_id')
-                ->mapWithKeys(fn ($store) => [$store->public_id => (int) $cart->getSubtotalForStore($store)])
-                ->all();
-            $tipShares = static::splitByShare((int) static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal), $storeSubtotals);
-        }
-
+        $transaction    = null;
         $multipleOrders = [];
 
-        foreach ($origins as $pickup) {
-            $store = Storefront::getStoreFromLocation($pickup->uuid);
-
-            // create payload
-            $payload = Payload::create([
-                'company_uuid'   => $store->company_uuid,
-                'pickup_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
-                'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
-                'return_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
-                'payment_method' => $gateway->type,
-                'type'           => 'storefront',
+        try {
+            // create transactions for cart
+            $transaction = Transaction::create([
+                'company_uuid'           => session('company'),
+                'customer_uuid'          => $customer->uuid,
+                'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
+                'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
+                'gateway'                => $gateway->code,
+                'gateway_uuid'           => $gateway->uuid,
+                'amount'                 => $amount,
+                'currency'               => $currency,
+                'description'            => 'Storefront network order',
+                'type'                   => 'storefront',
+                'status'                 => Transaction::STATUS_SUCCESS,
+                'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
+                'settled_at'             => now(),
+                'settled_amount'         => $amount,
+                'settled_currency'       => $currency,
+                'meta'                   => $transactionMeta,
             ]);
 
-            // get cart items from this store
-            $cartItems = $cart->getItemsForStore($store);
+            // create transaction items
+            foreach ($cart->items as $cartItem) {
+                $store = Storefront::findAbout($cartItem->store_id);
+
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => $cartItem->subtotal,
+                    'currency'         => $checkout->currency,
+                    'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
+                    'code'             => 'product',
+                    'meta'             => [
+                        'storefront_network'    => $about->name,
+                        'storefront_network_id' => $about->public_id,
+                        'storefront'            => $store->name ?? null,
+                        'storefront_id'         => $store->public_id ?? null,
+                    ],
+                ]);
+            }
+
+            // create transaction item for service quote
+            if (!$checkout->is_pickup) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => $serviceQuote->amount,
+                    'currency'         => $serviceQuote->currency,
+                    'details'          => 'Delivery fee',
+                    'code'             => 'delivery_fee',
+                ]);
+            }
+
+            // if tip create transaction item for tip
+            if ($checkout->hasOption('tip')) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
+                    'currency'         => $checkout->currency,
+                    'details'          => 'Tip',
+                    'code'             => 'tip',
+                ]);
+            }
+
+            // if delivery tip create transaction item for tip
+            if ($checkout->hasOption('delivery_tip')) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
+                    'currency'         => $checkout->currency,
+                    'details'          => 'Delivery Tip',
+                    'code'             => 'delivery_tip',
+                ]);
+            }
+
+            // if promotions were applied create a (credit) transaction item for the discount
+            $promotions          = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
+            $discountAllocations = $promotions->allocationsByStore();
+            static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
+
+            // payload pickups (resolved above) and the destination as places
+            $origins     = $originPlaces;
+            $destination = Place::createFromMixed($destination);
+
+            // The store tip goes to the network that runs the app, unless the network splits it
+            // across the stores, each by its share of the order.
+            $splitTips = $checkout->hasOption('tip') && $about->isOption('split_tips_across_stores');
+            $tipShares = [];
+            if ($splitTips) {
+                $storeSubtotals = $originStores
+                    ->unique('public_id')
+                    ->mapWithKeys(fn ($store) => [$store->public_id => (int) $cart->getSubtotalForStore($store)])
+                    ->all();
+                $tipShares = static::splitByShare((int) static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal), $storeSubtotals);
+            }
+
+            $multipleOrders = [];
+
+            foreach ($origins as $index => $pickup) {
+                $store = $originStores[$index];
+
+                // create payload
+                $payload = Payload::create([
+                    'company_uuid'   => $store->company_uuid,
+                    'pickup_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
+                    'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+                    'return_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
+                    'payment_method' => $gateway->type,
+                    'type'           => 'storefront',
+                ]);
+
+                // get cart items from this store
+                $cartItems = $cart->getItemsForStore($store);
+
+                // create entities
+                foreach ($cartItems as $cartItem) {
+                    $this->processCartItem($cartItem, $payload, $customer);
+                }
+
+                // get order subtotal and this store's share of the item discount
+                $subtotal      = $cart->getSubtotalForStore($store);
+                $storeDiscount = min((int) ($discountAllocations[$store->public_id] ?? 0), (int) $subtotal);
+
+                // prepare order meta
+                $orderMeta = [
+                    'is_master_order'       => false,
+                    'storefront'            => $store->name,
+                    'storefront_id'         => $store->public_id,
+                    'storefront_network'    => $about->name,
+                    'storefront_network_id' => $about->public_id,
+                    'checkout_id'           => $checkout->public_id,
+                    'subtotal'              => $subtotal,
+                    'delivery_fee'          => 0,
+                    'tip'                   => $tipShares[$store->public_id] ?? 0,
+                    'tip_recipient'         => $splitTips ? 'store' : 'network',
+                    'delivery_tip'          => 0,
+                    'discount'              => $storeDiscount,
+                    'total'                 => $subtotal - $storeDiscount,
+                    'currency'              => $currency,
+                    'gateway'               => $gateway->type,
+                    'require_pod'           => $about->getOption('require_pod'),
+                    'pod_method'            => $about->pod_method,
+                    'is_pickup'             => $checkout->is_pickup,
+                    ...$transactionDetails,
+                ];
+
+                // prepare order input
+                $orderInput = [
+                    'company_uuid'      => $store->company_uuid,
+                    'payload_uuid'      => $payload->uuid,
+                    'customer_uuid'     => $customer->uuid,
+                    'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
+                    'transaction_uuid'  => $transaction->uuid,
+                    'order_config_uuid' => $store->getOrderConfigId(),
+                    'adhoc'             => $about->isOption('auto_dispatch'),
+                    'type'              => 'storefront',
+                    'status'            => 'created',
+                    'notes'             => $notes,
+                ];
+
+                // if it's integrated vendor order apply to meta
+                if ($integratedVendorOrder) {
+                    $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
+                    $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
+                    // order input
+                    $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
+                    $orderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
+                }
+
+                // A booked service makes this store's order a booking order, with its own flow.
+                [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
+
+                // set meta to order input last
+                $orderInput['meta'] = $orderMeta;
+
+                // create order
+                $multipleOrders[] = $order = Order::create($orderInput);
+
+                // set driving distance and time
+                $order->setPreliminaryDistanceAndTime();
+
+                // purchase service quote
+                $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
+
+                // if order is auto accepted update status
+                if ($store->isOption('auto_accept_orders')) {
+                    $this->autoAcceptOrder($order);
+                    if ($store->isOption('auto_dispatch')) {
+                        $this->autoDispatchOrder($order);
+                    }
+                }
+
+                // notify order creation
+                Storefront::alertNewOrder($order);
+            }
+
+            // convert origin to Place
+            $origin = Place::createFromMixed($origin);
+
+            // create master payload
+            $payload = Payload::create([
+                'company_uuid'   => session('company'),
+                'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+                'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+                'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+                'payment_method' => $gateway->type,
+                'type'           => 'storefront',
+            ])->setWaypoints($waypoints);
 
             // create entities
-            foreach ($cartItems as $cartItem) {
+            foreach ($cart->items as $cartItem) {
                 $this->processCartItem($cartItem, $payload, $customer);
             }
 
-            // get order subtotal and this store's share of the item discount
-            $subtotal      = $cart->getSubtotalForStore($store);
-            $storeDiscount = min((int) ($discountAllocations[$store->public_id] ?? 0), (int) $subtotal);
-
-            // prepare order meta
-            $orderMeta = [
-                'is_master_order'       => false,
-                'storefront'            => $store->name,
-                'storefront_id'         => $store->public_id,
+            // prepare master order meta
+            $masterOrderMeta = [
+                'is_master_order'       => true,
+                'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
+                'storefront'            => $about->name,
+                'storefront_id'         => $about->public_id,
                 'storefront_network'    => $about->name,
                 'storefront_network_id' => $about->public_id,
                 'checkout_id'           => $checkout->public_id,
-                'subtotal'              => $subtotal,
-                'delivery_fee'          => 0,
-                'tip'                   => $tipShares[$store->public_id] ?? 0,
-                'tip_recipient'         => $splitTips ? 'store' : 'network',
-                'delivery_tip'          => 0,
-                'discount'              => $storeDiscount,
-                'total'                 => $subtotal - $storeDiscount,
+                'subtotal'              => Utils::numbersOnly($cart->subtotal),
+                'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
+                'tip'                   => $checkout->getOption('tip'),
+                'tip_recipient'         => $splitTips ? 'stores' : 'network',
+                'delivery_tip'          => $checkout->getOption('delivery_tip'),
+                'discount'              => $promotions->discount(),
+                'promotions'            => $promotions->toPublicArray()['applied'],
+                'total'                 => Utils::numbersOnly($amount),
                 'currency'              => $currency,
                 'gateway'               => $gateway->type,
                 'require_pod'           => $about->getOption('require_pod'),
@@ -1842,37 +1943,44 @@ class CheckoutController extends Controller
                 ...$transactionDetails,
             ];
 
-            // prepare order input
-            $orderInput = [
-                'company_uuid'      => $store->company_uuid,
+            // prepare master order input
+            $masterOrderInput = [
+                'company_uuid'      => session('company'),
                 'payload_uuid'      => $payload->uuid,
                 'customer_uuid'     => $customer->uuid,
                 'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
                 'transaction_uuid'  => $transaction->uuid,
-                'order_config_uuid' => $store->getOrderConfigId(),
+                'order_config_uuid' => $about->getOrderConfigId(),
                 'adhoc'             => $about->isOption('auto_dispatch'),
                 'type'              => 'storefront',
                 'status'            => 'created',
-                'notes'             => $notes,
             ];
 
             // if it's integrated vendor order apply to meta
             if ($integratedVendorOrder) {
-                $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
-                $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
+                $masterOrderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
+                $masterOrderMeta['integrated_vendor_order'] = $integratedVendorOrder;
                 // order input
-                $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
-                $orderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
+                $masterOrderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
+                $masterOrderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
             }
 
-            // A booked service makes this store's order a booking order, with its own flow.
-            [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
+            // finally apply meta to master order
+            $masterOrderInput['meta'] = $masterOrderMeta;
 
-            // set meta to order input last
-            $orderInput['meta'] = $orderMeta;
+            // create master order
+            $order = Order::create($masterOrderInput);
 
-            // create order
-            $multipleOrders[] = $order = Order::create($orderInput);
+            // record the promotions as used by this checkout's master order
+            PromotionRedemptions::redeem($checkout, $order);
+
+            // update child orders with master order id in meta
+            foreach ($multipleOrders as $childOrder) {
+                $childOrder->updateMeta('master_order_id', $order->public_id);
+            }
+
+            // notify driver if assigned
+            $order->notifyDriverAssigned();
 
             // set driving distance and time
             $order->setPreliminaryDistanceAndTime();
@@ -1880,120 +1988,48 @@ class CheckoutController extends Controller
             // purchase service quote
             $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
 
-            // if order is auto accepted update status
-            if ($store->isOption('auto_accept_orders')) {
-                $this->autoAcceptOrder($order);
-                if ($store->isOption('auto_dispatch')) {
-                    $this->autoDispatchOrder($order);
+            // dispatch if flagged true
+            $order->firstDispatch();
+
+            // update the cart with the checkout
+            $checkout->checkedout();
+
+            // update checkout token
+            $checkout->update([
+                'order_uuid' => $order->uuid,
+                // 'store_uuid' => $about->uuid,
+                'captured' => true,
+            ]);
+
+            return new OrderResource($order);
+        } catch (\Throwable $e) {
+            // Undo this attempt's records so a retry ("Finish placing order") starts clean
+            // instead of leaving another payment record with no order.
+            static::discardFailedCapture($transaction, $multipleOrders);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Remove what a failed capture attempt created: its transaction (with its line items) and
+     * any of the store orders already made. Nothing else refers to them yet.
+     */
+    protected static function discardFailedCapture(?Transaction $transaction, array $orders = []): void
+    {
+        try {
+            foreach ($orders as $order) {
+                if ($order instanceof Order) {
+                    $order->delete();
                 }
             }
-
-            // notify order creation
-            Storefront::alertNewOrder($order);
+            if ($transaction) {
+                TransactionItem::where('transaction_uuid', $transaction->uuid)->delete();
+                $transaction->delete();
+            }
+        } catch (\Throwable $cleanup) {
+            Log::error('[Storefront] Unable to discard a failed order capture.', ['transaction' => $transaction?->public_id, 'error' => $cleanup->getMessage()]);
         }
-
-        // convert origin to Place
-        $origin = Place::createFromMixed($origin);
-
-        // create master payload
-        $payload = Payload::create([
-            'company_uuid'   => session('company'),
-            'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
-            'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
-            'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
-            'payment_method' => $gateway->type,
-            'type'           => 'storefront',
-        ])->setWaypoints($waypoints);
-
-        // create entities
-        foreach ($cart->items as $cartItem) {
-            $this->processCartItem($cartItem, $payload, $customer);
-        }
-
-        // prepare master order meta
-        $masterOrderMeta = [
-            'is_master_order'       => true,
-            'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
-            'storefront'            => $about->name,
-            'storefront_id'         => $about->public_id,
-            'storefront_network'    => $about->name,
-            'storefront_network_id' => $about->public_id,
-            'checkout_id'           => $checkout->public_id,
-            'subtotal'              => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
-            'tip'                   => $checkout->getOption('tip'),
-            'tip_recipient'         => $splitTips ? 'stores' : 'network',
-            'delivery_tip'          => $checkout->getOption('delivery_tip'),
-            'discount'              => $promotions->discount(),
-            'promotions'            => $promotions->toPublicArray()['applied'],
-            'total'                 => Utils::numbersOnly($amount),
-            'currency'              => $currency,
-            'gateway'               => $gateway->type,
-            'require_pod'           => $about->getOption('require_pod'),
-            'pod_method'            => $about->pod_method,
-            'is_pickup'             => $checkout->is_pickup,
-            ...$transactionDetails,
-        ];
-
-        // prepare master order input
-        $masterOrderInput = [
-            'company_uuid'      => session('company'),
-            'payload_uuid'      => $payload->uuid,
-            'customer_uuid'     => $customer->uuid,
-            'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
-            'transaction_uuid'  => $transaction->uuid,
-            'order_config_uuid' => $about->getOrderConfigId(),
-            'adhoc'             => $about->isOption('auto_dispatch'),
-            'type'              => 'storefront',
-            'status'            => 'created',
-        ];
-
-        // if it's integrated vendor order apply to meta
-        if ($integratedVendorOrder) {
-            $masterOrderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
-            $masterOrderMeta['integrated_vendor_order'] = $integratedVendorOrder;
-            // order input
-            $masterOrderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
-            $masterOrderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
-        }
-
-        // finally apply meta to master order
-        $masterOrderInput['meta'] = $masterOrderMeta;
-
-        // create master order
-        $order = Order::create($masterOrderInput);
-
-        // record the promotions as used by this checkout's master order
-        PromotionRedemptions::redeem($checkout, $order);
-
-        // update child orders with master order id in meta
-        foreach ($multipleOrders as $childOrder) {
-            $childOrder->updateMeta('master_order_id', $order->public_id);
-        }
-
-        // notify driver if assigned
-        $order->notifyDriverAssigned();
-
-        // set driving distance and time
-        $order->setPreliminaryDistanceAndTime();
-
-        // purchase service quote
-        $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
-
-        // dispatch if flagged true
-        $order->firstDispatch();
-
-        // update the cart with the checkout
-        $checkout->checkedout();
-
-        // update checkout token
-        $checkout->update([
-            'order_uuid' => $order->uuid,
-            // 'store_uuid' => $about->uuid,
-            'captured' => true,
-        ]);
-
-        return new OrderResource($order);
     }
 
     public function afterCheckout(Request $request)

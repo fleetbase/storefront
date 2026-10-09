@@ -108,11 +108,15 @@ class Storefront
             $columns = array_merge(['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'order_config_uuid', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'], $columns);
         }
 
-        return Store::select($columns)->with($with)->whereHas('locations', function ($q) use ($id) {
-            $q->where('place_uuid', $id);
-            $q->orWhereHas('place', function ($q) use ($id) {
-                $q->where('public_id', $id);
-            });
+        // Places live in the Fleet-Ops database and store locations in Storefront's, so the place
+        // is resolved on its own (a join across the two databases fails) before the store lookup.
+        $placeUuid = Str::isUuid($id) ? $id : \Fleetbase\FleetOps\Models\Place::where('public_id', $id)->value('uuid');
+        if (!$placeUuid) {
+            return null;
+        }
+
+        return Store::select($columns)->with($with)->whereHas('locations', function ($q) use ($placeUuid) {
+            $q->where('place_uuid', $placeUuid);
         })->first();
     }
 
