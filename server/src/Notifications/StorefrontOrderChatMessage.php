@@ -11,6 +11,8 @@ use Fleetbase\Storefront\Push\PushMessage;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
@@ -20,9 +22,10 @@ use Illuminate\Notifications\Notification;
  * Messages about an order in progress always reach the customer: they are not promotional
  * and do not depend on the order update preference.
  */
-class StorefrontOrderChatMessage extends Notification implements SendsPushNotification
+class StorefrontOrderChatMessage extends Notification implements SendsPushNotification, ShouldQueue
 {
     use Queueable;
+    use SerializesModels;
 
     public function __construct(public ChatMessage $message, public Order $order)
     {
