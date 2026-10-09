@@ -185,12 +185,10 @@ class CustomerController extends Controller
         $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
             $query->where('customer_uuid', $customer->uuid)->whereNull('deleted_at')->withoutGlobalScopes();
 
-            // dont query any master orders if its a network
+            // A multi-store checkout is one order to the customer: list its master order (which
+            // shows each store's part) and leave out the stores' own orders.
             if (session('storefront_network')) {
-                $query->where(function ($q) {
-                    $q->where('meta->is_master_order', false);
-                    $q->orWhere('meta', 'not like', '%related_orders%');
-                });
+                $query->whereNull('meta->master_order_id');
             }
         }, true);
 
