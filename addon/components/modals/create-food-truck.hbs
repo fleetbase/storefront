@@ -3,6 +3,7 @@
         <InputGroup @name="Assign Food Truck Vehicle">
             <ModelSelect
                 @modelName="vehicle"
+                @selectedItemComponent={{component "select-option/vehicle" compact=true}}
                 @selectedModel={{@options.foodTruck.vehicle}}
                 @placeholder="Assign Food Truck Vehicle"
                 @triggerClass="form-select form-input"
@@ -11,15 +12,7 @@
                 @onChange={{fn (mut @options.foodTruck.vehicle)}}
                 as |model|
             >
-                <div class="flex flex-row">
-                    <div class="mr-2">
-                        <Image src={{model.photo_url}} class="w-10 h-10 rounded-md shadow-sm" />
-                    </div>
-                    <div class="flex flex-col flex-1">
-                        <div class="font-semibold">{{model.display_name}}</div>
-                        <div>{{model.plate_number}}</div>
-                    </div>
-                </div>
+                <SelectOption::Vehicle @option={{model}} />
             </ModelSelect>
         </InputGroup>
         <InputGroup @name="Service Area">

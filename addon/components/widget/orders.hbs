@@ -26,14 +26,12 @@
                     </div>
 
                     <div class="storefront-order-card-details">
-                        <span>{{n-a order.customer.name}}</span>
-                        <span>
-                            {{#if order.meta.is_pickup}}
-                                {{t "storefront.component.widget.orders.pickup-order"}}
-                            {{else}}
-                                {{n-a order.driver_assigned.name}}
-                            {{/if}}
-                        </span>
+                        <Customer::Pill @customer={{order.customer}} @static={{not order.customer.id}} />
+                        {{#if order.meta.is_pickup}}
+                            <span>{{t "storefront.component.widget.orders.pickup-order"}}</span>
+                        {{else}}
+                            <Driver::Pill @driver={{order.driver_assigned}} @titleFallback="No driver assigned" @static={{not order.driver_assigned.id}} />
+                        {{/if}}
                     </div>
 
                     <div class="storefront-order-card-actions">
@@ -46,7 +44,7 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-orders-table-wrap {{if (not this.orders) 'empty-state'}}">
+        <div class="storefront-orders-table-wrap {{unless this.orders 'empty-state'}}">
             <table class="storefront-orders-table">
                 <thead>
                     <tr>
@@ -68,14 +66,14 @@
                                 </a>
                             </td>
                             <td><span class="storefront-order-total">{{format-currency order.meta.total order.meta.currency}}</span></td>
-                            <td><span class="storefront-table-text">{{n-a order.customer.name}}</span></td>
+                            <td><Customer::Pill @customer={{order.customer}} @static={{not order.customer.id}} /></td>
                             <td>
                                 {{#if order.meta.is_pickup}}
                                     <Badge @hideStatusDot={{true}} @status="info"><FaIcon @icon="hand-holding-dollar" class="mr-1" />{{t
                                             "storefront.component.widget.orders.pickup-order"
                                         }}</Badge>
                                 {{else}}
-                                    <span class="storefront-table-text">{{n-a order.driver_assigned.name}}</span>
+                                    <Driver::Pill @driver={{order.driver_assigned}} @titleFallback="No driver assigned" @static={{not order.driver_assigned.id}} />
                                 {{/if}}
                             </td>
                             <td><Badge @status={{order.status}} /></td>

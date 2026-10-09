@@ -15,10 +15,8 @@
             {{#each this.customers as |customer|}}
                 <article class="storefront-customer-card storefront-animate-card">
                     <div class="flex items-center gap-3">
-                        <Image src={{avatar-url customer.photo_url}} class="storefront-customer-avatar" alt={{customer.name}} />
                         <div class="min-w-0 flex-1">
-                            <a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-name">{{n-a customer.name}}</a>
-                            <div class="storefront-table-muted">{{customer.public_id}}</div>
+                            <Customer::Pill @customer={{customer}} @subtitle={{customer.public_id}} @onClick={{fn this.viewCustomer customer}} />
                         </div>
                         <div class="storefront-customer-order-count">{{n-a customer.orders 0}}</div>
                     </div>
@@ -32,7 +30,7 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-customers-table-wrap {{if (not this.customer) 'empty-state'}}">
+        <div class="storefront-customers-table-wrap {{unless this.customer 'empty-state'}}">
             <table class="storefront-customers-table">
                 <thead>
                     <tr>
@@ -48,10 +46,7 @@
                         <tr class="storefront-animate-row">
                             <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-id">{{customer.public_id}}</a></td>
                             <td>
-                                <div class="storefront-customer-cell">
-                                    <Image src={{avatar-url customer.photo_url}} class="storefront-customer-avatar" alt={{customer.name}} />
-                                    <span class="storefront-table-text">{{n-a customer.name}}</span>
-                                </div>
+                                <Customer::Pill @customer={{customer}} @onClick={{fn this.viewCustomer customer}} />
                             </td>
                             <td><span class="storefront-table-text">{{n-a customer.phone}}</span></td>
                             <td><span class="storefront-table-text">{{n-a customer.email}}</span></td>

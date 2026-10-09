@@ -37,6 +37,7 @@
                         <InputGroup @name={{t "storefront.promotions.push-notifications.customers-label"}}>
                             <ModelSelectMultiple
                                 @modelName="contact"
+                                @selectedItemComponent={{component "select-option/contact" compact=true}}
                                 @query={{hash type="customer"}}
                                 @selectedModel={{this.selectedCustomers}}
                                 @placeholder={{t "storefront.promotions.push-notifications.customers-placeholder"}}
@@ -46,23 +47,7 @@
                                 @triggerClass="form-select form-input w-full"
                                 as |model|
                             >
-                                <div class="flex flex-row space-x-2">
-                                    <div class="hide-from-trigger">
-                                        <Image
-                                            src={{model.photo_url}}
-                                            @fallbackSrc={{config "defaultValues.customerImage"}}
-                                            alt={{model.name}}
-                                            height="40"
-                                            width="40"
-                                            class="h-10 w-10 rounded-lg shadow-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <div class="font-semibold normalize-in-trigger">{{model.name}}</div>
-                                        <div class="text-xs hide-from-trigger">{{n-a model.email}}</div>
-                                        <div class="text-xs hide-from-trigger">{{n-a model.phone}}</div>
-                                    </div>
-                                </div>
+                                <SelectOption::Contact @option={{model}} />
                             </ModelSelectMultiple>
                         </InputGroup>
                     {{/unless}}

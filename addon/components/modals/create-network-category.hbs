@@ -12,7 +12,7 @@
                 @onChange={{@options.setParentCategory}}
                 as |model|
             >
-                {{model.name}}
+                <SelectOption::Category @option={{model}} />
             </ModelSelect>
         </InputGroup>
         <InputGroup

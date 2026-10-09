@@ -106,7 +106,7 @@
                             @onChange={{fn (mut @options.selectedCategory)}}
                             as |model|
                         >
-                            {{model.name}}
+                            <SelectOption::Category @option={{model}} />
                         </ModelSelect>
                     </InputGroup>
                 </div>

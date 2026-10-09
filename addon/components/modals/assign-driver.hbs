@@ -16,6 +16,7 @@
                 <InputGroup class="mt-4" @name={{t "storefront.component.modals.assign-driver.message-driver"}}>
                     <ModelSelect
                         @modelName="driver"
+                        @selectedItemComponent={{component "select-option/driver" compact=true}}
                         @selectedModel={{@options.order.driver_assigned}}
                         @placeholder={{t "storefront.component.modals.assign-driver.placeholder-driver"}}
                         @triggerClass="form-select form-input w-full"
@@ -24,7 +25,7 @@
                         @onChange={{fn (mut @options.order.driver_assigned)}}
                         as |model|
                     >
-                        {{model.name}}
+                        <SelectOption::Driver @option={{model}} />
                     </ModelSelect>
                 </InputGroup>
             </div>
