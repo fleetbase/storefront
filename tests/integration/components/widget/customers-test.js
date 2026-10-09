@@ -26,6 +26,14 @@ class FetchStubService extends Service {
 }
 
 class IntlStubService extends Service {
+    exists() {
+        return false;
+    }
+
+    onLocaleChanged() {
+        return () => {};
+    }
+
     t(key) {
         if (key === 'storefront.component.widget.customers.widget-title') {
             return 'Recent Customers';

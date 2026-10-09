@@ -14,6 +14,20 @@ module.exports = function (environment) {
             },
         },
 
+        // `@fleetbase/ember-core`'s application adapter reads `config.API.host` at
+
+        // module scope, so the dummy application must declare it before any
+
+        // adapter module can even be evaluated. The values are deliberately
+
+        // obviously-fake: nothing in the suite performs a real request.
+
+        API: {
+            host: 'https://api.fleetbase.test',
+
+            namespace: 'int/v1',
+        },
+
         APP: {
             // Here you can pass flags/options to your application instance
             // when it is created

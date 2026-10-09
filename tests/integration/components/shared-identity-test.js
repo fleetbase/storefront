@@ -17,7 +17,7 @@ module('Integration | Component | shared identity components', function (hooks) 
     });
 
     test('a driver identity cell renders the name, status dot and vehicle badge from the shared descriptor', async function (assert) {
-        this.set('row', { driver_assigned: { resourceType: 'driver', name: 'Ada Driver', status: 'available', vehicle_name: 'Truck 10' } });
+        this.set('row', { driver_assigned: { resourceType: 'driver', name: 'Ada Driver', status: 'available', online: true, vehicle_name: 'Truck 10' } });
         this.set('column', { resourceType: 'driver', resourcePath: 'driver_assigned', popover: false });
 
         await render(hbs`<Table::Cell::Identity @row={{this.row}} @column={{this.column}} />`);
@@ -52,7 +52,7 @@ module('Integration | Component | shared identity components', function (hooks) 
         `);
 
         assert.dom('[data-test-customer] [data-test-resource-pill-title]').hasText('Ava Chen');
-        assert.dom('[data-test-customer] [data-test-resource-pill-subtitle]').hasText('Customer');
+        assert.dom('[data-test-customer] [data-test-resource-pill-subtitle]').hasText('Contact', 'the polymorphic type reads as a person would say it');
         assert.dom('[data-test-driver] [data-test-resource-pill-title]').hasText('Ada Driver');
         assert.dom('[data-test-driver] [data-test-resource-pill-subtitle]').hasText('+15550100');
         assert.dom('[data-test-place] [data-test-resource-pill-title]').hasText('Depot');
