@@ -223,6 +223,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('completed', $controller('markOrderAsCompleted'));
                                 $router->patch('cancel', $controller('rejectOrder'));
                                 $router->post('unassign-driver', $controller('unassignDriver'));
+                                // Moves an order on a custom flow (e.g. a booking) to its next activity.
+                                $router->patch('update-activity/{id}', $controller('updateActivity'));
                             }
                         );
                         $router->fleetbaseRoutes(
