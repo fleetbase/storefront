@@ -14,7 +14,7 @@ class Order extends FleetOpsOrderResource
      */
     public function toArray($request): array
     {
-        $data                       = parent::toArray($request);
+        $data                       = $this->withoutPlaceTypes(json_decode(json_encode($this->filter(parent::toArray($request))), true) ?? []);
         $data['customer_name']      = $this->customer_name;
         $data['transaction_amount'] = $this->transaction_amount;
         $data['meta']               = $this->storefrontOrderMeta();
@@ -49,6 +49,9 @@ class Order extends FleetOpsOrderResource
             'tip',
             'delivery_tip',
             'total',
+            'discount',
+            'promotions',
+            'payment_status',
             'currency',
             'gateway',
             'is_pickup',
@@ -67,6 +70,47 @@ class Order extends FleetOpsOrderResource
         }
 
         return $meta;
+    }
+
+    /**
+     * A customer's places carry their kind in `type` (apartment, house, office...).
+     * The console reads `type` on an embedded record as its model name, so the
+     * customer copies in this order (its own and each item's) leave it out.
+     */
+    private function withoutPlaceTypes(array $data): array
+    {
+        $strip = function ($customer) {
+            if (!is_array($customer)) {
+                return $customer;
+            }
+            if (is_array($customer['place'] ?? null)) {
+                unset($customer['place']['type']);
+            }
+            if (is_array($customer['places'] ?? null)) {
+                $customer['places'] = array_map(function ($place) {
+                    if (is_array($place)) {
+                        unset($place['type']);
+                    }
+
+                    return $place;
+                }, $customer['places']);
+            }
+
+            return $customer;
+        };
+
+        if (isset($data['customer'])) {
+            $data['customer'] = $strip($data['customer']);
+        }
+        if (is_array(data_get($data, 'payload.entities'))) {
+            foreach ($data['payload']['entities'] as $index => $entity) {
+                if (is_array($entity) && isset($entity['customer'])) {
+                    $data['payload']['entities'][$index]['customer'] = $strip($entity['customer']);
+                }
+            }
+        }
+
+        return $data;
     }
 
     private function normalizeMeta($meta): array

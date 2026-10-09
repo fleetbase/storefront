@@ -56,6 +56,17 @@
             {{#unless @resource.meta.is_pickup}}
                 <div><span>Delivery fee</span><strong>{{format-currency @resource.meta.delivery_fee @resource.meta.currency}}</strong></div>
             {{/unless}}
+            {{#each this.promotions as |promotion|}}
+                <div class="text-green-600 dark:text-green-400">
+                    <span>
+                        <FaIcon @icon={{if promotion.isFreeDelivery "truck-fast" "tag"}} @size="xs" class="mr-1" />{{promotion.name}}{{#if promotion.code}} · <code>{{promotion.code}}</code>{{/if}}
+                    </span>
+                    <strong>-{{format-currency promotion.amount @resource.meta.currency}}</strong>
+                </div>
+            {{/each}}
+            {{#if this.unattributedDiscount}}
+                <div class="text-green-600 dark:text-green-400"><span>Discount</span><strong>-{{format-currency this.unattributedDiscount @resource.meta.currency}}</strong></div>
+            {{/if}}
             {{#if @resource.meta.tip}}
                 <div><span>Tip</span><strong>{{get-tip-amount @resource.meta.tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{/if}}
