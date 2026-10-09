@@ -8,6 +8,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\File;
 use Fleetbase\Storefront\Http\Requests\CreateReviewRequest;
 use Fleetbase\Storefront\Http\Resources\Review as StorefrontReview;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
@@ -72,12 +73,33 @@ class ReviewController extends Controller
     }
 
     /**
+     * Whether reviews are switched off for this storefront. A network's setting covers all of
+     * its stores and reviews are only on when it is switched on; a single store's app keeps
+     * reviews unless the store switches them off.
+     */
+    protected static function reviewsDisabled(): bool
+    {
+        $about = Storefront::about();
+        if (!$about) {
+            return false;
+        }
+
+        $enabled = data_get($about->options, 'reviews_enabled');
+
+        return $about instanceof Network ? $enabled !== true : $enabled === false;
+    }
+
+    /**
      * Query for Storefront Review resources.
      *
      * @return \Illuminate\Http\Response
      */
     public function query(Request $request)
     {
+        if (static::reviewsDisabled()) {
+            return StorefrontReview::collection([]);
+        }
+
         $results = [];
         $limit   = $request->input('limit', false);
         $offset  = $request->input('offset', false);
@@ -173,6 +195,10 @@ class ReviewController extends Controller
         $counts = [];
         $range  = range(1, 5);
 
+        if (static::reviewsDisabled()) {
+            return response()->json(array_fill_keys($range, 0));
+        }
+
         if (session('storefront_store')) {
             foreach ($range as $rating) {
                 $counts[$rating] = Review::where(['subject_uuid' => session('storefront_store'), 'rating' => $rating])->count();
@@ -237,6 +263,10 @@ class ReviewController extends Controller
             return response()->error('Invalid subject for review');
         }
 
+        if (static::reviewsDisabled()) {
+            return response()->json(['can_review' => false, 'reason' => 'reviews_disabled', 'message' => 'Reviews are turned off.', 'order' => null, 'review' => null]);
+        }
+
         $eligibility = ReviewEligibility::check(Storefront::getCustomerFromToken(), $subject, $request->input('order'));
 
         return response()->json($eligibility->toArray());
@@ -256,6 +286,10 @@ class ReviewController extends Controller
 
         if (!$customer) {
             return response()->error('Not authorized to create reviews');
+        }
+
+        if (static::reviewsDisabled()) {
+            return response()->json(['error' => 'Reviews are turned off.', 'reason' => 'reviews_disabled'], 403);
         }
 
         $subject = Utils::resolveSubject($request->input('subject'));

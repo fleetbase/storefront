@@ -10,6 +10,7 @@ use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Models\Vehicle;
+use Fleetbase\FleetOps\Support\DistanceMatrix;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
@@ -423,11 +424,41 @@ class ServiceQuoteController extends Controller
     }
 
     /**
-     * Resolve the multi-origin distance matrix used to quote a network order.
+     * Resolve the distance and time of a network order's route: the driver collects from each
+     * store, then delivers. Each leg is measured like a single store's (`getDrivingMatrix`) and
+     * the legs are added up.
+     *
+     * The stores are visited farthest from the customer first, then each nearest next, so the
+     * route ends close to the customer. (`Utils::distanceMatrix` cannot be used here: it joins
+     * the stores into one origin string, which the straight-line provider misreads and Google
+     * answers for the first store only.)
      */
     protected function getNetworkDistanceMatrix($origins, Place $destination): object
     {
-        return Utils::distanceMatrix($origins, [$destination]);
+        $remaining = collect($origins)->filter()->values();
+        if ($remaining->isEmpty()) {
+            return new DistanceMatrix(0, 0);
+        }
+
+        $straightLine = fn ($from, $to) => (float) Utils::getPreliminaryDistanceMatrix($from, $to)->distance;
+
+        $current   = $remaining->sortByDesc(fn ($place) => $straightLine($place, $destination))->first();
+        $remaining = $remaining->reject(fn ($place) => $place === $current)->values();
+        $distance  = 0;
+        $time      = 0;
+
+        while ($remaining->isNotEmpty()) {
+            $next      = $remaining->sortBy(fn ($place) => $straightLine($current, $place))->first();
+            $leg       = $this->getDrivingMatrix($current, $next);
+            $distance += (float) $leg->distance;
+            $time     += (float) $leg->time;
+            $current   = $next;
+            $remaining = $remaining->reject(fn ($place) => $place === $next)->values();
+        }
+
+        $leg = $this->getDrivingMatrix($current, $destination);
+
+        return new DistanceMatrix($distance + (float) $leg->distance, $time + (float) $leg->time);
     }
 
     /**
