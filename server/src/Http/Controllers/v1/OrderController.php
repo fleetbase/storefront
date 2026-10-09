@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
@@ -56,6 +57,80 @@ class OrderController extends Controller
     protected function updateOrderStatus(Order $order, string $status)
     {
         return $order->updateStatus($status);
+    }
+
+    /**
+     * The stores a multi-store (network) order was placed with: each store's own order, its
+     * progress, the items it is preparing and its subtotal. The customer's order is the one
+     * delivery that brings them together; this is its breakdown by store. Empty for an order
+     * from a single store.
+     */
+    public function getStores(string $id)
+    {
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->apiError('Customer is not authenticated.');
+        }
+
+        $order = Order::where('public_id', $id)->whereNull('deleted_at')->first();
+        if (!$order) {
+            return response()->apiError('No order found.', 404);
+        }
+
+        if ($order->customer_uuid !== $customer->uuid) {
+            return response()->apiError('Not authorized to view this order.', 403);
+        }
+
+        $related = array_values(array_filter((array) $order->getMeta('related_orders', [])));
+        if (!$order->getMeta('is_master_order') || empty($related)) {
+            return response()->json(['stores' => []]);
+        }
+
+        $children = Order::whereIn('public_id', $related)
+            ->where('customer_uuid', $customer->uuid)
+            ->whereNull('deleted_at')
+            ->with(['payload.pickup', 'payload.entities'])
+            ->get()
+            ->sortBy(fn ($child) => array_search($child->public_id, $related))
+            ->values();
+
+        $storeIds = $children->map(fn ($child) => $child->getMeta('storefront_id'))->filter()->unique()->values();
+        $stores   = Store::whereIn('public_id', $storeIds)->get()->keyBy('public_id');
+
+        $sections = $children->map(function (Order $child) use ($stores) {
+            $store  = $stores->get($child->getMeta('storefront_id'));
+            $pickup = data_get($child, 'payload.pickup');
+            $flow   = OrderActivityFlow::forOrder($child);
+            $step   = collect($flow['steps'] ?? [])->firstWhere('state', 'current') ?? collect($flow['steps'] ?? [])->last();
+
+            return [
+                'order'    => $child->public_id,
+                'status'   => $child->status,
+                'label'    => data_get($step, 'label'),
+                'store'    => [
+                    'id'       => $store?->public_id ?? $child->getMeta('storefront_id'),
+                    'name'     => $store?->name ?? $child->getMeta('storefront'),
+                    'logo_url' => $store?->logo_url,
+                    'phone'    => $store?->phone,
+                    'address'  => $pickup ? ($pickup->address ?? null) : null,
+                ],
+                'items'    => collect(data_get($child, 'payload.entities', []))->map(fn ($entity) => [
+                    'id'        => $entity->public_id,
+                    'name'      => $entity->name,
+                    'quantity'  => (int) (data_get($entity, 'meta.quantity') ?: 1),
+                    'subtotal'  => (int) data_get($entity, 'meta.subtotal', 0),
+                    'variants'  => data_get($entity, 'meta.variants', []),
+                    'addons'    => data_get($entity, 'meta.addons', []),
+                    'image_url' => data_get($entity, 'meta.image_url') ?? $entity->photo_url ?? null,
+                ])->values(),
+                'subtotal' => (int) $child->getMeta('subtotal', 0),
+                'discount' => (int) $child->getMeta('discount', 0),
+                'tip'      => (int) $child->getMeta('tip', 0),
+                'currency' => $child->getMeta('currency'),
+            ];
+        })->values();
+
+        return response()->json(['stores' => $sections]);
     }
 
     /**

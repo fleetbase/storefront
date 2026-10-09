@@ -99,6 +99,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->put('picked-up', 'OrderController@completeOrderPickup');
                     $router->post('receipt', 'OrderController@getReceipt');
                     $router->get('{id}/activity-flow', 'OrderController@getActivityFlow');
+                    $router->get('{id}/stores', 'OrderController@getStores');
                     $router->get('{id}/chat', 'OrderChatController@show');
                     $router->get('{id}/chat/messages', 'OrderChatController@messages');
                     $router->post('{id}/chat/messages', 'OrderChatController@send');
