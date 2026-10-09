@@ -36,6 +36,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Models\FoodTruck::class => \Fleetbase\Storefront\Observers\FoodTruckObserver::class,
         \Fleetbase\Models\Company::class              => \Fleetbase\Storefront\Observers\CompanyObserver::class,
         \Fleetbase\Models\ChatMessage::class          => \Fleetbase\Storefront\Observers\ChatMessageObserver::class,
+        \Fleetbase\FleetOps\Models\Order::class      => \Fleetbase\Storefront\Observers\OrderActivityObserver::class,
     ];
 
     /**
