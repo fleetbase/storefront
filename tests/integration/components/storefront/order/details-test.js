@@ -1,13 +1,49 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'dummy/tests/helpers';
-import { render } from '@ember/test-helpers';
+import { setupIntl } from 'ember-intl/test-support';
+import { render, findAll } from '@ember/test-helpers';
+import Service from '@ember/service';
 import { hbs } from 'ember-cli-htmlbars';
 import { initialize } from '@fleetbase/fleetops-data/instance-initializers/register-shared-resource-descriptors';
 
 module('Integration | Component | storefront/order/details', function (hooks) {
     setupRenderingTest(hooks);
+    setupIntl(hooks, 'en-us');
 
     hooks.beforeEach(function () {
+        // The activity, route and tracking panels fetch on insert and the dummy app has
+        // no API. A request that never answers leaves each task pending, and ember-concurrency
+        // cancels it with its component, so nothing writes to a torn-down panel.
+        this.owner.register(
+            'service:fetch',
+            class extends Service {
+                get() {
+                    return new Promise(() => {});
+                }
+
+                post() {
+                    return new Promise(() => {});
+                }
+            }
+        );
+        // The app cache keeps a proxy that outlives a test's owner; the activity panel reads
+        // it while initialising, so give it an inert cache like the widget tests do.
+        this.owner.register(
+            'service:app-cache',
+            class extends Service {
+                get() {
+                    return undefined;
+                }
+
+                set() {}
+
+                setEmberData() {}
+
+                getEmberData() {
+                    return [];
+                }
+            }
+        );
         initialize(this.owner);
     });
 
@@ -55,13 +91,14 @@ module('Integration | Component | storefront/order/details', function (hooks) {
 
         await render(hbs`<Storefront::Order::Details @resource={{this.order}} />`);
 
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Activity');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Store');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Order');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Details');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Customer Insights');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Route');
-        assert.dom('.next-content-panel-title-container').hasTextContaining('Metadata');
+        const titles = findAll('.next-content-panel-title-container').map((element) => element.textContent.trim());
+
+        for (const title of ['Activity', 'Store', 'Order', 'Details', 'Customer Insights', 'Route', 'Metadata']) {
+            assert.ok(
+                titles.some((text) => text.includes(title)),
+                `a panel titled ${title} renders`
+            );
+        }
         assert.dom('.storefront-order-person__name').hasTextContaining('Tasty Store');
         assert.dom('[data-test-order-driver-pill] [data-test-resource-pill-title]').hasText('No driver assigned', 'an unassigned driver is a static pill with the fallback title');
         assert.dom('[data-test-order-customer-pill] [data-test-resource-pill-title]').hasText('No customer');
