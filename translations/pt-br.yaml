@@ -421,6 +421,7 @@ storefront:
               enable-tips: Ativar gorjetas
               enable-delivery-tips: Ativar gorjetas para entrega
               enable-multi-cart-checkout: Ativar checkout para múltiplos carrinhos
+              split-tips-across-stores: "Dividir as gorjetas entre as lojas em pedidos de várias lojas"
               enable-user-reviews: Ativar avaliações de usuários
           api-panel:
             panel-title: API

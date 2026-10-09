@@ -417,6 +417,7 @@ storefront:
               enable-tips: Bật tiền boa
               enable-delivery-tips: Bật tiền boa cho giao hàng
               enable-multi-cart-checkout: Bật thanh toán nhiều giỏ hàng
+              split-tips-across-stores: "Chia tiền tip cho các cửa hàng trong đơn hàng nhiều cửa hàng"
               enable-user-reviews: Bật đánh giá người dùng
           api-panel:
             panel-title: API

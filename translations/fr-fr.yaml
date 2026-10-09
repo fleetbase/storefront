@@ -433,6 +433,7 @@ storefront:
               enable-tips: Activer les pourboires
               enable-delivery-tips: Activer les pourboires de livraison
               enable-multi-cart-checkout: Activer le paiement multi-panier
+              split-tips-across-stores: "Répartir les pourboires entre les boutiques dans les commandes multi-boutiques"
               enable-user-reviews: Activer les avis utilisateurs
           api-panel:
             panel-title: API

@@ -1778,6 +1778,20 @@ class CheckoutController extends Controller
         });
         $destination = Place::createFromMixed($destination);
 
+        // The store tip goes to the network that runs the app, unless the network splits it
+        // across the stores, each by its share of the order.
+        $splitTips = $checkout->hasOption('tip') && $about->isOption('split_tips_across_stores');
+        $tipShares = [];
+        if ($splitTips) {
+            $storeSubtotals = $origins
+                ->map(fn ($pickup) => Storefront::getStoreFromLocation($pickup->uuid))
+                ->filter()
+                ->unique('public_id')
+                ->mapWithKeys(fn ($store) => [$store->public_id => (int) $cart->getSubtotalForStore($store)])
+                ->all();
+            $tipShares = static::splitByShare((int) static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal), $storeSubtotals);
+        }
+
         $multipleOrders = [];
 
         foreach ($origins as $pickup) {
@@ -1815,7 +1829,8 @@ class CheckoutController extends Controller
                 'checkout_id'           => $checkout->public_id,
                 'subtotal'              => $subtotal,
                 'delivery_fee'          => 0,
-                'tip'                   => 0,
+                'tip'                   => $tipShares[$store->public_id] ?? 0,
+                'tip_recipient'         => $splitTips ? 'store' : 'network',
                 'delivery_tip'          => 0,
                 'discount'              => $storeDiscount,
                 'total'                 => $subtotal - $storeDiscount,
@@ -1907,6 +1922,7 @@ class CheckoutController extends Controller
             'subtotal'              => Utils::numbersOnly($cart->subtotal),
             'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
             'tip'                   => $checkout->getOption('tip'),
+            'tip_recipient'         => $splitTips ? 'stores' : 'network',
             'delivery_tip'          => $checkout->getOption('delivery_tip'),
             'discount'              => $promotions->discount(),
             'promotions'            => $promotions->toPublicArray()['applied'],
@@ -2308,6 +2324,39 @@ class CheckoutController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Split an amount across stores in proportion to their subtotals. Shares are whole cents
+     * that add up to the amount; the cents left over by rounding go to the largest shares.
+     *
+     * @param array<string,int> $subtotals store id => subtotal
+     *
+     * @return array<string,int> store id => share
+     */
+    protected static function splitByShare(int $amount, array $subtotals): array
+    {
+        $total = array_sum($subtotals);
+        if ($amount <= 0 || $total <= 0) {
+            return array_map(fn () => 0, $subtotals);
+        }
+
+        $shares = [];
+        foreach ($subtotals as $storeId => $subtotal) {
+            $shares[$storeId] = intdiv($amount * $subtotal, $total);
+        }
+
+        $left = $amount - array_sum($shares);
+        arsort($subtotals);
+        foreach (array_keys($subtotals) as $storeId) {
+            if ($left <= 0) {
+                break;
+            }
+            $shares[$storeId]++;
+            $left--;
+        }
+
+        return $shares;
     }
 
     private static function calculateTipAmount($tip, $subtotal)

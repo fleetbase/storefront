@@ -268,6 +268,16 @@
                             }}</span>
                     </Toggle>
                 </div>
+                {{#if (and @model.options.tips_enabled @model.options.multi_cart_enabled)}}
+                    {{! Off: a multi-store order's store tip goes to the network. On: it is split across the stores by their share of the order. }}
+                    <div class="input-group">
+                        <Toggle @isToggled={{@model.options.split_tips_across_stores}} @onToggle={{fn (mut @model.options.split_tips_across_stores)}}>
+                            <FaIcon @icon="code-branch" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                    "storefront.networks.index.network.index.general-network-settings-form.config-switches.split-tips-across-stores"
+                                }}</span>
+                        </Toggle>
+                    </div>
+                {{/if}}
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.reviews_enabled}} @onToggle={{fn (mut @model.options.reviews_enabled)}}>
                         <FaIcon @icon="star" @prefix="fas" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t

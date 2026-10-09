@@ -414,6 +414,7 @@ storefront:
               enable-tips: Зөвлөмжийг идэвхжүүлэх
               enable-delivery-tips: Хүргэлтийн зөвлөмжийг идэвхжүүлэх
               enable-multi-cart-checkout: Олон сагснаас төлбөр хийхийг идэвхжүүлэх
+              split-tips-across-stores: "Олон дэлгүүрийн захиалгад цайны мөнгийг дэлгүүрүүдэд хуваах"
               enable-user-reviews: Хэрэглэгчийн үнэлгээг идэвхжүүлэх
           api-panel:
             panel-title: API
