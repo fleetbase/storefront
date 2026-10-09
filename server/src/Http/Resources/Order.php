@@ -14,7 +14,7 @@ class Order extends FleetOpsOrderResource
      */
     public function toArray($request): array
     {
-        $data                       = $this->withoutCustomerPlaces(json_decode(json_encode($this->filter(parent::toArray($request))), true) ?? []);
+        $data                       = parent::toArray($request);
         $data['customer_name']      = $this->customer_name;
         $data['transaction_amount'] = $this->transaction_amount;
         $data['meta']               = $this->storefrontOrderMeta();
@@ -70,36 +70,6 @@ class Order extends FleetOpsOrderResource
         }
 
         return $meta;
-    }
-
-    /**
-     * A customer's places carry their kind in `type` (apartment, house, office...), which the
-     * console reads as a model name, and without it they cannot be identified at all. The
-     * customer copies in this order (its own and each item's) leave their places out.
-     */
-    private function withoutCustomerPlaces(array $data): array
-    {
-        // The order views don't use the customer's address book, so it is left out entirely.
-        $strip = function ($customer) {
-            if (is_array($customer)) {
-                unset($customer['place'], $customer['places']);
-            }
-
-            return $customer;
-        };
-
-        if (isset($data['customer'])) {
-            $data['customer'] = $strip($data['customer']);
-        }
-        if (is_array(data_get($data, 'payload.entities'))) {
-            foreach ($data['payload']['entities'] as $index => $entity) {
-                if (is_array($entity) && isset($entity['customer'])) {
-                    $data['payload']['entities'][$index]['customer'] = $strip($entity['customer']);
-                }
-            }
-        }
-
-        return $data;
     }
 
     private function normalizeMeta($meta): array

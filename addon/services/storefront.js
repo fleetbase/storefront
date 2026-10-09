@@ -96,12 +96,11 @@ export default class StorefrontService extends Service.extend(Evented) {
      * @param {Object} store - The store associated with the order.
      */
     async alertIncomingOrder(orderId, store) {
-        // Through Storefront's own order endpoint: it shapes the customer and items so the console can load them.
-        const order = await this.fetch.get(
-            `orders/${orderId}`,
-            { storefront: store?.public_id ?? this.getActiveStore('public_id') },
-            { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' }
-        );
+        const order = await this.store.queryRecord('order', {
+            public_id: orderId,
+            single: true,
+            with: ['customer', 'payload', 'trackingNumber'],
+        });
 
         this.playAlert();
         this.trigger('order.incoming', order, store);
