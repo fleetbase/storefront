@@ -1,4 +1,6 @@
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
+import { relationValue } from '@fleetbase/ember-ui/utils/resource-registry';
+import { buildIdentityStub } from '@fleetbase/fleetops-data/utils/identity-stub';
 import { tracked } from '@glimmer/tracking';
 import { action, get } from '@ember/object';
 import { inject as service } from '@ember/service';
@@ -7,6 +9,7 @@ import { isArray } from '@ember/array';
 import { timeout, task } from 'ember-concurrency';
 
 export default class OrdersIndexController extends BaseController {
+    @service store;
     @service notifications;
     @service intl;
     @service modalsManager;
@@ -131,7 +134,11 @@ export default class OrdersIndexController extends BaseController {
             id: 'customer-name',
             label: this.intl.t('storefront.orders.index.customer'),
             valuePath: 'customer.name',
-            cellComponent: 'table/cell/base',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'customer',
+            resourcePath: (order) => relationValue(order, 'customer') ?? buildIdentityStub(order, { type: order.customer_type ?? 'customer', nameKey: 'customer_name' }),
+            action: this.viewCustomer,
+            emptyText: 'No customer',
             width: '100px',
             resizable: true,
             sortable: true,
@@ -157,7 +164,9 @@ export default class OrdersIndexController extends BaseController {
             id: 'pickup-name',
             label: this.intl.t('storefront.common.pickup'),
             valuePath: 'pickupName',
-            cellComponent: 'table/cell/base',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'place',
+            resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'pickup') ?? buildIdentityStub(order, { type: 'place', nameKey: 'pickupName' }),
             width: '150px',
             resizable: true,
             sortable: true,
@@ -171,7 +180,9 @@ export default class OrdersIndexController extends BaseController {
             id: 'dropoff-name',
             label: this.intl.t('storefront.common.dropoff'),
             valuePath: 'dropoffName',
-            cellComponent: 'table/cell/base',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'place',
+            resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'dropoff') ?? buildIdentityStub(order, { type: 'place', nameKey: 'dropoffName' }),
             width: '150px',
             resizable: true,
             sortable: true,
@@ -184,9 +195,13 @@ export default class OrdersIndexController extends BaseController {
         {
             id: 'driver-assigned',
             label: this.intl.t('storefront.orders.index.driver-assigned'),
-            cellComponent: 'table/cell/driver-name',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'driver',
             valuePath: 'driver_assigned',
-            modelPath: 'driver_assigned',
+            resourcePath: (order) =>
+                relationValue(order, 'driver_assigned') ??
+                buildIdentityStub(order, { type: 'driver', load: () => (order.driver_assigned_uuid ? this.store.findRecord('driver', order.driver_assigned_uuid) : null) }),
+            emptyText: 'No driver assigned',
             width: '150px',
             resizable: true,
             sortable: true,
@@ -386,6 +401,19 @@ export default class OrdersIndexController extends BaseController {
 
         // update the query param
         this.query = value;
+    }
+
+    /**
+     * Opens the storefront customer behind an order. A stub that only carries
+     * the customer's name has no page to open.
+     * @param {Object} customer
+     */
+    @action viewCustomer(customer) {
+        if (!customer?.public_id) {
+            return;
+        }
+
+        return this.transitionToRoute('customers.index.view', customer.public_id);
     }
 
     @action viewOrder(order) {

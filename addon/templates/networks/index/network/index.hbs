@@ -139,6 +139,7 @@
                     <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-label"}} @wrapperClass="mb-0">
                         <ModelSelectMultiple
                             @modelName="user"
+                            @selectedItemComponent={{component "select-option/user" compact=true}}
                             @selectedModel={{@model.alertable.for_new_order}}
                             @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-placeholder"}}
                             @triggerClass="form-select form-input multiple"
@@ -147,7 +148,7 @@
                             @onChange={{fn this.makeAlertable "for_new_order"}}
                             as |model|
                         >
-                            {{model.name}}
+                            <SelectOption::User @option={{model}} />
                         </ModelSelectMultiple>
                     </InputGroup>
                 </div>

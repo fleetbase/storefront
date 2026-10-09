@@ -1912,22 +1912,6 @@ body[data-theme='dark'] .storefront-widget-count {
     background-color: #1d4ed8;
 }
 
-.storefront-customer-cell {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.65rem;
-}
-
-.storefront-customer-avatar {
-    width: 2rem;
-    height: 2rem;
-    flex: 0 0 auto;
-    border-radius: 0.35rem;
-    object-fit: cover;
-    box-shadow: 0 1px 2px rgb(15 23 42 / 16%);
-}
-
 .storefront-customer-name {
     display: block;
     overflow: hidden;
@@ -2244,22 +2228,10 @@ body[data-theme='dark'] .storefront-order-totals strong {
     gap: 0.75rem;
 }
 
-.storefront-order-person--compact {
-    align-items: flex-start;
-}
-
 .storefront-order-store {
     display: flex;
     align-items: flex-start;
     gap: 0.9rem;
-}
-
-.storefront-order-person__avatar {
-    width: 2.75rem;
-    height: 2.75rem;
-    flex: 0 0 auto;
-    border-radius: 0.5rem;
-    object-fit: cover;
 }
 
 .storefront-order-person__name {
@@ -2273,19 +2245,6 @@ body[data-theme='dark'] .storefront-order-totals strong {
 
 body[data-theme='dark'] .storefront-order-person__name {
     color: #f8fafc;
-}
-
-.storefront-order-person__meta {
-    overflow: hidden;
-    color: #64748b;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-body[data-theme='dark'] .storefront-order-person__meta {
-    color: #94a3b8;
 }
 
 .storefront-order-facts,

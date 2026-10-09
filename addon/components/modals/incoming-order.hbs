@@ -34,16 +34,7 @@
                                 <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
                                 <div class="flex flex-col space-y-4">
                                     {{#if @options.order.driver_assigned.id}}
-                                        <div class="flex items-center">
-                                            <Image src={{@options.order.driver_assigned.photoUrl}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.order.driver_assigned.name}} />
-                                            <div>
-                                                <h5 class="font-semibold dark:text-white text-xs">{{n-a @options.order.driver_assigned.displayName}}</h5>
-                                                <div class="font-semibold dark:text-gray-100 text-xs">{{n-a
-                                                        @options.order.driver_assigned.phone
-                                                        (t "storefront.component.modals.incoming-order.no-phone")
-                                                    }}</div>
-                                            </div>
-                                        </div>
+                                        <Driver::Pill @driver={{@options.order.driver_assigned}} />
                                     {{else}}
                                         <div>
                                             <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
@@ -72,16 +63,9 @@
                         <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
                             <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
                             <div class="">
-                                <div class="flex flex-row">
-                                    <div>
-                                        <Image src={{avatar-url @options.order.customer.photo_url}} class="w-12 h-12 rounded-md shadow-sm mr-4" alt={{@options.order.customer.name}} />
-                                    </div>
-                                    <div>
-                                        <div class="text-xs font-bold dark:text-gray-100">{{@options.order.customer.name}}</div>
-                                        <div class="text-xs dark:text-gray-100">{{@options.order.customer.email}}</div>
-                                        <div class="text-xs dark:text-gray-100">{{@options.order.customer.phone}}</div>
-                                    </div>
-                                </div>
+                                <Customer::Pill @customer={{@options.order.customer}} @static={{not @options.order.customer.id}} />
+                                <div class="text-xs dark:text-gray-100 mt-1">{{n-a @options.order.customer.email}}</div>
+                                <div class="text-xs dark:text-gray-100">{{n-a @options.order.customer.phone}}</div>
                                 {{#unless @options.order.meta.is_pickup}}
                                     <div class="mt-2">
                                         <h5 class="dark:text-gray-100 font-semibold text-xs truncate">{{t "storefront.component.modals.incoming-order.address"}}</h5>
