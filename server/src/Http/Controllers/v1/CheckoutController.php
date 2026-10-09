@@ -23,6 +23,7 @@ use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
+use Illuminate\Support\Carbon;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Promotions\PromotionContext;
@@ -1125,6 +1126,66 @@ class CheckoutController extends Controller
      *
      * @return void
      */
+    /**
+     * The booking an order's items make, if any: a cart with a booked service (a bookable
+     * product with a chosen time) is a booking order. Products in it come with the earliest
+     * appointment, so the order follows the booking flow and carries that appointment's time.
+     *
+     * The time is kept in the order meta (`booking_at`), not `scheduled_at`: Fleet-Ops
+     * dispatches scheduled orders by themselves on the day, before the store confirms.
+     */
+    protected static function bookingFor(iterable $cartItems): ?array
+    {
+        $items      = collect($cartItems);
+        $productIds = $items->map(fn ($item) => data_get($item, 'product_id'))->filter()->unique()->values();
+        $bookable   = $productIds->isEmpty() ? collect() : Product::whereIn('public_id', $productIds)->where('is_bookable', true)->pluck('public_id');
+
+        $times = $items
+            ->filter(fn ($item) => data_get($item, 'scheduled_at') || $bookable->contains(data_get($item, 'product_id')))
+            ->map(fn ($item) => data_get($item, 'scheduled_at'))
+            ->filter()
+            ->map(function ($at) {
+                try {
+                    return Carbon::parse($at);
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->sort();
+
+        $hasService = $items->contains(fn ($item) => data_get($item, 'scheduled_at') || $bookable->contains(data_get($item, 'product_id')));
+        if (!$hasService) {
+            return null;
+        }
+
+        $first = $times->first();
+
+        return [
+            'is_booking'        => true,
+            'booking_at'        => $first ? $first->toIso8601String() : null,
+            'booking_has_items' => $items->contains(fn ($item) => !data_get($item, 'scheduled_at') && !$bookable->contains(data_get($item, 'product_id'))),
+        ];
+    }
+
+    /**
+     * Mark an order as a booking (meta and the company's booking order config) when its items make one.
+     */
+    protected static function applyBooking(iterable $cartItems, array $orderMeta, array $orderInput): array
+    {
+        $booking = static::bookingFor($cartItems);
+        if (!$booking) {
+            return [$orderMeta, $orderInput];
+        }
+
+        $config = Storefront::getBookingOrderConfig($orderInput['company_uuid'] ?? null);
+        if ($config) {
+            $orderInput['order_config_uuid'] = $config->uuid;
+        }
+
+        return [array_merge($orderMeta, $booking), $orderInput];
+    }
+
     private function processCartItem($cartItem, $payload, $customer)
     {
         $product = Product::where('public_id', $cartItem->product_id)->first();
@@ -1425,6 +1486,10 @@ class CheckoutController extends Controller
             'meta'              => $orderMeta,
             'notes'             => $notes,
         ];
+
+        // A booked service makes this a booking order, with its own flow.
+        [$bookingMeta, $orderInput] = static::applyBooking($cart->items ?? [], $orderInput['meta'], $orderInput);
+        $orderInput['meta']         = $bookingMeta;
 
         // if it's integrated vendor order apply to meta
         if ($integratedVendorOrder) {
@@ -1784,6 +1849,9 @@ class CheckoutController extends Controller
                 $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
                 $orderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
             }
+
+            // A booked service makes this store's order a booking order, with its own flow.
+            [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
 
             // set meta to order input last
             $orderInput['meta'] = $orderMeta;

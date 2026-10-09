@@ -33,6 +33,12 @@ class Storefront
     private const CONFIG_NS  = 'system:order-config:storefront';
     /** @var array<string,OrderConfig> In-memory cache keyed by company UUID */
     private static array $configCache = [];
+    /** @var string */
+    public const BOOKING_CONFIG_KEY = 'storefront_booking';
+    /** @var string */
+    public const BOOKING_CONFIG_NS  = 'system:order-config:storefront-booking';
+    /** @var array<string,OrderConfig> In-memory cache of booking configs keyed by company UUID */
+    private static array $bookingConfigCache = [];
 
     /**
      * Returns current store or network based on session `storefront_key`
@@ -575,6 +581,108 @@ class Storefront
     }
 
     /**
+     * Whether an order is a service booking: it holds at least one booked service, and any
+     * products in it come with the (earliest) appointment.
+     */
+    public static function isBookingOrder($order): bool
+    {
+        return $order instanceof Order && $order->isMeta('is_booking');
+    }
+
+    /**
+     * Get (or lazily create) the Storefront booking OrderConfig for a company. Bookings have
+     * their own steps (confirmed, provider on the way, in progress...) instead of delivery's,
+     * and a config of their own so the delivery config, which may be customised, is untouched.
+     */
+    public static function getBookingOrderConfig(Company|string|null $company): ?OrderConfig
+    {
+        $companyUuid = static::resolveCompanyUuid($company);
+        if (!$companyUuid) {
+            return null;
+        }
+
+        if (isset(static::$bookingConfigCache[$companyUuid])) {
+            return static::$bookingConfigCache[$companyUuid];
+        }
+
+        $config = OrderConfig::where(['company_uuid' => $companyUuid, 'key' => self::BOOKING_CONFIG_KEY, 'namespace' => self::BOOKING_CONFIG_NS])->first()
+            ?? DB::transaction(fn () => static::createBookingConfig($companyUuid));
+
+        return static::$bookingConfigCache[$companyUuid] = $config;
+    }
+
+    /**
+     * Create (or retrieve) the Storefront booking config for a company.
+     *
+     * At the customer's address: requested, confirmed, provider assigned, on the way, arrived,
+     * in progress, completed. At the store (a pickup booking) the customer comes in, so it goes
+     * from confirmed straight to in progress: only "provider assigned" is conditional, so it is
+     * the branch taken when the booking is at the customer's address.
+     */
+    public static function createBookingConfig(Company|string $company): OrderConfig
+    {
+        $companyUuid = $company instanceof Company ? $company->uuid : $company;
+        $atCustomer  = [['type' => 'not', 'conditions' => [['field' => 'meta.is_pickup', 'operator' => 'equal', 'value' => 'true']]]];
+
+        $flow = [
+            'created'          => static::bookingActivity('created', 'Booking requested', '{storefront.name} will confirm your booking shortly.', ['accepted', 'canceled']),
+            'accepted'         => static::bookingActivity('accepted', 'Booking confirmed', '{storefront.name} has confirmed your booking.', ['dispatched', 'in_progress', 'canceled']),
+            'dispatched'       => static::bookingActivity('dispatched', 'Provider assigned', 'Your provider has been assigned and will set off in time for your appointment.', ['started'], $atCustomer),
+            'started'          => static::bookingActivity('started', 'Provider on the way', 'Your provider is on the way to you.', ['provider_arrived']),
+            'provider_arrived' => static::bookingActivity('provider_arrived', 'Provider arrived', 'Your provider has arrived.', ['in_progress']),
+            'in_progress'      => static::bookingActivity('in_progress', 'Service in progress', 'Your booking with {storefront.name} is under way.', ['completed']),
+            'completed'        => static::bookingActivity('completed', 'Booking completed', 'Your booking with {storefront.name} is complete.', [], [], ['complete' => true]),
+            'canceled'         => static::bookingActivity('canceled', 'Booking canceled', 'Your booking was canceled.', [], [], ['events' => ['order.canceled']]),
+        ];
+
+        return OrderConfig::firstOrCreate(
+            [
+                'company_uuid' => $companyUuid,
+                'key'          => self::BOOKING_CONFIG_KEY,
+                'namespace'    => self::BOOKING_CONFIG_NS,
+            ],
+            [
+                'name'         => 'Storefront Booking',
+                'key'          => self::BOOKING_CONFIG_KEY,
+                'namespace'    => self::BOOKING_CONFIG_NS,
+                'description'  => 'Storefront order configuration for booked services, at the customer\'s address or at the store',
+                'core_service' => 1,
+                'status'       => 'private',
+                'version'      => '0.0.1',
+                'tags'         => ['storefront', 'booking', 'services'],
+                'entities'     => [],
+                'meta'         => [],
+                'flow'         => $flow,
+            ]
+        );
+    }
+
+    /**
+     * One activity of the booking flow, in the same shape as the delivery flow's.
+     */
+    protected static function bookingActivity(string $code, string $status, string $details, array $activities, array $logic = [], array $overrides = []): array
+    {
+        return array_merge([
+            'key'         => $code,
+            'code'        => $code,
+            'color'       => '#1f2937',
+            'logic'       => $logic,
+            'events'      => [],
+            'status'      => $status,
+            'actions'     => [],
+            'details'     => $details,
+            'options'     => [],
+            'complete'    => false,
+            'entities'    => [],
+            'sequence'    => 0,
+            'activities'  => $activities,
+            'internalId'  => (string) Str::uuid(),
+            'pod_method'  => 'scan',
+            'require_pod' => false,
+        ], $overrides);
+    }
+
+    /**
      * Normalize a Company|UUID|null to a UUID string (or null if unresolved).
      */
     protected static function resolveCompanyUuid(Company|string|null $company): ?string
@@ -592,6 +700,12 @@ class Storefront
 
     public static function createAcceptedActivity(?OrderConfig $orderConfig = null): Activity
     {
+        // A config with its own acceptance step (e.g. bookings: "Booking confirmed") uses it.
+        $flow = $orderConfig ? $orderConfig->flow : null;
+        if (is_array($flow) && is_array($flow['accepted'] ?? null)) {
+            return new Activity($flow['accepted'], $orderConfig->activities()->toArray());
+        }
+
         return new Activity([
             'key'         => 'accepted',
             'code'        => 'accepted',
@@ -633,9 +747,11 @@ class Storefront
             return response()->error('Unable to accept order.');
         }
 
-        // Notify customer order was accepted
+        // Notify customer order was accepted (a booking's confirmation is sent as its activity)
         try {
-            $order->customer->notify(new StorefrontOrderAccepted($order));
+            if (!static::isBookingOrder($order)) {
+                $order->customer->notify(new StorefrontOrderAccepted($order));
+            }
         } catch (\Throwable $e) {
             Log::error('[Storefront] was unable to notify the customer that their order was accepted.', ['order' => $order->public_id, 'error' => $e->getMessage()]);
         }
@@ -647,6 +763,11 @@ class Storefront
     {
         // Patch order config
         Storefront::patchOrderConfig($order);
+
+        // An at-store booking has nobody to dispatch: it starts when the customer comes in.
+        if (static::isBookingOrder($order) && $order->isMeta('is_pickup')) {
+            return $order;
+        }
 
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');

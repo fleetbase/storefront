@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Observers;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderActivity;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
+use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,8 +26,11 @@ class OrderActivityObserver
             return;
         }
 
-        $status = (string) $order->status;
-        if ($status === '' || in_array($status, static::NOTIFIED_ELSEWHERE, true)) {
+        // Bookings have no dedicated step notifications (those speak of deliveries), so every
+        // step after the request is announced here.
+        $status  = (string) $order->status;
+        $skipped = Storefront::isBookingOrder($order) ? ['created', 'pending'] : static::NOTIFIED_ELSEWHERE;
+        if ($status === '' || in_array($status, $skipped, true)) {
             return;
         }
 
