@@ -1922,6 +1922,8 @@ class CheckoutController extends Controller
             $masterOrderMeta = [
                 'is_master_order'       => true,
                 'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
+                // the stores this order brings together, for lists that show it as one order
+                'store_names'           => $originStores->pluck('name')->filter()->unique()->values()->all(),
                 'storefront'            => $about->name,
                 'storefront_id'         => $about->public_id,
                 'storefront_network'    => $about->name,
