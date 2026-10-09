@@ -14,7 +14,7 @@ class Order extends FleetOpsOrderResource
      */
     public function toArray($request): array
     {
-        $data                       = $this->withoutPlaceTypes(json_decode(json_encode($this->filter(parent::toArray($request))), true) ?? []);
+        $data                       = $this->withoutCustomerPlaces(json_decode(json_encode($this->filter(parent::toArray($request))), true) ?? []);
         $data['customer_name']      = $this->customer_name;
         $data['transaction_amount'] = $this->transaction_amount;
         $data['meta']               = $this->storefrontOrderMeta();
@@ -73,27 +73,16 @@ class Order extends FleetOpsOrderResource
     }
 
     /**
-     * A customer's places carry their kind in `type` (apartment, house, office...).
-     * The console reads `type` on an embedded record as its model name, so the
-     * customer copies in this order (its own and each item's) leave it out.
+     * A customer's places carry their kind in `type` (apartment, house, office...), which the
+     * console reads as a model name, and without it they cannot be identified at all. The
+     * customer copies in this order (its own and each item's) leave their places out.
      */
-    private function withoutPlaceTypes(array $data): array
+    private function withoutCustomerPlaces(array $data): array
     {
+        // The order views don't use the customer's address book, so it is left out entirely.
         $strip = function ($customer) {
-            if (!is_array($customer)) {
-                return $customer;
-            }
-            if (is_array($customer['place'] ?? null)) {
-                unset($customer['place']['type']);
-            }
-            if (is_array($customer['places'] ?? null)) {
-                $customer['places'] = array_map(function ($place) {
-                    if (is_array($place)) {
-                        unset($place['type']);
-                    }
-
-                    return $place;
-                }, $customer['places']);
+            if (is_array($customer)) {
+                unset($customer['place'], $customer['places']);
             }
 
             return $customer;
