@@ -293,7 +293,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');
-                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes(
+                            'catalogs',
+                            function ($router, $controller) {
+                                $router->put('{id}/subjects', $controller('assignSubjects'));
+                            }
+                        );
                         $router->fleetbaseRoutes('catalog-categories');
                         $router->fleetbaseRoutes('catalog-hours');
                         $router->group(

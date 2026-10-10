@@ -328,10 +328,75 @@ storefront:
       cancel-edit-button: Cancel edit customer
       cancel-new-button: Cancel new customer
   catalogs:
+    editor:
+      back: All catalogs
+      name-placeholder: Catalog name
+      categories-count: "{count, plural, =0 {no categories} one {# category} other {# categories}}"
+      served-by-count: "served by {stores, plural, =0 {no stores} one {# store} other {# stores}} and {trucks, plural, =0 {no trucks} one {# truck} other {# trucks}}"
+      duplicate: Duplicate
+      duplicated: Catalog duplicated as a draft.
+      sections:
+        categories: Categories and products
+        hours: Hours
+        served-by: Served by
+        details: Details
+      new-category: New category
+      rename: Rename
+      move-up: Move up
+      move-down: Move down
+      categories-note: The order here is the order the app shows. A category with no products is hidden in the app.
+      remove-category-title: "Remove the category {name}?"
+      remove-category-body: Its products stay in the store; they just leave this catalog.
+      add-products: Add products
+      search-products: Search the store's products
+      picker-hint: "{count, plural, =0 {Products already in this catalog are hidden.} one {# selected} other {# selected}}"
+      no-products-to-add: Every product of this store is already in the catalog.
+      add-count-to: "{count, plural, =0 {Add to {category}} one {Add # to {category}} other {Add # to {category}}}"
+      variants-count: "{count, plural, one {# variant} other {# variants}}"
+      addons-count: "{count, plural, one {# add-on} other {# add-ons}}"
+      store-price: store price
+      in-stock: In stock
+      out-of-stock: Out of stock
+      remove-from-category: Remove from this category
+      products-note: A product can be in several catalogs; removing it here never deletes it from the store.
+      no-products-in-category: No products in this category yet.
+      pick-a-category: Pick a category on the left, or create one.
+      status: Status
+      visible-in-app: Visible in app
+      visible-yes: Yes, during hours
+      visible-no: "No, draft"
+      empty-categories: Empty categories
+      no-hours: No hours set
+      every-day: every day
+      hours-lede: When the catalog is served. Outside these hours the app hides it.
+      served-by-lede: The stores and trucks that serve this catalog. A truck shows it only while online.
+      manage-served-by: Manage
+      served-by-title: "Who serves {name}"
+      served-by-saved: Served-by list saved.
+      serving: Serving
+      no-served-by: Nobody serves this catalog yet.
+      assign-store-or-truck: Assign a store or truck
+      stores: Stores
+      stores-help: Stores that serve this catalog at their locations.
+      trucks-help: Trucks that serve this catalog while they are online.
+      pick-trucks: Pick trucks
+      unsaved: Unsaved changes
+      unsaved-summary: "Unsaved: {added, plural, =0 {} one {# product added} other {# products added}} {removed, plural, =0 {} one {# removed} other {# removed}} {categories, plural, =0 {} other {categories changed}}"
+      save: Save catalog
+      saved: Catalog saved.
+      created: Catalog created. Add categories and products next.
+      create-and-open: Create and open
+      create-lede: Give the catalog a name; you add categories, products, hours and who serves it next.
+      leave-title: Leave without saving?
+      leave-body: Your unsaved changes to this catalog will be lost.
+      leave: Leave
     index:
       empty-state: Create a catalog to group products into a menu with its own categories and hours.
       create-catalog: Create catalog
     card:
+      store-only: Store only, no trucks
+      draft-hint: Needs categories, products and hours
+      continue-setup: Continue setup
       no-description: No description
       no-categories: No categories yet
       products-count: "{count, plural, =0 {No products} one {# product} other {# products}}"

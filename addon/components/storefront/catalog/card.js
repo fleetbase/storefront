@@ -34,6 +34,12 @@ export default class StorefrontCatalogCardComponent extends Component {
         return hours ? hours.slice() : [];
     }
 
+    get subjects() {
+        const subjects = get(this.catalog, 'subjects');
+
+        return Array.isArray(subjects) ? subjects : [];
+    }
+
     get status() {
         return get(this.catalog, 'status') ?? 'draft';
     }

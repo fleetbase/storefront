@@ -11,7 +11,7 @@
             {{/if}}
             <Badge @status={{this.status}} @size="xs" @hideStatusDot={{true}} data-test-catalog-status />
         </div>
-        <div class="storefront-card__subtitle">{{n-a this.catalog.description (t "storefront.catalogs.card.no-description")}}</div>
+        <div class="storefront-card__subtitle">{{n-a this.catalog.description (if this.isDraft (t "storefront.catalogs.card.draft-hint") (t "storefront.catalogs.card.no-description"))}}</div>
         <RegistryYield @registry="storefront:component:catalog:card:header:end" as |RegistryComponent|>
             <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
         </RegistryYield>
@@ -27,6 +27,19 @@
             </div>
         {{/if}}
         <Storefront::HoursStrip @hours={{this.hours}} class="storefront-card__hours" />
+        {{#if this.subjects.length}}
+            <div class="storefront-card__chips storefront-catalog-card__served-by" data-test-catalog-served-by>
+                {{#each this.subjects as |subject|}}
+                    <span class="storefront-card__chip" title={{subject.name}}>
+                        <FaIcon @icon={{if (eq subject.type "food-truck") "truck" "store"}} @size="xs" class="mr-1" />
+                        <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator mr-1 {{if subject.online 'text-green-500' 'text-gray-400'}}" />
+                        {{subject.name}}
+                    </span>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="storefront-card__empty storefront-catalog-card__served-by" data-test-catalog-served-by>{{t "storefront.catalogs.card.store-only"}}</div>
+        {{/if}}
     </Card.body>
     <Card.footer class={{@footerClass}}>
         <RegistryYield @registry="storefront:component:catalog:card:footer:start" as |RegistryComponent|>
@@ -36,7 +49,11 @@
             <span class="storefront-card__count" data-test-catalog-products-count>{{t "storefront.catalogs.card.products-count" count=this.productsCount}}</span>
             <div class="storefront-card__buttons">
                 {{#if @onEdit}}
-                    <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.catalog}} @permission="storefront update catalog" data-test-catalog-edit />
+                    {{#if this.isDraft}}
+                        <Button @icon="arrow-right" @size="xs" @text={{t "storefront.catalogs.card.continue-setup"}} @onClick={{fn @onEdit this.catalog}} @permission="storefront update catalog" data-test-catalog-edit />
+                    {{else}}
+                        <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.catalog}} @permission="storefront update catalog" data-test-catalog-edit />
+                    {{/if}}
                 {{/if}}
                 {{#if @onDelete}}
                     <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "storefront.common.delete"}} @onClick={{fn @onDelete this.catalog}} @permission="storefront delete catalog" data-test-catalog-delete />

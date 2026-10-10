@@ -287,6 +287,28 @@ class Store extends StorefrontModel
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
+    /**
+     * Catalog assignments pointing at this store.
+     */
+    public function catalogAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(CatalogSubject::class, 'subject', 'subject_type', 'subject_uuid');
+    }
+
+    /**
+     * The catalogs this store serves; a store can be assigned catalogs like a truck.
+     */
+    public function catalogs(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(
+            Catalog::class,
+            'subject',
+            'catalog_subjects',
+            'subject_uuid',
+            'catalog_uuid'
+        );
+    }
+
     public function networks()
     {
         return $this->belongsToMany(Network::class, 'network_stores', 'store_uuid', 'network_uuid')

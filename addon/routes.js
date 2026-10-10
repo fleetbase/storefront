@@ -14,7 +14,9 @@ export default buildRoutes(function () {
         });
     });
     this.route('catalogs', function () {
-        this.route('index', { path: '/' }, function () {});
+        this.route('index', { path: '/' }, function () {
+            this.route('edit', { path: '/:public_id' });
+        });
     });
     this.route('customers', function () {
         this.route('index', { path: '/' }, function () {
