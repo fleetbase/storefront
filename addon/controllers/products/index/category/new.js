@@ -98,6 +98,20 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         this.reset();
     }
 
+    /**
+     * A new product starts over; an existing one rolls back to what was loaded.
+     */
+    @action discardChanges() {
+        if (this.product?.isNew) {
+            return this.reset();
+        }
+
+        this.product.rollbackAttributes();
+        (this.product.variants?.toArray?.() ?? []).forEach((variant) => (variant.isNew ? this.product.variants.removeObject(variant) : variant.rollbackAttributes()));
+        (this.product.addon_categories?.toArray?.() ?? []).forEach((category) => (category.isNew ? this.product.addon_categories.removeObject(category) : category.rollbackAttributes()));
+        this.uploadQueue = [];
+    }
+
     @action addTag(tag) {
         if (!isArray(this.product.tags)) {
             this.product.tags = [];

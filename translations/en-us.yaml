@@ -766,6 +766,23 @@ storefront:
         save-order-note: Save Order Note
         order-notes-updated: Order notes updated.
   products:
+    form:
+      tabs:
+        details: Details
+        variants: Variants and add-ons
+        availability: Availability
+        media: Media
+      more: More
+      more-subtitle: "translations ({translations}), metadata ({metadata} keys)"
+      needs-attention: "{count, plural, one {# field needs attention} other {# fields need attention}}"
+      save: Save changes
+      issues:
+        name: Give the product a name.
+        price: Set a price.
+        sale-price: Sale price must be lower than the price.
+        sale-price-missing: The product is on sale but has no sale price.
+        category: A published product needs a category.
+        media: A published product should have at least one image.
     index:
       manage-addons: Manage Addons
       manage-addons-dialog:

@@ -1,50 +1,93 @@
 <div class="storefront-product-form" data-test-storefront-product-form>
     {{#let (cannot @permission) as |unauthorized|}}
-        <Storefront::Product::Form::Basics
-            @product={{@product}}
-            @activeStore={{@activeStore}}
-            @statusOptions={{@statusOptions}}
-            @addTag={{@addTag}}
-            @removeTag={{@removeTag}}
-            @disabled={{unauthorized}}
-        />
-        <Storefront::Product::Form::Pricing
-            @product={{@product}}
-            @activeStore={{@activeStore}}
-            @disabled={{unauthorized}}
-        />
-        <Storefront::Product::Form::Flags
-            @product={{@product}}
-            @disabled={{unauthorized}}
-        />
-        <Storefront::Product::Form::Variants
-            @product={{@product}}
-            @activeStore={{@activeStore}}
-            @variantTabs={{@variantTabs}}
-            @createProductVariant={{@createProductVariant}}
-            @removeProductVariant={{@removeProductVariant}}
-            @editProductVariant={{@editProductVariant}}
-            @addVariantOption={{@addVariantOption}}
-            @removeVariantOption={{@removeVariantOption}}
-        />
-        <Storefront::Product::Form::Addons
-            @product={{@product}}
-            @promptSelectAddonCategories={{@promptSelectAddonCategories}}
-            @removeAddonCategory={{@removeAddonCategory}}
-            @excludeAddon={{@excludeAddon}}
-        />
-        <Storefront::Product::Form::Availability @product={{@product}} @disabled={{unauthorized}} />
-        <Storefront::Product::Form::Media
-            @product={{@product}}
-            @acceptedFileTypes={{@acceptedFileTypes}}
-            @uploadQueue={{@uploadQueue}}
-            @queueFile={{@queueFile}}
-            @removeFile={{@removeFile}}
-            @makePrimaryFile={{@makePrimaryFile}}
-            @disabled={{unauthorized}}
-        />
-        <Storefront::Product::Form::Videos @product={{@product}} @disabled={{unauthorized}} />
-        <Storefront::Product::Form::Translations @product={{@product}} @disabled={{unauthorized}} />
-        <Storefront::Product::Form::Metadata @product={{@product}} />
+        <div class="storefront-status-tabs storefront-product-form__tabs" role="tablist" data-test-product-form-tabs>
+            {{#each this.tabs as |tab|}}
+                <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-product-form-tab={{tab.id}}>
+                    <span>{{tab.label}}</span>
+                    {{#if tab.issues}}
+                        <span class="storefront-status-tab__count storefront-status-tab__count--issue" title={{t "storefront.products.form.needs-attention" count=tab.issues}}>{{tab.issues}}</span>
+                    {{else if tab.count}}
+                        <span class="storefront-status-tab__count">{{tab.count}}</span>
+                    {{/if}}
+                </button>
+            {{/each}}
+        </div>
+
+        {{#if (eq this.activeTab "details")}}
+            {{#if this.detailIssueMessages.length}}
+                <div class="storefront-product-form__issues" role="alert" data-test-product-form-issues>
+                    {{#each this.detailIssueMessages as |message|}}
+                        <div><FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{message}}</div>
+                    {{/each}}
+                </div>
+            {{/if}}
+            <Storefront::Product::Form::Basics
+                @product={{@product}}
+                @activeStore={{@activeStore}}
+                @statusOptions={{@statusOptions}}
+                @addTag={{@addTag}}
+                @removeTag={{@removeTag}}
+                @disabled={{unauthorized}}
+            />
+            <Storefront::Product::Form::Pricing @product={{@product}} @activeStore={{@activeStore}} @disabled={{unauthorized}} />
+            <Storefront::Product::Form::Flags @product={{@product}} @disabled={{unauthorized}} />
+            <ContentPanel @title={{t "storefront.products.form.more"}} @subtitle={{t "storefront.products.form.more-subtitle" translations=this.translationsCount metadata=this.metadataCount}} @open={{this.moreOpen}} @onClick={{this.toggleMore}} @wrapperClass="bordered-top" @pad={{false}}>
+                <Storefront::Product::Form::Translations @product={{@product}} @disabled={{unauthorized}} />
+                <Storefront::Product::Form::Metadata @product={{@product}} />
+            </ContentPanel>
+        {{else if (eq this.activeTab "variants")}}
+            <Storefront::Product::Form::Variants
+                @product={{@product}}
+                @activeStore={{@activeStore}}
+                @variantTabs={{@variantTabs}}
+                @createProductVariant={{@createProductVariant}}
+                @removeProductVariant={{@removeProductVariant}}
+                @editProductVariant={{@editProductVariant}}
+                @addVariantOption={{@addVariantOption}}
+                @removeVariantOption={{@removeVariantOption}}
+            />
+            <Storefront::Product::Form::Addons
+                @product={{@product}}
+                @promptSelectAddonCategories={{@promptSelectAddonCategories}}
+                @removeAddonCategory={{@removeAddonCategory}}
+                @excludeAddon={{@excludeAddon}}
+            />
+        {{else if (eq this.activeTab "availability")}}
+            <Storefront::Product::Form::Availability @product={{@product}} @disabled={{unauthorized}} />
+        {{else}}
+            <Storefront::Product::Form::Media
+                @product={{@product}}
+                @acceptedFileTypes={{@acceptedFileTypes}}
+                @uploadQueue={{@uploadQueue}}
+                @queueFile={{@queueFile}}
+                @removeFile={{@removeFile}}
+                @makePrimaryFile={{@makePrimaryFile}}
+                @disabled={{unauthorized}}
+            />
+            <Storefront::Product::Form::Videos @product={{@product}} @disabled={{unauthorized}} />
+        {{/if}}
+
+        {{#if @onSave}}
+            <div class="storefront-save-bar storefront-product-form__save-bar {{if this.isDirty 'is-dirty'}}" data-test-product-save-bar>
+                <div class="storefront-save-bar__status">
+                    {{#if this.isDirty}}
+                        <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />
+                        {{t "storefront.settings.save-bar.unsaved" count=this.dirtyCount}}
+                    {{else}}
+                        <FaIcon @icon="check" @size="xs" class="text-green-500 mr-2" />
+                        {{t "storefront.settings.save-bar.saved"}}
+                    {{/if}}
+                    {{#if this.issues.length}}
+                        <button type="button" class="storefront-save-bar__issues" {{on "click" (fn this.jumpToIssue (get this.issues "0"))}}>{{t "storefront.products.form.needs-attention" count=this.issues.length}}</button>
+                    {{/if}}
+                </div>
+                <div class="storefront-save-bar__actions">
+                    {{#if @onDiscard}}
+                        <Button @text={{t "storefront.settings.save-bar.discard"}} @disabled={{not this.isDirty}} @onClick={{@onDiscard}} />
+                    {{/if}}
+                    <Button @type="primary" @icon={{or @saveIcon "save"}} @text={{or @saveText (t "storefront.products.form.save")}} @isLoading={{@isSaving}} @disabled={{unauthorized}} @onClick={{@onSave}} @permission={{@permission}} data-test-product-save />
+                </div>
+            </div>
+        {{/if}}
     {{/let}}
 </div>

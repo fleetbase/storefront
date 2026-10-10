@@ -5206,3 +5206,58 @@ body[data-theme='dark'] .storefront-catalog-editor__details {
 .storefront-catalog-card__served-by {
     margin-top: 0.5rem;
 }
+
+/* Product editor: tabs, inline issues, save bar */
+.storefront-product-form__tabs {
+    margin: 0 0 0.75rem;
+}
+
+.storefront-status-tab__count--issue {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+body[data-theme='dark'] .storefront-status-tab__count--issue {
+    background-color: rgb(127 29 29 / 40%);
+    color: #fca5a5;
+}
+
+.storefront-product-form__issues {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #fcd34d;
+    border-radius: 0.375rem;
+    background-color: #fffbeb;
+    font-size: 0.8125rem;
+    color: #92400e;
+}
+
+body[data-theme='dark'] .storefront-product-form__issues {
+    border-color: #92400e;
+    background-color: rgb(120 53 15 / 30%);
+    color: #fcd34d;
+}
+
+.storefront-product-form__status {
+    width: 9rem;
+    margin-right: 0.5rem;
+}
+
+.storefront-product-form__save-bar {
+    margin-top: 1rem;
+}
+
+.storefront-save-bar__issues {
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: #b91c1c;
+    text-decoration: underline;
+    background: none;
+}
+
+body[data-theme='dark'] .storefront-save-bar__issues {
+    color: #fca5a5;
+}

@@ -8,6 +8,7 @@
         @onPressCancel={{this.transitionBack}}
     >
         <:actions>
+            <Select class="form-select form-input-sm storefront-product-form__status" @value={{this.product.status}} @placeholder={{t "storefront.common.status"}} @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} data-test-product-status />
             <Button
                 @icon={{this.overlayActionButtonIcon}}
                 @type="primary"
@@ -41,7 +42,12 @@
             @removeVariantOption={{this.removeVariantOption}}
             @removeAddonCategory={{this.removeAddonCategory}}
             @excludeAddon={{this.excludeAddon}}
+            @onSave={{perform this.saveProduct}}
+            @onDiscard={{this.discardChanges}}
+            @isSaving={{not this.saveProduct.isIdle}}
+            @saveText={{this.overlayActionButtonTitle}}
+            @saveIcon={{this.overlayActionButtonIcon}}
         />
-        <Spacer @height="300px" />
+        <Spacer @height="120px" />
     </Overlay::Body>
 </Overlay>
