@@ -395,15 +395,19 @@ class MongoliaSeeder extends Seeder
     |--------------------------------------------------------------------------
     */
 
+    /**
+     * Emails on a real-looking domain: QPay rejects the whole invoice for addresses it
+     * doesn't accept, such as the reserved `.test` domain.
+     */
     protected function customerFixtures(): array
     {
         return [
-            ['Болд Батбаяр', 'bold.batbayar@example.test', '+976 9911 0001'],
-            ['Сарнай Ганбаатар', 'sarnai.ganbaatar@example.test', '+976 9911 0002'],
-            ['Тэмүүлэн Дорж', 'temuulen.dorj@example.test', '+976 9911 0003'],
-            ['Номин Энхбаяр', 'nomin.enkhbayar@example.test', '+976 9911 0004'],
-            ['Ариунаа Мөнх', 'ariunaa.munkh@example.test', '+976 9911 0005'],
-            ['Ганзориг Сүх', 'ganzorig.sukh@example.test', '+976 9911 0006'],
+            ['Болд Батбаяр', 'bold.batbayar@example.mn', '+976 9911 0001'],
+            ['Сарнай Ганбаатар', 'sarnai.ganbaatar@example.mn', '+976 9911 0002'],
+            ['Тэмүүлэн Дорж', 'temuulen.dorj@example.mn', '+976 9911 0003'],
+            ['Номин Энхбаяр', 'nomin.enkhbayar@example.mn', '+976 9911 0004'],
+            ['Ариунаа Мөнх', 'ariunaa.munkh@example.mn', '+976 9911 0005'],
+            ['Ганзориг Сүх', 'ganzorig.sukh@example.mn', '+976 9911 0006'],
         ];
     }
 
