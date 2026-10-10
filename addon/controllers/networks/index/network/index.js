@@ -29,7 +29,9 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     }
 
     get openInvitations() {
-        return this.invitations.filter((invitation) => ['pending', 'declined', 'expired'].includes(invitation.status)).map((invitation) => ({ ...invitation, sentAgo: this.sentAgo(invitation) }));
+        return this.invitations
+            .filter((invitation) => ['pending', 'declined', 'expired'].includes(invitation.status))
+            .map((invitation) => ({ ...invitation, sentAgo: this.sentAgo(invitation) }));
     }
 
     get pendingCount() {

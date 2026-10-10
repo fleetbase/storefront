@@ -25,7 +25,7 @@
                 {{on "click" (fn @onSelect row.category)}}
             >
                 {{#if row.hasChildren}}
-                    <span class="storefront-product-category__caret" role="button" {{on "click" (fn this.toggleCollapse row.category)}}>
+                    <span class="storefront-product-category__caret" aria-hidden="true" {{on "click" (fn this.toggleCollapse row.category)}}>
                         <FaIcon @icon={{if row.isCollapsed "chevron-right" "chevron-down"}} @size="xs" />
                     </span>
                 {{/if}}

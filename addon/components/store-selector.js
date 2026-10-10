@@ -252,7 +252,8 @@ export default class StoreSelectorComponent extends Component {
     iconMarkup(name) {
         const paths = {
             store: '<path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',
-            'network-wired': '<rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/>',
+            'network-wired':
+                '<rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/>',
             plus: '<path d="M12 5v14M5 12h14"/>',
             check: '<path d="M5 12l5 5L20 7"/>',
         };

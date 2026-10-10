@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action, get } from '@ember/object';
+import { action } from '@ember/object';
 import { debug } from '@ember/debug';
 import { task } from 'ember-concurrency';
 
@@ -28,9 +28,8 @@ export default class CustomerPanelOrdersComponent extends Component {
     }
 
     @task *loadOrders(params = {}) {
-        const storefront = get(this.storefront, 'activeStore.public_id');
         const queryParams = {
-            storefront,
+            ...this.storefront.contextScope(),
             limit: 14,
             sort: '-created_at',
             customer_uuid: this.customer?.id,

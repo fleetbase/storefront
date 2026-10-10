@@ -17,7 +17,6 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service abilities;
     @service socket;
-    @service hostRouter;
     @tracked activeStoreId;
     @tracked activeNetworkId;
     @tracked pendingInvitations = [];
@@ -125,6 +124,18 @@ export default class StorefrontService extends Service.extend(Evented) {
      * @param {string|null} property - The property to retrieve from the active store.
      * @returns {Object|null} The active store or its specific property.
      */
+    /**
+     * Query scope for the active context: `{ network }` inside a network, `{ storefront }` for a store.
+     * Every list and panel that can open in either context should take its scope from here.
+     */
+    contextScope() {
+        if (this.isNetworkContext) {
+            return { network: this.getActiveNetwork('public_id') };
+        }
+
+        return { storefront: this.getActiveStore('public_id') };
+    }
+
     getActiveStore(property = null) {
         if (this.activeStore) {
             if (typeof property === 'string') {

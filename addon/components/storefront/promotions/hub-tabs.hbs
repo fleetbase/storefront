@@ -1,7 +1,6 @@
 <div class="storefront-status-tabs storefront-promotions-hub__tabs px-4 pt-3" role="tablist" data-test-promotions-hub-tabs ...attributes>
     {{#each this.tabs as |tab|}}
         <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.openTab tab)}} data-test-promotions-tab={{tab.id}}>
-            <FaIcon @icon={{tab.icon}} @size="xs" class="mr-1" />
             <span>{{tab.label}}</span>
             {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
         </button>

@@ -77,7 +77,9 @@ export default class StorefrontPromotionBuilderComponent extends Component {
             case 'percentage':
                 return this.intl.t('storefront.promotions.builder.summary.percentage', { value: promotion.value ?? 0 });
             case 'fixed_amount':
-                return this.intl.t('storefront.promotions.builder.summary.fixed', { amount: this.intl.formatNumber((promotion.value ?? 0) / 100, { style: 'currency', currency: this.currency }) });
+                return this.intl.t('storefront.promotions.builder.summary.fixed', {
+                    amount: this.intl.formatNumber((promotion.value ?? 0) / 100, { style: 'currency', currency: this.currency }),
+                });
             case 'free_delivery':
                 return this.intl.t('storefront.promotions.types.free_delivery');
             case 'bogo':
@@ -110,7 +112,12 @@ export default class StorefrontPromotionBuilderComponent extends Component {
                 if (promotion?.runsFrom || promotion?.runsUntil) parts.push([promotion.runsFrom, promotion.runsUntil].filter(Boolean).join(' – '));
                 else parts.push(this.intl.t('storefront.promotions.card.always'));
                 if (promotion?.usage_limit) parts.push(this.intl.t('storefront.promotions.builder.summary.limit', { count: promotion.usage_limit }));
-                if (promotion?.min_subtotal) parts.push(this.intl.t('storefront.promotions.card.cart-total-above', { amount: this.intl.formatNumber(promotion.min_subtotal / 100, { style: 'currency', currency: this.currency }) }));
+                if (promotion?.min_subtotal)
+                    parts.push(
+                        this.intl.t('storefront.promotions.card.cart-total-above', {
+                            amount: this.intl.formatNumber(promotion.min_subtotal / 100, { style: 'currency', currency: this.currency }),
+                        })
+                    );
                 return parts.join(' · ');
             }
             default:

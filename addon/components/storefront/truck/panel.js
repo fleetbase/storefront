@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
 import { task } from 'ember-concurrency';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -126,7 +126,8 @@ export default class StorefrontTruckPanelComponent extends Component {
             return this.intl.t('storefront.trucks.panel.new-truck');
         }
 
-        return this.truck?.vehicle?.display_name ?? this.truck?.vehicle?.plate_number ?? this.truck?.public_id ?? this.intl.t('storefront.common.food-trucks');
+        // `vehicle` is a belongsTo proxy until it resolves; read through `get`.
+        return get(this.truck, 'vehicle.display_name') ?? get(this.truck, 'vehicle.plate_number') ?? this.truck?.public_id ?? this.intl.t('storefront.common.food-trucks');
     }
 
     @action selectTab(tab) {

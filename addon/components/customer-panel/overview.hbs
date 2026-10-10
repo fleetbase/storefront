@@ -76,7 +76,7 @@
                     </div>
                 {{/each}}
             </div>
-        {{else unless this.loadOrders.isRunning}}
+        {{else if (not this.loadOrders.isRunning)}}
             <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-orders"}}</span></div>
         {{/if}}
     </ContentPanel>

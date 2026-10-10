@@ -87,10 +87,12 @@ export default class CustomerPanelComponent extends Component {
     constructor() {
         super(...arguments);
         this.customer = this.args.customer;
-        this.loadInsights.perform();
-
-        this.tab = this.getTabUsingSlug(this.args.tab);
+        // The context panel may pass the customer and tab as component arguments; apply them
+        // before anything reads `customer`, or Glimmer asserts on an update after a read.
         applyContextComponentArguments(this);
+        // Read the requested tab from the arguments, not from the tracked field the helper just wrote.
+        this.tab = this.getTabUsingSlug(this.args.tab ?? this.args.dynamicArgs?.tab);
+        this.loadInsights.perform();
     }
 
     /**
@@ -103,10 +105,22 @@ export default class CustomerPanelComponent extends Component {
         const registeredTabs = this.universe.getMenuItemsFromRegistry('component:customer-panel');
 
         const defaultTabs = [
-            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.overview'), null, { icon: 'circle-info', component: CustomerPanelOverviewComponent, componentParams: { insights: this.insights, onChange: this.reload } }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.overview'), null, {
+                icon: 'circle-info',
+                component: CustomerPanelOverviewComponent,
+                componentParams: { insights: this.insights, onChange: this.reload },
+            }),
             this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.orders'), null, { icon: 'file-invoice-dollar', component: CustomerPanelOrdersComponent }),
-            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.places'), null, { icon: 'map-marker-alt', component: CustomerPanelPlacesComponent, componentParams: { onChange: this.reload } }),
-            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.activity'), null, { icon: 'wave-square', component: CustomerPanelActivityComponent, componentParams: { insights: this.insights } }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.places'), null, {
+                icon: 'map-marker-alt',
+                component: CustomerPanelPlacesComponent,
+                componentParams: { onChange: this.reload },
+            }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.activity'), null, {
+                icon: 'wave-square',
+                component: CustomerPanelActivityComponent,
+                componentParams: { insights: this.insights },
+            }),
         ];
 
         if (isArray(registeredTabs)) {
@@ -149,7 +163,7 @@ export default class CustomerPanelComponent extends Component {
             return;
         }
 
-        const scope = this.storefront.isNetworkContext ? { network: this.storefront.getActiveNetwork('public_id') } : { storefront: this.storefront.getActiveStore('public_id') };
+        const scope = this.storefront.contextScope();
 
         try {
             this.insights = yield this.fetch.get(`customers/${customer.id}/insights`, scope, { namespace: 'storefront/int/v1' });

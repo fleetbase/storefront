@@ -23,7 +23,14 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     @service hostRouter;
     @service storefrontOrderActions;
 
-    queryParams = this.registeredQueryParams('network-order', [{ page: 'o_page' }, { limit: 'o_limit' }, { sort: 'o_sort' }, { query: 'o_query' }, { status: 'o_status' }, { view: 'o_view' }]);
+    queryParams = this.registeredQueryParams('network-order', [
+        { page: 'o_page' },
+        { limit: 'o_limit' },
+        { sort: 'o_sort' },
+        { query: 'o_query' },
+        { status: 'o_status' },
+        { view: 'o_view' },
+    ]);
 
     @tracked page = 1;
     @tracked limit;

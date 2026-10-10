@@ -13,7 +13,7 @@ export default class NetworksJoinRoute extends Route {
         return this.fetch.get(`networks/join/${uri}`, {}, { namespace: 'storefront/int/v1' }).then((response) => ({ uri, ...response }));
     }
 
-    setupController(controller, model) {
+    setupController(controller) {
         super.setupController(...arguments);
         controller.stores = this.store.peekAll('store').toArray();
         controller.selectedStore = this.storefront.activeStore ?? controller.stores[0] ?? null;

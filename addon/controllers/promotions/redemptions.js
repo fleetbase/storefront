@@ -24,7 +24,14 @@ export default class PromotionsRedemptionsController extends BaseController {
             { id: 'code', label: this.intl.t('storefront.promotions.codes.code'), valuePath: 'code', cellComponent: 'click-to-copy', width: '140px' },
             { id: 'customer', label: this.intl.t('storefront.common.customer'), valuePath: 'customer_name', width: '180px' },
             { id: 'order', label: this.intl.t('storefront.common.orders'), valuePath: 'order_public_id', cellComponent: 'table/cell/anchor', action: this.viewOrder, width: '170px' },
-            { id: 'amount', label: this.intl.t('storefront.promotions.redemptions.discount'), valuePath: 'amount', cellComponent: 'table/cell/currency', currencyPath: 'currency', width: '120px' },
+            {
+                id: 'amount',
+                label: this.intl.t('storefront.promotions.redemptions.discount'),
+                valuePath: 'amount',
+                cellComponent: 'table/cell/currency',
+                currencyPath: 'currency',
+                width: '120px',
+            },
             { id: 'status', label: this.intl.t('storefront.common.status'), valuePath: 'status', cellComponent: 'table/cell/status', width: '120px' },
             { id: 'redeemed-at', label: this.intl.t('storefront.promotions.redemptions.redeemed-at'), valuePath: 'redeemedAt', width: '170px' },
         ];

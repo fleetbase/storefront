@@ -88,7 +88,16 @@ export default class OrdersIndexNewController extends Controller {
     get pickerProducts() {
         const query = this.pickerQuery.trim().toLowerCase();
 
-        return this.products.filter((product) => !query || String(product.name ?? '').toLowerCase().includes(query) || String(product.sku ?? '').toLowerCase().includes(query));
+        return this.products.filter(
+            (product) =>
+                !query ||
+                String(product.name ?? '')
+                    .toLowerCase()
+                    .includes(query) ||
+                String(product.sku ?? '')
+                    .toLowerCase()
+                    .includes(query)
+        );
     }
 
     get itemsCount() {
@@ -136,7 +145,17 @@ export default class OrdersIndexNewController extends Controller {
     }
 
     get totals() {
-        return this.quote?.totals ?? { subtotal: this.linesSubtotal, delivery_fee: 0, discount: 0, tip: this.tipAmount, delivery_tip: 0, total: this.linesSubtotal + this.tipAmount, items: this.itemsCount };
+        return (
+            this.quote?.totals ?? {
+                subtotal: this.linesSubtotal,
+                delivery_fee: 0,
+                discount: 0,
+                tip: this.tipAmount,
+                delivery_tip: 0,
+                total: this.linesSubtotal + this.tipAmount,
+                items: this.itemsCount,
+            }
+        );
     }
 
     get minimum() {
@@ -163,7 +182,9 @@ export default class OrdersIndexNewController extends Controller {
         }
 
         if (this.quote && !this.minimum.met) {
-            issues.push(this.intl.t('storefront.orders.create.issues.minimum', { amount: this.intl.formatNumber((this.minimum.amount ?? 0) / 100, { style: 'currency', currency: this.currency }) }));
+            issues.push(
+                this.intl.t('storefront.orders.create.issues.minimum', { amount: this.intl.formatNumber((this.minimum.amount ?? 0) / 100, { style: 'currency', currency: this.currency }) })
+            );
         }
 
         if (this.quoteError && !this.isPickup) {
@@ -188,8 +209,20 @@ export default class OrdersIndexNewController extends Controller {
             items: this.lines.map((line) => ({
                 product: line.product.public_id,
                 quantity: line.quantity,
-                variants: line.variants.map((option) => ({ id: option.public_id ?? option.id, name: option.name, additional_cost: option.additional_cost, product_variant_uuid: option.product_variant_uuid })),
-                addons: line.addons.map((addon) => ({ id: addon.public_id ?? addon.id, name: addon.name, price: addon.price, sale_price: addon.sale_price, is_on_sale: addon.is_on_sale, category_uuid: addon.category_uuid })),
+                variants: line.variants.map((option) => ({
+                    id: option.public_id ?? option.id,
+                    name: option.name,
+                    additional_cost: option.additional_cost,
+                    product_variant_uuid: option.product_variant_uuid,
+                })),
+                addons: line.addons.map((addon) => ({
+                    id: addon.public_id ?? addon.id,
+                    name: addon.name,
+                    price: addon.price,
+                    sale_price: addon.sale_price,
+                    is_on_sale: addon.is_on_sale,
+                    category_uuid: addon.category_uuid,
+                })),
             })),
             tip: this.tipAmount || 0,
             delivery_tip: 0,
@@ -228,7 +261,11 @@ export default class OrdersIndexNewController extends Controller {
 
     @task *place() {
         try {
-            const order = yield this.fetch.post('orders/console/place', { ...this.payload, cart: this.quote?.cart, service_quote: this.quote?.service_quote }, { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' });
+            const order = yield this.fetch.post(
+                'orders/console/place',
+                { ...this.payload, cart: this.quote?.cart, service_quote: this.quote?.service_quote },
+                { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' }
+            );
             this.notifications.success(this.intl.t('storefront.orders.create.placed', { id: order?.public_id ?? '' }));
             yield this.hostRouter.transitionTo('console.storefront.orders.index');
             this.hostRouter.refresh();
@@ -292,7 +329,10 @@ export default class OrdersIndexNewController extends Controller {
 
         return variants.map((variant) => ({
             variant,
-            options: (variant.options?.toArray?.() ?? Array.from(variant.options ?? [])).map((option) => ({ option, isSelected: (this.configVariants[variant.id] ?? []).some((selected) => selected.id === option.id) })),
+            options: (variant.options?.toArray?.() ?? Array.from(variant.options ?? [])).map((option) => ({
+                option,
+                isSelected: (this.configVariants[variant.id] ?? []).some((selected) => selected.id === option.id),
+            })),
         }));
     }
 

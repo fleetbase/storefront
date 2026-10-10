@@ -61,7 +61,9 @@ export default class StorefrontPromotionCardComponent extends Component {
         }
 
         if (promotion?.min_subtotal) {
-            return this.intl.t('storefront.promotions.card.cart-total-above', { amount: this.intl.formatNumber(promotion.min_subtotal / 100, { style: 'currency', currency: promotion.currency ?? 'USD' }) });
+            return this.intl.t('storefront.promotions.card.cart-total-above', {
+                amount: this.intl.formatNumber(promotion.min_subtotal / 100, { style: 'currency', currency: promotion.currency ?? 'USD' }),
+            });
         }
 
         return this.intl.t('storefront.promotions.triggers.automatic');

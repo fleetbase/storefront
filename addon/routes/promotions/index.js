@@ -24,7 +24,9 @@ export default class PromotionsIndexRoute extends Route {
     }
 
     model(params) {
-        const { view, ...query } = params;
+        // `view` is a UI-only query param (cards or table).
+        const query = { ...params };
+        delete query.view;
 
         return this.store.query('promotion', { ...query, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
     }

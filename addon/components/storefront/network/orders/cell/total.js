@@ -23,7 +23,7 @@ export default class StorefrontNetworkOrdersCellTotalComponent extends Component
     get currency() {
         const { row } = this.args;
 
-        return (row?.isGroup ? row.currency : get(row, 'meta.currency') ?? row?.currency) ?? 'USD';
+        return (row?.isGroup ? row.currency : (get(row, 'meta.currency') ?? row?.currency)) ?? 'USD';
     }
 
     get tipLabel() {

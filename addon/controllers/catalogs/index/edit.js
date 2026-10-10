@@ -66,7 +66,18 @@ export default class CatalogsIndexEditController extends Controller {
         const inCatalog = this.productIdsInCatalog;
         const query = this.pickerQuery.trim().toLowerCase();
 
-        return this.products.filter((product) => !inCatalog.has(product.id)).filter((product) => !query || String(product.name ?? '').toLowerCase().includes(query) || String(product.sku ?? '').toLowerCase().includes(query));
+        return this.products
+            .filter((product) => !inCatalog.has(product.id))
+            .filter(
+                (product) =>
+                    !query ||
+                    String(product.name ?? '')
+                        .toLowerCase()
+                        .includes(query) ||
+                    String(product.sku ?? '')
+                        .toLowerCase()
+                        .includes(query)
+            );
     }
 
     get productsCount() {
@@ -120,7 +131,11 @@ export default class CatalogsIndexEditController extends Controller {
             name: this.catalog?.name,
             description: this.catalog?.description,
             status: this.catalog?.status,
-            categories: this.categories.map((category) => ({ id: category.id, name: category.name, products: (category.products?.toArray?.() ?? Array.from(category.products ?? [])).map((product) => product.id) })),
+            categories: this.categories.map((category) => ({
+                id: category.id,
+                name: category.name,
+                products: (category.products?.toArray?.() ?? Array.from(category.products ?? [])).map((product) => product.id),
+            })),
         });
     }
 

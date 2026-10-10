@@ -36,7 +36,9 @@ export default class NetworksIndexNetworkOrdersRoute extends Route {
     }
 
     buildQueryParams(params = {}) {
-        const { view, ...rest } = params;
+        // `view` is a UI-only query param (grouped or flat).
+        const rest = { ...params };
+        delete rest.view;
 
         return Object.entries({ ...rest, network: this.modelFor('networks.index.network').public_id }).reduce((queryParams, [key, value]) => {
             if (value !== undefined && value !== null && value !== '') {

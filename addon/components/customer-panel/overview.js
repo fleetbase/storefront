@@ -61,10 +61,14 @@ export default class CustomerPanelOverviewComponent extends Component {
             return;
         }
 
-        const scope = this.storefront.isNetworkContext ? { network: this.storefront.getActiveNetwork('public_id') } : { storefront: this.storefront.getActiveStore('public_id') };
+        const scope = this.storefront.contextScope();
 
         try {
-            const orders = yield this.fetch.get('orders', { ...scope, limit: 5, sort: '-created_at', customer_uuid: this.customer.id }, { namespace: 'storefront/int/v1', normalizeToEmberData: true });
+            const orders = yield this.fetch.get(
+                'orders',
+                { ...scope, limit: 5, sort: '-created_at', customer_uuid: this.customer.id },
+                { namespace: 'storefront/int/v1', normalizeToEmberData: true }
+            );
             this.orders = orders?.toArray?.() ?? Array.from(orders ?? []);
         } catch {
             this.orders = [];

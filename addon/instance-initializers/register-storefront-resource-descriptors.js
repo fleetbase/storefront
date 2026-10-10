@@ -104,7 +104,12 @@ export function buildStorefrontResourceDescriptors(owner) {
             status: presence,
             badges: (network) => [first(network, 'stores_count') !== null ? { key: 'stores', icon: 'store', label: `${first(network, 'stores_count')} stores` } : null].filter(Boolean),
             selectDetails: (network) => [first(network, 'currency'), first(network, 'email')],
-            facts: (network) => [fact('email', first(network, 'email')), fact('phone', first(network, 'phone')), fact('website', first(network, 'website')), fact('currency', first(network, 'currency'))],
+            facts: (network) => [
+                fact('email', first(network, 'email')),
+                fact('phone', first(network, 'phone')),
+                fact('website', first(network, 'website')),
+                fact('currency', first(network, 'currency')),
+            ],
             canOpen: () => true,
             open: (network) => transitionTo('console.storefront.networks.index.network.index', network),
         },
