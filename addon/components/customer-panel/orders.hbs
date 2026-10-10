@@ -29,10 +29,8 @@
                         <td>
                             <Badge @status={{order.status}} />
                         </td>
-                        <td>
-                            <div>
-                                <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{true}} />
-                            </div>
+                        <td class="whitespace-nowrap text-right">
+                            <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{false}} />
                         </td>
                     </tr>
                 {{/each}}

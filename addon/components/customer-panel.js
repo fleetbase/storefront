@@ -56,6 +56,7 @@ export default class CustomerPanelComponent extends Component {
     @service contextPanel;
     @service intl;
     @service notifications;
+    @service storefront;
 
     /**
      * The current active tab.

@@ -17,6 +17,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service modalsManager;
     @service abilities;
     @service socket;
+    @service hostRouter;
     @tracked activeStoreId;
     @tracked activeNetworkId;
     @tracked pendingInvitations = [];
