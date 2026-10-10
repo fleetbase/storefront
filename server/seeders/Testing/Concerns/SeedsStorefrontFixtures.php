@@ -191,7 +191,8 @@ trait SeedsStorefrontFixtures
         $this->seededIdentities = [];
 
         // Products and vehicles too: open carts point at products, and food trucks at vehicles.
-        foreach ([Store::class => 'meta', Network::class => 'options', Product::class => 'meta', \Fleetbase\FleetOps\Models\Vehicle::class => 'meta'] as $modelClass => $column) {
+        // Customers too, with the app account they signed in with, so a signed-in app keeps its customer.
+        foreach ([Store::class => 'meta', Network::class => 'options', Product::class => 'meta', \Fleetbase\FleetOps\Models\Vehicle::class => 'meta', Contact::class => 'meta'] as $modelClass => $column) {
             foreach ($this->seededQuery($modelClass)->get() as $model) {
                 $tag    = (array) $model->{$column};
                 $seedId = $tag['seed_id'] ?? null;
@@ -203,6 +204,7 @@ trait SeedsStorefrontFixtures
                     'uuid'      => $model->uuid,
                     'public_id' => $model->public_id,
                     'key'       => $model->key,
+                    'user_uuid' => $modelClass === Contact::class ? $model->user_uuid : null,
                 ];
             }
         }
@@ -231,7 +233,7 @@ trait SeedsStorefrontFixtures
         $model = $this->createRecord($modelClass, $attributes);
 
         if ($previous) {
-            $identity = array_filter(['public_id' => $previous['public_id'], 'key' => $previous['key']]);
+            $identity = array_filter(['public_id' => $previous['public_id'], 'key' => $previous['key'] ?? null, 'user_uuid' => $previous['user_uuid'] ?? null]);
             if ($identity) {
                 $model->getConnection()->table($model->getTable())->where('uuid', $model->uuid)->update($identity);
                 $model->forceFill($identity)->syncOriginal();
@@ -902,7 +904,8 @@ trait SeedsStorefrontFixtures
     {
         $seedId = 'customer:' . Str::slug($name);
 
-        return $this->createRecord(Contact::class, [
+        // Same id (and app account) as last time, so a customer signed in to an app stays signed in.
+        return $this->createWithSeededIdentity(Contact::class, $seedId, [
             '_key'         => $this->fixtureKey($seedId),
             'company_uuid' => $company->uuid,
             'name'         => $name,
