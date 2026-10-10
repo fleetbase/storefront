@@ -851,14 +851,6 @@ class CheckoutController extends Controller
         $invoice = null;
         if ($ebarimtInvoiceCode) {
             $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
-
-            // The receiver's email is optional, but QPay rejects the whole invoice when it
-            // doesn't accept the address (e.g. an unusual domain). Try again without it so
-            // the customer can still pay.
-            if (data_get($invoice, 'error.email') && isset($invoiceReceiverData['email'])) {
-                unset($invoiceReceiverData['email']);
-                $invoice = $qpay->createEbarimtInvoice($ebarimtInvoiceCode, $senderInvoiceNo, $invoiceReceiverCode, $invoiceReceiverData, $invoiceDescription, $taxType, $districtCode, $lines);
-            }
         } else {
             $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
         }
