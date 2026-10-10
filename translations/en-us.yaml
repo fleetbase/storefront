@@ -349,6 +349,28 @@ storefront:
       assign-catalogs: Assign catalogs
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
+  order:
+    asap: ASAP
+    incl-tip: "incl. tip {tip}"
+    other-orders-in-checkout: "{count, plural, =0 {Other orders in this checkout} one {# other order in this checkout} other {# other orders in this checkout}}"
+    no-other-orders: This is the only order in its checkout.
+    tabs:
+      items: Items
+      route: Route
+      payment: Payment
+      activity: Activity
+      customer: Customer
+      data: Data
+    flow:
+      created: Created
+      accepted: Confirmed
+      preparing: Preparing
+      ready: Ready
+      pickup_ready: Ready for pickup
+      dispatched: Dispatched
+      picked_up: Picked up
+      completed: Completed
+      canceled: Canceled
   networks:
     card:
       stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"

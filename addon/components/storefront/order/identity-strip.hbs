@@ -1,0 +1,37 @@
+<div class="storefront-identity-strip" data-test-order-identity-strip ...attributes>
+    <div class="storefront-identity-strip__cell">
+        <div class="storefront-identity-strip__label">{{t "storefront.common.customer"}}</div>
+        <Customer::Pill @customer={{this.order.customer}} @titleFallback={{t "storefront.networks.orders.no-customer"}} @static={{not this.order.customer.id}} @size="xs" data-test-order-customer-pill />
+    </div>
+    <div class="storefront-identity-strip__cell">
+        <div class="storefront-identity-strip__label">{{t "storefront.common.driver"}}</div>
+        {{#if this.hasDriver}}
+            <Driver::Pill @driver={{this.order.driver_assigned}} @titleFallback={{t "storefront.networks.orders.unassigned"}} @static={{not this.order.driver_assigned.id}} @size="xs" data-test-order-driver-pill />
+        {{else if this.isPickup}}
+            <span class="storefront-identity-strip__muted">{{t "storefront.networks.orders.no-driver-needed"}}</span>
+        {{else if this.canAssignDriver}}
+            <Button @size="xs" @icon="id-card" @text={{t "storefront.networks.orders.assign-driver"}} @onClick={{this.assignDriver}} @permission="storefront update order" data-test-order-assign-driver />
+        {{else}}
+            <span class="storefront-identity-strip__muted">{{t "storefront.networks.orders.unassigned"}}</span>
+        {{/if}}
+    </div>
+    <div class="storefront-identity-strip__cell">
+        <div class="storefront-identity-strip__label">{{t "storefront.networks.orders.columns.fulfillment"}}</div>
+        <div class="storefront-identity-strip__value">
+            <FaIcon @icon={{if this.isPickup "store" "truck"}} @size="xs" class="mr-1 {{if this.isPickup 'text-purple-500' 'text-sky-500'}}" />
+            {{if this.isPickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}
+            <span class="storefront-identity-strip__muted">· {{if this.scheduledAt this.scheduledAt (if this.bookingAt (format-date-fns this.bookingAt "d MMM HH:mm") (t "storefront.order.asap"))}}</span>
+        </div>
+    </div>
+    <div class="storefront-identity-strip__cell">
+        <div class="storefront-identity-strip__label">{{t "storefront.networks.orders.columns.total"}}</div>
+        <div class="storefront-identity-strip__value storefront-identity-strip__value--strong">{{format-currency this.total this.currency}}</div>
+        {{#if (or this.tip this.promotionCode)}}
+            <div class="storefront-identity-strip__muted">
+                {{#if this.tip}}{{t "storefront.order.incl-tip" tip=(format-currency this.tip this.currency)}}{{/if}}
+                {{#if (and this.tip this.promotionCode)}} · {{/if}}
+                {{#if this.promotionCode}}{{this.promotionCode}}{{#if this.discount}} −{{format-currency this.discount this.currency}}{{/if}}{{/if}}
+            </div>
+        {{/if}}
+    </div>
+</div>

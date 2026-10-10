@@ -4222,3 +4222,195 @@ body[data-theme='dark'] .storefront-order-group__row {
     min-width: 0;
     padding: 0 0.5rem;
 }
+
+/* Order panel: header row, flow steps and identity strip */
+.storefront-order-panel-heading__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.storefront-order-panel-heading__title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.storefront-flow-steps {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background-color: #f9fafb;
+}
+
+body[data-theme='dark'] .storefront-flow-steps {
+    border-color: #374151;
+    background-color: rgb(55 65 81 / 50%);
+}
+
+.storefront-flow-steps__list {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+}
+
+.storefront-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    position: relative;
+}
+
+.storefront-flow-step:not(:last-child)::after {
+    content: '';
+    flex: 1 1 auto;
+    height: 1px;
+    margin: 0 0.25rem;
+    background-color: #d1d5db;
+}
+
+body[data-theme='dark'] .storefront-flow-step:not(:last-child)::after {
+    background-color: #4b5563;
+}
+
+.storefront-flow-step.is-complete:not(:last-child)::after {
+    background-color: #10b981;
+}
+
+.storefront-flow-step__marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #6b7280;
+    background-color: #ffffff;
+}
+
+body[data-theme='dark'] .storefront-flow-step__marker {
+    border-color: #4b5563;
+    color: #9ca3af;
+    background-color: #1f2937;
+}
+
+.storefront-flow-step.is-complete .storefront-flow-step__marker {
+    border-color: #10b981;
+    background-color: #10b981;
+    color: #ffffff;
+}
+
+.storefront-flow-step.is-current .storefront-flow-step__marker {
+    border-color: #0284c7;
+    background-color: #0284c7;
+    color: #ffffff;
+}
+
+.storefront-flow-step.is-current .storefront-flow-step__label {
+    color: #111827;
+    font-weight: 600;
+}
+
+body[data-theme='dark'] .storefront-flow-step.is-current .storefront-flow-step__label {
+    color: #f3f4f6;
+}
+
+.storefront-flow-step__label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.storefront-flow-steps.is-canceled .storefront-flow-steps__list {
+    opacity: 0.5;
+}
+
+.storefront-flow-steps__canceled {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+body[data-theme='dark'] .storefront-flow-steps__canceled {
+    color: #fca5a5;
+    background-color: rgb(127 29 29 / 40%);
+}
+
+.storefront-identity-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+@media (max-width: 640px) {
+    .storefront-identity-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.storefront-identity-strip__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.storefront-identity-strip__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-identity-strip__label {
+    color: #9ca3af;
+}
+
+.storefront-identity-strip__value {
+    font-size: 0.875rem;
+    color: #111827;
+}
+
+.storefront-identity-strip__value--strong {
+    font-weight: 600;
+}
+
+body[data-theme='dark'] .storefront-identity-strip__value {
+    color: #f3f4f6;
+}
+
+.storefront-identity-strip__muted {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-identity-strip__muted {
+    color: #9ca3af;
+}
+
+.storefront-order-tab > .content-panel {
+    margin-bottom: 0.5rem;
+}

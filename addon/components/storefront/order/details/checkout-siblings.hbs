@@ -1,0 +1,18 @@
+<ContentPanel @title={{t "storefront.order.other-orders-in-checkout" count=this.siblings.length}} @open={{true}} @isLoading={{this.load.isRunning}} @wrapperClass="bordered-top" ...attributes>
+    {{#if this.siblings.length}}
+        <div class="storefront-member-list">
+            {{#each this.siblings as |order|}}
+                <div class="storefront-member-row" data-test-checkout-sibling={{order.public_id}}>
+                    <div class="storefront-member-row__identity">
+                        <a href="javascript:;" class="storefront-member-row__name storefront-order-ref__id--link" {{on "click" (fn this.storefrontOrderActions.viewOrder order)}}>{{order.public_id}}</a>
+                        <div class="storefront-member-row__meta">{{n-a order.meta.storefront}}</div>
+                    </div>
+                    <div class="storefront-member-row__amount">{{format-currency order.meta.total order.meta.currency}}</div>
+                    <Badge @status={{order.status}} @size="xs" />
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="storefront-empty-row"><span>{{t "storefront.order.no-other-orders"}}</span></div>
+    {{/if}}
+</ContentPanel>

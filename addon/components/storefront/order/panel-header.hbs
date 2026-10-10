@@ -1,41 +1,41 @@
-<div class="storefront-order-panel-heading">
-    <div class="storefront-order-panel-heading__main">
-        <div class="storefront-order-panel-heading__icon">
-            <FaIcon @icon={{if @resource.meta.is_pickup "store" "truck"}} />
+<div class="storefront-order-panel-heading" data-test-order-panel-header>
+    <div class="storefront-order-panel-heading__row">
+        <div class="storefront-order-panel-heading__main">
+            <div class="storefront-order-panel-heading__icon">
+                <FaIcon @icon={{if @resource.meta.is_pickup "store" "truck"}} />
+            </div>
+            <div class="min-w-0">
+                <div class="storefront-order-panel-heading__title">
+                    <span>{{n-a @resource.public_id "Order"}}</span>
+                    <Badge @status={{@resource.status}} @size="xs" />
+                    {{#if @resource.meta.storefront_network}}
+                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
+                            <FaIcon @icon="network-wired" class="mr-1" />
+                            {{@resource.meta.storefront_network}}
+                        </Badge>
+                    {{else if @resource.meta.storefront}}
+                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
+                            <FaIcon @icon="store" class="mr-1" />
+                            {{@resource.meta.storefront}}
+                        </Badge>
+                    {{/if}}
+                </div>
+                <div class="storefront-order-panel-heading__meta">
+                    <span>{{n-a (or @resource.tracking_number.tracking_number @resource.tracking) "—"}}</span>
+                    {{#if @resource.meta.checkout_id}}
+                        <span>{{t "storefront.networks.orders.part-of" checkout=@resource.meta.checkout_id}}</span>
+                    {{/if}}
+                    {{#if (and @resource.meta.storefront_network @resource.meta.storefront)}}
+                        <span>{{@resource.meta.storefront}}</span>
+                    {{/if}}
+                    <span>{{n-a @resource.createdAt}}</span>
+                </div>
+            </div>
         </div>
-        <div class="min-w-0">
-            <div class="storefront-order-panel-heading__eyebrow">
-                {{if @resource.meta.is_pickup "Pickup order" "Delivery order"}}
-            </div>
-            <div class="storefront-order-panel-heading__title">
-                {{n-a @resource.public_id "Order"}}
-            </div>
-            <div class="storefront-order-panel-heading__meta">
-                <span>{{n-a @resource.createdAt "No created date"}}</span>
-                <span>{{format-currency (or @resource.meta.total @resource.transaction_amount 0) @resource.meta.currency}}</span>
-            </div>
+        <div class="storefront-order-panel-heading__actions">
+            <Layout::Resource::Panel::HeaderActions @resource={{@resource}} @actionButtons={{@actionButtons}} @onPressCancel={{@onPressCancel}} @authSchema={{@authSchema}} />
         </div>
     </div>
-    <div class="storefront-order-panel-heading__actions">
-        <div class="storefront-order-panel-heading__badges">
-            <Badge @status={{@resource.status}} />
-            {{#if @resource.meta.is_pickup}}
-                <Badge @hideStatusDot={{true}} @status="info" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
-                    <FaIcon @icon="hand-holding-dollar" class="mr-1" />
-                    {{t "storefront.component.widget.orders.pickup-order"}}
-                </Badge>
-            {{else}}
-                <Badge @hideStatusDot={{true}} @status="info" @wrapperClass="storefront-order-panel-heading__fulfillment-badge">
-                    <FaIcon @icon="truck" class="mr-1" />
-                    Delivery Order
-                </Badge>
-            {{/if}}
-        </div>
-        <Layout::Resource::Panel::HeaderActions
-            @resource={{@resource}}
-            @actionButtons={{@actionButtons}}
-            @onPressCancel={{@onPressCancel}}
-            @authSchema={{@authSchema}}
-        />
-    </div>
+    <Storefront::Order::FlowSteps @order={{@resource}} />
+    <Storefront::Order::IdentityStrip @order={{@resource}} @onChange={{@overlay.onChange}} />
 </div>

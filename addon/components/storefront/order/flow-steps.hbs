@@ -1,0 +1,22 @@
+<div class="storefront-flow-steps {{if this.isCanceled 'is-canceled'}}" data-test-order-flow-steps ...attributes>
+    {{#if this.isCanceled}}
+        <div class="storefront-flow-steps__canceled">
+            <FaIcon @icon="ban" @size="xs" class="mr-1" />
+            {{t "storefront.order.flow.canceled"}}
+        </div>
+    {{/if}}
+    <ol class="storefront-flow-steps__list">
+        {{#each this.steps as |step|}}
+            <li class="storefront-flow-step {{if step.isComplete 'is-complete'}} {{if step.isCurrent 'is-current'}}" data-test-flow-step={{step.code}}>
+                <span class="storefront-flow-step__marker">
+                    {{#if step.isComplete}}
+                        <FaIcon @icon="check" @size="xs" />
+                    {{else}}
+                        {{step.number}}
+                    {{/if}}
+                </span>
+                <span class="storefront-flow-step__label">{{step.label}}</span>
+            </li>
+        {{/each}}
+    </ol>
+</div>
