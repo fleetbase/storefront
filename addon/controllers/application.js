@@ -1,7 +1,6 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { alias } from '@ember/object/computed';
 import { tracked } from '@glimmer/tracking';
 
 export default class ApplicationController extends Controller {
@@ -12,8 +11,17 @@ export default class ApplicationController extends Controller {
     @service intl;
     @service abilities;
     @service store;
-    @alias('storefront.activeStore') activeStore;
-    @alias('storefront.activeNetwork') activeNetwork;
+    /**
+     * Native getters so the sidebar re-renders when the service's tracked ids change;
+     * a computed alias onto a native getter never invalidates.
+     */
+    get activeStore() {
+        return this.storefront.activeStore;
+    }
+
+    get activeNetwork() {
+        return this.storefront.activeNetwork;
+    }
     @tracked productCategories = [];
     categoryLoadStoreUuid;
 
@@ -318,7 +326,6 @@ export default class ApplicationController extends Controller {
                 const loader = this.loader.show({ loadingMessage: 'Switching to newly created store...' });
 
                 this.hostRouter.refresh().then(() => {
-                    this.notifyPropertyChange('activeStore');
                     this.loadProductCategories(this.activeStoreUuid);
                     this.loader.removeLoader(loader);
                 });
@@ -343,7 +350,6 @@ export default class ApplicationController extends Controller {
 
         return Promise.resolve(transition)
             .then(() => {
-                this.notifyPropertyChange('activeStore');
                 return this.loadProductCategories(store.id);
             })
             .finally(() => {
