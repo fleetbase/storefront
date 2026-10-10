@@ -6,12 +6,12 @@ export default class NetworksIndexNetworkOrdersRoute extends Route {
     @service store;
 
     queryParams = {
-        page: { refreshModel: true },
-        limit: { refreshModel: true },
-        sort: { refreshModel: true },
-        query: { refreshModel: true },
-        status: { refreshModel: true },
-        view: { refreshModel: false },
+        page: { refreshModel: true, as: 'o_page' },
+        limit: { refreshModel: true, as: 'o_limit' },
+        sort: { refreshModel: true, as: 'o_sort' },
+        query: { refreshModel: true, as: 'o_query' },
+        status: { refreshModel: true, as: 'o_status' },
+        view: { refreshModel: false, as: 'o_view' },
     };
 
     async model(params) {
