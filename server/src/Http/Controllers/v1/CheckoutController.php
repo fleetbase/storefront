@@ -805,13 +805,24 @@ class CheckoutController extends Controller
 
         // Create invoice description
         $taxType             = '1'; // Start with VAT required
-        $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
+        // Sandbox e-barimt invoices use QPay's TEST_EB_INVOICE code (QPay API v2, invoice_create_ebarimt).
+        $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_EB_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
         $invoiceAmount       = $amount;
         $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->invoice_id ?? null;
         $invoiceDescription  = $about->name . ' cart checkout';
-        $invoiceReceiverCode = 'CITIZEN';
-        $senderInvoiceNo     = $checkout->public_id;
+        // The customer's own unique code (QPay: "unique number of the customer receiving the
+        // invoice"). The e-barimt receiver type is sent separately, with ebarimt_v3/create.
+        $invoiceReceiverCode = static::qpayCode($customer->public_id);
+        // Unique per checkout, without special characters (QPay: sender_invoice_no).
+        $senderInvoiceNo     = static::qpayCode($checkout->public_id);
         $districtCode        = $gateway->config?->district_code ?? null;
+        // QPay requires district_code on e-barimt invoices (QPay API v2, invoice_create_ebarimt):
+        // the 4-digit code of where the business operates (district + sub-district, see the
+        // district_code list), set in the gateway settings. QPay's sandbox accepts invoices
+        // without it, so a live gateway missing it is reported rather than guessed.
+        if ($ebarimtInvoiceCode && !$districtCode && !$gateway->sandbox) {
+            Log::warning('[QPAY]: e-barimt invoice without a district code; set district_code in the QPay gateway settings', ['gateway' => $gateway->public_id]);
+        }
         $invoiceReceiverData = Utils::filterArray([
             'register' => $ebarimtRegistationNumber,
             'name'     => $customer->name,
@@ -855,8 +866,12 @@ class CheckoutController extends Controller
             $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
         }
 
-        // Update checkout with invoice id
+        // Update checkout with invoice id, and the amount the invoice asks for so a payment
+        // can be checked against it before the order is created.
         $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
+        if (data_get($invoice, 'invoice_id')) {
+            $checkout->updateOption('qpay_invoice_amount', $ebarimtInvoiceCode ? QPay::linesTotal($lines) : (float) $invoiceAmount);
+        }
 
         return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'invoice'  => $invoice,
@@ -897,8 +912,13 @@ class CheckoutController extends Controller
         $shouldRespond = $request->boolean('respond');
         $testScenario  = $request->input('test'); // Expected: 'success' or 'error'
 
+        // QPay calls this URL (GET) when a payment is made and requires the reply to be
+        // HTTP 200 with the body SUCCESS, in no other format. `respond=1` (manual checks)
+        // gets the details as JSON instead.
+        $reply = fn (array $data) => $shouldRespond ? response()->json($data) : response('SUCCESS', 200)->header('Content-Type', 'text/plain');
+
         if (!$checkoutId) {
-            return response()->json([
+            return $reply([
                 'error'    => 'CHECKOUT_ID_MISSING',
                 'checkout' => null,
                 'payment'  => null,
@@ -907,7 +927,7 @@ class CheckoutController extends Controller
 
         $checkout = Checkout::where('public_id', $checkoutId)->first();
         if (!$checkout) {
-            return response()->json([
+            return $reply([
                 'error'    => 'CHECKOUT_SESSION_NOT_FOUND',
                 'checkout' => null,
                 'payment'  => null,
@@ -916,7 +936,7 @@ class CheckoutController extends Controller
 
         $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
         if (!$gateway) {
-            return response()->json([
+            return $reply([
                 'error'    => 'GATEWAY_NOT_CONFIGURED',
                 'checkout' => $checkout->public_id,
                 'payment'  => null,
@@ -943,7 +963,7 @@ class CheckoutController extends Controller
 
                 static::publishCheckoutUpdate($checkout, $testScenario === 'success', $data['error']);
 
-                return $shouldRespond ? response()->json($data) : response()->json();
+                return $reply($data);
             }
 
             // Create the QPay instance.
@@ -959,45 +979,42 @@ class CheckoutController extends Controller
             if (!$invoiceId) {
                 Log::error("Missing QPay invoice ID for checkout: {$checkout->public_id}");
 
-                return response()->json([
+                return $reply([
                     'error'    => 'MISSING_INVOICE_ID',
                     'checkout' => $checkout->public_id,
                     'payment'  => null,
                 ]);
             }
 
+            // The order is created only for a payment QPay reports as PAID, covering the
+            // invoice amount. NEW, FAILED, PARTIAL and REFUNDED payments create nothing.
             $paymentCheck = $qpay->paymentCheck($invoiceId);
-            if (!$paymentCheck || empty($paymentCheck->count) || $paymentCheck->count < 1) {
-                return response()->json([
-                    'error'    => 'PAYMENT_NOTFOUND',
+            $payment      = static::paidQPayPayment($paymentCheck, $checkout);
+            if (!$payment) {
+                return $reply([
+                    'error'    => 'PAYMENT_NOT_PAID',
                     'checkout' => $checkout->public_id,
                     'payment'  => null,
                 ]);
             }
 
-            $payment = data_get($paymentCheck, 'rows.0');
+            // Create order from payment using reusable gateway-agnostic method
+            $transactionDetails = [
+                'transaction_id' => $payment->payment_id,
+                'payment_status' => $payment->payment_status,
+                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+            ];
 
-            if ($payment) {
-                // Create order from payment using reusable gateway-agnostic method
-                $transactionDetails = [
-                    'transaction_id' => $payment->payment_id,
-                    'payment_status' => 'PAID',
-                    'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                ];
+            $this->createOrderFromCheckout($checkout, $transactionDetails);
+            $checkout->refresh();
 
-                $this->createOrderFromCheckout($checkout, $transactionDetails);
-                $checkout->refresh();
+            static::publishCheckoutUpdate($checkout, true);
 
-                $data = [
-                    'checkout' => $checkout->public_id,
-                    'payment'  => (array) $payment,
-                    'error'    => null,
-                ];
-
-                static::publishCheckoutUpdate($checkout, true);
-
-                return $shouldRespond ? response()->json($data) : response()->json();
-            }
+            return $reply([
+                'checkout' => $checkout->public_id,
+                'payment'  => (array) $payment,
+                'error'    => null,
+            ]);
         } catch (\Exception $e) {
             Log::error('[QPAY CHECKOUT ERROR]: ' . $e->getMessage(), ['checkout' => $checkout->toArray()]);
             if ($shouldRespond) {
@@ -1005,7 +1022,53 @@ class CheckoutController extends Controller
             }
         }
 
-        return response()->json();
+        return $reply(['checkout' => $checkout->public_id, 'payment' => null, 'error' => null]);
+    }
+
+    /**
+     * The payment that pays a checkout's QPay invoice, or null.
+     *
+     * QPay's payment/check returns `count`, `paid_amount` and `rows`, each row with a
+     * `payment_status` of NEW, FAILED, PAID, PARTIAL or REFUNDED. A checkout is paid only
+     * by a PAID row, and only when the amount paid covers the invoice amount recorded when
+     * the invoice was created (older checkouts without it are checked by status only).
+     */
+    protected static function paidQPayPayment($paymentCheck, Checkout $checkout): ?object
+    {
+        $rows = collect(data_get($paymentCheck, 'rows', []));
+        $paid = $rows->first(fn ($row) => data_get($row, 'payment_status') === 'PAID');
+        if (!$paid) {
+            return null;
+        }
+
+        $expected = $checkout->getOption('qpay_invoice_amount');
+        if ($expected !== null) {
+            $paidAmount = data_get($paymentCheck, 'paid_amount');
+            if ($paidAmount === null) {
+                $paidAmount = $rows->filter(fn ($row) => data_get($row, 'payment_status') === 'PAID')->sum(fn ($row) => (float) data_get($row, 'payment_amount', 0));
+            }
+            // Amounts are decimals in the invoice currency; allow for rounding only.
+            if ((float) $paidAmount + 0.01 < (float) $expected) {
+                Log::warning('[QPAY]: payment is less than the invoice amount; no order created', [
+                    'checkout'    => $checkout->public_id,
+                    'paid_amount' => $paidAmount,
+                    'expected'    => $expected,
+                ]);
+
+                return null;
+            }
+        }
+
+        return (object) $paid;
+    }
+
+    /**
+     * A value QPay accepts where it doesn't allow special characters (sender_invoice_no,
+     * invoice_receiver_code): letters and digits only, at most 45 characters.
+     */
+    protected static function qpayCode(?string $value): string
+    {
+        return substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $value), 0, 45);
     }
 
     /**
@@ -2101,10 +2164,11 @@ class CheckoutController extends Controller
 
                         // Verify payment status with QPay
                         $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
-                        $payment      = data_get($paymentCheck, 'rows.0');
+                        // Only a PAID payment covering the invoice amount (see paidQPayPayment)
+                        $payment      = static::paidQPayPayment($paymentCheck, $checkout);
                     }
 
-                    if ($payment && $payment->payment_status === 'PAID') {
+                    if ($payment) {
                         $response['status']  = 'paid';
                         $response['payment'] = [
                             'payment_id'     => $payment->payment_id,
