@@ -205,6 +205,13 @@ export default class ApplicationController extends Controller {
                         route: 'console.storefront.promotions.push-notifications',
                         keywords: ['marketing', 'broadcast', 'campaigns'],
                     },
+                    {
+                        label: this.intl.t('storefront.promotions.redemptions.tab-title'),
+                        description: 'Every time a promotion was used, with the order and the discount given.',
+                        icon: 'receipt',
+                        route: 'console.storefront.promotions.redemptions',
+                        keywords: ['redemptions', 'coupons used', 'discount given'],
+                    },
                 ],
             },
             {

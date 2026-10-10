@@ -1,7 +1,7 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
-export default class PromotionsIndexRoute extends Route {
+export default class PromotionsRedemptionsRoute extends Route {
     @service store;
     @service storefront;
     @service intl;
@@ -11,9 +11,9 @@ export default class PromotionsIndexRoute extends Route {
 
     queryParams = {
         query: { refreshModel: true },
+        promotion: { refreshModel: true },
         status: { refreshModel: true },
         page: { refreshModel: true },
-        view: { refreshModel: false },
     };
 
     beforeModel() {
@@ -24,8 +24,6 @@ export default class PromotionsIndexRoute extends Route {
     }
 
     model(params) {
-        const { view, ...query } = params;
-
-        return this.store.query('promotion', { ...query, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('promotion-redemption', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
     }
 }

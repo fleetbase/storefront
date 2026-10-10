@@ -1016,6 +1016,74 @@ storefront:
   application:
     launch-app: Launch App
   promotions:
+    hub:
+      subtitle: One place for offers, the campaigns that announce them, the segments they target, and the pushes that go out.
+      active: Active
+      scheduled: Scheduled
+      discount-given: Discount given
+      cards: Cards
+      table: Table
+    redemptions:
+      tab-title: Redemptions
+      header: Redemptions
+      subtitle: Every time a promotion was used, with the order and the discount it gave.
+      search-placeholder: Search by promotion or code
+      discount: Discount
+      redeemed-at: Redeemed
+      empty-title: No redemptions yet
+      empty-help: Redemptions appear here as soon as a customer uses a promotion at checkout.
+    card:
+      bogo-summary: "Buy {buy}, get {get}"
+      first-order: First order
+      with-code: With a code
+      cart-total-above: "Cart total above {amount}"
+      starts: "Starts {date}"
+      ends: "Ends {date}"
+      always: Always
+      products-count: "{count, plural, one {# product} other {# products}}"
+      categories-count: "{count, plural, one {# category} other {# categories}}"
+      whole-store: Whole store
+      redemptions-summary: "{count, plural, =0 {No redemptions} one {# redemption} other {# redemptions}} · {amount}"
+    builder:
+      step-of: "Step {step} of {total}"
+      steps:
+        what: What
+        when: When it applies
+        targets: Targets
+        schedule: Schedule and limits
+        review: Review and announce
+      type-hints:
+        percentage: A percentage off the eligible items
+        fixed_amount: A fixed amount off the cart
+        free_delivery: Delivery fee waived
+        bogo: Buy some, get some free or discounted
+      trigger:
+        code: At checkout with a code
+        code-hint: The customer enters a code
+        automatic: Automatically
+        automatic-hint: Applies when the conditions match
+      min-subtotal-help: Threshold in the store currency; leave empty for none.
+      codes-after-save: Save the promotion first, then generate its codes here.
+      segment: Customer segment
+      segment-help: Only customers in this segment get the promotion.
+      segment-placeholder: Everyone
+      summary:
+        percentage: "{value}% off"
+        fixed: "{amount} off"
+        with-code: At checkout with a code
+        automatic: Automatically
+        excluded: "{count, plural, one {# excluded} other {# excluded}}"
+        limit: "{count} uses"
+      issues:
+        name: Give the promotion a name.
+        value: Set the discount value.
+        percent: A percentage cannot exceed 100.
+        window: The end must be after the start.
+      announce: Announce after saving
+      announce-help: Opens the campaign composer so customers hear about it.
+      save-draft: Save draft
+      back: Back
+      next: "Next: {step}"
     title: Promotions
     push-notifications:
       tab-title: Push Notifications

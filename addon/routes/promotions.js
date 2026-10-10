@@ -1,16 +1,19 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
+/**
+ * The promotions hub: counts for every tab, loaded once for the shell.
+ */
 export default class PromotionsRoute extends Route {
-    @service intl;
-    @service abilities;
-    @service hostRouter;
-    @service notifications;
+    @service fetch;
+    @service storefront;
 
-    beforeModel() {
-        if (this.abilities.cannot('storefront view promotions')) {
-            this.notifications.warning(this.intl.t('common.unauthorized-access'));
-            return this.hostRouter.transitionTo('console');
-        }
+    model() {
+        return this.fetch.get('promotions/hub', { owner: this.storefront.getActiveStore('id') }, { namespace: 'storefront/int/v1' }).catch(() => null);
+    }
+
+    setupController(controller, model) {
+        super.setupController(...arguments);
+        controller.hub = model;
     }
 }

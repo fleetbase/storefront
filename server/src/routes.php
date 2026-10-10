@@ -277,9 +277,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('{id}/generate-codes', $controller('generateCodes'));
                                 $router->post('{id}/announce', $controller('announce'));
+                                $router->get('hub', $controller('hub'));
                             }
                         );
                         $router->fleetbaseRoutes('promotion-codes');
+                        $router->fleetbaseRoutes('promotion-redemptions');
                         $router->fleetbaseRoutes(
                             'customer-segments',
                             function ($router, $controller) {

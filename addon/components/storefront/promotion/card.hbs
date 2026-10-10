@@ -1,0 +1,58 @@
+<Layout::Resource::Card class="storefront-card storefront-promotion-card" data-test-storefront-promotion-card ...attributes as |Card|>
+    <Card.header class={{@headerClass}}>
+        <RegistryYield @registry="storefront:component:promotion:card:header:start" as |RegistryComponent|>
+            <RegistryComponent @promotion={{this.promotion}} @resource={{this.promotion}} />
+        </RegistryYield>
+        <div class="storefront-card__title">
+            {{#if @onEdit}}
+                <a href="javascript:;" class="storefront-card__title-text" {{on "click" (fn @onEdit this.promotion)}} data-test-promotion-name>{{n-a this.promotion.name}}</a>
+            {{else}}
+                <span class="storefront-card__title-text" data-test-promotion-name>{{n-a this.promotion.name}}</span>
+            {{/if}}
+            <Badge @status={{this.displayStatus}} @size="xs" @hideStatusDot={{true}} @text={{t (concat "storefront.promotions.statuses." this.displayStatus)}} data-test-promotion-status />
+        </div>
+        <div class="storefront-card__subtitle">{{t (concat "storefront.promotions.types." this.promotion.type)}} · {{this.triggerLabel}}</div>
+        <RegistryYield @registry="storefront:component:promotion:card:header:end" as |RegistryComponent|>
+            <RegistryComponent @promotion={{this.promotion}} @resource={{this.promotion}} />
+        </RegistryYield>
+    </Card.header>
+    <Card.body class="storefront-card__body {{@bodyClass}}">
+        <div class="storefront-promotion-card__value" data-test-promotion-value>{{this.valueLabel}}</div>
+        <div class="storefront-promotion-card__facts">
+            <div><FaIcon @icon="calendar" @size="xs" class="mr-1" />{{this.windowLabel}}</div>
+            <div><FaIcon @icon="bullseye" @size="xs" class="mr-1" />{{this.targetsLabel}}</div>
+            {{#if this.promotion.description}}<div class="storefront-promotion-card__description">{{this.promotion.description}}</div>{{/if}}
+        </div>
+    </Card.body>
+    <Card.footer class={{@footerClass}}>
+        <RegistryYield @registry="storefront:component:promotion:card:footer:start" as |RegistryComponent|>
+            <RegistryComponent @promotion={{this.promotion}} @resource={{this.promotion}} />
+        </RegistryYield>
+        <div class="storefront-card__actions">
+            <span class="storefront-card__count" data-test-promotion-redemptions>{{t "storefront.promotions.card.redemptions-summary" count=this.promotion.redemptionsCount amount=(format-currency this.promotion.discountGiven this.promotion.currency)}}</span>
+            <div class="storefront-card__buttons">
+                {{#if @onEdit}}
+                    <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.promotion}} @permission="storefront update promotion" data-test-promotion-edit />
+                {{/if}}
+                {{#if this.menuItems.length}}
+                    <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @text={{false}} @renderInPlace={{true}} as |dd|>
+                        <div class="next-dd-menu mt-1 mx-0">
+                            <div class="px-1">
+                                {{#each this.menuItems as |item|}}
+                                    {{#if item.separator}}
+                                        <div class="next-dd-menu-seperator"></div>
+                                    {{else}}
+                                        <a href="javascript:;" class="next-dd-item {{item.class}}" {{on "click" (dropdown-fn dd (fn item.fn this.promotion))}}>{{item.label}}</a>
+                                    {{/if}}
+                                {{/each}}
+                            </div>
+                        </div>
+                    </DropdownButton>
+                {{/if}}
+            </div>
+        </div>
+        <RegistryYield @registry="storefront:component:promotion:card:footer:end" as |RegistryComponent|>
+            <RegistryComponent @promotion={{this.promotion}} @resource={{this.promotion}} />
+        </RegistryYield>
+    </Card.footer>
+</Layout::Resource::Card>

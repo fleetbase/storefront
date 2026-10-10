@@ -1,0 +1,179 @@
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="620px" @minResizeWidth={{520}} @fullHeight={{true}} @isOpen={{true}}>
+    <Overlay::Header @title={{if this.promotion.isNew (t "storefront.promotions.list.new-promotion") (t "storefront.promotions.list.edit-promotion")}} @onPressCancel={{this.close}}>
+        <:actions>
+            <span class="storefront-builder__step-count">{{t "storefront.promotions.builder.step-of" step=(add this.stepIndex 1) total=this.steps.length}}</span>
+        </:actions>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i" @wrapperClass="storefront-builder" data-test-promotion-builder>
+        <ol class="storefront-builder__steps">
+            {{#each this.steps as |step|}}
+                <li class="storefront-builder__step {{if step.isActive 'is-active'}} {{if step.isDone 'is-done'}}" data-test-builder-step={{step.id}}>
+                    <button type="button" class="storefront-builder__step-header" {{on "click" (fn this.goTo step)}}>
+                        <span class="storefront-flow-step__marker">{{#if step.isDone}}<FaIcon @icon="check" @size="xs" />{{else}}{{step.number}}{{/if}}</span>
+                        <span class="storefront-builder__step-label">{{step.label}}</span>
+                        {{#unless step.isActive}}<span class="storefront-builder__step-summary">{{step.summary}}</span>{{/unless}}
+                    </button>
+
+                    {{#if step.isActive}}
+                        <div class="storefront-builder__step-body">
+                            {{#if (eq step.id "what")}}
+                                <div class="storefront-builder__choices" role="radiogroup">
+                                    {{#each this.types as |type|}}
+                                        <button type="button" role="radio" aria-checked={{if (eq type this.promotion.type) "true" "false"}} class="storefront-builder__choice {{if (eq type this.promotion.type) 'is-selected'}}" {{on "click" (fn this.setField "type" type)}} data-test-builder-type={{type}}>
+                                            <span class="storefront-builder__choice-label">{{t (concat "storefront.promotions.types." type)}}</span>
+                                            <span class="storefront-builder__choice-hint">{{t (concat "storefront.promotions.builder.type-hints." type)}}</span>
+                                        </button>
+                                    {{/each}}
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 mt-3">
+                                    {{#if (eq this.promotion.type "percentage")}}
+                                        <InputGroup @name={{t "storefront.promotions.form.percent-off"}} as |inputId|>
+                                            <Input id={{inputId}} @type="number" min="0" max="100" step="0.01" class="form-input w-full" placeholder="10" @value={{this.promotion.value}} {{on "input" (fn this.setNumber "value")}} />
+                                        </InputGroup>
+                                    {{else if (eq this.promotion.type "fixed_amount")}}
+                                        <InputGroup @name={{t "storefront.promotions.form.amount-off"}} as |inputId|>
+                                            <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{this.currency}} @value={{this.promotion.value}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "value"}} />
+                                        </InputGroup>
+                                    {{else if (eq this.promotion.type "bogo")}}
+                                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+                                            <InputGroup @name={{t "storefront.promotions.form.buy-quantity"}} as |inputId|>
+                                                <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder="1" @value={{this.bogo.buy_quantity}} {{on "input" (fn this.setBogo "buy_quantity")}} />
+                                            </InputGroup>
+                                            <InputGroup @name={{t "storefront.promotions.form.get-quantity"}} as |inputId|>
+                                                <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder="1" @value={{this.bogo.get_quantity}} {{on "input" (fn this.setBogo "get_quantity")}} />
+                                            </InputGroup>
+                                            <InputGroup @name={{t "storefront.promotions.form.get-discount-percent"}} as |inputId|>
+                                                <Input id={{inputId}} @type="number" min="0" max="100" class="form-input w-full" placeholder="100" @value={{this.bogo.discount_percent}} {{on "input" (fn this.setBogo "discount_percent")}} />
+                                            </InputGroup>
+                                            <p class="sm:col-span-3 text-xs text-gray-500 dark:text-gray-400">{{t "storefront.promotions.form.bogo-help"}}</p>
+                                        </div>
+                                    {{/if}}
+                                    <InputGroup @name={{t "storefront.promotions.common.name"}} @value={{this.promotion.name}} @required={{true}} @placeholder={{t "storefront.promotions.form.name-placeholder"}} @helpText={{t "storefront.promotions.form.name-help"}} @wrapperClass="md:col-span-2" />
+                                    <InputGroup @name={{t "storefront.promotions.common.description"}} @helpText={{t "storefront.promotions.form.description-help"}} @wrapperClass="md:col-span-2" as |inputId|>
+                                        <Textarea id={{inputId}} placeholder={{t "storefront.promotions.form.description-placeholder"}} @value={{this.promotion.description}} class="form-input w-full" rows="2" />
+                                    </InputGroup>
+                                </div>
+                            {{else if (eq step.id "when")}}
+                                <div class="storefront-builder__choices" role="radiogroup">
+                                    <button type="button" role="radio" aria-checked={{if (eq this.promotion.trigger "code") "true" "false"}} class="storefront-builder__choice {{if (eq this.promotion.trigger 'code') 'is-selected'}}" {{on "click" (fn this.setField "trigger" "code")}} data-test-builder-trigger="code">
+                                        <span class="storefront-builder__choice-label">{{t "storefront.promotions.builder.trigger.code"}}</span>
+                                        <span class="storefront-builder__choice-hint">{{t "storefront.promotions.builder.trigger.code-hint"}}</span>
+                                    </button>
+                                    <button type="button" role="radio" aria-checked={{if (eq this.promotion.trigger "automatic") "true" "false"}} class="storefront-builder__choice {{if (eq this.promotion.trigger 'automatic') 'is-selected'}}" {{on "click" (fn this.setField "trigger" "automatic")}} data-test-builder-trigger="automatic">
+                                        <span class="storefront-builder__choice-label">{{t "storefront.promotions.builder.trigger.automatic"}}</span>
+                                        <span class="storefront-builder__choice-hint">{{t "storefront.promotions.builder.trigger.automatic-hint"}}</span>
+                                    </button>
+                                </div>
+                                <div class="mt-3 space-y-3">
+                                    <Toggle @isToggled={{this.promotion.first_order_only}} @onToggle={{this.setFirstOrderOnly}} @label={{t "storefront.promotions.form.first-order-only"}} @helpText={{t "storefront.promotions.form.first-order-only-help"}} />
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                                        <InputGroup @name={{t "storefront.promotions.form.min-subtotal"}} @helpText={{t "storefront.promotions.builder.min-subtotal-help"}} as |inputId|>
+                                            <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{this.currency}} @value={{this.promotion.min_subtotal}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "min_subtotal"}} />
+                                        </InputGroup>
+                                        <InputGroup @name={{t "storefront.promotions.form.min-items"}} as |inputId|>
+                                            <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-minimum"}} @value={{this.promotion.min_items}} {{on "input" (fn this.setNumber "min_items")}} />
+                                        </InputGroup>
+                                    </div>
+                                    {{#if (eq this.promotion.trigger "code")}}
+                                        {{#if this.promotion.isNew}}
+                                            <p class="storefront-invite-panel__hint">{{t "storefront.promotions.builder.codes-after-save"}}</p>
+                                        {{else}}
+                                            <Storefront::Promotion::Codes @promotion={{this.promotion}} />
+                                        {{/if}}
+                                    {{/if}}
+                                </div>
+                            {{else if (eq step.id "targets")}}
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{t "storefront.promotions.form.targeting-help"}}</p>
+                                <InputGroup @name={{t "storefront.promotions.form.products"}} as |inputId|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{hash store_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.products-placeholder"}} @selectedModel={{this.products}} @onChange={{fn this.setTargets "products" "products"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                        {{model.name}}
+                                    </ModelSelectMultiple>
+                                </InputGroup>
+                                <InputGroup @name={{t "storefront.promotions.form.categories"}} as |inputId|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="category" @query={{hash for="storefront_product" owner_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.categories-placeholder"}} @selectedModel={{this.categories}} @onChange={{fn this.setTargets "categories" "categories"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                        {{model.name}}
+                                    </ModelSelectMultiple>
+                                </InputGroup>
+                                <InputGroup @name={{t "storefront.promotions.form.exclude-products"}} as |inputId|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{hash store_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.exclude-products-placeholder"}} @selectedModel={{this.excludedProducts}} @onChange={{fn this.setTargets "exclude_products" "excludedProducts"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                        {{model.name}}
+                                    </ModelSelectMultiple>
+                                </InputGroup>
+                                <InputGroup @name={{t "storefront.promotions.builder.segment"}} @helpText={{t "storefront.promotions.builder.segment-help"}} as |inputId|>
+                                    <ModelSelect @triggerId={{inputId}} @modelName="customer-segment" @query={{hash owner=this.storeId}} @placeholder={{t "storefront.promotions.builder.segment-placeholder"}} @selectedModel={{this.segment}} @onChange={{this.setSegment}} @allowClear={{true}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                        {{model.name}}
+                                    </ModelSelect>
+                                </InputGroup>
+                            {{else if (eq step.id "schedule")}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                                    <InputGroup @name={{t "storefront.promotions.form.starts-at"}}>
+                                        <DateTimeInput role="group" aria-label={{t "storefront.promotions.form.starts-at"}} class="form-input w-full" @value={{this.promotion.starts_at}} @onUpdate={{fn (mut this.promotion.starts_at)}} />
+                                    </InputGroup>
+                                    <InputGroup @name={{t "storefront.promotions.form.ends-at"}}>
+                                        <DateTimeInput role="group" aria-label={{t "storefront.promotions.form.ends-at"}} class="form-input w-full" @value={{this.promotion.ends_at}} @onUpdate={{fn (mut this.promotion.ends_at)}} />
+                                    </InputGroup>
+                                    <p class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400">{{t "storefront.promotions.form.schedule-help"}}</p>
+                                    <InputGroup @name={{t "storefront.promotions.form.usage-limit"}} as |inputId|>
+                                        <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-limit"}} @value={{this.promotion.usage_limit}} {{on "input" (fn this.setNumber "usage_limit")}} />
+                                    </InputGroup>
+                                    <InputGroup @name={{t "storefront.promotions.form.usage-limit-per-customer"}} as |inputId|>
+                                        <Input id={{inputId}} @type="number" min="1" class="form-input w-full" placeholder={{t "storefront.promotions.form.no-limit"}} @value={{this.promotion.usage_limit_per_customer}} {{on "input" (fn this.setNumber "usage_limit_per_customer")}} />
+                                    </InputGroup>
+                                    <InputGroup @name={{t "storefront.promotions.form.budget-amount"}} as |inputId|>
+                                        <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{this.currency}} @value={{this.promotion.budget_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "budget_amount"}} />
+                                    </InputGroup>
+                                    <InputGroup @name={{t "storefront.promotions.form.max-discount-amount"}} as |inputId|>
+                                        <MoneyInput id={{inputId}} class="w-full" placeholder="0.00" @currency={{this.currency}} @value={{this.promotion.max_discount_amount}} @canSelectCurrency={{false}} @onChange={{fn this.setMoney "max_discount_amount"}} />
+                                    </InputGroup>
+                                </div>
+                                <div class="space-y-3 mt-2">
+                                    <Toggle @isToggled={{this.promotion.stackable}} @onToggle={{fn (mut this.promotion.stackable)}} @label={{t "storefront.promotions.form.stackable"}} @helpText={{t "storefront.promotions.form.stackable-help"}} />
+                                    <InputGroup @name={{t "storefront.promotions.form.priority"}} @helpText={{t "storefront.promotions.form.priority-help"}} as |inputId|>
+                                        <Input id={{inputId}} @type="number" class="form-input w-full" placeholder="0" @value={{this.promotion.priority}} {{on "input" (fn this.setNumber "priority")}} />
+                                    </InputGroup>
+                                    <Toggle @isToggled={{this.promotion.is_public}} @onToggle={{fn (mut this.promotion.is_public)}} @label={{t "storefront.promotions.form.is-public"}} />
+                                </div>
+                            {{else}}
+                                <dl class="storefront-builder__review" data-test-builder-review>
+                                    {{#each this.steps as |done|}}
+                                        {{#unless (eq done.id "review")}}
+                                            <div class="storefront-builder__review-row">
+                                                <dt>{{done.label}}</dt>
+                                                <dd>{{done.summary}}</dd>
+                                                <Button @size="xs" @text={{t "common.edit"}} @onClick={{fn this.goTo done}} />
+                                            </div>
+                                        {{/unless}}
+                                    {{/each}}
+                                </dl>
+                                {{#if this.issues.length}}
+                                    <div class="storefront-product-form__issues" role="alert">
+                                        {{#each this.issues as |issue|}}<div><FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{issue}}</div>{{/each}}
+                                    </div>
+                                {{/if}}
+                                <InputGroup @name={{t "storefront.promotions.common.status"}} as |inputId|>
+                                    <select id={{inputId}} class="form-select w-full" {{on "change" (fn this.setField "status")}}>
+                                        {{#each this.statuses as |status|}}
+                                            <option value={{status}} selected={{eq status this.promotion.status}}>{{t (concat "storefront.promotions.statuses." status)}}</option>
+                                        {{/each}}
+                                    </select>
+                                </InputGroup>
+                                <Toggle @isToggled={{this.announce}} @onToggle={{this.toggleAnnounce}} @label={{t "storefront.promotions.builder.announce"}} @helpText={{t "storefront.promotions.builder.announce-help"}} />
+                            {{/if}}
+                        </div>
+                    {{/if}}
+                </li>
+            {{/each}}
+        </ol>
+
+        <div class="storefront-invite-panel__footer storefront-builder__footer">
+            <Button @text={{t "storefront.promotions.builder.save-draft"}} @onClick={{perform this.save "draft"}} @isLoading={{this.save.isRunning}} @disabled={{not this.canSave}} @permission="storefront create promotion" />
+            <div class="flex-1"></div>
+            <Button @text={{t "storefront.promotions.builder.back"}} @disabled={{eq this.stepIndex 0}} @onClick={{this.back}} />
+            {{#if this.isLastStep}}
+                <Button @type="primary" @icon="save" @text={{t "storefront.promotions.common.save"}} @onClick={{perform this.save}} @isLoading={{this.save.isRunning}} @disabled={{not this.canSave}} @permission="storefront create promotion" data-test-builder-save />
+            {{else}}
+                <Button @type="primary" @icon="arrow-right" @text={{t "storefront.promotions.builder.next" step=(get (get this.steps (add this.stepIndex 1)) "label")}} @onClick={{this.next}} data-test-builder-next />
+            {{/if}}
+        </div>
+    </Overlay::Body>
+</Overlay>

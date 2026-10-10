@@ -1,26 +1,27 @@
-<Layout::Section::Header
-    @title={{t "storefront.promotions.list.header"}}
-    @searchQuery={{this.query}}
-    @searchPlaceholder={{t "storefront.promotions.list.search-placeholder"}}
-    @onSearch={{this.search}}
->
+<Layout::Section::Header @title={{t "storefront.promotions.list.header"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.list.search-placeholder"}} @onSearch={{this.search}}>
+    <div class="storefront-view-toggle mr-2" role="group" data-test-promotions-view-toggle>
+        <button type="button" class="storefront-view-toggle__option {{if this.isCards 'is-active'}}" {{on "click" (fn this.setView "cards")}}>{{t "storefront.promotions.hub.cards"}}</button>
+        <button type="button" class="storefront-view-toggle__option {{unless this.isCards 'is-active'}}" {{on "click" (fn this.setView "table")}}>{{t "storefront.promotions.hub.table"}}</button>
+    </div>
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
-<Layout::Section::Body>
-    {{#if @model.length}}
-        <Table
-            @wrapperClass="overscroll-y-none"
-            @rows={{@model}}
-            @columns={{this.registeredColumns}}
-            @selectable={{false}}
-            @canSelectAll={{false}}
-            @pagination={{true}}
-            @paginationMeta={{@model.meta}}
-            @page={{this.page}}
-            @onPageChange={{fn (mut this.page)}}
-        />
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-promotion-status-tabs>
+        {{#each this.tabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>{{tab.label}}</button>
+        {{/each}}
+    </div>
+
+    {{#if this.rows.length}}
+        {{#if this.isCards}}
+            <Layout::Resource::CardsGrid @resource="promotion" @data={{this.rows}} @columns="3" @containerClass="p-4" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @paginationMeta={{@model.meta}} class="h-full" as |Item|>
+                <Storefront::Promotion::Card @promotion={{Item.model}} @onEdit={{this.editPromotion}} @actions={{this.cardActions}} />
+            </Layout::Resource::CardsGrid>
+        {{else}}
+            <Table @wrapperClass="overscroll-y-none" @rows={{this.rows}} @columns={{this.registeredColumns}} @selectable={{false}} @canSelectAll={{false}} @pagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} />
+        {{/if}}
     {{else}}
         <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
             <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
@@ -33,15 +34,12 @@
             {{else}}
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.list.empty-title"}}</h3>
                 <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.list.empty-help"}}</p>
-                <Button
-                    @type="primary"
-                    @size="sm"
-                    @icon="plus"
-                    @text={{t "storefront.promotions.list.new-promotion"}}
-                    @onClick={{this.createPromotion}}
-                    @permission="storefront create promotion"
-                />
+                <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
             {{/if}}
         </div>
     {{/if}}
 </Layout::Section::Body>
+
+{{#if this.builderPromotion}}
+    <Storefront::Promotion::Builder @promotion={{this.builderPromotion}} @currency={{or this.builderPromotion.currency this.storefront.activeStore.currency}} @storeId={{this.storefront.activeStore.id}} @onClose={{this.closeBuilder}} @onSaved={{this.onBuilderSaved}} />
+{{/if}}

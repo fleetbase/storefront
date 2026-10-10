@@ -1,8 +1,28 @@
-<TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="px-4 flex-row-reverse">
-    <:actions>
-        <h3 class="uppercase text-xs tracking-wide text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.promotions.title"}}</h3>
-    </:actions>
-    <:default>
+<div class="storefront-promotions-hub" data-test-promotions-hub>
+    <div class="storefront-promotions-hub__header">
+        <div class="min-w-0">
+            <h2 class="storefront-promotions-hub__title">{{t "storefront.promotions.title"}}</h2>
+            <p class="storefront-promotions-hub__subtitle">{{t "storefront.promotions.hub.subtitle"}}</p>
+        </div>
+        {{#if this.hub}}
+            <div class="storefront-promotions-hub__stats" data-test-promotions-hub-stats>
+                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.active"}}</span><strong>{{this.hub.promotions.active}}</strong></div>
+                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.scheduled"}}</span><strong>{{this.hub.promotions.scheduled}}</strong></div>
+                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.redemptions.tab-title"}}</span><strong>{{this.hub.redemptions.total}}</strong></div>
+                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.discount-given"}}</span><strong>{{format-currency this.hub.redemptions.amount this.currency}}</strong></div>
+            </div>
+        {{/if}}
+    </div>
+    <div class="storefront-status-tabs storefront-promotions-hub__tabs" role="tablist">
+        {{#each this.tabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.openTab tab)}} data-test-promotions-tab={{tab.id}}>
+                <FaIcon @icon={{tab.icon}} @size="xs" class="mr-1" />
+                <span>{{tab.label}}</span>
+                {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+            </button>
+        {{/each}}
+    </div>
+    <div class="storefront-promotions-hub__body">
         {{outlet}}
-    </:default>
-</TabNavigation>
+    </div>
+</div>

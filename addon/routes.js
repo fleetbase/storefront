@@ -53,6 +53,7 @@ export default buildRoutes(function () {
         this.route('campaigns');
         this.route('segments');
         this.route('push-notifications');
+        this.route('redemptions');
     });
     this.route('coupons');
     this.route('broadcast');

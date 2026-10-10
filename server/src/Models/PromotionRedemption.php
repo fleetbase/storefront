@@ -33,6 +33,16 @@ class PromotionRedemption extends StorefrontModel
         return $this->belongsTo(Promotion::class, 'promotion_uuid', 'uuid');
     }
 
+    public function customer()
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(\Fleetbase\FleetOps\Models\Contact::class, 'customer_uuid', 'uuid');
+    }
+
+    public function order()
+    {
+        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(\Fleetbase\FleetOps\Models\Order::class, 'order_uuid', 'uuid');
+    }
+
     public function code()
     {
         return $this->belongsTo(PromotionCode::class, 'promotion_code_uuid', 'uuid');

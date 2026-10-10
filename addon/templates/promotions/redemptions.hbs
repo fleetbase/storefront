@@ -1,0 +1,19 @@
+<Layout::Section::Header @title={{t "storefront.promotions.redemptions.header"}} @subtitle={{t "storefront.promotions.redemptions.subtitle"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.redemptions.search-placeholder"}} @onSearch={{perform this.search}}>
+    {{#if (or this.promotion this.status)}}
+        <Button @size="sm" @icon="times" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
+    {{/if}}
+</Layout::Section::Header>
+
+<Layout::Section::Body>
+    {{#if @model.length}}
+        <Table @wrapperClass="overscroll-y-none" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @pagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} />
+    {{else}}
+        <div class="flex flex-col items-center justify-center px-4 py-12 text-center" data-test-redemptions-empty>
+            <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                <FaIcon @icon="receipt" @size="lg" />
+            </div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.redemptions.empty-title"}}</h3>
+            <p class="max-w-md mt-2 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.redemptions.empty-help"}}</p>
+        </div>
+    {{/if}}
+</Layout::Section::Body>
