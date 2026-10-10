@@ -1,18 +1,3 @@
 <div class="storefront-network-page" data-test-storefront-network-page>
-    <div class="storefront-network-page__header">
-        <Image src={{@model.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{n-a @model.name ""}} class="storefront-network-page__logo" />
-        <div class="storefront-network-page__identity">
-            <h2 class="storefront-network-page__name" data-test-network-page-name>{{n-a @model.name}}</h2>
-            <div class="storefront-network-page__meta">
-                <Badge @status={{if @model.online "online" "offline"}} @text={{if @model.online (t "storefront.common.online") (t "storefront.common.offline")}} @size="xs" />
-                <span>{{t "storefront.networks.card.stores-count" count=this.storesCount}}</span>
-                {{#if @model.currency}}
-                    <span>{{@model.currency}}</span>
-                {{/if}}
-            </div>
-        </div>
-    </div>
-    <div class="storefront-network-page__body">
-        {{outlet}}
-    </div>
+    {{outlet}}
 </div>

@@ -1,4 +1,4 @@
-<Layout::Section::Header @title={{t "storefront.promotions.redemptions.header"}} @subtitle={{t "storefront.promotions.redemptions.subtitle"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.redemptions.search-placeholder"}} @onSearch={{perform this.search}}>
+<Layout::Section::Header @title={{t "storefront.promotions.redemptions.header"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.redemptions.search-placeholder"}} @onSearch={{perform this.search}}>
     {{#if (or this.promotion this.status)}}
         <Button @size="sm" @icon="times" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
     {{/if}}

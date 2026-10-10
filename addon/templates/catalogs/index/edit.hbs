@@ -1,24 +1,10 @@
 <div class="storefront-catalog-editor" data-test-catalog-editor>
-    <div class="storefront-catalog-editor__header">
-        <Button @icon="arrow-left" @size="xs" @helpText={{t "storefront.catalogs.editor.back"}} @onClick={{this.back}} data-test-catalog-back />
-        <div class="storefront-catalog-editor__identity">
-            <div class="storefront-catalog-editor__title">
-                <Input class="storefront-catalog-editor__name form-input form-input-sm" @value={{this.catalog.name}} placeholder={{t "storefront.catalogs.editor.name-placeholder"}} {{on "input" this.touchField}} data-test-catalog-name />
-                <Select class="form-select form-input-sm storefront-catalog-editor__status" @value={{this.catalog.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} data-test-catalog-status />
-            </div>
-            <div class="storefront-catalog-editor__meta">
-                <span>{{this.catalog.public_id}}</span>
-                <span>{{t "storefront.catalogs.editor.categories-count" count=this.categories.length}}</span>
-                <span>{{t "storefront.catalogs.card.products-count" count=this.productsCount}}</span>
-                <span>{{this.hoursSummary}}</span>
-                <span>{{t "storefront.catalogs.editor.served-by-count" stores=this.catalog.storeSubjects.length trucks=this.catalog.truckSubjects.length}}</span>
-            </div>
-        </div>
-        <div class="storefront-catalog-editor__actions">
-            <Button @size="sm" @icon="clone" @text={{t "storefront.catalogs.editor.duplicate"}} @onClick={{this.duplicate}} @permission="storefront create catalog" />
-            <Button @size="sm" @type="danger" @icon="trash" @helpText={{t "common.delete"}} @onClick={{this.deleteCatalog}} @permission="storefront delete catalog" />
-        </div>
-    </div>
+    <Layout::Section::Header @title={{this.catalog.name}} @badge={{this.catalog.status}} @hideStatusDot={{true}}>
+        <Button @size="sm" @icon="arrow-left" @text={{t "storefront.catalogs.editor.back"}} @onClick={{this.back}} data-test-catalog-back />
+        <Select class="form-select form-input-sm storefront-catalog-editor__status" @value={{this.catalog.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} data-test-catalog-status />
+        <Button @size="sm" @icon="clone" @text={{t "storefront.catalogs.editor.duplicate"}} @onClick={{this.duplicate}} @permission="storefront create catalog" />
+        <Button @size="sm" @type="danger" @icon="trash" @helpText={{t "common.delete"}} @onClick={{this.deleteCatalog}} @permission="storefront delete catalog" />
+    </Layout::Section::Header>
 
     <div class="storefront-catalog-editor__tabs" role="tablist">
         {{#each (array "categories" "hours" "served-by" "details") as |section|}}

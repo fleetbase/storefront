@@ -1,18 +1,4 @@
 <div class="storefront-promotions-hub" data-test-promotions-hub>
-    <div class="storefront-promotions-hub__header">
-        <div class="min-w-0">
-            <h2 class="storefront-promotions-hub__title">{{t "storefront.promotions.title"}}</h2>
-            <p class="storefront-promotions-hub__subtitle">{{t "storefront.promotions.hub.subtitle"}}</p>
-        </div>
-        {{#if this.hub}}
-            <div class="storefront-promotions-hub__stats" data-test-promotions-hub-stats>
-                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.active"}}</span><strong>{{this.hub.promotions.active}}</strong></div>
-                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.scheduled"}}</span><strong>{{this.hub.promotions.scheduled}}</strong></div>
-                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.redemptions.tab-title"}}</span><strong>{{this.hub.redemptions.total}}</strong></div>
-                <div class="storefront-promotions-hub__stat"><span>{{t "storefront.promotions.hub.discount-given"}}</span><strong>{{format-currency this.hub.redemptions.amount this.currency}}</strong></div>
-            </div>
-        {{/if}}
-    </div>
     <div class="storefront-status-tabs storefront-promotions-hub__tabs" role="tablist">
         {{#each this.tabs as |tab|}}
             <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.openTab tab)}} data-test-promotions-tab={{tab.id}}>

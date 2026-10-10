@@ -1,4 +1,4 @@
-<Layout::Section::Header @title={{t "storefront.common.orders"}} @subtitle={{t "storefront.networks.orders.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+<Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
     <div class="storefront-view-toggle mr-2" role="group" data-test-order-view-toggle>
         <button type="button" class="storefront-view-toggle__option {{if this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "grouped")}}>{{t "storefront.networks.orders.group-by-checkout"}}</button>
         <button type="button" class="storefront-view-toggle__option {{unless this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "flat")}}>{{t "storefront.networks.orders.flat"}}</button>

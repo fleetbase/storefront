@@ -1,21 +1,7 @@
 <div class="storefront-settings-shell" data-test-settings-shell>
-    <div class="storefront-settings-shell__header">
-        <div class="storefront-settings-shell__identity">
-            <Image src={{this.activeStore.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{this.activeStore.name}} class="storefront-settings-shell__logo" />
-            <div class="min-w-0">
-                <h2 class="storefront-settings-shell__title">{{t "storefront.common.settings"}}</h2>
-                <div class="storefront-settings-shell__meta">
-                    <span>{{this.activeStore.name}}</span>
-                    {{#if this.activeStore.public_id}}<span>{{this.activeStore.public_id}}</span>{{/if}}
-                    {{#if this.activeStore.currency}}<span>{{this.activeStore.currency}}</span>{{/if}}
-                    {{#if this.activeStore.timezone}}<span>{{this.activeStore.timezone}}</span>{{/if}}
-                </div>
-            </div>
-        </div>
-        <div class="storefront-settings-shell__actions">
-            <Button @size="sm" @icon="key" @text={{t "storefront.settings.shell.copy-store-key"}} @onClick={{this.copyStoreKey}} data-test-copy-store-key />
-        </div>
-    </div>
+    <Layout::Section::Header @title={{t "storefront.common.settings"}} @hideActions={{false}}>
+        <Button @size="sm" @icon="key" @text={{t "storefront.settings.shell.copy-store-key"}} @onClick={{this.copyStoreKey}} data-test-copy-store-key />
+    </Layout::Section::Header>
     <div class="storefront-settings-shell__body">
         <nav class="storefront-settings-rail" aria-label={{t "storefront.common.settings"}} data-test-settings-rail>
             {{#each this.railItems as |item|}}

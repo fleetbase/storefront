@@ -137,7 +137,8 @@ export default class StoreSelectorComponent extends Component {
 
             if (this.hasNetworks) {
                 this.networks.forEach((network) => {
-                    const count = network?.stores_count ?? network?.stores?.length ?? null;
+                    const storesCount = Number(network?.stores_count);
+                    const count = Number.isFinite(storesCount) && storesCount > 0 ? storesCount : network?.stores?.length > 0 ? network.stores.length : null;
 
                     networkList.appendChild(
                         this.createMenuItem({

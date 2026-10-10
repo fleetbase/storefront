@@ -1,9 +1,4 @@
-<Layout::Section::Header
-    @title={{t "storefront.networks.index.network.stores.store"}}
-    @subtitle={{t "storefront.networks.invitations.stores-subtitle" members=this.members.length pending=this.pendingInvitations.length}}
-    @searchQuery={{this.storeQuery}}
-    @onSearch={{perform this.search}}
->
+<Layout::Section::Header @title={{t "storefront.networks.index.network.stores.store"}} @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
     <Button @icon="plus" @text={{t "storefront.networks.invitations.add-existing-store"}} @textClass="truncate" @size="sm" @onClick={{fn this.invite this.network "own"}} @wrapperClass="mr-2" @permission="storefront update network" />
     <Button @type="primary" @icon="envelope-open-text" @textClass="truncate" @size="sm" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} @permission="storefront update network" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
