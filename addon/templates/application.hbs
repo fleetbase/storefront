@@ -9,6 +9,7 @@
         @onSwitchStore={{this.switchActiveStore}}
         @onCreateNetwork={{this.createNewNetwork}}
         @onSwitchNetwork={{this.switchActiveNetwork}}
+        @badge={{this.storefront.pendingInvitations.length}}
     />
     <Layout::Sidebar::Navigator @items={{this.navigationItems}} @searchPlaceholder="Search Storefront..." @searchProvider={{this.searchNavigation}} />
 </EmberWormhole>

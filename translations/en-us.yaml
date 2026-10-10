@@ -563,6 +563,33 @@ storefront:
       group-status: "{count} of {total} {status}"
       expand-hint: Expand for each store's order
       group-note: Group status is the least-advanced child; a group leaves "Needs action" when every child has a driver or is ready for pickup.
+    join:
+      eyebrow: You are invited to join
+      sent-by: "sent by {name}"
+      expires: "expires {when}"
+      what-happens: What happens
+      what-happens-body: Your store joins with its own catalog, prices and hours; the network's app lists it.
+      category-later: The network chooses after you join
+      approval: Approval
+      approval-body: The network reviews your store before it appears in the app.
+      which-store: Which store joins
+      which-store-help: Stores you administer. The network sees the store's name, catalog and hours.
+      accept: Review and accept
+      decline: Decline
+      accepted: "{store} joined {network}."
+      declined: Invitation declined.
+      joined: "{store} is now a member of {network}."
+      awaiting-approval: "{network} will review your store before it appears in the app."
+      go-to-dashboard: Go to the dashboard
+      closed:
+        accepted: This invitation was already accepted.
+        awaiting_approval: This invitation was accepted and is awaiting the network's approval.
+        declined: This invitation was declined.
+        expired: This invitation has expired. Ask the network to invite you again.
+        revoked: This invitation was withdrawn.
+      banner-title: "{network} invited this store to join"
+      review: Review
+      badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
     invitations:
       title: Invitations
       invite-stores: Invite stores

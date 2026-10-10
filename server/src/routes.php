@@ -242,6 +242,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('{id}/invitations/{invitationId}/resend', $controller('resendInvitation'));
                                 $router->delete('{id}/invitations/{invitationId}', $controller('revokeInvitation'));
                                 $router->get('{id}/overview', $controller('overview'));
+                                $router->get('invitations/pending', $controller('pendingInvitationsForStore'));
+                                $router->get('join/{uri}', $controller('lookupInvitation'));
+                                $router->post('join/{uri}/accept', $controller('acceptInvitation'));
+                                $router->post('join/{uri}/decline', $controller('declineInvitation'));
                             }
                         );
                         $router->fleetbaseRoutes(

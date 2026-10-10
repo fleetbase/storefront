@@ -19,6 +19,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service socket;
     @tracked activeStoreId;
     @tracked activeNetworkId;
+    @tracked pendingInvitations = [];
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -325,6 +326,27 @@ export default class StorefrontService extends Service.extend(Evented) {
             },
             ...options,
         });
+    }
+
+    /**
+     * Open network invitations addressed to the active store, for the dashboard banner and the switcher badge.
+     */
+    async loadPendingInvitations() {
+        const storeId = this.getActiveStore('public_id');
+
+        if (!storeId) {
+            this.pendingInvitations = [];
+            return [];
+        }
+
+        try {
+            const invitations = await this.fetch.get('networks/invitations/pending', { storefront: storeId }, { namespace: 'storefront/int/v1' });
+            this.pendingInvitations = Array.isArray(invitations) ? invitations : [];
+        } catch {
+            this.pendingInvitations = [];
+        }
+
+        return this.pendingInvitations;
     }
 
     /**

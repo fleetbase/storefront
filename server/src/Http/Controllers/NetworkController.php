@@ -176,6 +176,149 @@ class NetworkController extends StorefrontController
     }
 
     /**
+     * The invitation behind a join link, with the network it is for. Revoked links are gone;
+     * expired, declined and accepted ones say so.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function lookupInvitation(string $uri)
+    {
+        $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject', 'createdBy'])->first();
+
+        if (!$invitation || !$invitation->subject) {
+            return response()->error('This invitation is no longer available.', 404);
+        }
+
+        $network  = $invitation->subject;
+        $category = data_get($invitation->meta, 'category_uuid') ? Category::where('uuid', data_get($invitation->meta, 'category_uuid'))->first() : null;
+
+        return response()->json([
+            'invitation' => static::serializeInvitation($invitation),
+            'sender'     => $invitation->createdBy ? ['name' => $invitation->createdBy->name, 'company' => data_get($invitation->createdBy, 'company.name')] : null,
+            'category'   => $category ? ['id' => $category->uuid, 'name' => $category->name] : null,
+            'network'    => [
+                'id'           => $network->uuid,
+                'public_id'    => $network->public_id,
+                'name'         => $network->name,
+                'description'  => $network->description,
+                'logo_url'     => $network->logo_url,
+                'currency'     => $network->currency,
+                'timezone'     => $network->timezone,
+                'stores_count' => $network->stores()->count(),
+                'online'       => (bool) $network->online,
+                'website'      => $network->website,
+            ],
+        ]);
+    }
+
+    /**
+     * Accept an invitation with one of the current company's stores: the store becomes a
+     * member (in the invited category when one was set) and the invitation is closed.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function acceptInvitation(string $uri, Request $request)
+    {
+        $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject'])->first();
+
+        if (!$invitation || !$invitation->subject) {
+            return response()->error('This invitation is no longer available.', 404);
+        }
+
+        $status    = data_get($invitation->meta, 'status', 'pending');
+        $expiresAt = $invitation->expires_at ? Carbon::parse($invitation->expires_at) : null;
+
+        if ($status !== 'pending' || ($expiresAt && $expiresAt->isPast())) {
+            return response()->error('This invitation can no longer be accepted.', 422);
+        }
+
+        $store = Store::where('company_uuid', session('company'))->where(fn ($query) => $query->where('uuid', $request->input('store'))->orWhere('public_id', $request->input('store')))->first();
+
+        if (!$store) {
+            return response()->error('Pick one of your stores to join with.', 422);
+        }
+
+        $network         = $invitation->subject;
+        $requireApproval = (bool) data_get($invitation->meta, 'require_approval', false);
+
+        NetworkStore::firstOrCreate(
+            ['network_uuid' => $network->uuid, 'store_uuid' => $store->uuid],
+            ['network_uuid' => $network->uuid, 'store_uuid' => $store->uuid, 'category_uuid' => data_get($invitation->meta, 'category_uuid')]
+        );
+
+        $meta                   = $invitation->meta ?? [];
+        $meta['status']         = $requireApproval ? 'awaiting_approval' : 'accepted';
+        $meta['accepted_at']    = Carbon::now()->toIso8601String();
+        $meta['accepted_store'] = $store->uuid;
+        $invitation->meta       = $meta;
+        $invitation->save();
+
+        return response()->json([
+            'status'  => 'ok',
+            'network' => ['id' => $network->uuid, 'public_id' => $network->public_id, 'name' => $network->name],
+            'store'   => ['id' => $store->uuid, 'public_id' => $store->public_id, 'name' => $store->name],
+            'awaiting_approval' => $requireApproval,
+        ]);
+    }
+
+    /**
+     * Decline an invitation; the network sees it as declined and can invite again.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function declineInvitation(string $uri)
+    {
+        $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->first();
+
+        if (!$invitation) {
+            return response()->error('This invitation is no longer available.', 404);
+        }
+
+        $meta                = $invitation->meta ?? [];
+        $meta['status']      = 'declined';
+        $meta['declined_at'] = Carbon::now()->toIso8601String();
+        $invitation->meta    = $meta;
+        $invitation->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Open invitations addressed to a store (matched by its email), for the store's dashboard banner.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function pendingInvitationsForStore(Request $request)
+    {
+        $storeId = $request->input('storefront') ?? $request->input('store');
+        $store   = $storeId ? Store::where('company_uuid', session('company'))->where(fn ($query) => $query->where('uuid', $storeId)->orWhere('public_id', $storeId))->first() : null;
+
+        if (!$store || !$store->email) {
+            return response()->json([]);
+        }
+
+        $invitations = Invite::where('reason', 'join_storefront_network')
+            ->whereJsonContains('recipients', strtolower($store->email))
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', Carbon::now()))
+            ->with(['subject'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(fn (Invite $invitation) => data_get($invitation->meta, 'status', 'pending') === 'pending' && $invitation->subject)
+            ->map(fn (Invite $invitation) => array_merge(static::serializeInvitation($invitation), [
+                'network' => [
+                    'id'        => $invitation->subject->uuid,
+                    'public_id' => $invitation->subject->public_id,
+                    'name'      => $invitation->subject->name,
+                    'logo_url'  => $invitation->subject->logo_url,
+                    'currency'  => $invitation->subject->currency,
+                ],
+            ]))
+            ->values();
+
+        return response()->json($invitations);
+    }
+
+    /**
      * Numbers the network overview shows: members, invitations, the last seven days of
      * orders and revenue, customers, each member's share, and the latest orders.
      *

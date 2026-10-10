@@ -30,7 +30,7 @@ class StorefrontNetworkInvite extends Mailable
         $this->invite  = $invite;
         $this->network = $this->invite->subject;
         $this->sender  = $this->invite->createdBy;
-        $this->url     = Utils::consoleUrl('join/network/' . $this->invite->uri);
+        $this->url     = Utils::consoleUrl('storefront/networks/join/' . $this->invite->uri);
     }
 
     /**

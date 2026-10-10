@@ -35,6 +35,7 @@ export default buildRoutes(function () {
         });
     });
     this.route('networks', function () {
+        this.route('join', { path: '/join/:uri' });
         this.route('index', { path: '/' }, function () {
             this.route('network', { path: '/:public_id' }, function () {
                 this.route('stores');
