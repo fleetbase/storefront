@@ -19,6 +19,7 @@ class CheckoutQPayStub extends Fleetbase\Storefront\Support\QPay
     public static ?Throwable $failure       = null;
     public static bool $sandboxUsed         = false;
     public static bool $authenticated       = false;
+    public static int $checks               = 0;
     public static ?string $invoiceKind      = null;
     public static array $invoiceArguments   = [];
 
@@ -42,6 +43,7 @@ class CheckoutQPayStub extends Fleetbase\Storefront\Support\QPay
 
     public function paymentCheck(string $invoiceId, $options = [])
     {
+        static::$checks++;
         if (static::$failure) {
             throw static::$failure;
         }
@@ -1344,7 +1346,7 @@ test('checkout status reports gateway agnostic pending and completed sessions', 
     ]);
 });
 
-test('checkout status reports qpay pending paid fallback and provider failure states', function () {
+test('checkout status answers qpay from the checkout and asks qpay only to verify a return from paying', function () {
     createCheckoutCaptureExecutionSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('gateways')->insert([
@@ -1359,73 +1361,106 @@ test('checkout status reports qpay pending paid fallback and provider failure st
             'password' => 'secret',
         ]),
     ]);
-    $connection->table('checkouts')->insert([
-        'uuid'         => 'checkout_uuid',
-        'public_id'    => 'checkout_abcdefgh',
-        'gateway_uuid' => 'qpay_gateway_uuid',
-        'options'      => json_encode(['qpay_invoice_id' => 'invoice_checkout']),
-        'token'        => 'checkout-token',
-        'captured'     => false,
-    ]);
+    foreach (['checkout_abcdefgh' => 'checkout_uuid', 'checkout_failing' => 'checkout_failing_uuid', 'checkout_unpaid' => 'checkout_unpaid_uuid'] as $publicId => $uuid) {
+        $connection->table('checkouts')->insert([
+            'uuid'         => $uuid,
+            'public_id'    => $publicId,
+            'gateway_uuid' => 'qpay_gateway_uuid',
+            'options'      => json_encode(['qpay_invoice_id' => 'invoice_' . $publicId]),
+            'token'        => 'checkout-token',
+            'captured'     => false,
+        ]);
+    }
     $connection->table('orders')->insert([
         'uuid'      => 'status_order_uuid',
         'public_id' => 'order_status',
     ]);
     CheckoutQPayStub::$failure                         = null;
-    CheckoutQPayStub::$paymentCheckResult              = (object) ['rows' => []];
+    CheckoutQPayStub::$checks                          = 0;
     CheckoutQPayStub::$sandboxUsed                     = false;
-    TestableCheckoutController::$statusFallbackOrder   = null;
-    TestableCheckoutController::$statusFallbackFailure = null;
-    $controller                                        = new TestableCheckoutController();
-    $request                                           = fn () => Request::create('/checkouts/status', 'GET', [
-        'checkout' => 'checkout_abcdefgh',
-        'token'    => 'checkout-token',
-    ]);
-
-    $pending                              = $controller->getCheckoutStatus($request());
-    CheckoutQPayStub::$paymentCheckResult = (object) [
-        'rows' => [
+    CheckoutQPayStub::$paymentCheckResult              = (object) [
+        'count'       => 1,
+        'paid_amount' => 2500,
+        'rows'        => [
             (object) [
-                'payment_id'     => 'payment_checkout',
-                'payment_status' => 'PAID',
-                'payment_amount' => 2500,
-                'payment_date'   => '2026-07-27 10:00:00',
-                'payment_wallet' => 'QPay',
+                'payment_id'       => 'payment_checkout',
+                'payment_status'   => 'PAID',
+                'payment_amount'   => 2500,
+                'payment_currency' => 'MNT',
+                'payment_date'     => '2026-07-27 10:00:00',
+                'payment_wallet'   => 'Most money',
             ],
         ],
     ];
-    session(['storefront_key' => null]);
-    TestableCheckoutController::$statusFallbackOrder = Fleetbase\FleetOps\Models\Order::where(
-        'uuid',
-        'status_order_uuid'
-    )->firstOrFail();
-    $paid                                              = $controller->getCheckoutStatus($request());
-    TestableCheckoutController::$statusFallbackFailure = new RuntimeException('Concurrent status capture');
-    $raceRecovered                                     = $controller->getCheckoutStatus($request());
+    TestableCheckoutController::$statusFallbackOrder   = null;
     TestableCheckoutController::$statusFallbackFailure = null;
-    $alreadyCompleted                                  = $controller->getCheckoutStatus($request());
-    CheckoutQPayStub::$failure                         = new RuntimeException('QPay status unavailable');
-    $failure                                           = $controller->getCheckoutStatus($request());
-    CheckoutQPayStub::$failure                         = null;
-    $pendingData                                       = $pending->getData(true);
-    $paidData                                          = $paid->getData(true);
-    expect($pendingData['status'])->toBe('pending')
-        ->and($pendingData['payment'])->toBeNull()
-        ->and($pendingData['order'])->toBeNull()
-        ->and($paidData['status'])->toBe('completed')
-        ->and($paidData['payment']['payment_id'])->toBe('payment_checkout')
-        ->and($paidData['payment']['payment_status'])->toBe('PAID')
-        ->and($paidData['payment']['payment_amount'])->toBe(2500)
-        ->and($paidData['payment']['payment_wallet'])->toBe('QPay')
-        ->and($paidData['order']['id'])->toBe('order_status')
-        ->and($raceRecovered->getData(true)['status'])->toBe('completed')
-        ->and($alreadyCompleted->getData(true)['status'])->toBe('completed')
+    $controller                                        = new TestableCheckoutController();
+    $request                                           = fn (string $checkout = 'checkout_abcdefgh', bool $verify = false) => Request::create('/checkouts/status', 'GET', [
+        'checkout' => $checkout,
+        'token'    => 'checkout-token',
+        'verify'   => $verify ? '1' : '0',
+    ]);
+    $record = fn () => Fleetbase\Storefront\Models\Checkout::where('uuid', 'checkout_uuid')->first()->getOption('qpay_payment');
+
+    // Without verify the answer comes from the checkout alone: QPay is not asked.
+    $pending = $controller->getCheckoutStatus($request())->getData(true);
+    $checksAfterPending = CheckoutQPayStub::$checks;
+
+    // Back from paying: one verify asks QPay and records the payment.
+    $paid = $controller->getCheckoutStatus($request('checkout_abcdefgh', true))->getData(true);
+    $checksAfterVerify = CheckoutQPayStub::$checks;
+    $recorded = $record();
+
+    // Recorded payments are answered from the checkout, even when verify is asked again.
+    $again = $controller->getCheckoutStatus($request('checkout_abcdefgh', true))->getData(true);
+    $checksAfterAgain = CheckoutQPayStub::$checks;
+
+    // A payment recorded a while ago without an order gets its order (safety net).
+    $checkout = Fleetbase\Storefront\Models\Checkout::where('uuid', 'checkout_uuid')->first();
+    $checkout->updateOption('qpay_payment', array_merge((array) $recorded, ['recorded_at' => now()->subSeconds(30)->toIso8601String()]));
+    TestableCheckoutController::$statusFallbackOrder = Fleetbase\FleetOps\Models\Order::where('uuid', 'status_order_uuid')->firstOrFail();
+    session(['storefront_key' => null]);
+    $fallback = $controller->getCheckoutStatus($request())->getData(true);
+
+    // A concurrent capture that won the race is picked up.
+    TestableCheckoutController::$statusFallbackFailure = new RuntimeException('Concurrent status capture');
+    $raceRecovered                                     = $controller->getCheckoutStatus($request())->getData(true);
+    TestableCheckoutController::$statusFallbackFailure = null;
+
+    // QPay asked to verify but failing surfaces as an error; an unpaid verify is throttled.
+    CheckoutQPayStub::$failure = new RuntimeException('QPay status unavailable');
+    $failure                   = $controller->getCheckoutStatus($request('checkout_failing', true));
+    CheckoutQPayStub::$failure = null;
+    CheckoutQPayStub::$paymentCheckResult = (object) ['count' => 0, 'rows' => []];
+    $unpaidFirst  = $controller->getCheckoutStatus($request('checkout_unpaid', true))->getData(true);
+    $checksUnpaid = CheckoutQPayStub::$checks;
+    $unpaidSecond = $controller->getCheckoutStatus($request('checkout_unpaid', true))->getData(true);
+
+    expect($pending['status'])->toBe('pending')
+        ->and($pending['payment'])->toBeNull()
+        ->and($checksAfterPending)->toBe(0)
+        ->and($paid['status'])->toBe('paid')
+        ->and($paid['order'])->toBeNull()
+        ->and($paid['payment']['payment_id'])->toBe('payment_checkout')
+        ->and($paid['payment']['payment_amount'])->toBe(2500)
+        ->and($paid['payment']['payment_wallet'])->toBe('Most money')
+        ->and($checksAfterVerify)->toBe(1)
         ->and(CheckoutQPayStub::$sandboxUsed)->toBeTrue()
+        ->and(data_get($recorded, 'payment_currency'))->toBe('MNT')
+        ->and(data_get($recorded, 'recorded_at'))->not->toBeNull()
+        ->and($again['status'])->toBe('paid')
+        ->and($checksAfterAgain)->toBe(1)
+        ->and($fallback['status'])->toBe('completed')
+        ->and($fallback['order']['id'])->toBe('order_status')
+        ->and($raceRecovered['status'])->toBe('completed')
         ->and($failure->getStatusCode())->toBe(500)
         ->and($failure->getData(true))->toBe([
             'error'   => 'Failed to retrieve checkout status',
             'message' => 'QPay status unavailable',
-        ]);
+        ])
+        ->and($unpaidFirst['status'])->toBe('pending')
+        ->and($unpaidSecond['status'])->toBe('pending')
+        ->and(CheckoutQPayStub::$checks)->toBe($checksUnpaid);
 });
 
 test('customer lookup safely returns null for unknown customer aliases', function () {
