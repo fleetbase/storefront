@@ -3,6 +3,10 @@ import { setupTest } from 'dummy/tests/helpers';
 import Service from '@ember/service';
 
 class StorefrontStub extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     calls = [];
 
     setActiveNetwork(network) {

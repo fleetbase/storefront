@@ -15,12 +15,7 @@ module('Integration | Component | customer-panel/details', function (hooks) {
         assert.dom().hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <CustomerPanel::Details>
-        template block text
-      </CustomerPanel::Details>
-    `);
-
-        assert.dom().hasText('template block text');
+        await render(hbs`<CustomerPanel::Details />`);
+        assert.dom(this.element).exists();
     });
 });

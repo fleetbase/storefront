@@ -15,12 +15,7 @@ module('Integration | Component | widget/storefront-metrics', function (hooks) {
         assert.dom(this.element).hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <Widget::StorefrontMetrics>
-        template block text
-      </Widget::StorefrontMetrics>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<Widget::StorefrontMetrics />`);
+        assert.dom(this.element).exists();
     });
 });

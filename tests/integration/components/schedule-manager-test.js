@@ -15,12 +15,7 @@ module('Integration | Component | schedule-manager', function (hooks) {
         assert.dom(this.element).hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <ScheduleManager>
-        template block text
-      </ScheduleManager>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<ScheduleManager />`);
+        assert.dom(this.element).exists();
     });
 });

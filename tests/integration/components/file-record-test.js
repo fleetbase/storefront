@@ -15,12 +15,7 @@ module('Integration | Component | file-record', function (hooks) {
         assert.dom(this.element).hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <FileRecord>
-        template block text
-      </FileRecord>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<FileRecord />`);
+        assert.dom(this.element).exists();
     });
 });

@@ -1,0 +1,17 @@
+{{! A segmented control for switching between views (grid/list, grouped/flat, cards/table, delivery/pickup).
+    @options: [{ id, label?, icon? }] · @value: the active id · @onChange: (id) => void }}
+<div class="storefront-view-toggle {{@wrapperClass}}" role="group" aria-label={{@label}} ...attributes>
+    {{#each @options as |option|}}
+        <button
+            type="button"
+            class="storefront-view-toggle__option {{if (eq option.id @value) 'is-active'}} {{unless option.label 'storefront-view-toggle__option--icon'}}"
+            aria-pressed={{if (eq option.id @value) "true" "false"}}
+            title={{option.title}}
+            {{on "click" (fn @onChange option.id)}}
+            data-test-view-option={{option.id}}
+        >
+            {{#if option.icon}}<FaIcon @icon={{option.icon}} class={{if option.label "mr-1"}} />{{/if}}
+            {{#if option.label}}{{option.label}}{{/if}}
+        </button>
+    {{/each}}
+</div>

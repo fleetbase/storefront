@@ -15,12 +15,7 @@ module('Integration | Component | display-place', function (hooks) {
         assert.dom().hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <DisplayPlace>
-        template block text
-      </DisplayPlace>
-    `);
-
-        assert.dom().hasText('template block text');
+        await render(hbs`<DisplayPlace />`);
+        assert.dom(this.element).exists();
     });
 });

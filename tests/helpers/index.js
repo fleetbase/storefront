@@ -26,7 +26,16 @@ function setupApplicationTest(hooks, options) {
 function setupRenderingTest(hooks, options) {
     upstreamSetupRenderingTest(hooks, options);
 
-    // Additional setup for rendering tests can be done here.
+    // ember-intl 6 sets its tracked locale in the service constructor; if the service is first
+    // created by a `{{t}}` helper mid-render, Glimmer asserts on the update-after-read. Create it
+    // (and pick a locale) before any template renders.
+    hooks.beforeEach(function () {
+        const intl = this.owner.lookup('service:intl');
+
+        if (intl && typeof intl.setLocale === 'function' && !intl.primaryLocale) {
+            intl.setLocale(['en-us']);
+        }
+    });
 }
 
 function setupTest(hooks, options) {

@@ -804,6 +804,7 @@ storefront:
   orders:
     create:
       title: New order
+      fulfillment: Fulfillment
       subtitle: a console order follows the same flow as an app order
       change-customer: Change customer
       customer-placeholder: Search customers by name, phone or email
@@ -972,6 +973,8 @@ storefront:
         media: A published product should have at least one image.
     index:
       manage-addons: Manage Addons
+      view-grid: Grid
+      view-list: List
       manage-addons-dialog:
         manage-addons-title: Manage Product Addon Categories & Options
         manage-addons-accept-button: Save Changes

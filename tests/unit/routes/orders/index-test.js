@@ -3,6 +3,10 @@ import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     getActiveStore(key) {
         if (key === 'public_id') {
             return 'store_123';

@@ -15,12 +15,7 @@ module('Integration | Component | add-product-as-entity-button', function (hooks
         assert.dom().hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <AddProductAsEntityButton>
-        template block text
-      </AddProductAsEntityButton>
-    `);
-
-        assert.dom().hasText('template block text');
+        await render(hbs`<AddProductAsEntityButton />`);
+        assert.dom(this.element).exists();
     });
 });

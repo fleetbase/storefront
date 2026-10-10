@@ -284,6 +284,14 @@ export default class OrdersIndexNewController extends Controller {
         this.requote.perform();
     }
 
+    @action setFulfillment(id) {
+        return this.setPickup(id === 'pickup');
+    }
+
+    @action setTiming(id) {
+        return this.setScheduled(id === 'schedule');
+    }
+
     @action setPickup(isPickup) {
         this.isPickup = isPickup;
         this.requote.perform();

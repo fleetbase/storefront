@@ -26,6 +26,10 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
         }
 
         class StorefrontStub extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
             getActiveStore(key) {
                 assert.strictEqual(key, 'public_id');
                 return 'store_test';

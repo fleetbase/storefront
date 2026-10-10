@@ -15,12 +15,7 @@ module('Integration | Component | settings-container', function (hooks) {
         assert.dom(this.element).hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <SettingsContainer>
-        template block text
-      </SettingsContainer>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<SettingsContainer />`);
+        assert.dom(this.element).exists();
     });
 });

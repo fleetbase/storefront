@@ -6,14 +6,7 @@
     @searchInputClass="storefront-product-search-input"
 >
     <div class="storefront-product-header-actions">
-        <div class="storefront-product-view-toggle">
-            <button type="button" class={{if (eq this.viewMode "grid") "is-active"}} {{on "click" (fn this.setViewMode "grid")}}>
-                <FaIcon @icon="th-large" />
-            </button>
-            <button type="button" class={{if (eq this.viewMode "list") "is-active"}} {{on "click" (fn this.setViewMode "list")}}>
-                <FaIcon @icon="list" />
-            </button>
-        </div>
+        <Storefront::ViewToggle @options={{array (hash id="grid" icon="th-large" title=(t "storefront.products.index.view-grid")) (hash id="list" icon="list" title=(t "storefront.products.index.view-list"))}} @value={{this.viewMode}} @onChange={{this.setViewMode}} @label={{t "storefront.common.view"}} />
         {{#if this.category}}
             <DropdownButton @icon="gear" @text="Category" @type="default" @size="sm" @contentClass="dropdown-menu" @renderInPlace={{true}} as |dd|>
                 <div class="next-dd-menu mt-1 mx-0" aria-labelledby="user-menu">

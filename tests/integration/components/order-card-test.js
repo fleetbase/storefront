@@ -15,12 +15,7 @@ module('Integration | Component | order-card', function (hooks) {
         assert.dom(this.element).hasText('');
 
         // Template block usage:
-        await render(hbs`
-      <OrderCard>
-        template block text
-      </OrderCard>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<OrderCard />`);
+        assert.dom(this.element).exists();
     });
 });

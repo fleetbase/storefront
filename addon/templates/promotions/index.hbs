@@ -1,8 +1,5 @@
 <Layout::Section::Header @title={{t "storefront.promotions.list.header"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.list.search-placeholder"}} @onSearch={{this.search}}>
-    <div class="storefront-view-toggle mr-2" role="group" data-test-promotions-view-toggle>
-        <button type="button" class="storefront-view-toggle__option {{if this.isCards 'is-active'}}" {{on "click" (fn this.setView "cards")}}>{{t "storefront.promotions.hub.cards"}}</button>
-        <button type="button" class="storefront-view-toggle__option {{unless this.isCards 'is-active'}}" {{on "click" (fn this.setView "table")}}>{{t "storefront.promotions.hub.table"}}</button>
-    </div>
+    <Storefront::ViewToggle @options={{array (hash id="cards" label=(t "storefront.promotions.hub.cards")) (hash id="table" label=(t "storefront.promotions.hub.table"))}} @value={{if this.isCards "cards" "table"}} @onChange={{this.setView}} @wrapperClass="mr-2" data-test-promotions-view-toggle />
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>

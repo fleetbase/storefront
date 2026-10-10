@@ -30,6 +30,10 @@ class ContextPanelStubService extends Service {
 }
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     activeStore = { public_id: 'store_1' };
 }
 
@@ -40,6 +44,10 @@ class FetchStubService extends Service {
 }
 
 class IntlStubService extends Service {
+    onLocaleChanged() {
+        return () => {};
+    }
+
     t(key) {
         const translations = {
             'storefront.customers.customer-panel.details.web-url': 'Web URL',

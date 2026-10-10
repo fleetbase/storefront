@@ -1,8 +1,5 @@
 <Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    <div class="storefront-view-toggle mr-2" role="group" data-test-order-view-toggle>
-        <button type="button" class="storefront-view-toggle__option {{if this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "grouped")}}>{{t "storefront.networks.orders.group-by-checkout"}}</button>
-        <button type="button" class="storefront-view-toggle__option {{unless this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "flat")}}>{{t "storefront.networks.orders.flat"}}</button>
-    </div>
+    <Storefront::ViewToggle @options={{array (hash id="grouped" label=(t "storefront.networks.orders.group-by-checkout")) (hash id="flat" label=(t "storefront.networks.orders.flat"))}} @value={{if this.isGrouped "grouped" "flat"}} @onChange={{this.setView}} @wrapperClass="mr-2" data-test-order-view-toggle />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 

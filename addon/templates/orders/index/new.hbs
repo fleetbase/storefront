@@ -32,14 +32,8 @@
                 <div class="storefront-create-order__step-title"><span class="storefront-flow-step__marker">2</span>{{t "storefront.networks.orders.columns.fulfillment"}}</div>
                 <div class="storefront-create-order__step-body space-y-3">
                     <div class="flex flex-wrap gap-4">
-                        <div class="storefront-view-toggle" role="group">
-                            <button type="button" class="storefront-view-toggle__option {{unless this.isPickup 'is-active'}}" {{on "click" (fn this.setPickup false)}} data-test-fulfillment="delivery">{{t "storefront.networks.orders.delivery"}}</button>
-                            <button type="button" class="storefront-view-toggle__option {{if this.isPickup 'is-active'}}" {{on "click" (fn this.setPickup true)}} data-test-fulfillment="pickup">{{t "storefront.common.pickup"}}</button>
-                        </div>
-                        <div class="storefront-view-toggle" role="group">
-                            <button type="button" class="storefront-view-toggle__option {{unless this.isScheduled 'is-active'}}" {{on "click" (fn this.setScheduled false)}}>{{t "storefront.order.asap"}}</button>
-                            <button type="button" class="storefront-view-toggle__option {{if this.isScheduled 'is-active'}}" {{on "click" (fn this.setScheduled true)}}>{{t "storefront.orders.create.schedule"}}</button>
-                        </div>
+                        <Storefront::ViewToggle @options={{array (hash id="delivery" label=(t "storefront.networks.orders.delivery")) (hash id="pickup" label=(t "storefront.common.pickup"))}} @value={{if this.isPickup "pickup" "delivery"}} @onChange={{this.setFulfillment}} @label={{t "storefront.orders.create.fulfillment"}} data-test-fulfillment-toggle />
+                        <Storefront::ViewToggle @options={{array (hash id="asap" label=(t "storefront.order.asap")) (hash id="schedule" label=(t "storefront.orders.create.schedule"))}} @value={{if this.isScheduled "schedule" "asap"}} @onChange={{this.setTiming}} @label={{t "storefront.orders.create.schedule"}} data-test-timing-toggle />
                         {{#if this.isScheduled}}
                             <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
                         {{/if}}
