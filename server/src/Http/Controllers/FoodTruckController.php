@@ -18,6 +18,6 @@ class FoodTruckController extends StorefrontController
      */
     public function onQueryRecord(Builder $builder)
     {
-        $builder->with(['vehicle']);
+        $builder->with(['vehicle', 'store', 'network', 'serviceArea', 'zone', 'catalogs']);
     }
 }

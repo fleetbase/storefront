@@ -33,12 +33,22 @@ class FoodTruckFilter extends FleetOpsOrderFilter
      */
     public function network(?string $network)
     {
-        $this->builder->whereHas(
-            'store.networks',
-            function ($query) use ($network) {
-                $query->where('network_uuid', $network);
-            }
-        );
+        $this->builder->where(function ($query) use ($network) {
+            $query->where('network_uuid', $network)->orWhereHas(
+                'store.networks',
+                function ($memberQuery) use ($network) {
+                    $memberQuery->where('network_uuid', $network);
+                }
+            );
+        });
+    }
+
+    /**
+     * Only the trucks a network owns itself, not its member stores'.
+     */
+    public function ownedByNetwork(?string $network)
+    {
+        $this->builder->where('network_uuid', $network);
     }
 
     public function serviceArea(string $serviceAreaId)

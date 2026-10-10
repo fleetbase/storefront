@@ -26,6 +26,13 @@ class FoodTruck extends FleetbaseResource
             'company_uuid'                   => $this->when(Http::isInternalRequest(), $this->company_uuid),
             'created_by_uuid'                => $this->when(Http::isInternalRequest(), $this->created_by_uuid),
             'store_uuid'                     => $this->when(Http::isInternalRequest(), $this->store_uuid),
+            'network_uuid'                   => $this->when(Http::isInternalRequest(), $this->network_uuid),
+            'network'                        => $this->whenLoaded('network', fn () => $this->network ? [
+                'id'       => $this->network->public_id,
+                'uuid'     => $this->network->uuid,
+                'name'     => $this->network->name,
+                'logo_url' => $this->network->logo_url,
+            ] : null),
             'service_area_uuid'              => $this->when(Http::isInternalRequest(), $this->service_area_uuid),
             'zone_uuid'                      => $this->when(Http::isInternalRequest(), $this->zone_uuid),
             'vehicle_uuid'                   => $this->when(Http::isInternalRequest(), $this->vehicle_uuid),

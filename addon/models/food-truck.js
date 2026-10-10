@@ -7,6 +7,7 @@ export default class FoodTruckModel extends Model {
     @attr('string') created_by_uuid;
     @attr('string') vehicle_uuid;
     @attr('string') store_uuid;
+    @attr('string') network_uuid;
 
     /** @relationships */
     @belongsTo('vehicle') vehicle;
@@ -18,6 +19,7 @@ export default class FoodTruckModel extends Model {
     @attr('string', { defaultValue: 'storefront:store' }) subject_type;
     @attr('raw') meta;
     @attr('raw') store_summary;
+    @attr('raw') network;
     @attr('string') status;
     @attr('boolean') online;
 
@@ -31,6 +33,14 @@ export default class FoodTruckModel extends Model {
     }
 
     /** @computed */
+    get ownerName() {
+        return this.network?.name ?? this.store_summary?.name ?? null;
+    }
+
+    get isNetworkOwned() {
+        return Boolean(this.network_uuid);
+    }
+
     get updatedAgo() {
         return formatDistanceToNow(this.updated_at);
     }

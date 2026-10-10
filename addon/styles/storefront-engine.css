@@ -5604,3 +5604,35 @@ body[data-theme='dark'] .storefront-builder__review-row dt {
     margin: 0 1rem 1rem;
     align-items: center;
 }
+
+/* Truck panel */
+.storefront-truck-panel__catalog {
+    width: 100%;
+    text-align: left;
+    background: none;
+}
+
+.storefront-truck-panel__catalog:hover {
+    background-color: #f9fafb;
+}
+
+body[data-theme='dark'] .storefront-truck-panel__catalog:hover {
+    background-color: #374151;
+}
+
+.storefront-truck-panel__catalog.is-assigned {
+    background-color: #f0f9ff;
+}
+
+body[data-theme='dark'] .storefront-truck-panel__catalog.is-assigned {
+    background-color: rgb(12 74 110 / 35%);
+}
+
+.storefront-truck-panel__check {
+    color: #0284c7;
+    flex-shrink: 0;
+}
+
+.storefront-truck-panel__save-bar {
+    margin: 1rem;
+}

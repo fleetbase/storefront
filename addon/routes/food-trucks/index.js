@@ -23,4 +23,15 @@ export default class FoodTrucksIndexRoute extends Route {
     model(params) {
         return this.store.query('food-truck', { ...params, store_uuid: this.storefront.getActiveStore('id') });
     }
+
+    async setupController(controller, model) {
+        super.setupController(controller, model);
+
+        try {
+            const catalogs = await this.store.query('catalog', { limit: -1, store_uuid: this.storefront.getActiveStore('id') });
+            controller.catalogs = catalogs?.toArray?.() ?? Array.from(catalogs ?? []);
+        } catch {
+            controller.catalogs = [];
+        }
+    }
 }

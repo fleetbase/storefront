@@ -1,0 +1,92 @@
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="600px" @minResizeWidth={{480}} @fullHeight={{true}} @isOpen={{true}}>
+    <Overlay::Header @title={{this.title}} @onPressCancel={{this.close}}>
+        <:actions>
+            {{#if this.truck.vehicle.id}}
+                <Vehicle::Pill @vehicle={{this.truck.vehicle}} @showOnlineIndicator={{true}} @size="xs" />
+            {{/if}}
+        </:actions>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i" @wrapperClass="storefront-truck-panel" data-test-truck-panel>
+        {{#if this.truck.ownerName}}
+            <p class="storefront-invite-panel__lede">
+                {{t "storefront.trucks.card.owned-by" name=this.truck.ownerName}}
+                {{#if this.truck.isNetworkOwned}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.common.network"}} />{{/if}}
+            </p>
+        {{/if}}
+        <div class="storefront-invite-panel__tabs" role="tablist">
+            {{#each this.tabs as |tab|}}
+                <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-invite-panel__tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-truck-tab={{tab.id}}>
+                    {{tab.label}}{{#if tab.count}} <span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+                </button>
+            {{/each}}
+        </div>
+
+        {{#if (eq this.tab "details")}}
+            <div class="storefront-invite-panel__section space-y-4">
+                <InputGroup @name={{t "storefront.trucks.panel.vehicle"}} @helpText={{t "storefront.trucks.panel.vehicle-help"}}>
+                    <ModelSelect @modelName="vehicle" @selectedItemComponent={{component "select-option/vehicle" compact=true}} @selectedModel={{this.truck.vehicle}} @placeholder={{t "storefront.trucks.panel.vehicle-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.setVehicle}} as |model|>
+                        <SelectOption::Vehicle @option={{model}} />
+                    </ModelSelect>
+                </InputGroup>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                    <InputGroup @name={{t "storefront.trucks.panel.service-area"}}>
+                        <ModelSelect @modelName="service-area" @selectedModel={{this.truck.service_area}} @placeholder={{t "storefront.trucks.panel.service-area-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.setServiceArea}} @allowClear={{true}} as |model|>
+                            {{model.name}}
+                        </ModelSelect>
+                    </InputGroup>
+                    <InputGroup @name={{t "storefront.trucks.panel.zone"}}>
+                        {{#if this.truck.service_area}}
+                            <ModelSelect @modelName="zone" @selectedModel={{this.truck.zone}} @query={{hash service_area_uuid=this.truck.service_area.id}} @placeholder={{t "storefront.trucks.panel.zone-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.setZone}} @allowClear={{true}} as |model|>
+                                {{model.name}}
+                            </ModelSelect>
+                        {{else}}
+                            <div class="form-input text-gray-400">{{t "storefront.trucks.panel.pick-service-area-first"}}</div>
+                        {{/if}}
+                    </InputGroup>
+                </div>
+                <InputGroup @name={{t "storefront.common.status"}} @helpText={{t "storefront.trucks.panel.status-help"}}>
+                    <Select class="w-full" @value={{this.truck.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} />
+                </InputGroup>
+            </div>
+        {{else}}
+            <div class="storefront-invite-panel__section space-y-3">
+                <p class="storefront-settings-section__lede mb-0">{{t "storefront.trucks.panel.catalogs-lede"}}</p>
+                {{#if this.catalogRows.length}}
+                    <div class="storefront-member-list storefront-catalog-served-by" data-test-truck-catalogs>
+                        {{#each this.catalogRows as |row|}}
+                            <button type="button" class="storefront-member-row storefront-truck-panel__catalog {{if row.isAssigned 'is-assigned'}}" {{on "click" (fn this.toggleCatalog row.catalog)}} data-test-truck-catalog={{row.catalog.id}} aria-pressed={{if row.isAssigned "true" "false"}}>
+                                <FaIcon @icon={{if row.isAssigned "check-square" "square"}} @prefix="far" class="storefront-truck-panel__check" />
+                                <div class="storefront-member-row__identity">
+                                    <div class="storefront-member-row__name">{{row.catalog.name}}</div>
+                                    <div class="storefront-member-row__meta">{{row.hoursSummary}} · {{t "storefront.catalogs.card.products-count" count=row.productsCount}}{{#if row.ownerName}} · {{row.ownerName}}{{/if}}</div>
+                                </div>
+                                {{#if row.servingNow}}
+                                    <Badge @status="online" @size="xs" @text={{t "storefront.catalogs.editor.serving"}} />
+                                {{else if row.isAssigned}}
+                                    <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.trucks.panel.outside-hours"}} />
+                                {{/if}}
+                            </button>
+                        {{/each}}
+                    </div>
+                    <p class="storefront-invitation-list__note">{{t "storefront.trucks.panel.catalogs-note"}}</p>
+                {{else}}
+                    <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-catalogs"}}</span></div>
+                {{/if}}
+            </div>
+        {{/if}}
+
+        <div class="storefront-save-bar storefront-truck-panel__save-bar {{if this.isDirty 'is-dirty'}}">
+            <div class="storefront-save-bar__status">
+                {{#if this.isDirty}}
+                    <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />{{t "storefront.trucks.panel.unsaved"}}
+                {{else}}
+                    <FaIcon @icon="check" @size="xs" class="text-green-500 mr-2" />{{t "storefront.settings.save-bar.saved"}}
+                {{/if}}
+            </div>
+            <div class="storefront-save-bar__actions">
+                <Button @text={{t "storefront.settings.save-bar.discard"}} @disabled={{not this.isDirty}} @onClick={{this.discard}} />
+                <Button @type="primary" @icon={{if this.truck.isNew "check" "save"}} @text={{if this.truck.isNew (t "storefront.trucks.panel.create") (t "storefront.common.save")}} @isLoading={{this.save.isRunning}} @disabled={{not this.isDirty}} @onClick={{perform this.save}} @permission={{if this.truck.isNew "storefront create food-truck" "storefront update food-truck"}} data-test-truck-save />
+            </div>
+        </div>
+    </Overlay::Body>
+</Overlay>

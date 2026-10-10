@@ -58,6 +58,7 @@ class FoodTruck extends StorefrontModel
         'uuid',
         'vehicle_uuid',
         'store_uuid',
+        'network_uuid',
         'company_uuid',
         'created_by_uuid',
         'service_area_uuid',
@@ -78,6 +79,22 @@ class FoodTruck extends StorefrontModel
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class, 'store_uuid', 'uuid');
+    }
+
+    /**
+     * The network that owns this truck, when it is not a store's.
+     */
+    public function network(): BelongsTo
+    {
+        return $this->belongsTo(Network::class, 'network_uuid', 'uuid');
+    }
+
+    /**
+     * Whoever runs the truck: its network, otherwise its store.
+     */
+    public function owner(): Store|Network|null
+    {
+        return $this->network_uuid ? $this->network : $this->store;
     }
 
     /**

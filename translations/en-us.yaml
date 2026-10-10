@@ -434,7 +434,33 @@ storefront:
       no-categories: No categories yet
       products-count: "{count, plural, =0 {No products} one {# product} other {# products}}"
   trucks:
+    panel:
+      tabs:
+        details: Details
+        catalogs: Catalogs
+      new-truck: New truck
+      vehicle: Vehicle
+      vehicle-help: The Fleet-Ops vehicle; its driver and online state come from Fleet-Ops.
+      vehicle-placeholder: Select the vehicle for this truck
+      service-area: Service area
+      service-area-placeholder: Where the truck serves
+      zone: Zone
+      zone-placeholder: A zone inside the service area
+      pick-service-area-first: Pick a service area first
+      status-help: An inactive truck is hidden from the app even when its vehicle is online.
+      catalogs-lede: What the app shows is the union of the assigned catalogs that are within their hours.
+      catalogs-note: Overlapping hours are allowed. A draft catalog is never shown.
+      outside-hours: Outside hours
+      no-catalogs: No catalogs to assign yet. Create one on the Catalogs page.
+      unsaved: Unsaved changes
+      create: Create truck
+      saved: Truck saved.
+    network:
+      subtitle: Trucks run by this network and by the stores that sell through it.
     index:
+      subtitle: A Fleet-Ops vehicle that sells from a catalog inside a service area.
+      new-truck: New truck
+      inactive: Inactive
       empty-state: Add a truck to sell from a vehicle inside a service area.
       create-truck: Add truck
     card:

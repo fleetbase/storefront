@@ -1,15 +1,31 @@
-<Layout::Section::Header @title={{t "storefront.common.food-trucks"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} />
+<Layout::Section::Header @title={{t "storefront.common.food-trucks"}} @subtitle={{t "storefront.trucks.network.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    <Button @type="primary" @icon="plus" @text={{t "storefront.trucks.index.new-truck"}} @onClick={{this.createFoodTruck}} @permission="storefront create food-truck" />
+</Layout::Section::Header>
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-truck-status-tabs>
+        {{#each this.statusTabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                <span>{{tab.label}}</span>
+                <span class="storefront-status-tab__count">{{tab.count}}</span>
+            </button>
+        {{/each}}
+    </div>
     <Layout::Resource::CardsGrid
         @resource="truck"
-        @data={{@model}}
+        @data={{this.visibleTrucks}}
         @columns="4"
         @containerClass="p-4"
         @emptyStateText={{t "storefront.networks.index.network.trucks.empty-state"}}
+        @createButtonText={{t "storefront.trucks.index.new-truck"}}
+        @onCreateNew={{this.createFoodTruck}}
         class="h-full"
         as |Item|
     >
         <Storefront::Truck::Card @truck={{Item.model}} @onEdit={{this.editFoodTruck}} @onAssignCatalogs={{this.assignCatalogs}} @onDelete={{this.deleteFoodTruck}} />
     </Layout::Resource::CardsGrid>
 </Layout::Section::Body>
+
+{{#if this.activeTruck}}
+    <Storefront::Truck::Panel @truck={{this.activeTruck}} @tab={{this.panelTab}} @catalogs={{this.catalogs}} @onClose={{this.closeTruckPanel}} @onSaved={{this.onTruckSaved}} />
+{{/if}}

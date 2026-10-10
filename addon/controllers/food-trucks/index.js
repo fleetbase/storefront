@@ -30,82 +30,80 @@ export default class FoodTrucksIndexController extends Controller {
         this.query = value;
     }
     @tracked statusOptions = ['active', 'inactive'];
+    @tracked statusTab = 'all';
+    @tracked activeTruck = null;
+    @tracked panelTab = 'details';
+    @tracked catalogs = [];
+
+    get trucks() {
+        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+    }
+
+    get statusTabs() {
+        const trucks = this.trucks;
+        const online = trucks.filter((truck) => truck.status !== 'inactive' && (truck.online || truck.vehicle?.online));
+        const inactive = trucks.filter((truck) => truck.status === 'inactive');
+        const offline = trucks.filter((truck) => !online.includes(truck) && !inactive.includes(truck));
+
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: trucks.length },
+            { id: 'online', label: this.intl.t('storefront.common.online'), count: online.length },
+            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: offline.length },
+            { id: 'inactive', label: this.intl.t('storefront.trucks.index.inactive'), count: inactive.length },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    get visibleTrucks() {
+        const trucks = this.trucks;
+
+        switch (this.statusTab) {
+            case 'online':
+                return trucks.filter((truck) => truck.status !== 'inactive' && (truck.online || truck.vehicle?.online));
+            case 'offline':
+                return trucks.filter((truck) => truck.status !== 'inactive' && !(truck.online || truck.vehicle?.online));
+            case 'inactive':
+                return trucks.filter((truck) => truck.status === 'inactive');
+            default:
+                return trucks;
+        }
+    }
+
+    /**
+     * Attributes a new truck starts with; the network trucks page overrides the owner.
+     */
+    get newTruckAttributes() {
+        return { store_uuid: this.storefront.activeStore?.id, status: 'active' };
+    }
+
+    @action selectStatusTab(tab) {
+        this.statusTab = tab.id ?? tab;
+    }
+
+    @action openTruck(truck, tab = 'details') {
+        this.panelTab = typeof tab === 'string' ? tab : 'details';
+        this.activeTruck = truck;
+    }
+
+    @action closeTruckPanel() {
+        this.activeTruck = null;
+    }
+
+    @action onTruckSaved() {
+        return this.hostRouter.refresh();
+    }
 
     @action createFoodTruck() {
-        const foodTruck = this.store.createRecord('food-truck', {
-            store_uuid: this.storefront.activeStore.id,
-            status: 'active',
-        });
+        const foodTruck = this.store.createRecord('food-truck', this.newTruckAttributes);
 
-        this.modalsManager.show('modals/create-food-truck', {
-            title: 'New Truck',
-            statusOptions: this.statusOptions,
-            foodTruck,
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('New truck created.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+        return this.openTruck(foodTruck, 'details');
     }
 
     @action editFoodTruck(foodTruck) {
-        this.modalsManager.show('modals/create-food-truck', {
-            title: 'Edit Truck',
-            acceptButtonText: 'Save Changes',
-            acceptButtonIcon: 'save',
-            statusOptions: this.statusOptions,
-            foodTruck,
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('Changes to truck saved.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+        return this.openTruck(foodTruck, 'details');
     }
 
-    @action async assignCatalogs(foodTruck) {
-        const allCatalogs = await this.store.query('catalog', { limit: -1 });
-        console.log('[allCatalogs]', allCatalogs);
-        this.modalsManager.show('modals/assign-food-truck-catalogs', {
-            title: 'Assign catalogs to this truck',
-            acceptButtonText: 'Done',
-            acceptButtonIcon: 'save',
-            foodTruck,
-            allCatalogs,
-            updateCatalogSelections: (catalogs) => {
-                foodTruck.set('catalogs', catalogs);
-            },
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('Changes to truck saved.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+    @action assignCatalogs(foodTruck) {
+        return this.openTruck(foodTruck, 'catalogs');
     }
 
     @action deleteFoodTruck(foodTruck) {

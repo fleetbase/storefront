@@ -38,7 +38,9 @@
         </div>
         <div class="storefront-card__meta">
             <span data-test-truck-catalogs-count>{{t "storefront.trucks.card.catalogs-count" count=this.catalogs.length}}</span>
-            {{#if this.storeName}}
+            {{#if this.truck.isNetworkOwned}}
+                <span data-test-truck-store><FaIcon @icon="network-wired" @size="xs" class="mr-1" />{{t "storefront.trucks.card.owned-by" name=this.truck.network.name}}</span>
+            {{else if this.storeName}}
                 <span data-test-truck-store>{{t "storefront.trucks.card.owned-by" name=this.storeName}}</span>
             {{/if}}
         </div>
