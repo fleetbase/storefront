@@ -452,6 +452,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
     });
     $failedEphemeralKey = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
     $failedSetupIntent  = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
+    // Creating the Stripe customer fails too (e.g. the gateway's key is refused): an error, not an exception.
+    $connection->table('contacts')->where('uuid', $customerUuid)->update(['meta' => '{}']);
+    $failedCreateEphemeralKey = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
+    $failedCreateSetupIntent  = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
     $connection->table('gateways')->delete();
     $missingEphemeralGateway = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
     $missingSetupGateway     = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
@@ -559,6 +563,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ->and($createdSetupIntent->getData(true)['customerId'])->toBe('cus_created_customer')
         ->and($failedEphemeralKey->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
         ->and($failedSetupIntent->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
+        ->and($failedCreateEphemeralKey->getStatusCode())->toBe(400)
+        ->and($failedCreateEphemeralKey->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
+        ->and($failedCreateSetupIntent->getStatusCode())->toBe(400)
+        ->and($failedCreateSetupIntent->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
         ->and($missingEphemeralGateway->getData(true))->toBe(['error' => 'Stripe not setup.'])
         ->and($missingSetupGateway->getData(true))->toBe(['error' => 'Stripe not setup.'])
         ->and($closureStart->getData(true))->toBe(['error' => 'Customer user account not found.'])

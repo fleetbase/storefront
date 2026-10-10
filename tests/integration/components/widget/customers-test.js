@@ -57,7 +57,7 @@ module('Integration | Component | widget/customers', function (hooks) {
         assert.dom('.storefront-widget-count').hasText('1');
         assert.dom('.storefront-customers-table').exists();
         assert.dom('.storefront-customer-id').hasText('contact_1');
-        assert.dom('.storefront-customers-table').includesText('Ava Chen');
+        assert.dom('.storefront-customers-table [data-test-resource-pill-title]').hasText('Ava Chen', 'the customer renders as its pill');
         assert.dom('.storefront-customers-table').includesText('ava.chen@example.test');
     });
 });

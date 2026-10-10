@@ -613,3 +613,78 @@ test('store locations and tags preserve store context while rejecting missing co
         ->and($missingLocations->getStatusCode())->toBe(400)
         ->and($missingTags->getStatusCode())->toBe(400);
 });
+
+test('network stores endpoint ignores distance filters without a usable location', function () {
+    createNetworkApiControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_one_uuid', 'public_id' => 'store_one', 'company_uuid' => 'company_uuid', 'name' => 'One', 'created_at' => '2026-01-01 00:00:00'],
+        ['uuid' => 'store_two_uuid', 'public_id' => 'store_two', 'company_uuid' => 'company_uuid', 'name' => 'Two', 'created_at' => '2026-02-01 00:00:00'],
+    ]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_one_uuid'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_two_uuid'],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'location_one_uuid', 'store_uuid' => 'store_one_uuid'],
+        ['uuid' => 'location_two_uuid', 'store_uuid' => 'store_two_uuid'],
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => null,
+        'storefront_network' => 'network_uuid',
+    ]);
+    $controller = new NetworkController();
+
+    // Without a location there is nothing to measure from, so the distance filter no longer
+    // removes every store and limit/offset stay in SQL.
+    $withoutLocation = $controller->stores(Request::create('/network/stores', 'GET', [
+        'sort'             => 'oldest',
+        'maximum_distance' => 1000,
+        'limit'            => 1,
+        'offset'           => 1,
+    ]));
+    // The coordinate parser's (0, 0) fallback is treated the same as no location.
+    $nullIsland = $controller->stores(Request::create('/network/stores', 'GET', [
+        'sort'     => 'nearest',
+        'location' => 'not-a-location',
+    ]));
+
+    expect($withoutLocation->resource->pluck('uuid')->all())->toBe(['store_two_uuid'])
+        ->and($nullIsland->resource->pluck('uuid')->sort()->values()->all())->toBe(['store_one_uuid', 'store_two_uuid'])
+        ->and($nullIsland->resource->first()->distance)->toBeNull();
+});
+
+test('network stores endpoint preloads each store rating in the store query', function () {
+    createNetworkApiControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_rated_uuid', 'public_id' => 'store_rated', 'company_uuid' => 'company_uuid', 'name' => 'Rated'],
+        ['uuid' => 'store_new_uuid', 'public_id' => 'store_new', 'company_uuid' => 'company_uuid', 'name' => 'New'],
+    ]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_rated_uuid'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_new_uuid'],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'location_rated_uuid', 'store_uuid' => 'store_rated_uuid'],
+        ['uuid' => 'location_new_uuid', 'store_uuid' => 'store_new_uuid'],
+    ]);
+    $connection->table('reviews')->insert([
+        ['uuid' => 'review_a', 'subject_uuid' => 'store_rated_uuid', 'rating' => 5],
+        ['uuid' => 'review_b', 'subject_uuid' => 'store_rated_uuid', 'rating' => 4],
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => null,
+        'storefront_network' => 'network_uuid',
+    ]);
+
+    $stores = (new NetworkController())->stores(Request::create('/network/stores', 'GET'))->resource->keyBy('uuid');
+
+    expect(array_key_exists('reviews_avg_rating', $stores['store_rated_uuid']->getAttributes()))->toBeTrue()
+        ->and($stores['store_rated_uuid']->rating)->toBe(4.5)
+        ->and($stores['store_new_uuid']->rating)->toBe(0);
+});

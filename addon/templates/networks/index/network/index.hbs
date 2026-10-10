@@ -139,6 +139,7 @@
                     <InputGroup @name={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-label"}} @wrapperClass="mb-0">
                         <ModelSelectMultiple
                             @modelName="user"
+                            @selectedItemComponent={{component "select-option/user" compact=true}}
                             @selectedModel={{@model.alertable.for_new_order}}
                             @placeholder={{t "storefront.networks.index.network.index.general-network-settings-form.alert-panel.new-order-alert-placeholder"}}
                             @triggerClass="form-select form-input multiple"
@@ -147,7 +148,7 @@
                             @onChange={{fn this.makeAlertable "for_new_order"}}
                             as |model|
                         >
-                            {{model.name}}
+                            <SelectOption::User @option={{model}} />
                         </ModelSelectMultiple>
                     </InputGroup>
                 </div>
@@ -268,6 +269,16 @@
                             }}</span>
                     </Toggle>
                 </div>
+                {{#if (and @model.options.tips_enabled @model.options.multi_cart_enabled)}}
+                    {{! Off: a multi-store order's store tip goes to the network. On: it is split across the stores by their share of the order. }}
+                    <div class="input-group">
+                        <Toggle @isToggled={{@model.options.split_tips_across_stores}} @onToggle={{fn (mut @model.options.split_tips_across_stores)}}>
+                            <FaIcon @icon="code-branch" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
+                                    "storefront.networks.index.network.index.general-network-settings-form.config-switches.split-tips-across-stores"
+                                }}</span>
+                        </Toggle>
+                    </div>
+                {{/if}}
                 <div class="input-group">
                     <Toggle @isToggled={{@model.options.reviews_enabled}} @onToggle={{fn (mut @model.options.reviews_enabled)}}>
                         <FaIcon @icon="star" @prefix="fas" class="text-gray-600 dark:text-gray-400 mx-2" /><span class="dark:text-gray-100 text-sm">{{t
@@ -334,9 +345,11 @@
 
             {{#each this.gateways as |gateway|}}
                 <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top">
+                    {{! Read-only summary; changes are made in the gateway modal, which saves them. }}
                     <InputGroup
                         @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.name"}}
                         @value={{gateway.name}}
+                        @disabled={{true}}
                         @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.name-help-text"}}
                     />
                     <InputGroup
@@ -348,18 +361,20 @@
                     <InputGroup
                         @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.callback-url"}}
                         @value={{gateway.callback_url}}
+                        @disabled={{true}}
                         @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.callback-url-help-text"}}
                     />
                     <InputGroup
                         @name={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.return-url"}}
                         @value={{gateway.return_url}}
+                        @disabled={{true}}
                         @helpText={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.return-url-help-text"}}
                     />
                     <div class="input-group">
                         <Checkbox
                             @value={{gateway.sandbox}}
                             @label={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.sandbox-toggle-label"}}
-                            @onToggle={{fn (mut gateway.sandbox)}}
+                            @disabled={{true}}
                         />
                     </div>
                     <div>
@@ -367,23 +382,40 @@
                         {{#each-in gateway.config as |key value|}}
                             {{#if (is-bool-value value)}}
                                 <div class="input-group">
-                                    <Checkbox @value={{value}} @label={{humanize key}} />
+                                    <Checkbox @value={{value}} @label={{smart-humanize key}} @disabled={{true}} />
                                 </div>
                             {{else}}
-                                <InputGroup @name={{humanize key}}>
-                                    <Input class="form-input w-full" placeholder={{humanize key}} @value={{value}} />
+                                <InputGroup @name={{smart-humanize key}}>
+                                    <Input
+                                        @type={{if (can "storefront update gateway") "text" "password"}}
+                                        class="form-input w-full"
+                                        placeholder={{humanize key}}
+                                        @value={{value}}
+                                        disabled
+                                    />
                                 </InputGroup>
                             {{/if}}
                         {{/each-in}}
                     </div>
-                    <div>
-                        <Button
-                            @size="sm"
-                            @type="danger"
-                            @icon="trash"
-                            @text={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.delete-gateway-button-text"}}
-                            @onClick={{fn this.deleteGateway gateway}}
-                        />
+                    <div class="flex flex-row items-center space-x-2">
+                        {{#if (can "storefront update gateway")}}
+                            <Button
+                                @size="sm"
+                                @type="primary"
+                                @icon="pencil"
+                                @text={{t "storefront.settings.gateways.edit-payment-gateway"}}
+                                @onClick={{fn this.editGateway gateway null}}
+                            />
+                        {{/if}}
+                        {{#if (can "storefront delete gateway")}}
+                            <Button
+                                @size="sm"
+                                @type="danger"
+                                @icon="trash"
+                                @text={{t "storefront.networks.index.network.index.payment-gateways-panel.gateway-form.delete-gateway-button-text"}}
+                                @onClick={{fn this.deleteGateway gateway}}
+                            />
+                        {{/if}}
                     </div>
                 </ContentPanel>
             {{/each}}

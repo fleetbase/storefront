@@ -88,15 +88,22 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'reviews'], function () use ($router) {
                     $router->get('/', 'ReviewController@query');
                     $router->get('count', 'ReviewController@count');
+                    $router->get('eligibility', 'ReviewController@eligibility');
                     $router->get('{id}', 'ReviewController@find');
                     $router->post('/', 'ReviewController@create');
-                    $router->delete('{id}', 'ReviewController@find');
+                    $router->delete('{id}', 'ReviewController@delete');
                 });
 
                 // storefront/v1/orders
                 $router->group(['prefix' => 'orders'], function () use ($router) {
                     $router->put('picked-up', 'OrderController@completeOrderPickup');
                     $router->post('receipt', 'OrderController@getReceipt');
+                    $router->get('{id}/activity-flow', 'OrderController@getActivityFlow');
+                    $router->get('{id}/stores', 'OrderController@getStores');
+                    $router->get('{id}/chat', 'OrderChatController@show');
+                    $router->get('{id}/chat/messages', 'OrderChatController@messages');
+                    $router->post('{id}/chat/messages', 'OrderChatController@send');
+                    $router->post('{id}/chat/read', 'OrderChatController@read');
                 });
 
                 // storefront/v1/promotions
@@ -104,7 +111,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'PromotionController@query');
                     $router->get('{id}', 'PromotionController@find');
                 });
-                
+
                 // storefront/v1/notifications
                 $router->group(['prefix' => 'notifications'], function () use ($router) {
                     $router->get('/', 'NotificationController@query');
@@ -135,6 +142,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
                     $router->post('unregister-device', 'CustomerController@unregisterDevice');
+                    $router->post('socket-token', 'CustomerController@socketToken');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');
@@ -216,6 +224,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('completed', $controller('markOrderAsCompleted'));
                                 $router->patch('cancel', $controller('rejectOrder'));
                                 $router->post('unassign-driver', $controller('unassignDriver'));
+                                // Moves an order on a custom flow (e.g. a booking) to its next activity.
+                                $router->patch('update-activity/{id}', $controller('updateActivity'));
                             }
                         );
                         $router->fleetbaseRoutes(

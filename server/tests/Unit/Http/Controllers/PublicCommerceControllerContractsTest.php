@@ -38,6 +38,13 @@ class CartControllerOperationStub extends Fleetbase\Storefront\Models\Cart
         return $this;
     }
 
+    public function clear(): Fleetbase\Storefront\Models\Cart
+    {
+        $this->calls['clear'] = true;
+
+        return $this;
+    }
+
     public function delete()
     {
         $this->calls['delete'] = true;
@@ -70,6 +77,7 @@ function createPublicCartControllerSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('user_uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->string('customer_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->string('currency')->nullable();
@@ -404,7 +412,9 @@ test('cart controller delegates successful item and lifecycle operations with re
             '2026-07-29 10:00:00',
         ])
         ->and($cart->calls['remove'])->toBe(['line_item_abcdefgh'])
-        ->and($cart->calls['empty'])->toBeTrue()
+        // Emptying closes the cart (keeping its items) rather than wiping it.
+        ->and($cart->calls['clear'])->toBeTrue()
+        ->and($cart->calls)->not->toHaveKey('empty')
         ->and($cart->calls['delete'])->toBeTrue();
 });
 

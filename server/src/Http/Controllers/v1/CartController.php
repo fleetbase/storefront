@@ -127,11 +127,12 @@ class CartController extends Controller
      */
     public function empty(string $cartId)
     {
+        // Emptying closes the cart as cleared, keeping its items as a record of what it
+        // held, and continues with the device's open cart. A cart already checked out or
+        // cleared is never touched: retrieveCart() resolves its id to the device's open cart.
         $cart = $this->retrieveCart($cartId);
 
-        $cart->empty();
-
-        return new StorefrontCart($cart);
+        return new StorefrontCart($cart->clear());
     }
 
     /**

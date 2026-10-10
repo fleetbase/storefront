@@ -19,6 +19,11 @@ export default class StorefrontOrderWorkflowService extends Service {
         return toBoolean(order?.meta?.is_pickup) === true;
     }
 
+    /** A service booking (at the customer's address, or at the store when it is a pickup). */
+    isBookingOrder(order) {
+        return toBoolean(order?.meta?.is_booking) === true;
+    }
+
     isDefaultStorefrontConfig(order) {
         const orderConfig = order?.order_config;
 
@@ -89,6 +94,12 @@ export default class StorefrontOrderWorkflowService extends Service {
         }
 
         if (status === 'accepted') {
+            // An at-store booking starts when the customer comes in; a home visit is dispatched to the provider.
+            if (this.isBookingOrder(order) && this.isPickupOrder(order)) {
+                const flow = order?.order_config?.flow ?? {};
+                return [this.descriptorFor('update_activity', order, flow.in_progress ?? { code: 'in_progress', key: 'in_progress', status: 'Service in progress' })];
+            }
+
             return [this.descriptorFor('mark_ready', order)];
         }
 
@@ -101,6 +112,10 @@ export default class StorefrontOrderWorkflowService extends Service {
                 }
 
                 if (['completed', 'picked_up'].includes(code)) {
+                    if (this.isBookingOrder(order)) {
+                        return this.descriptorFor('mark_completed', order);
+                    }
+
                     return this.descriptorFor(this.isPickupOrder(order) ? 'mark_picked_up' : 'mark_completed', order);
                 }
 
@@ -114,12 +129,16 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'accept':
                 return {
                     action,
-                    text: 'Accept order',
+                    text: this.isBookingOrder(order) ? 'Confirm booking' : 'Accept order',
                     icon: 'check',
                     type: 'success',
                 };
 
             case 'mark_ready':
+                if (this.isBookingOrder(order)) {
+                    return { action, text: 'Dispatch provider', icon: 'paper-plane', type: 'magic' };
+                }
+
                 return {
                     action,
                     text: 'Mark as Ready',
@@ -138,7 +157,7 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'mark_completed':
                 return {
                     action,
-                    text: 'Complete order',
+                    text: this.isBookingOrder(order) ? 'Complete booking' : 'Complete order',
                     icon: 'check',
                     type: 'success',
                 };

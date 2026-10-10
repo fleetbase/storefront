@@ -8,14 +8,17 @@ use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
-class StorefrontOrderCreated extends Notification
+class StorefrontOrderCreated extends Notification implements ShouldQueue
 {
     use Queueable;
+    use SerializesModels;
 
     /**
      * The order instance this notification is for.

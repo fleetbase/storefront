@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Listeners;
 
+use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\FleetOps\Events\OrderCompleted;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCompleted;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,6 +23,11 @@ class HandleOrderCompleted implements ShouldQueue
     {
         /** @var \Fleetbase\FleetOps\Models\Order $order */
         $order = $event->getModelRecord();
+
+        // Bookings are told about each step by the order activity observer, in booking terms.
+        if (Storefront::isBookingOrder($order)) {
+            return;
+        }
 
         // if storefront order notify customer driver has been addigned
         if ($order->hasMeta('storefront_id')) {

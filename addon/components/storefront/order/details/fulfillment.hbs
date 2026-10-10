@@ -3,18 +3,7 @@
         <div class="storefront-order-card-grid">
             <div class="storefront-order-detail-card">
                 <div class="storefront-order-detail-card__label">Driver</div>
-                <div class="storefront-order-person storefront-order-person--compact">
-                    <Image
-                        src={{avatar-url @resource.driver_assigned.photo_url}}
-                        @fallbackSrc={{config "defaultValues.driverImage"}}
-                        class="storefront-order-person__avatar"
-                        alt={{@resource.driver_assigned.name}}
-                    />
-                    <div class="min-w-0">
-                        <div class="storefront-order-person__name">{{n-a (or @resource.driver_assigned.displayName @resource.driver_assigned.name) "No driver assigned"}}</div>
-                        <div class="storefront-order-person__meta">{{n-a @resource.driver_assigned.phone "No phone"}}</div>
-                    </div>
-                </div>
+                <Driver::Pill @driver={{@resource.driver_assigned}} @titleFallback="No driver assigned" @static={{not @resource.driver_assigned.id}} data-test-order-driver-pill />
             </div>
             <div class="storefront-order-detail-card">
                 <div class="storefront-order-detail-card__label">Schedule</div>

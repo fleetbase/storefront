@@ -16,6 +16,13 @@ specific code disables the batch count, prefix, and length fields because they d
 not apply to that operation. The code list shows loading and failure states, with
 a retry action if it cannot load.
 
+The customer app shows the code of a public code promotion only when the promotion
+has a reusable code that is active, not assigned to a customer and not expired
+(for example one specific code entered with **Manage codes**). Batches of
+single-use codes are never shown; send them to customers with a campaign instead.
+Public promotions with weekly hours stay visible in the app outside those hours,
+marked with when they next start.
+
 ## Campaigns
 
 Enter an internal campaign name, notification title, and message. Choose an

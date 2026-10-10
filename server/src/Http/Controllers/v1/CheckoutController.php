@@ -18,11 +18,13 @@ use Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Http\Middleware\SetStorefrontSession;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
+use Illuminate\Support\Carbon;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Promotions\PromotionContext;
@@ -32,6 +34,7 @@ use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Storefront\Support\StripeUtils;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\JsonResponse;
@@ -385,7 +388,7 @@ class CheckoutController extends Controller
         // GET /checkouts/status needs BOTH, and only initializeQPayCheckout was returning
         // the id — so a cash or card client could never reach its own checkout's status.
         // The checkout is discarded instead if one of its promotions ran out meanwhile.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
         ]);
@@ -486,7 +489,7 @@ class CheckoutController extends Controller
 
         // See initializeCheckout: `checkout` is the chkt_* public id GET /checkouts/status
         // requires alongside the token, and nothing but the QPay path used to return it.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -699,8 +702,7 @@ class CheckoutController extends Controller
             return response()->apiError('Failed to create ephemeral key: ' . $e->getMessage());
         }
 
-        // Create a new checkout token
-        $checkout = Checkout::create([
+        $attributes = [
             'company_uuid'       => session('company'),
             'store_uuid'         => session('storefront_store'),
             'network_uuid'       => session('storefront_network'),
@@ -714,11 +716,26 @@ class CheckoutController extends Controller
             'is_pickup'          => $isPickup,
             'options'            => $checkoutOptions,
             'cart_state'         => $cart->toArray(),
-        ]);
+        ];
+
+        // Capture verifies the payment against the checkout's PaymentIntent, and a
+        // PaymentIntent belongs to one checkout, so update the checkout that started it
+        // rather than adding an unlinked one.
+        $checkout = Checkout::where('stripe_payment_intent_id', $paymentIntent->id)->first();
+        if ($checkout && $checkout->owner_uuid !== $customer->uuid) {
+            return response()->apiError('PaymentIntent belongs to another checkout.', 422);
+        }
+        if ($checkout) {
+            // Its promotion uses are reserved again below at the new price.
+            PromotionRedemptions::releaseFor($checkout);
+            $checkout->update($attributes);
+        } else {
+            $checkout = Checkout::create([...$attributes, 'stripe_payment_intent_id' => $paymentIntent->id]);
+        }
 
         // Return JSON response with updated PaymentIntent and ephemeral key. `checkout` is
         // the chkt_* public id GET /checkouts/status requires alongside the token.
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'paymentIntent' => $paymentIntent->id,
             'clientSecret'  => $paymentIntent->client_secret,
             'ephemeralKey'  => $ephemeralKey->secret,
@@ -789,13 +806,24 @@ class CheckoutController extends Controller
 
         // Create invoice description
         $taxType             = '1'; // Start with VAT required
-        $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
+        // Sandbox e-barimt invoices use QPay's TEST_EB_INVOICE code (QPay API v2, invoice_create_ebarimt).
+        $ebarimtInvoiceCode  = $gateway->sandbox ? 'TEST_EB_INVOICE' : $gateway->config?->ebarimt_invoice_id ?? null;
         $invoiceAmount       = $amount;
         $invoiceCode         = $gateway->sandbox ? 'TEST_INVOICE' : $gateway->config?->invoice_id ?? null;
         $invoiceDescription  = $about->name . ' cart checkout';
-        $invoiceReceiverCode = 'CITIZEN';
-        $senderInvoiceNo     = $checkout->public_id;
+        // The customer's own unique code (QPay: "unique number of the customer receiving the
+        // invoice"). The e-barimt receiver type is sent separately, with ebarimt_v3/create.
+        $invoiceReceiverCode = static::qpayCode($customer->public_id);
+        // Unique per checkout, without special characters (QPay: sender_invoice_no).
+        $senderInvoiceNo     = static::qpayCode($checkout->public_id);
         $districtCode        = $gateway->config?->district_code ?? null;
+        // QPay requires district_code on e-barimt invoices (QPay API v2, invoice_create_ebarimt):
+        // the 4-digit code of where the business operates (district + sub-district, see the
+        // district_code list), set in the gateway settings. QPay's sandbox accepts invoices
+        // without it, so a live gateway missing it is reported rather than guessed.
+        if ($ebarimtInvoiceCode && !$districtCode && !$gateway->sandbox) {
+            Log::warning('[QPAY]: e-barimt invoice without a district code; set district_code in the QPay gateway settings', ['gateway' => $gateway->public_id]);
+        }
         $invoiceReceiverData = Utils::filterArray([
             'register' => $ebarimtRegistationNumber,
             'name'     => $customer->name,
@@ -839,10 +867,14 @@ class CheckoutController extends Controller
             $invoice = $qpay->createSimpleInvoice($invoiceAmount, $invoiceCode, $invoiceDescription, $invoiceReceiverCode, $senderInvoiceNo);
         }
 
-        // Update checkout with invoice id
+        // Update checkout with invoice id, and the amount the invoice asks for so a payment
+        // can be checked against it before the order is created.
         $checkout->updateOption('qpay_invoice_id', data_get($invoice, 'invoice_id'));
+        if (data_get($invoice, 'invoice_id')) {
+            $checkout->updateOption('qpay_invoice_amount', $ebarimtInvoiceCode ? QPay::linesTotal($lines) : (float) $invoiceAmount);
+        }
 
-        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? response()->json([
+        return static::reservePromotions($checkout, $checkoutOptions, $customer) ?? static::checkoutResponse($checkout, [
             'invoice'  => $invoice,
             'checkout' => $checkout->public_id,
             'token'    => $checkout->token,
@@ -861,7 +893,7 @@ class CheckoutController extends Controller
      *   response for either success or error scenarios.
      * - Initializes a QPay instance with the gateway configuration and sets the authentication token.
      * - Retrieves the invoice ID from the checkout options and performs a payment check using QPay's API.
-     * - Publishes the payment data or error response to the SocketCluster channel.
+     * - Publishes the checkout status, its order and any error to the checkout's realtime channel.
      *
      * Depending on the 'respond' flag from the request, the method returns a JSON response
      * or completes the processing without returning data.
@@ -881,8 +913,13 @@ class CheckoutController extends Controller
         $shouldRespond = $request->boolean('respond');
         $testScenario  = $request->input('test'); // Expected: 'success' or 'error'
 
+        // QPay calls this URL (GET) when a payment is made and requires the reply to be
+        // HTTP 200 with the body SUCCESS, in no other format. `respond=1` (manual checks)
+        // gets the details as JSON instead.
+        $reply = fn (array $data) => $shouldRespond ? response()->json($data) : response('SUCCESS', 200)->header('Content-Type', 'text/plain');
+
         if (!$checkoutId) {
-            return response()->json([
+            return $reply([
                 'error'    => 'CHECKOUT_ID_MISSING',
                 'checkout' => null,
                 'payment'  => null,
@@ -891,7 +928,7 @@ class CheckoutController extends Controller
 
         $checkout = Checkout::where('public_id', $checkoutId)->first();
         if (!$checkout) {
-            return response()->json([
+            return $reply([
                 'error'    => 'CHECKOUT_SESSION_NOT_FOUND',
                 'checkout' => null,
                 'payment'  => null,
@@ -900,7 +937,7 @@ class CheckoutController extends Controller
 
         $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
         if (!$gateway) {
-            return response()->json([
+            return $reply([
                 'error'    => 'GATEWAY_NOT_CONFIGURED',
                 'checkout' => $checkout->public_id,
                 'payment'  => null,
@@ -925,9 +962,9 @@ class CheckoutController extends Controller
                     ];
                 }
 
-                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
+                static::publishCheckoutUpdate($checkout, $testScenario === 'success', $data['error']);
 
-                return $shouldRespond ? response()->json($data) : response()->json();
+                return $reply($data);
             }
 
             // Create the QPay instance.
@@ -943,45 +980,47 @@ class CheckoutController extends Controller
             if (!$invoiceId) {
                 Log::error("Missing QPay invoice ID for checkout: {$checkout->public_id}");
 
-                return response()->json([
+                return $reply([
                     'error'    => 'MISSING_INVOICE_ID',
                     'checkout' => $checkout->public_id,
                     'payment'  => null,
                 ]);
             }
 
+            // The order is created only for a payment QPay reports as PAID, covering the
+            // invoice amount. NEW, FAILED, PARTIAL and REFUNDED payments create nothing.
             $paymentCheck = $qpay->paymentCheck($invoiceId);
-            if (!$paymentCheck || empty($paymentCheck->count) || $paymentCheck->count < 1) {
-                return response()->json([
-                    'error'    => 'PAYMENT_NOTFOUND',
+            $payment      = static::paidQPayPayment($paymentCheck, $checkout);
+            if (!$payment) {
+                return $reply([
+                    'error'    => 'PAYMENT_NOT_PAID',
                     'checkout' => $checkout->public_id,
                     'payment'  => null,
                 ]);
             }
 
-            $payment = data_get($paymentCheck, 'rows.0');
+            // Record the payment on the checkout and tell the app at once; creating the order
+            // takes a moment, and a second update follows with the order.
+            static::recordQPayPayment($checkout, $payment);
+            static::publishCheckoutUpdate($checkout, true);
 
-            if ($payment) {
-                // Create order from payment using reusable gateway-agnostic method
-                $transactionDetails = [
-                    'transaction_id' => $payment->payment_id,
-                    'payment_status' => 'PAID',
-                    'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                ];
+            // Create order from payment using reusable gateway-agnostic method
+            $transactionDetails = [
+                'transaction_id' => $payment->payment_id,
+                'payment_status' => $payment->payment_status,
+                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
+            ];
 
-                $this->createOrderFromCheckout($checkout, $transactionDetails);
-                $checkout->refresh();
+            $this->createOrderFromCheckout($checkout, $transactionDetails);
+            $checkout->refresh();
 
-                $data = [
-                    'checkout' => $checkout->public_id,
-                    'payment'  => (array) $payment,
-                    'error'    => null,
-                ];
+            static::publishCheckoutUpdate($checkout, true);
 
-                SocketClusterService::publish('checkout.' . $checkout->public_id, $data);
-
-                return $shouldRespond ? response()->json($data) : response()->json();
-            }
+            return $reply([
+                'checkout' => $checkout->public_id,
+                'payment'  => (array) $payment,
+                'error'    => null,
+            ]);
         } catch (\Exception $e) {
             Log::error('[QPAY CHECKOUT ERROR]: ' . $e->getMessage(), ['checkout' => $checkout->toArray()]);
             if ($shouldRespond) {
@@ -989,7 +1028,96 @@ class CheckoutController extends Controller
             }
         }
 
-        return response()->json();
+        return $reply(['checkout' => $checkout->public_id, 'payment' => null, 'error' => null]);
+    }
+
+    /**
+     * Make the checkout's storefront (its network, else its store) the storefront of the
+     * current request, exactly as SetStorefrontSession does for the storefront API. Order
+     * creation reads the storefront from there, and requests from a payment provider (QPay's
+     * callback) arrive without one. Always the checkout's own, so an order is never created
+     * under another storefront's settings.
+     */
+    protected static function useCheckoutStorefront(Checkout $checkout): void
+    {
+        $owner = $checkout->network_uuid
+            ? Network::select(['key'])->where('uuid', $checkout->network_uuid)->first()
+            : ($checkout->store_uuid ? Store::select(['key'])->where('uuid', $checkout->store_uuid)->first() : null);
+
+        if ($owner && $owner->key) {
+            app(SetStorefrontSession::class)->setKey($owner->key);
+        }
+    }
+
+    /**
+     * Save a verified QPay payment on the checkout (once) and return its summary, so the
+     * app can be told it was paid without asking QPay again.
+     */
+    protected static function recordQPayPayment(Checkout $checkout, object $payment): array
+    {
+        $existing = $checkout->getOption('qpay_payment');
+        if ($existing) {
+            return (array) $existing;
+        }
+
+        $summary = [
+            'payment_id'       => $payment->payment_id ?? null,
+            'payment_status'   => $payment->payment_status ?? 'PAID',
+            'payment_amount'   => $payment->payment_amount ?? null,
+            'payment_currency' => $payment->payment_currency ?? $checkout->currency,
+            'payment_date'     => $payment->payment_date ?? null,
+            'payment_wallet'   => $payment->payment_wallet ?? 'QPay',
+            'recorded_at'      => now()->toIso8601String(),
+        ];
+        $checkout->updateOption('qpay_payment', $summary);
+
+        return $summary;
+    }
+
+    /**
+     * The payment that pays a checkout's QPay invoice, or null.
+     *
+     * QPay's payment/check returns `count`, `paid_amount` and `rows`, each row with a
+     * `payment_status` of NEW, FAILED, PAID, PARTIAL or REFUNDED. A checkout is paid only
+     * by a PAID row, and only when the amount paid covers the invoice amount recorded when
+     * the invoice was created (older checkouts without it are checked by status only).
+     */
+    protected static function paidQPayPayment($paymentCheck, Checkout $checkout): ?object
+    {
+        $rows = collect(data_get($paymentCheck, 'rows', []));
+        $paid = $rows->first(fn ($row) => data_get($row, 'payment_status') === 'PAID');
+        if (!$paid) {
+            return null;
+        }
+
+        $expected = $checkout->getOption('qpay_invoice_amount');
+        if ($expected !== null) {
+            $paidAmount = data_get($paymentCheck, 'paid_amount');
+            if ($paidAmount === null) {
+                $paidAmount = $rows->filter(fn ($row) => data_get($row, 'payment_status') === 'PAID')->sum(fn ($row) => (float) data_get($row, 'payment_amount', 0));
+            }
+            // Amounts are decimals in the invoice currency; allow for rounding only.
+            if ((float) $paidAmount + 0.01 < (float) $expected) {
+                Log::warning('[QPAY]: payment is less than the invoice amount; no order created', [
+                    'checkout'    => $checkout->public_id,
+                    'paid_amount' => $paidAmount,
+                    'expected'    => $expected,
+                ]);
+
+                return null;
+            }
+        }
+
+        return (object) $paid;
+    }
+
+    /**
+     * A value QPay accepts where it doesn't allow special characters (sender_invoice_no,
+     * invoice_receiver_code): letters and digits only, at most 45 characters.
+     */
+    protected static function qpayCode(?string $value): string
+    {
+        return substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $value), 0, 45);
     }
 
     /**
@@ -1033,6 +1161,11 @@ class CheckoutController extends Controller
                     'checkout_id'    => $checkout->public_id,
                     'transaction_id' => $transactionDetails['transaction_id'] ?? null,
                 ]);
+
+                // captureOrder() works within the storefront of the request. QPay's callback
+                // carries no storefront key, so set the checkout's own storefront the way the
+                // storefront API does for app requests.
+                static::useCheckoutStorefront($checkout);
 
                 // Create CaptureOrderRequest with payment details
                 $captureRequest = CaptureOrderRequest::create('', 'POST', [
@@ -1110,6 +1243,66 @@ class CheckoutController extends Controller
      *
      * @return void
      */
+    /**
+     * The booking an order's items make, if any: a cart with a booked service (a bookable
+     * product with a chosen time) is a booking order. Products in it come with the earliest
+     * appointment, so the order follows the booking flow and carries that appointment's time.
+     *
+     * The time is kept in the order meta (`booking_at`), not `scheduled_at`: Fleet-Ops
+     * dispatches scheduled orders by themselves on the day, before the store confirms.
+     */
+    protected static function bookingFor(iterable $cartItems): ?array
+    {
+        $items      = collect($cartItems);
+        $productIds = $items->map(fn ($item) => data_get($item, 'product_id'))->filter()->unique()->values();
+        $bookable   = $productIds->isEmpty() ? collect() : Product::whereIn('public_id', $productIds)->where('is_bookable', true)->pluck('public_id');
+
+        $times = $items
+            ->filter(fn ($item) => data_get($item, 'scheduled_at') || $bookable->contains(data_get($item, 'product_id')))
+            ->map(fn ($item) => data_get($item, 'scheduled_at'))
+            ->filter()
+            ->map(function ($at) {
+                try {
+                    return Carbon::parse($at);
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            })
+            ->filter()
+            ->sort();
+
+        $hasService = $items->contains(fn ($item) => data_get($item, 'scheduled_at') || $bookable->contains(data_get($item, 'product_id')));
+        if (!$hasService) {
+            return null;
+        }
+
+        $first = $times->first();
+
+        return [
+            'is_booking'        => true,
+            'booking_at'        => $first ? $first->toIso8601String() : null,
+            'booking_has_items' => $items->contains(fn ($item) => !data_get($item, 'scheduled_at') && !$bookable->contains(data_get($item, 'product_id'))),
+        ];
+    }
+
+    /**
+     * Mark an order as a booking (meta and the company's booking order config) when its items make one.
+     */
+    protected static function applyBooking(iterable $cartItems, array $orderMeta, array $orderInput): array
+    {
+        $booking = static::bookingFor($cartItems);
+        if (!$booking) {
+            return [$orderMeta, $orderInput];
+        }
+
+        $config = Storefront::getBookingOrderConfig($orderInput['company_uuid'] ?? null);
+        if ($config) {
+            $orderInput['order_config_uuid'] = $config->uuid;
+        }
+
+        return [array_merge($orderMeta, $booking), $orderInput];
+    }
+
     private function processCartItem($cartItem, $payload, $customer)
     {
         $product = Product::where('public_id', $cartItem->product_id)->first();
@@ -1171,7 +1364,9 @@ class CheckoutController extends Controller
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
         $origin       = $serviceQuote ? $serviceQuote->getMeta('origin', []) : null;
         $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
-        $cart         = $checkout->cart;
+        // The cart as it was priced and charged (see Checkout::cartAtCheckout()); the live
+        // cart only for checkouts saved before the copy existed.
+        $cart         = $checkout->cartAtCheckout() ?? $checkout->cart;
 
         // If the checkout already has an order created
         if ($checkout->order_uuid) {
@@ -1411,6 +1606,10 @@ class CheckoutController extends Controller
             'notes'             => $notes,
         ];
 
+        // A booked service makes this a booking order, with its own flow.
+        [$bookingMeta, $orderInput] = static::applyBooking($cart->items ?? [], $orderInput['meta'], $orderInput);
+        $orderInput['meta']         = $bookingMeta;
+
         // if it's integrated vendor order apply to meta
         if ($integratedVendorOrder) {
             $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
@@ -1579,7 +1778,8 @@ class CheckoutController extends Controller
         $origin      = Arr::first($origins);
         $waypoints   = array_slice($origins, 1);
         $destination = $serviceQuote->getMeta('destination');
-        $cart        = $checkout->cart;
+        // The cart as it was priced and charged (see Checkout::cartAtCheckout()).
+        $cart        = $checkout->cartAtCheckout() ?? $checkout->cart;
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? $cart->getCurrency();
@@ -1608,6 +1808,14 @@ class CheckoutController extends Controller
             $integratedVendorOrder = $vendorResult['order'];
         }
 
+        // Find each pickup's store before anything is created: an order that cannot be built
+        // fails here, without a payment record or half the orders left behind.
+        $originPlaces = collect($origins)->map(fn ($publicId) => Place::createFromMixed($publicId))->values();
+        $originStores = $originPlaces->map(fn ($pickup) => $pickup instanceof Place ? Storefront::getStoreFromLocation($pickup->uuid) : null)->values();
+        if ($originPlaces->isEmpty() || $originStores->contains(fn ($store) => !$store)) {
+            return response()->apiError('A store in this order could not be found, so it was not placed. Your payment has not been used.');
+        }
+
         // setup transaction meta
         $transactionMeta = [
             'storefront_network'    => $about->name,
@@ -1615,130 +1823,240 @@ class CheckoutController extends Controller
             ...$transactionDetails,
         ];
 
-        // create transactions for cart
-        $transaction = Transaction::create([
-            'company_uuid'           => session('company'),
-            'customer_uuid'          => $customer->uuid,
-            'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
-            'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
-            'gateway'                => $gateway->code,
-            'gateway_uuid'           => $gateway->uuid,
-            'amount'                 => $amount,
-            'currency'               => $currency,
-            'description'            => 'Storefront network order',
-            'type'                   => 'storefront',
-            'status'                 => Transaction::STATUS_SUCCESS,
-            'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
-            'settled_at'             => now(),
-            'settled_amount'         => $amount,
-            'settled_currency'       => $currency,
-            'meta'                   => $transactionMeta,
-        ]);
-
-        // create transaction items
-        foreach ($cart->items as $cartItem) {
-            $store = Storefront::findAbout($cartItem->store_id);
-
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => $cartItem->subtotal,
-                'currency'         => $checkout->currency,
-                'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
-                'code'             => 'product',
-                'meta'             => [
-                    'storefront_network'    => $about->name,
-                    'storefront_network_id' => $about->public_id,
-                    'storefront'            => $store->name ?? null,
-                    'storefront_id'         => $store->public_id ?? null,
-                ],
-            ]);
-        }
-
-        // create transaction item for service quote
-        if (!$checkout->is_pickup) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => $serviceQuote->amount,
-                'currency'         => $serviceQuote->currency,
-                'details'          => 'Delivery fee',
-                'code'             => 'delivery_fee',
-            ]);
-        }
-
-        // if tip create transaction item for tip
-        if ($checkout->hasOption('tip')) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
-                'currency'         => $checkout->currency,
-                'details'          => 'Tip',
-                'code'             => 'tip',
-            ]);
-        }
-
-        // if delivery tip create transaction item for tip
-        if ($checkout->hasOption('delivery_tip')) {
-            TransactionItem::create([
-                'transaction_uuid' => $transaction->uuid,
-                'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
-                'currency'         => $checkout->currency,
-                'details'          => 'Delivery Tip',
-                'code'             => 'delivery_tip',
-            ]);
-        }
-
-        // if promotions were applied create a (credit) transaction item for the discount
-        $promotions          = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
-        $discountAllocations = $promotions->allocationsByStore();
-        static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
-
-        // convert payload destinations to Place
-        $origins = collect($origins)->map(function ($publicId) {
-            return Place::createFromMixed($publicId);
-        });
-        $destination = Place::createFromMixed($destination);
-
+        $transaction    = null;
         $multipleOrders = [];
 
-        foreach ($origins as $pickup) {
-            $store = Storefront::getStoreFromLocation($pickup->uuid);
-
-            // create payload
-            $payload = Payload::create([
-                'company_uuid'   => $store->company_uuid,
-                'pickup_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
-                'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
-                'return_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
-                'payment_method' => $gateway->type,
-                'type'           => 'storefront',
+        try {
+            // create transactions for cart
+            $transaction = Transaction::create([
+                'company_uuid'           => session('company'),
+                'customer_uuid'          => $customer->uuid,
+                'customer_type'          => Utils::getMutationType('fleet-ops:contact'),
+                'gateway_transaction_id' => Utils::or($transactionDetails, ['id', 'transaction_id']) ?? Transaction::generateNumber(),
+                'gateway'                => $gateway->code,
+                'gateway_uuid'           => $gateway->uuid,
+                'amount'                 => $amount,
+                'currency'               => $currency,
+                'description'            => 'Storefront network order',
+                'type'                   => 'storefront',
+                'status'                 => Transaction::STATUS_SUCCESS,
+                'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
+                'settled_at'             => now(),
+                'settled_amount'         => $amount,
+                'settled_currency'       => $currency,
+                'meta'                   => $transactionMeta,
             ]);
 
-            // get cart items from this store
-            $cartItems = $cart->getItemsForStore($store);
+            // create transaction items
+            foreach ($cart->items as $cartItem) {
+                $store = Storefront::findAbout($cartItem->store_id);
+
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => $cartItem->subtotal,
+                    'currency'         => $checkout->currency,
+                    'details'          => Storefront::getFullDescriptionFromCartItem($cartItem),
+                    'code'             => 'product',
+                    'meta'             => [
+                        'storefront_network'    => $about->name,
+                        'storefront_network_id' => $about->public_id,
+                        'storefront'            => $store->name ?? null,
+                        'storefront_id'         => $store->public_id ?? null,
+                    ],
+                ]);
+            }
+
+            // create transaction item for service quote
+            if (!$checkout->is_pickup) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => $serviceQuote->amount,
+                    'currency'         => $serviceQuote->currency,
+                    'details'          => 'Delivery fee',
+                    'code'             => 'delivery_fee',
+                ]);
+            }
+
+            // if tip create transaction item for tip
+            if ($checkout->hasOption('tip')) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal),
+                    'currency'         => $checkout->currency,
+                    'details'          => 'Tip',
+                    'code'             => 'tip',
+                ]);
+            }
+
+            // if delivery tip create transaction item for tip
+            if ($checkout->hasOption('delivery_tip')) {
+                TransactionItem::create([
+                    'transaction_uuid' => $transaction->uuid,
+                    'amount'           => static::calculateTipAmount($checkout->getOption('delivery_tip'), $cart->subtotal),
+                    'currency'         => $checkout->currency,
+                    'details'          => 'Delivery Tip',
+                    'code'             => 'delivery_tip',
+                ]);
+            }
+
+            // if promotions were applied create a (credit) transaction item for the discount
+            $promotions          = PromotionResult::fromArray(data_get($checkout->options, 'promotions'));
+            $discountAllocations = $promotions->allocationsByStore();
+            static::createDiscountTransactionItem($transaction, $promotions, $checkout->currency);
+
+            // payload pickups (resolved above) and the destination as places
+            $origins     = $originPlaces;
+            $destination = Place::createFromMixed($destination);
+
+            // The store tip goes to the network that runs the app, unless the network splits it
+            // across the stores, each by its share of the order.
+            $splitTips = $checkout->hasOption('tip') && $about->isOption('split_tips_across_stores');
+            $tipShares = [];
+            if ($splitTips) {
+                $storeSubtotals = $originStores
+                    ->unique('public_id')
+                    ->mapWithKeys(fn ($store) => [$store->public_id => (int) $cart->getSubtotalForStore($store)])
+                    ->all();
+                $tipShares = static::splitByShare((int) static::calculateTipAmount($checkout->getOption('tip'), $cart->subtotal), $storeSubtotals);
+            }
+
+            $multipleOrders = [];
+
+            foreach ($origins as $index => $pickup) {
+                $store = $originStores[$index];
+
+                // create payload
+                $payload = Payload::create([
+                    'company_uuid'   => $store->company_uuid,
+                    'pickup_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
+                    'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+                    'return_uuid'    => $pickup instanceof Place ? $pickup->uuid : null,
+                    'payment_method' => $gateway->type,
+                    'type'           => 'storefront',
+                ]);
+
+                // get cart items from this store
+                $cartItems = $cart->getItemsForStore($store);
+
+                // create entities
+                foreach ($cartItems as $cartItem) {
+                    $this->processCartItem($cartItem, $payload, $customer);
+                }
+
+                // get order subtotal and this store's share of the item discount
+                $subtotal      = $cart->getSubtotalForStore($store);
+                $storeDiscount = min((int) ($discountAllocations[$store->public_id] ?? 0), (int) $subtotal);
+
+                // prepare order meta
+                $orderMeta = [
+                    'is_master_order'       => false,
+                    'storefront'            => $store->name,
+                    'storefront_id'         => $store->public_id,
+                    'storefront_network'    => $about->name,
+                    'storefront_network_id' => $about->public_id,
+                    'checkout_id'           => $checkout->public_id,
+                    'subtotal'              => $subtotal,
+                    'delivery_fee'          => 0,
+                    'tip'                   => $tipShares[$store->public_id] ?? 0,
+                    'tip_recipient'         => $splitTips ? 'store' : 'network',
+                    'delivery_tip'          => 0,
+                    'discount'              => $storeDiscount,
+                    'total'                 => $subtotal - $storeDiscount,
+                    'currency'              => $currency,
+                    'gateway'               => $gateway->type,
+                    'require_pod'           => $about->getOption('require_pod'),
+                    'pod_method'            => $about->pod_method,
+                    'is_pickup'             => $checkout->is_pickup,
+                    ...$transactionDetails,
+                ];
+
+                // prepare order input
+                $orderInput = [
+                    'company_uuid'      => $store->company_uuid,
+                    'payload_uuid'      => $payload->uuid,
+                    'customer_uuid'     => $customer->uuid,
+                    'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
+                    'transaction_uuid'  => $transaction->uuid,
+                    'order_config_uuid' => $store->getOrderConfigId(),
+                    'adhoc'             => $about->isOption('auto_dispatch'),
+                    'type'              => 'storefront',
+                    'status'            => 'created',
+                    'notes'             => $notes,
+                ];
+
+                // if it's integrated vendor order apply to meta
+                if ($integratedVendorOrder) {
+                    $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
+                    $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
+                    // order input
+                    $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
+                    $orderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
+                }
+
+                // A booked service makes this store's order a booking order, with its own flow.
+                [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
+
+                // set meta to order input last
+                $orderInput['meta'] = $orderMeta;
+
+                // create order
+                $multipleOrders[] = $order = Order::create($orderInput);
+
+                // set driving distance and time
+                $order->setPreliminaryDistanceAndTime();
+
+                // purchase service quote
+                $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
+
+                // if order is auto accepted update status
+                if ($store->isOption('auto_accept_orders')) {
+                    $this->autoAcceptOrder($order);
+                    if ($store->isOption('auto_dispatch')) {
+                        $this->autoDispatchOrder($order);
+                    }
+                }
+
+                // notify order creation
+                Storefront::alertNewOrder($order);
+            }
+
+            // convert origin to Place
+            $origin = Place::createFromMixed($origin);
+
+            // create master payload
+            $payload = Payload::create([
+                'company_uuid'   => session('company'),
+                'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+                'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
+                'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
+                'payment_method' => $gateway->type,
+                'type'           => 'storefront',
+            ])->setWaypoints($waypoints);
 
             // create entities
-            foreach ($cartItems as $cartItem) {
+            foreach ($cart->items as $cartItem) {
                 $this->processCartItem($cartItem, $payload, $customer);
             }
 
-            // get order subtotal and this store's share of the item discount
-            $subtotal      = $cart->getSubtotalForStore($store);
-            $storeDiscount = min((int) ($discountAllocations[$store->public_id] ?? 0), (int) $subtotal);
-
-            // prepare order meta
-            $orderMeta = [
-                'is_master_order'       => false,
-                'storefront'            => $store->name,
-                'storefront_id'         => $store->public_id,
+            // prepare master order meta
+            $masterOrderMeta = [
+                'is_master_order'       => true,
+                'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
+                // the stores this order brings together, for lists that show it as one order
+                'store_names'           => $originStores->pluck('name')->filter()->unique()->values()->all(),
+                'storefront'            => $about->name,
+                'storefront_id'         => $about->public_id,
                 'storefront_network'    => $about->name,
                 'storefront_network_id' => $about->public_id,
                 'checkout_id'           => $checkout->public_id,
-                'subtotal'              => $subtotal,
-                'delivery_fee'          => 0,
-                'tip'                   => 0,
-                'delivery_tip'          => 0,
-                'discount'              => $storeDiscount,
-                'total'                 => $subtotal - $storeDiscount,
+                'subtotal'              => Utils::numbersOnly($cart->subtotal),
+                'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
+                'tip'                   => $checkout->getOption('tip'),
+                'tip_recipient'         => $splitTips ? 'stores' : 'network',
+                'delivery_tip'          => $checkout->getOption('delivery_tip'),
+                'discount'              => $promotions->discount(),
+                'promotions'            => $promotions->toPublicArray()['applied'],
+                'total'                 => Utils::numbersOnly($amount),
                 'currency'              => $currency,
                 'gateway'               => $gateway->type,
                 'require_pod'           => $about->getOption('require_pod'),
@@ -1747,34 +2065,44 @@ class CheckoutController extends Controller
                 ...$transactionDetails,
             ];
 
-            // prepare order input
-            $orderInput = [
-                'company_uuid'      => $store->company_uuid,
+            // prepare master order input
+            $masterOrderInput = [
+                'company_uuid'      => session('company'),
                 'payload_uuid'      => $payload->uuid,
                 'customer_uuid'     => $customer->uuid,
                 'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
                 'transaction_uuid'  => $transaction->uuid,
-                'order_config_uuid' => $store->getOrderConfigId(),
+                'order_config_uuid' => $about->getOrderConfigId(),
                 'adhoc'             => $about->isOption('auto_dispatch'),
                 'type'              => 'storefront',
                 'status'            => 'created',
-                'notes'             => $notes,
             ];
 
             // if it's integrated vendor order apply to meta
             if ($integratedVendorOrder) {
-                $orderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
-                $orderMeta['integrated_vendor_order'] = $integratedVendorOrder;
+                $masterOrderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
+                $masterOrderMeta['integrated_vendor_order'] = $integratedVendorOrder;
                 // order input
-                $orderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
-                $orderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
+                $masterOrderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
+                $masterOrderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
             }
 
-            // set meta to order input last
-            $orderInput['meta'] = $orderMeta;
+            // finally apply meta to master order
+            $masterOrderInput['meta'] = $masterOrderMeta;
 
-            // create order
-            $multipleOrders[] = $order = Order::create($orderInput);
+            // create master order
+            $order = Order::create($masterOrderInput);
+
+            // record the promotions as used by this checkout's master order
+            PromotionRedemptions::redeem($checkout, $order);
+
+            // update child orders with master order id in meta
+            foreach ($multipleOrders as $childOrder) {
+                $childOrder->updateMeta('master_order_id', $order->public_id);
+            }
+
+            // notify driver if assigned
+            $order->notifyDriverAssigned();
 
             // set driving distance and time
             $order->setPreliminaryDistanceAndTime();
@@ -1782,119 +2110,48 @@ class CheckoutController extends Controller
             // purchase service quote
             $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
 
-            // if order is auto accepted update status
-            if ($store->isOption('auto_accept_orders')) {
-                $this->autoAcceptOrder($order);
-                if ($store->isOption('auto_dispatch')) {
-                    $this->autoDispatchOrder($order);
+            // dispatch if flagged true
+            $order->firstDispatch();
+
+            // update the cart with the checkout
+            $checkout->checkedout();
+
+            // update checkout token
+            $checkout->update([
+                'order_uuid' => $order->uuid,
+                // 'store_uuid' => $about->uuid,
+                'captured' => true,
+            ]);
+
+            return new OrderResource($order);
+        } catch (\Throwable $e) {
+            // Undo this attempt's records so a retry ("Finish placing order") starts clean
+            // instead of leaving another payment record with no order.
+            static::discardFailedCapture($transaction, $multipleOrders);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Remove what a failed capture attempt created: its transaction (with its line items) and
+     * any of the store orders already made. Nothing else refers to them yet.
+     */
+    protected static function discardFailedCapture(?Transaction $transaction, array $orders = []): void
+    {
+        try {
+            foreach ($orders as $order) {
+                if ($order instanceof Order) {
+                    $order->delete();
                 }
             }
-
-            // notify order creation
-            Storefront::alertNewOrder($order);
+            if ($transaction) {
+                TransactionItem::where('transaction_uuid', $transaction->uuid)->delete();
+                $transaction->delete();
+            }
+        } catch (\Throwable $cleanup) {
+            Log::error('[Storefront] Unable to discard a failed order capture.', ['transaction' => $transaction?->public_id, 'error' => $cleanup->getMessage()]);
         }
-
-        // convert origin to Place
-        $origin = Place::createFromMixed($origin);
-
-        // create master payload
-        $payload = Payload::create([
-            'company_uuid'   => session('company'),
-            'pickup_uuid'    => $origin instanceof Place ? $origin->uuid : null,
-            'dropoff_uuid'   => $destination instanceof Place ? $destination->uuid : null,
-            'return_uuid'    => $origin instanceof Place ? $origin->uuid : null,
-            'payment_method' => $gateway->type,
-            'type'           => 'storefront',
-        ])->setWaypoints($waypoints);
-
-        // create entities
-        foreach ($cart->items as $cartItem) {
-            $this->processCartItem($cartItem, $payload, $customer);
-        }
-
-        // prepare master order meta
-        $masterOrderMeta = [
-            'is_master_order'       => true,
-            'related_orders'        => collect($multipleOrders)->pluck('public_id')->toArray(),
-            'storefront'            => $about->name,
-            'storefront_id'         => $about->public_id,
-            'storefront_network'    => $about->name,
-            'storefront_network_id' => $about->public_id,
-            'checkout_id'           => $checkout->public_id,
-            'subtotal'              => Utils::numbersOnly($cart->subtotal),
-            'delivery_fee'          => $checkout->is_pickup ? 0 : Utils::numbersOnly($serviceQuote->amount),
-            'tip'                   => $checkout->getOption('tip'),
-            'delivery_tip'          => $checkout->getOption('delivery_tip'),
-            'discount'              => $promotions->discount(),
-            'promotions'            => $promotions->toPublicArray()['applied'],
-            'total'                 => Utils::numbersOnly($amount),
-            'currency'              => $currency,
-            'gateway'               => $gateway->type,
-            'require_pod'           => $about->getOption('require_pod'),
-            'pod_method'            => $about->pod_method,
-            'is_pickup'             => $checkout->is_pickup,
-            ...$transactionDetails,
-        ];
-
-        // prepare master order input
-        $masterOrderInput = [
-            'company_uuid'      => session('company'),
-            'payload_uuid'      => $payload->uuid,
-            'customer_uuid'     => $customer->uuid,
-            'customer_type'     => Utils::getMutationType('fleet-ops:contact'),
-            'transaction_uuid'  => $transaction->uuid,
-            'order_config_uuid' => $about->getOrderConfigId(),
-            'adhoc'             => $about->isOption('auto_dispatch'),
-            'type'              => 'storefront',
-            'status'            => 'created',
-        ];
-
-        // if it's integrated vendor order apply to meta
-        if ($integratedVendorOrder) {
-            $masterOrderMeta['integrated_vendor']       = $serviceQuote->integratedVendor->public_id;
-            $masterOrderMeta['integrated_vendor_order'] = $integratedVendorOrder;
-            // order input
-            $masterOrderInput['facilitator_uuid'] = $serviceQuote->integratedVendor->uuid;
-            $masterOrderInput['facilitator_type'] = Utils::getModelClassName('integrated_vendors');
-        }
-
-        // finally apply meta to master order
-        $masterOrderInput['meta'] = $masterOrderMeta;
-
-        // create master order
-        $order = Order::create($masterOrderInput);
-
-        // record the promotions as used by this checkout's master order
-        PromotionRedemptions::redeem($checkout, $order);
-
-        // update child orders with master order id in meta
-        foreach ($multipleOrders as $childOrder) {
-            $childOrder->updateMeta('master_order_id', $order->public_id);
-        }
-
-        // notify driver if assigned
-        $order->notifyDriverAssigned();
-
-        // set driving distance and time
-        $order->setPreliminaryDistanceAndTime();
-
-        // purchase service quote
-        $order->purchaseQuote($serviceQuote->uuid, $transactionDetails);
-
-        // dispatch if flagged true
-        $order->firstDispatch();
-
-        // update the cart with the checkout
-        $checkout->checkedout();
-
-        // update checkout token
-        $checkout->update([
-            'order_uuid' => $order->uuid,
-            // 'store_uuid' => $about->uuid,
-            'captured' => true,
-        ]);
-
-        return new OrderResource($order);
     }
 
     public function afterCheckout(Request $request)
@@ -1943,64 +2200,57 @@ class CheckoutController extends Controller
                 'order'    => $checkout->order ? new OrderResource($checkout->order) : null,
             ];
 
-            // Check if this is a QPay checkout
-            if ($checkout->gateway_uuid) {
+            // QPay: answered from the checkout, so the app can ask often and cheaply. The
+            // payment is recorded on the checkout as soon as QPay's callback (or a verify
+            // below) confirms it. QPay itself is asked only when the app says the customer
+            // is back from paying (verify=1), at most once every few seconds per checkout:
+            // QPay asks merchants to rely on the callback, not repeated payment checks.
+            if ($checkout->gateway_uuid && !$response['order']) {
                 $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
 
                 if ($gateway && $gateway->code === 'qpay') {
-                    // Get QPay invoice ID from checkout options
-                    $qpayInvoiceId = $checkout->getOption('qpay_invoice_id');
-                    $payment       = null;
+                    $recorded = $checkout->getOption('qpay_payment');
 
-                    if ($qpayInvoiceId) {
-                        // Create QPay instance with correct credentials
+                    if (!$recorded && $request->boolean('verify') && $checkout->getOption('qpay_invoice_id') && Cache::add('storefront:qpay-verify:' . $checkout->uuid, 1, 5)) {
                         $qpay = static::qpayForGateway($gateway);
-
                         if ($gateway->sandbox) {
                             $qpay->useSandbox();
                         }
-
                         $qpay->setAuthToken();
 
-                        // Verify payment status with QPay
-                        $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
-                        $payment      = data_get($paymentCheck, 'rows.0');
+                        $payment = static::paidQPayPayment($qpay->paymentCheck($checkout->getOption('qpay_invoice_id')), $checkout);
+                        if ($payment) {
+                            $recorded = static::recordQPayPayment($checkout, $payment);
+                            static::publishCheckoutUpdate($checkout, true);
+                        }
                     }
 
-                    if ($payment && $payment->payment_status === 'PAID') {
+                    if ($recorded) {
                         $response['status']  = 'paid';
-                        $response['payment'] = [
-                            'payment_id'     => $payment->payment_id,
-                            'payment_status' => $payment->payment_status,
-                            'payment_amount' => $payment->payment_amount,
-                            'payment_date'   => $payment->payment_date ?? null,
-                            'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                        ];
+                        $response['payment'] = $recorded;
 
-                        // FALLBACK: If payment confirmed but order doesn't exist, create it
-                        if (!$checkout->order_uuid) {
+                        // Safety net: the callback creates the order right after recording the
+                        // payment. If it still hasn't appeared a while later (e.g. the callback
+                        // failed), create it here; createOrderFromCheckout is idempotent.
+                        $recordedAt = data_get($recorded, 'recorded_at');
+                        if ($recordedAt && Carbon::parse($recordedAt)->lt(now()->subSeconds(15))) {
                             Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
                                 'checkout_id' => $checkout->public_id,
-                                'payment_id'  => $payment->payment_id,
+                                'payment_id'  => data_get($recorded, 'payment_id'),
                             ]);
 
-                            $transactionDetails = [
-                                'transaction_id' => $payment->payment_id,
-                                'payment_status' => 'PAID',
-                                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                            ];
-
                             try {
-                                // Use the reusable gateway-agnostic method to create order
-                                // createOrderFromCheckout has built-in idempotency checks
-                                $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
+                                $order = $this->createOrderFromCheckout($checkout, [
+                                    'transaction_id' => data_get($recorded, 'payment_id'),
+                                    'payment_status' => 'PAID',
+                                    'payment_wallet' => data_get($recorded, 'payment_wallet') ?? 'QPay',
+                                ]);
 
                                 if ($order) {
                                     $response['status'] = 'completed';
                                     $response['order']  = new OrderResource($order);
                                 }
                             } catch (\Exception $e) {
-                                // If order creation fails (e.g., race condition), refresh and check again
                                 Log::warning('[CHECKOUT STATUS FALLBACK]: Order creation failed, checking if order was created by another request', [
                                     'checkout_id' => $checkout->public_id,
                                     'error'       => $e->getMessage(),
@@ -2008,15 +2258,10 @@ class CheckoutController extends Controller
 
                                 $checkout->refresh();
                                 if ($checkout->order_uuid) {
-                                    // Order was created by another request
                                     $response['status'] = 'completed';
                                     $response['order']  = new OrderResource($checkout->order);
                                 }
                             }
-                        } else {
-                            // Order already exists
-                            $response['status'] = 'completed';
-                            $response['order']  = new OrderResource($checkout->order);
                         }
                     }
                 }
@@ -2144,6 +2389,75 @@ class CheckoutController extends Controller
     }
 
     /**
+     * The JSON response for an initialized checkout.
+     *
+     * When realtime socket authentication is enabled it carries `socket_token`: a
+     * `checkout` token whose scope is exactly this checkout's channel, so a client
+     * (a guest included) can listen for its own payment confirmation. The field is
+     * absent while socket authentication is disabled.
+     */
+    protected static function checkoutResponse(Checkout $checkout, array $data): JsonResponse
+    {
+        $socketToken = StorefrontSocket::checkoutToken($checkout);
+        if ($socketToken) {
+            $data['socket_token'] = $socketToken;
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * Publishes a checkout's progress on its realtime channel.
+     *
+     * The payload is what a storefront client acts on — the checkout, its status, the
+     * order once one exists (serialized exactly as GET checkouts/status returns it) and
+     * any error — never the raw gateway payment record. A publish failure is logged and
+     * swallowed: by now the payment is recorded, and clients still recover the outcome
+     * through GET checkouts/status.
+     *
+     * @return array|null the published payload, or null when publishing failed
+     */
+    protected static function publishCheckoutUpdate(Checkout $checkout, bool $paid, ?array $error = null): ?array
+    {
+        try {
+            // A failed payment carries no order, so a client never completes on an error event.
+            $order  = !$error && $checkout->order_uuid ? Order::where('uuid', $checkout->order_uuid)->first() : null;
+            $status = 'pending';
+            if ($error) {
+                $status = 'failed';
+            } elseif ($order) {
+                $status = 'completed';
+            } elseif ($paid) {
+                $status = 'paid';
+            }
+
+            $data = [
+                'checkout' => $checkout->public_id,
+                'status'   => $status,
+                'order'    => $order ? static::checkoutChannelOrder($order) : null,
+                'payment'  => !$error ? $checkout->getOption('qpay_payment') : null,
+                'error'    => $error,
+            ];
+
+            SocketClusterService::publish(StorefrontSocket::checkoutChannel($checkout), $data);
+
+            return $data;
+        } catch (\Throwable $e) {
+            Log::warning('[CHECKOUT SOCKET PUBLISH FAILED]: ' . $e->getMessage(), ['checkout' => $checkout->public_id]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Serializes a checkout's order for its realtime channel, as GET checkouts/status does.
+     */
+    protected static function checkoutChannelOrder(Order $order): array
+    {
+        return json_decode(json_encode(new OrderResource($order)), true);
+    }
+
+    /**
      * Reserve a new checkout's promotions, discarding the checkout if one ran out meanwhile.
      */
     protected static function reservePromotions(Checkout $checkout, $checkoutOptions, ?Contact $customer): ?JsonResponse
@@ -2157,6 +2471,39 @@ class CheckoutController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Split an amount across stores in proportion to their subtotals. Shares are whole cents
+     * that add up to the amount; the cents left over by rounding go to the largest shares.
+     *
+     * @param array<string,int> $subtotals store id => subtotal
+     *
+     * @return array<string,int> store id => share
+     */
+    protected static function splitByShare(int $amount, array $subtotals): array
+    {
+        $total = array_sum($subtotals);
+        if ($amount <= 0 || $total <= 0) {
+            return array_map(fn () => 0, $subtotals);
+        }
+
+        $shares = [];
+        foreach ($subtotals as $storeId => $subtotal) {
+            $shares[$storeId] = intdiv($amount * $subtotal, $total);
+        }
+
+        $left = $amount - array_sum($shares);
+        arsort($subtotals);
+        foreach (array_keys($subtotals) as $storeId) {
+            if ($left <= 0) {
+                break;
+            }
+            $shares[$storeId]++;
+            $left--;
+        }
+
+        return $shares;
     }
 
     private static function calculateTipAmount($tip, $subtotal)

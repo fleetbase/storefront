@@ -422,6 +422,7 @@ storefront:
               enable-tips: Активиране на бакшиши
               enable-delivery-tips: Активиране на бакшиши за доставка
               enable-multi-cart-checkout: Активиране на плащане с няколко колички
+              split-tips-across-stores: "Разпределяне на бакшишите между магазините при поръчки от няколко магазина"
               enable-user-reviews: Активиране на потребителски отзиви
           api-panel:
             panel-title: API

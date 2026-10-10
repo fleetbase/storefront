@@ -76,6 +76,11 @@ class OrderController extends FleetbaseOrderController
 
     protected function notifyOrderAccepted(Order $order): void
     {
+        // A booking's confirmation is announced as its activity ("Booking confirmed").
+        if (Storefront::isBookingOrder($order)) {
+            return;
+        }
+
         $order->customer->notify(new StorefrontOrderAccepted($order));
     }
 
@@ -172,6 +177,13 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         $this->patchOrderConfig($order);
 
+        // A booking at the store starts when the customer comes in; nobody is dispatched.
+        if (Storefront::isBookingOrder($order) && $order->isMeta('is_pickup')) {
+            $order->updateStatus('in_progress');
+
+            return $this->orderResponse($order);
+        }
+
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');
 
@@ -188,9 +200,12 @@ class OrderController extends FleetbaseOrderController
             $order->assignDriver($driver);
         }
 
-        // Dispatch the order and move Storefront delivery orders into preparation.
+        // Dispatch the order and move Storefront delivery orders into preparation. A booking
+        // is dispatched to its provider; there is nothing to prepare.
         $order->dispatchWithActivity();
-        $order->updateStatus('preparing');
+        if (!Storefront::isBookingOrder($order)) {
+            $order->updateStatus('preparing');
+        }
 
         return $this->orderResponse($order);
     }

@@ -56,6 +56,7 @@ test('checkout finalization links the originating cart to the checkout exactly o
         $table->increments('id');
         $table->string('uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
         $table->softDeletes();
@@ -93,5 +94,48 @@ test('checkout finalization links the originating cart to the checkout exactly o
             ->table('carts')
             ->where('uuid', 'cart_uuid')
             ->value('checkout_uuid')
-    )->toBe('checkout_uuid');
+    )->toBe('checkout_uuid')
+        ->and(Illuminate\Database\Capsule\Manager::connection('mysql')->table('carts')->where('uuid', 'cart_uuid')->value('status'))->toBe('checked_out');
+});
+
+test('checkout rebuilds the cart as it was priced and charged from its saved copy', function () {
+    $checkout = new Checkout();
+    $checkout->forceFill([
+        'cart_uuid'  => 'cart_uuid',
+        'cart_state' => [
+            'public_id'         => 'cart_public',
+            'currency'          => 'MNT',
+            'unique_identifier' => 'device-store_x',
+            'subtotal'          => 99999, // appended accessors in the copy are recomputed, not trusted
+            'items'             => [
+                ['id' => 'cart_item_1', 'name' => 'Туршилтын бараа', 'store_id' => 'store_a', 'quantity' => 1, 'subtotal' => 1000],
+                ['id' => 'cart_item_2', 'name' => 'Бууз', 'store_id' => 'store_a', 'quantity' => 2, 'subtotal' => 24000],
+            ],
+            'events'            => [['event' => 'cart.item_added']],
+        ],
+    ]);
+
+    $cart = $checkout->cartAtCheckout();
+
+    expect($cart)->toBeInstanceOf(Fleetbase\Storefront\Models\Cart::class)
+        ->and($cart->exists)->toBeFalse()
+        ->and($cart->uuid)->toBe('cart_uuid')
+        ->and($cart->public_id)->toBe('cart_public')
+        ->and($cart->getCurrency())->toBe('MNT')
+        ->and(count($cart->items))->toBe(2)
+        ->and($cart->items[1]->name)->toBe('Бууз')
+        ->and($cart->subtotal)->toBe(25000)
+        ->and(count($cart->events))->toBe(1);
+});
+
+test('checkout without a saved cart copy has no cart at checkout', function () {
+    $none = new Checkout();
+    $noItems = new Checkout();
+    $noItems->forceFill(['cart_state' => ['public_id' => 'cart_public']]);
+    $badItems = new Checkout();
+    $badItems->forceFill(['cart_state' => ['items' => 'not-a-list']]);
+
+    expect($none->cartAtCheckout())->toBeNull()
+        ->and($noItems->cartAtCheckout())->toBeNull()
+        ->and($badItems->cartAtCheckout())->toBeNull();
 });

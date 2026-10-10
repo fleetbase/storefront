@@ -10,6 +10,7 @@ use Fleetbase\FleetOps\Models\ServiceQuote;
 use Fleetbase\FleetOps\Models\ServiceQuoteItem;
 use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Models\Vehicle;
+use Fleetbase\FleetOps\Support\DistanceMatrix;
 use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
@@ -48,6 +49,11 @@ class ServiceQuoteController extends Controller
         $cart             = Cart::retrieve($request->input('cart'));
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
+
+        // Lines whose product or food truck is gone can't be quoted (or ordered).
+        if ($unavailable = $this->unavailableCartItems($cart, $request->input('origin'))) {
+            return $unavailable;
+        }
 
         if (!$origin) {
             return response()->error('No delivery origin!');
@@ -201,6 +207,11 @@ class ServiceQuoteController extends Controller
         $cart             = Cart::retrieve($request->input('cart'));
         $all              = $request->boolean('all');
         $isRouteOptimized = $request->boolean('is_route_optimized', true);
+
+        // Lines whose product, store or food truck is gone can't be quoted (or ordered).
+        if ($unavailable = $this->unavailableCartItems($cart, $request->input('origin'))) {
+            return $unavailable;
+        }
 
         // make sure destination is set
         if (!$destination) {
@@ -423,11 +434,41 @@ class ServiceQuoteController extends Controller
     }
 
     /**
-     * Resolve the multi-origin distance matrix used to quote a network order.
+     * Resolve the distance and time of a network order's route: the driver collects from each
+     * store, then delivers. Each leg is measured like a single store's (`getDrivingMatrix`) and
+     * the legs are added up.
+     *
+     * The stores are visited farthest from the customer first, then each nearest next, so the
+     * route ends close to the customer. (`Utils::distanceMatrix` cannot be used here: it joins
+     * the stores into one origin string, which the straight-line provider misreads and Google
+     * answers for the first store only.)
      */
     protected function getNetworkDistanceMatrix($origins, Place $destination): object
     {
-        return Utils::distanceMatrix($origins, [$destination]);
+        $remaining = collect($origins)->filter()->values();
+        if ($remaining->isEmpty()) {
+            return new DistanceMatrix(0, 0);
+        }
+
+        $straightLine = fn ($from, $to) => (float) Utils::getPreliminaryDistanceMatrix($from, $to)->distance;
+
+        $current   = $remaining->sortByDesc(fn ($place) => $straightLine($place, $destination))->first();
+        $remaining = $remaining->reject(fn ($place) => $place === $current)->values();
+        $distance  = 0;
+        $time      = 0;
+
+        while ($remaining->isNotEmpty()) {
+            $next      = $remaining->sortBy(fn ($place) => $straightLine($current, $place))->first();
+            $leg       = $this->getDrivingMatrix($current, $next);
+            $distance += (float) $leg->distance;
+            $time     += (float) $leg->time;
+            $current   = $next;
+            $remaining = $remaining->reject(fn ($place) => $place === $next)->values();
+        }
+
+        $leg = $this->getDrivingMatrix($current, $destination);
+
+        return new DistanceMatrix($distance + (float) $leg->distance, $time + (float) $leg->time);
     }
 
     /**
@@ -438,6 +479,58 @@ class ServiceQuoteController extends Controller
         return ServiceRate::getServicableForPlaces([$destination], $orderConfigKey, $currency, function ($query) {
             $query->where('company_uuid', session('company'));
         });
+    }
+
+    /**
+     * A 422 naming the cart lines that can no longer be ordered, or null when every line
+     * is fine: the product was deleted or unpublished, or the line (or the requested
+     * origin) points at a food truck or store location that no longer exists. Apps show
+     * "some items are no longer available" instead of an address problem.
+     */
+    protected function unavailableCartItems(?Cart $cart, string|array|null $origin = null)
+    {
+        $items = collect($cart?->items ?? []);
+        if ($items->isEmpty()) {
+            return null;
+        }
+
+        $productIds   = $items->pluck('product_id')->filter()->unique()->values();
+        $products     = Product::whereIn('public_id', $productIds)->get(['public_id', 'is_available', 'status'])->keyBy('public_id');
+        $truckIds     = $items->pluck('food_truck_id')->filter()->unique()->values();
+        $origins      = collect(is_array($origin) ? $origin : explode(',', (string) $origin))->filter();
+        $truckIds     = $truckIds->merge($origins->filter(fn ($id) => Str::startsWith($id, 'food_truck_')))->unique()->values();
+        $trucks       = $truckIds->isEmpty() ? collect() : FoodTruck::whereIn('public_id', $truckIds)->pluck('public_id');
+        $locationIds  = $items->pluck('store_location_id')->filter(fn ($id) => Str::startsWith((string) $id, 'store_location'))->unique()->values();
+        $locations    = $locationIds->isEmpty() ? collect() : StoreLocation::whereIn('public_id', $locationIds)->pluck('public_id');
+        $missingTruck = $origins->first(fn ($id) => Str::startsWith($id, 'food_truck_') && !$trucks->contains($id));
+
+        $unavailable = $items
+            ->filter(function ($item) use ($products, $trucks, $locations, $missingTruck) {
+                $product = $products->get(data_get($item, 'product_id'));
+                if (!$product || $product->is_available === false || $product->status === 'draft') {
+                    return true;
+                }
+                $truckId = data_get($item, 'food_truck_id');
+                if (($truckId && !$trucks->contains($truckId)) || ($missingTruck && $truckId === $missingTruck)) {
+                    return true;
+                }
+                $locationId = data_get($item, 'store_location_id');
+
+                return Str::startsWith((string) $locationId, 'store_location') && !$locations->contains($locationId);
+            })
+            ->map(fn ($item) => ['id' => data_get($item, 'id'), 'product_id' => data_get($item, 'product_id'), 'name' => data_get($item, 'name')])
+            ->values();
+
+        // A missing truck the app asked to deliver from, even if no line names it.
+        if ($unavailable->isEmpty() && !$missingTruck) {
+            return null;
+        }
+
+        return response()->json([
+            'errors' => ['Some items in your cart are no longer available.'],
+            'code'   => 'cart_items_unavailable',
+            'items'  => $unavailable->all(),
+        ], 422);
     }
 
     /**

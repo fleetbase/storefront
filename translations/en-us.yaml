@@ -394,6 +394,7 @@ storefront:
               enable-tips: Enable tips
               enable-delivery-tips: Enable delivery tips
               enable-multi-cart-checkout: Enable multi-cart checkout
+              split-tips-across-stores: "Split store tips across stores in multi-store orders"
               enable-user-reviews: Enable user reviews
           api-panel:
             panel-title: API

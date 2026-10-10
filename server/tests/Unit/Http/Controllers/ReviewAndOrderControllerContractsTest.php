@@ -281,6 +281,33 @@ class DriverAssignmentStub extends Model
     }
 }
 
+function createReviewOrderSchema(): void
+{
+    $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
+    $schema->dropIfExists('orders');
+    $schema->dropIfExists('entities');
+    $schema->create('orders', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('customer_uuid')->nullable();
+        $table->string('payload_uuid')->nullable();
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamp('created_at')->nullable();
+        $table->timestamp('updated_at')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('entities', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('payload_uuid')->nullable();
+        $table->string('internal_id')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+}
+
 function createReviewControllerSchema(): void
 {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
@@ -292,6 +319,7 @@ function createReviewControllerSchema(): void
         $table->string('public_id')->nullable();
         $table->string('created_by_uuid')->nullable();
         $table->string('customer_uuid')->nullable();
+        $table->string('order_uuid')->nullable();
         $table->string('subject_uuid')->nullable();
         $table->string('subject_type')->nullable();
         $table->integer('rating')->nullable();
@@ -309,7 +337,7 @@ function createReviewControllerSchema(): void
     });
 }
 
-test('review sort aliases map to stable API sort fields and directions', function (string $sort, ?array $expected) {
+test('review sort aliases map to the sort columns core understands, with "-" for descending', function (string $sort, ?array $expected) {
     $request = Request::create('/reviews');
 
     (new ReviewController())->applySort($request, $sort);
@@ -317,13 +345,14 @@ test('review sort aliases map to stable API sort fields and directions', functio
     if ($expected === null) {
         expect($request->has('sort'))->toBeFalse();
     } else {
-        expect($request->only(['sort', 'sort_direction']))->toBe($expected);
+        expect($request->input('sort'))->toBe($expected)
+            ->and($request->has('sort_direction'))->toBeFalse();
     }
 })->with([
-    'highest' => ['highest rated', ['sort' => 'rating', 'sort_direction' => 'desc']],
-    'lowest'  => ['lowest', ['sort' => 'rating', 'sort_direction' => 'asc']],
-    'newest'  => ['newest first', ['sort' => 'created_at', 'sort_direction' => 'desc']],
-    'oldest'  => ['oldest', ['sort' => 'created_at', 'sort_direction' => 'asc']],
+    'highest' => ['highest rated', ['-rating', '-created_at']],
+    'lowest'  => ['lowest', ['rating', '-created_at']],
+    'newest'  => ['newest first', ['-created_at']],
+    'oldest'  => ['oldest', ['created_at']],
     'unknown' => ['featured', null],
 ]);
 
@@ -418,8 +447,7 @@ test('review listing applies storefront ownership sorting limits and offsets', f
 
     $resource = (new ReviewController())->query($request);
 
-    expect($request->input('sort'))->toBe('rating')
-        ->and($request->input('sort_direction'))->toBe('desc')
+    expect($request->input('sort'))->toBe(['-rating', '-created_at'])
         ->and($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('review_two_uuid');
 });
@@ -637,9 +665,10 @@ test('authenticated review creation persists customer and store subject contract
     createReviewControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
-    foreach (['personal_access_tokens', 'files', 'contacts', 'stores'] as $table) {
+    foreach (['personal_access_tokens', 'files', 'contacts', 'stores', 'orders', 'entities'] as $table) {
         $schema->dropIfExists($table);
     }
+    createReviewOrderSchema();
     $schema->create('personal_access_tokens', function ($table) {
         $table->increments('id');
         $table->string('tokenable_type')->nullable();
@@ -728,6 +757,14 @@ test('authenticated review creation persists customer and store subject contract
         ['uuid' => 'product_uuid', 'public_id' => 'product_abcdefgh', 'store_uuid' => 'store_uuid'],
         ['uuid' => 'foreign_product_uuid', 'public_id' => 'product_foreign', 'store_uuid' => 'foreign_store_uuid'],
     ]);
+    // Two completed orders from the store and one containing the product: each order can be
+    // reviewed once per subject, newest first.
+    $connection->table('orders')->insert([
+        ['uuid' => 'older_store_order_uuid', 'public_id' => 'order_older', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => null, 'meta' => json_encode(['storefront_id' => 'store_abcdefgh']), 'created_at' => now()->subDays(3)],
+        ['uuid' => 'newer_store_order_uuid', 'public_id' => 'order_newer', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => null, 'meta' => json_encode(['storefront_id' => 'store_abcdefgh']), 'created_at' => now()->subDay()],
+        ['uuid' => 'product_order_uuid', 'public_id' => 'order_product', 'customer_uuid' => $customerUuid, 'status' => 'completed', 'payload_uuid' => 'payload_uuid', 'meta' => json_encode(['storefront_id' => 'other_store']), 'created_at' => now()->subDays(2)],
+    ]);
+    $connection->table('entities')->insert(['uuid' => 'entity_uuid', 'payload_uuid' => 'payload_uuid', 'internal_id' => 'product_abcdefgh']);
     $boundRequest = Request::create('/reviews');
     $boundRequest->headers->set('Customer-Token', 'review-customer-secret');
     $boundRequest->setLaravelSession(new Illuminate\Session\Store(
@@ -774,17 +811,22 @@ test('authenticated review creation persists customer and store subject contract
         'uuid'      => 'owned_review_uuid',
         'public_id' => 'review_owned',
     ]);
-    Illuminate\Support\Facades\Storage::swap(new class {
+    $reviewStorage = new class {
         public function disk(string $disk): self
         {
             return $this;
         }
 
-        public function put(string $path, string $contents, string $visibility): bool
+        public array $writes = [];
+
+        public function put(string $path, string $contents, mixed $options = []): bool
         {
+            $this->writes[] = [$path, $options];
+
             return true;
         }
-    });
+    };
+    Illuminate\Support\Facades\Storage::swap($reviewStorage);
     session(['storefront_key' => 'store_key']);
     $withPhoto = $controller->create(
         Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
@@ -801,7 +843,14 @@ test('authenticated review creation persists customer and store subject contract
             ],
         ])
     );
-    $photo = $connection->table('files')->first();
+    $photo           = $connection->table('files')->first();
+    $alreadyReviewed = $controller->create(
+        Fleetbase\Storefront\Http\Requests\CreateReviewRequest::create('/reviews', 'POST', [
+            'subject' => 'store_abcdefgh',
+            'rating'  => 3,
+            'content' => 'Third review',
+        ])
+    );
     session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
     $deleted = $controller->delete('review_owned');
 
@@ -814,12 +863,23 @@ test('authenticated review creation persists customer and store subject contract
         ->and($review->subject_uuid)->toBe('store_uuid')
         ->and($review->rating)->toBe(5)
         ->and($review->content)->toBe('Excellent service')
+        ->and($review->order_uuid)->toBe('newer_store_order_uuid')
+        ->and($createdProduct->resource->order_uuid)->toBe('product_order_uuid')
+        ->and($withPhoto->resource->order_uuid)->toBe('older_store_order_uuid')
+        ->and($alreadyReviewed->getStatusCode())->toBe(403)
+        ->and($alreadyReviewed->getData(true))->toBe([
+            'error'  => 'You have already reviewed this for your completed orders.',
+            'reason' => 'already_reviewed',
+        ])
         ->and($withPhoto->resource->files)->toHaveCount(1)
         ->and($photo->subject_uuid)->toBe($withPhoto->resource->uuid)
         ->and($photo->content_type)->toBe('image/png')
         ->and($photo->bucket)->toBe('review-bucket')
         ->and($photo->file_size)->toBe(strlen('image-bytes'))
         ->and($photo->type)->toBe('storefront_review_upload')
+        // review photos are written without a 'public' visibility/ACL
+        ->and($reviewStorage->writes)->toHaveCount(1)
+        ->and($reviewStorage->writes[0][1])->toBe([])
         ->and($deleted->resource->uuid)->toBe('owned_review_uuid')
         ->and($connection->table('reviews')->where('uuid', 'owned_review_uuid')->value('deleted_at'))->not->toBeNull();
 });
@@ -1351,4 +1411,121 @@ test('internal preparing completed rejected and driver-unassignment actions pres
     expect($controller->unassignDriver(Request::create('/orders/unassign', 'POST', [
         'order' => 'order_uuid',
     ]))['status'])->toBe('canceled');
+});
+
+test('a customer gets their own order as steps from its order config', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    foreach (['personal_access_tokens', 'contacts', 'orders', 'order_configs', 'tracking_statuses'] as $table) {
+        $schema->dropIfExists($table);
+    }
+    $schema->create('personal_access_tokens', function ($table) {
+        $table->increments('id');
+        $table->string('tokenable_type')->nullable();
+        $table->integer('tokenable_id')->nullable();
+        $table->string('name');
+        $table->string('token');
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->timestamps();
+    });
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('type')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('orders', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('customer_uuid')->nullable();
+        $table->string('order_config_uuid')->nullable();
+        $table->string('tracking_number_uuid')->nullable();
+        $table->string('status')->nullable();
+        $table->text('meta')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('order_configs', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('key')->nullable();
+        $table->string('name')->nullable();
+        $table->text('flow')->nullable();
+    });
+    $schema->create('tracking_statuses', function ($table) {
+        $table->increments('id');
+        $table->string('tracking_number_uuid')->nullable();
+        $table->string('code')->nullable();
+        $table->string('status')->nullable();
+        $table->timestamp('created_at')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('contacts')->insert(['uuid' => '11111111-1111-4111-8111-111111111111', 'public_id' => 'contact_customer', 'type' => 'customer']);
+    $connection->table('personal_access_tokens')->insert([
+        'name'       => '11111111-1111-4111-8111-111111111111',
+        'token'      => hash('sha256', 'customer-secret'),
+        'abilities'  => '["*"]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    // A branch whose condition can't be evaluated is skipped rather than failing the request.
+    $connection->table('order_configs')->insert([
+        'uuid'      => 'config_uuid',
+        'public_id' => 'order_config_olimax',
+        'key'       => 'olimax',
+        'name'      => 'Oli Max delivery',
+        'flow'      => json_encode([
+            'created'    => ['code' => 'created', 'status' => 'Created', 'activities' => ['dispatched']],
+            'dispatched' => ['code' => 'dispatched', 'status' => 'Dispatched', 'details' => 'Sent from {storefront.name}', 'activities' => ['unsupported', 'started']],
+            'unsupported' => ['code' => 'unsupported', 'status' => 'Unsupported', 'logic' => [['type' => 'not-a-logic-type', 'conditions' => []]]],
+            'started'    => ['code' => 'started', 'status' => 'Started', 'activities' => ['completed']],
+            'completed'  => ['code' => 'completed', 'status' => 'Completed', 'complete' => true],
+        ]),
+    ]);
+    $connection->table('orders')->insert([
+        ['uuid' => 'mine_uuid', 'public_id' => 'order_mine', 'customer_uuid' => '11111111-1111-4111-8111-111111111111', 'order_config_uuid' => 'config_uuid', 'tracking_number_uuid' => 'tracking_uuid', 'status' => 'dispatched', 'meta' => json_encode(['storefront' => 'Oli Max']), 'created_at' => '2026-10-08 10:00:00', 'updated_at' => now(), 'deleted_at' => null],
+        ['uuid' => 'bare_uuid', 'public_id' => 'order_bare', 'customer_uuid' => '11111111-1111-4111-8111-111111111111', 'order_config_uuid' => null, 'tracking_number_uuid' => null, 'status' => 'created', 'meta' => '{}', 'created_at' => null, 'updated_at' => null, 'deleted_at' => null],
+        ['uuid' => 'theirs_uuid', 'public_id' => 'order_theirs', 'customer_uuid' => '22222222-2222-4222-8222-222222222222', 'order_config_uuid' => null, 'tracking_number_uuid' => null, 'status' => 'created', 'meta' => '{}', 'created_at' => null, 'updated_at' => null, 'deleted_at' => null],
+    ]);
+    $connection->table('tracking_statuses')->insert([
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'CREATED', 'status' => 'Created', 'created_at' => '2026-10-08 10:00:00', 'deleted_at' => null],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'DISPATCHED', 'status' => 'Dispatched', 'created_at' => '2026-10-08 10:05:00', 'deleted_at' => null],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'REMOVED', 'status' => 'Removed', 'created_at' => '2026-10-08 10:06:00', 'deleted_at' => now()],
+        ['tracking_number_uuid' => 'tracking_uuid', 'code' => 'NO_TIME', 'status' => 'No time', 'created_at' => null, 'deleted_at' => null],
+    ]);
+
+    $signedOut = Request::create('/orders');
+    $signedOut->setLaravelSession(new Illuminate\Session\Store('activity-flow-signed-out', new Illuminate\Session\ArraySessionHandler(120)));
+    app()->instance('request', $signedOut);
+    $unauthenticated = (new OrderController())->getActivityFlow('order_mine');
+
+    $boundRequest = Request::create('/orders');
+    $boundRequest->headers->set('Customer-Token', 'customer-secret');
+    $boundRequest->setLaravelSession(new Illuminate\Session\Store('activity-flow-test', new Illuminate\Session\ArraySessionHandler(120)));
+    app()->instance('request', $boundRequest);
+    $controller = new OrderController();
+
+    $missing      = $controller->getActivityFlow('order_missing');
+    $unauthorized = $controller->getActivityFlow('order_theirs');
+    $flow         = $controller->getActivityFlow('order_mine')->getData(true);
+    $bare         = $controller->getActivityFlow('order_bare')->getData(true);
+
+    expect($unauthenticated->getData(true))->toBe(['error' => 'Customer is not authenticated.'])
+        ->and($missing->getStatusCode())->toBe(404)
+        ->and($unauthorized->getStatusCode())->toBe(403)
+        ->and($unauthorized->getData(true))->toBe(['error' => 'Not authorized to view this order.'])
+        ->and($flow['order'])->toBe('order_mine')
+        ->and($flow['order_config'])->toBe(['id' => 'order_config_olimax', 'key' => 'olimax', 'name' => 'Oli Max delivery'])
+        // History without a time sorts first; deleted history is left out.
+        ->and(array_map(fn ($step) => $step['code'] . ':' . $step['state'], $flow['steps']))->toBe(['no_time:done', 'created:done', 'dispatched:current', 'started:upcoming', 'completed:upcoming'])
+        ->and($flow['steps'][2]['details'])->toBe('Sent from Oli Max')
+        ->and($flow['steps'][2]['reached_at'])->toStartWith('2026-10-08T10:05:00')
+        ->and($flow['steps'][0]['reached_at'])->toBeNull()
+        ->and($bare['order_config'])->toBeNull()
+        ->and(array_map(fn ($step) => $step['code'] . ':' . $step['state'], $bare['steps']))->toBe(['created:current']);
 });

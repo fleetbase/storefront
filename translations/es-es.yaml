@@ -420,6 +420,7 @@ storefront:
               enable-tips: Habilitar propinas
               enable-delivery-tips: Habilitar propinas para entrega
               enable-multi-cart-checkout: Habilitar pago de múltiples carritos
+              split-tips-across-stores: "Repartir las propinas entre las tiendas en pedidos de varias tiendas"
               enable-user-reviews: Habilitar reseñas de usuarios
           api-panel:
             panel-title: API

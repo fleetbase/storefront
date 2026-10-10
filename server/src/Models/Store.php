@@ -340,6 +340,14 @@ class Store extends StorefrontModel
      */
     public function getRatingAttribute()
     {
+        // Use the average preloaded with withAvg('reviews', 'rating') when present, so
+        // listing stores does not run one aggregate query per store.
+        if (array_key_exists('reviews_avg_rating', $this->attributes)) {
+            $average = $this->attributes['reviews_avg_rating'];
+
+            return is_numeric($average) ? $average + 0 : 0;
+        }
+
         return $this->reviews()->avg('rating') ?? 0;
     }
 
@@ -356,13 +364,33 @@ class Store extends StorefrontModel
             return null;
         }
 
-        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
+        // A network's uuid never changes, so resolve each id once instead of once per store.
+        if (!array_key_exists($id, static::$networkUuidsById)) {
+            static::$networkUuidsById[$id] = Network::where('uuid', $id)->orWhere('public_id', $id)->value('uuid');
+        }
 
-        if (!$network instanceof Network) {
+        $networkUuid = static::$networkUuidsById[$id];
+
+        if (!$networkUuid) {
             return null;
         }
 
-        return $this->getNetworkCategory($network);
+        return $this->getNetworkCategory((new Network())->forceFill(['uuid' => $networkUuid]));
+    }
+
+    /**
+     * Network uuids resolved by uuid or public id.
+     *
+     * @var array<string, string|null>
+     */
+    protected static array $networkUuidsById = [];
+
+    /**
+     * Forget network ids resolved by getNetworkCategoryUsingId().
+     */
+    public static function flushResolvedNetworkIds(): void
+    {
+        static::$networkUuidsById = [];
     }
 
     /**
@@ -374,8 +402,11 @@ class Store extends StorefrontModel
      */
     public function getNetworkCategory(Network $network)
     {
-        // Find the relationship between this store and the given network
-        $networkRelation = $this->networks()->where('networks.uuid', $network->uuid)->first();
+        // Find the relationship between this store and the given network, using the
+        // eager-loaded networks when available.
+        $networkRelation = $this->relationLoaded('networks')
+            ? $this->networks->firstWhere('uuid', $network->uuid)
+            : $this->networks()->where('networks.uuid', $network->uuid)->first();
 
         // Check if the relationship exists
         if ($networkRelation) {

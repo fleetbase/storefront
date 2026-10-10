@@ -110,6 +110,8 @@ class Product extends FleetbaseResource
                     'id'                      => $addonCategory->id,
                     'name'                    => $addonCategory->name,
                     'excluded_addons'         => $addonCategory->excluded_addons,
+                    'is_required'             => (bool) $addonCategory->is_required,
+                    'max_selectable'          => $addonCategory->max_selectable,
                     'category'                => $addonCategory->category,
                     'created_at'              => $addonCategory->created_at,
                     'updated_at'              => $addonCategory->updated_at,
@@ -121,6 +123,8 @@ class Product extends FleetbaseResource
                 'name'            => data_get($addonCategory, 'name'),
                 'description'     => data_get($addonCategory, 'category.description'),
                 'excluded_addons' => $addonCategory->excluded_addons,
+                'is_required'     => (bool) $addonCategory->is_required,
+                'max_selectable'  => $addonCategory->max_selectable ? (int) $addonCategory->max_selectable : null,
                 'addons'          => $this->mapProductAddons($addons, $addonCategory->excluded_addons),
             ];
 
