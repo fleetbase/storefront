@@ -460,6 +460,7 @@ test('network storefront lookup and location access are limited to member stores
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -689,6 +690,7 @@ test('store controller searches direct and category products across store and ne
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -829,6 +831,7 @@ test('network controller resolves public IDs and invitation codes to their netwo
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -966,6 +969,7 @@ test('network controller adds removes and categorizes store assignments', functi
         $table->string('uuid')->nullable();
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
@@ -1027,6 +1031,7 @@ test('network controller add stores removes requested stale assignments in the s
         $table->string('uuid')->nullable();
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();

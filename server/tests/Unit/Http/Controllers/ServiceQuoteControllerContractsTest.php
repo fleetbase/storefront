@@ -183,6 +183,7 @@ function createServiceQuoteLookupSchema(): void
         $table->string('uuid')->nullable();
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });

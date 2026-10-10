@@ -41,6 +41,7 @@ function createNetworkApiControllerSchema(): void
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });

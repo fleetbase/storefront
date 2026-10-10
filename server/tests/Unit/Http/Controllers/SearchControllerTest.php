@@ -116,6 +116,7 @@ test('search returns authorized results across every supported storefront resour
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->softDeletes();
     });

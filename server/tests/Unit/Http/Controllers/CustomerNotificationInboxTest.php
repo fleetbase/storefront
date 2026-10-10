@@ -103,6 +103,7 @@ beforeEach(function () {
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();

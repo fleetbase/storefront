@@ -477,6 +477,7 @@ test('network review listing and counts validate membership and apply pagination
         $table->string('uuid')->nullable();
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });

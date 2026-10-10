@@ -186,6 +186,7 @@ test('cart add accepts member products and rejects products outside the active n
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('store_locations', function ($table) {

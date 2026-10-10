@@ -47,6 +47,7 @@ function createStoreBehaviorSchema(): void
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->softDeletes();
@@ -246,6 +247,7 @@ test('store returns no category when it is not assigned to a network', function 
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
