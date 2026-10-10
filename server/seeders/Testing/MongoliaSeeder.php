@@ -42,7 +42,8 @@ use Illuminate\Support\Str;
  *   - live in the Zaisan zone (a different zone, so it can't deliver to the customers),
  *   - offline in the Bayanzürkh zone.
  *
- * QPay uses the public sandbox merchant unless SEED_QPAY_* are set. Customers have
+ * QPay uses the public sandbox merchant unless SEED_QPAY_* are set; settings entered in the
+ * Console (e.g. a live merchant for payment tests) are kept when re-seeding. Customers have
  * Mongolian phone numbers and addresses in the Central zone.
  *
  * Re-running the seeder purges and recreates its own fixtures only, keeping the network and
@@ -60,6 +61,9 @@ class MongoliaSeeder extends Seeder
     use SeedsStorefrontFixtures;
 
     public const NETWORK_KEY = 'ulaanbaatar-market';
+
+    /** QPay gateway settings from the previous run, by seed id. */
+    protected array $qpayGateways = [];
     public const TRUCK_STORE = 'khaan-buuz';
 
     /** Central Ulaanbaatar: Sükhbaatar Square. */
@@ -153,6 +157,13 @@ class MongoliaSeeder extends Seeder
         $storeUuids = $this->seededUuids(Store::class);
         $truckUuids = DB::connection($this->storefrontConnection())->table('food_trucks')->whereIn('store_uuid', $storeUuids)->pluck('uuid')->all();
 
+        // QPay settings entered in the Console (e.g. a live merchant for payment tests) are
+        // kept: a re-seed must never swap them back to the sandbox test merchant.
+        $this->qpayGateways = $this->seededQuery(Gateway::class)->get(['meta', 'config', 'sandbox'])
+            ->filter(fn ($gateway) => data_get($gateway, 'meta.seed') === $this->seedName() && data_get($gateway, 'meta.seed_id'))
+            ->mapWithKeys(fn ($gateway) => [data_get($gateway, 'meta.seed_id') => ['config' => (array) $gateway->config, 'sandbox' => (bool) $gateway->sandbox]])
+            ->all();
+
         // Food trucks have no tag of their own: remember each by its vehicle's seed id, so the
         // truck keeps its id and carts holding it still find their delivery origin.
         $truckIdentities = [];
@@ -201,12 +212,12 @@ class MongoliaSeeder extends Seeder
             'description'     => 'Sandbox QPay gateway seeded for Storefront testing.',
             'code'            => 'qpay',
             'type'            => 'qpay',
-            'sandbox'         => true,
-            'config'          => [
+            'sandbox'         => $this->qpayGateways[$seedId]['sandbox'] ?? true,
+            'config'          => $this->qpayGateways[$seedId]['config'] ?? [
                 'username'           => env('SEED_QPAY_USERNAME', 'TEST_MERCHANT'),
                 'password'           => env('SEED_QPAY_PASSWORD', '123456'),
                 'invoice_id'         => env('SEED_QPAY_INVOICE_ID', 'TEST_INVOICE'),
-                'ebarimt_invoice_id' => env('SEED_QPAY_EBARIMT_INVOICE_ID', 'TEST_INVOICE'),
+                'ebarimt_invoice_id' => env('SEED_QPAY_EBARIMT_INVOICE_ID', 'TEST_EB_INVOICE'),
             ],
             'return_url'      => null,
             'callback_url'    => null,
@@ -215,7 +226,7 @@ class MongoliaSeeder extends Seeder
     }
 
     /**
-     * Delivery in tögrög: 3,000₮ plus 500₮ per kilometre (amounts are in minor units).
+     * Delivery in tögrög: 3,000₮ plus 500₮ per kilometre. MNT has no minor unit: every amount in this seeder is whole tögrög, as the app and QPay use it.
      */
     protected function createMongoliaDeliveryRate(Company $company): ServiceRate
     {
@@ -229,8 +240,8 @@ class MongoliaSeeder extends Seeder
             'service_name'            => 'Улаанбаатар хүргэлт',
             'service_type'            => data_get($orderConfig, 'key', 'storefront'),
             'rate_calculation_method' => 'per_meter',
-            'base_fee'                => 300000,
-            'per_meter_flat_rate_fee' => 50000,
+            'base_fee'                => 3000,
+            'per_meter_flat_rate_fee' => 500,
             'per_meter_unit'          => 'km',
             'currency'                => 'MNT',
             'duration_terms'          => 'Нэг цагийн дотор хүргэнэ',
@@ -368,7 +379,7 @@ class MongoliaSeeder extends Seeder
                 'zone'     => 'central',
                 'online'   => true,
                 'position' => [47.9178, 106.9122],
-                'catalog'  => ['name' => 'Төв машины цэс', 'categories' => ['Бууз' => ['buuz', 'buuz-mix'], 'Хуушуур' => ['khuushuur'], 'Ундаа' => ['suutei-tsai', 'aaruul-shake']]],
+                'catalog'  => ['name' => 'Төв машины цэс', 'categories' => ['Бууз' => ['buuz', 'buuz-mix'], 'Хуушуур' => ['khuushuur'], 'Ундаа' => ['suutei-tsai', 'aaruul-shake', 'test-item']]],
             ],
             'zaisan' => [
                 'name'     => 'Хаан Бууз — Зайсан',
@@ -456,9 +467,9 @@ class MongoliaSeeder extends Seeder
     {
         return [
             'promotions' => [
-                'welcome'       => ['name' => 'Тавтай морил', 'description' => 'Анхны захиалгадаа 15% хөнгөлөлт, дээд тал нь 10,000₮.', 'type' => 'percentage', 'value' => 15, 'max_discount_amount' => 1000000, 'min_subtotal' => 2000000, 'first_order_only' => true, 'code' => 'SAIN15', 'usage_limit_per_customer' => 1, 'starts_in_days' => -30, 'ends_in_days' => 60],
-                'free-delivery' => ['name' => '50,000₮-өөс дээш үнэгүй хүргэлт', 'description' => '50,000₮ ба түүнээс дээш захиалгад хүргэлт үнэгүй.', 'type' => 'free_delivery', 'min_subtotal' => 5000000, 'starts_in_days' => -14, 'ends_in_days' => 30, 'priority' => 5],
-                'weekend'       => ['name' => 'Амралтын өдрийн 5,000₮', 'description' => 'Бямба, ням гарагт 30,000₮-өөс дээш захиалгад 5,000₮ хасна.', 'type' => 'fixed_amount', 'value' => 500000, 'min_subtotal' => 3000000, 'schedule' => [['days' => [6, 7], 'start' => '00:00', 'end' => '23:59']], 'starts_in_days' => -7, 'ends_in_days' => 45],
+                'welcome'       => ['name' => 'Тавтай морил', 'description' => 'Анхны захиалгадаа 15% хөнгөлөлт, дээд тал нь 10,000₮.', 'type' => 'percentage', 'value' => 15, 'max_discount_amount' => 10000, 'min_subtotal' => 20000, 'first_order_only' => true, 'code' => 'SAIN15', 'usage_limit_per_customer' => 1, 'starts_in_days' => -30, 'ends_in_days' => 60],
+                'free-delivery' => ['name' => '50,000₮-өөс дээш үнэгүй хүргэлт', 'description' => '50,000₮ ба түүнээс дээш захиалгад хүргэлт үнэгүй.', 'type' => 'free_delivery', 'min_subtotal' => 50000, 'starts_in_days' => -14, 'ends_in_days' => 30, 'priority' => 5],
+                'weekend'       => ['name' => 'Амралтын өдрийн 5,000₮', 'description' => 'Бямба, ням гарагт 30,000₮-өөс дээш захиалгад 5,000₮ хасна.', 'type' => 'fixed_amount', 'value' => 5000, 'min_subtotal' => 30000, 'schedule' => [['days' => [6, 7], 'start' => '00:00', 'end' => '23:59']], 'starts_in_days' => -7, 'ends_in_days' => 45],
                 'upcoming'      => ['name' => 'Цагаан сарын урамшуулал', 'description' => 'Удахгүй: бүх бүтээгдэхүүнд 10%.', 'type' => 'percentage', 'value' => 10, 'starts_in_days' => 5, 'ends_in_days' => 20],
             ],
             'segments' => [
@@ -487,7 +498,7 @@ class MongoliaSeeder extends Seeder
             ],
             'modern-salon' => [
                 'promotions' => [
-                    'first-visit' => ['name' => 'Анхны үйлчилгээнд 10,000₮', 'description' => 'Шинэ үйлчлүүлэгчдэд, 30,000₮-өөс дээш.', 'type' => 'fixed_amount', 'value' => 1000000, 'min_subtotal' => 3000000, 'first_order_only' => true, 'code' => 'SALON10', 'starts_in_days' => -20, 'ends_in_days' => 70],
+                    'first-visit' => ['name' => 'Анхны үйлчилгээнд 10,000₮', 'description' => 'Шинэ үйлчлүүлэгчдэд, 30,000₮-өөс дээш.', 'type' => 'fixed_amount', 'value' => 10000, 'min_subtotal' => 30000, 'first_order_only' => true, 'code' => 'SALON10', 'starts_in_days' => -20, 'ends_in_days' => 70],
                 ],
             ],
         ];
@@ -557,16 +568,16 @@ class MongoliaSeeder extends Seeder
                     'bakery' => ['name' => 'Талх, нарийн боов', 'description' => 'Өдөр бүр шинэ.'],
                 ],
                 'addon_categories' => [
-                    'bags' => ['name' => 'Савлагаа', 'description' => 'Уут сонгох.', 'max_selectable' => 1, 'is_required' => false, 'addons' => [['Цаасан уут', 'Дахин боловсруулдаг.', 20000], ['Хөргөгчтэй уут', 'Хүйтэн байлгана.', 150000]]],
+                    'bags' => ['name' => 'Савлагаа', 'description' => 'Уут сонгох.', 'max_selectable' => 1, 'is_required' => false, 'addons' => [['Цаасан уут', 'Дахин боловсруулдаг.', 200], ['Хөргөгчтэй уут', 'Хүйтэн байлгана.', 1500]]],
                 ],
                 'products' => [
-                    'milk'      => ['name' => 'Сүү 1л', 'description' => 'Пастержүүлсэн үнээний сүү.', 'price' => 380000, 'category' => 'dairy', 'tags' => ['dairy'], 'recommended' => true, 'addon_categories' => ['bags']],
-                    'tarag'     => ['name' => 'Тараг 500г', 'description' => 'Уламжлалт исгэлэн тараг.', 'price' => 420000, 'sale_price' => 350000, 'category' => 'dairy', 'tags' => ['dairy']],
-                    'aaruul'    => ['name' => 'Ааруул 250г', 'description' => 'Гэрийн хатаасан ааруул.', 'price' => 650000, 'category' => 'dairy', 'tags' => ['dairy']],
-                    'mutton'    => ['name' => 'Хонины мах 1кг', 'description' => 'Шинэ хонины мах.', 'price' => 1800000, 'category' => 'meat', 'tags' => ['meat'], 'variants' => [['name' => 'Хэрчилт', 'required' => true, 'options' => [['Бүтэн', 0], ['Хэрчсэн', 100000]]]]],
-                    'beef'      => ['name' => 'Үхрийн мах 1кг', 'description' => 'Ястай үхрийн мах.', 'price' => 2200000, 'category' => 'meat', 'tags' => ['meat']],
-                    'bread'     => ['name' => 'Атар талх', 'description' => 'Өглөө бүр шинээр жигнэнэ.', 'price' => 250000, 'category' => 'bakery', 'tags' => ['bread'], 'recommended' => true],
-                    'boortsog'  => ['name' => 'Боорцог 500г', 'description' => 'Шаржигнуур боорцог.', 'price' => 600000, 'category' => 'bakery', 'tags' => ['pastry']],
+                    'milk'      => ['name' => 'Сүү 1л', 'description' => 'Пастержүүлсэн үнээний сүү.', 'price' => 3800, 'category' => 'dairy', 'tags' => ['dairy'], 'recommended' => true, 'addon_categories' => ['bags']],
+                    'tarag'     => ['name' => 'Тараг 500г', 'description' => 'Уламжлалт исгэлэн тараг.', 'price' => 4200, 'sale_price' => 3500, 'category' => 'dairy', 'tags' => ['dairy']],
+                    'aaruul'    => ['name' => 'Ааруул 250г', 'description' => 'Гэрийн хатаасан ааруул.', 'price' => 6500, 'category' => 'dairy', 'tags' => ['dairy']],
+                    'mutton'    => ['name' => 'Хонины мах 1кг', 'description' => 'Шинэ хонины мах.', 'price' => 18000, 'category' => 'meat', 'tags' => ['meat'], 'variants' => [['name' => 'Хэрчилт', 'required' => true, 'options' => [['Бүтэн', 0], ['Хэрчсэн', 1000]]]]],
+                    'beef'      => ['name' => 'Үхрийн мах 1кг', 'description' => 'Ястай үхрийн мах.', 'price' => 22000, 'category' => 'meat', 'tags' => ['meat']],
+                    'bread'     => ['name' => 'Атар талх', 'description' => 'Өглөө бүр шинээр жигнэнэ.', 'price' => 2500, 'category' => 'bakery', 'tags' => ['bread'], 'recommended' => true],
+                    'boortsog'  => ['name' => 'Боорцог 500г', 'description' => 'Шаржигнуур боорцог.', 'price' => 6000, 'category' => 'bakery', 'tags' => ['pastry']],
                 ],
                 'catalog' => ['name' => 'Номин Супермаркетын каталог', 'categories' => ['Сүүн бүтээгдэхүүн' => ['milk', 'tarag', 'aaruul'], 'Мах' => ['mutton', 'beef'], 'Талх' => ['bread', 'boortsog']]],
             ],
@@ -590,17 +601,19 @@ class MongoliaSeeder extends Seeder
                     'drinks'    => ['name' => 'Ундаа', 'description' => 'Цай, ундаа.'],
                 ],
                 'addon_categories' => [
-                    'sides' => ['name' => 'Нэмэлт', 'description' => 'Нэмэлт хачир.', 'max_selectable' => 2, 'is_required' => false, 'addons' => [['Даршилсан ногоо', 'Байцаа, лууван.', 150000], ['Кетчуп', 'Нэмэлт соус.', 0]]],
+                    'sides' => ['name' => 'Нэмэлт', 'description' => 'Нэмэлт хачир.', 'max_selectable' => 2, 'is_required' => false, 'addons' => [['Даршилсан ногоо', 'Байцаа, лууван.', 1500], ['Кетчуп', 'Нэмэлт соус.', 0]]],
                 ],
                 'products' => [
-                    'buuz'          => ['name' => 'Бууз (10ш)', 'description' => 'Хонины махтай уурын бууз.', 'price' => 1200000, 'category' => 'buuz', 'tags' => ['buuz'], 'recommended' => true, 'addon_categories' => ['sides']],
-                    'buuz-mix'      => ['name' => 'Холимог бууз (10ш)', 'description' => 'Үхэр, хонины холимог махтай.', 'price' => 1300000, 'category' => 'buuz', 'tags' => ['buuz'], 'variants' => [['name' => 'Хэмжээ', 'required' => true, 'options' => [['10ш', 0], ['20ш', 1200000]]]]],
-                    'khuushuur'     => ['name' => 'Хуушуур (4ш)', 'description' => 'Шинэхэн шарсан хуушуур.', 'price' => 1000000, 'sale_price' => 850000, 'category' => 'khuushuur', 'tags' => ['khuushuur'], 'recommended' => true, 'addon_categories' => ['sides']],
-                    'guriltai-shul' => ['name' => 'Гурилтай шөл', 'description' => 'Гар гурилтай махан шөл.', 'price' => 1100000, 'category' => 'soup', 'tags' => ['soup']],
-                    'suutei-tsai'   => ['name' => 'Сүүтэй цай', 'description' => 'Халуун сүүтэй цай.', 'price' => 200000, 'category' => 'drinks', 'tags' => ['tea']],
-                    'aaruul-shake'  => ['name' => 'Ааруулын коктейль', 'description' => 'Ааруул, сүү, зөгийн бал.', 'price' => 650000, 'category' => 'drinks', 'tags' => ['drink']],
+                    'buuz'          => ['name' => 'Бууз (10ш)', 'description' => 'Хонины махтай уурын бууз.', 'price' => 12000, 'category' => 'buuz', 'tags' => ['buuz'], 'recommended' => true, 'addon_categories' => ['sides']],
+                    'buuz-mix'      => ['name' => 'Холимог бууз (10ш)', 'description' => 'Үхэр, хонины холимог махтай.', 'price' => 13000, 'category' => 'buuz', 'tags' => ['buuz'], 'variants' => [['name' => 'Хэмжээ', 'required' => true, 'options' => [['10ш', 0], ['20ш', 12000]]]]],
+                    'khuushuur'     => ['name' => 'Хуушуур (4ш)', 'description' => 'Шинэхэн шарсан хуушуур.', 'price' => 10000, 'sale_price' => 8500, 'category' => 'khuushuur', 'tags' => ['khuushuur'], 'recommended' => true, 'addon_categories' => ['sides']],
+                    'guriltai-shul' => ['name' => 'Гурилтай шөл', 'description' => 'Гар гурилтай махан шөл.', 'price' => 11000, 'category' => 'soup', 'tags' => ['soup']],
+                    'suutei-tsai'   => ['name' => 'Сүүтэй цай', 'description' => 'Халуун сүүтэй цай.', 'price' => 2000, 'category' => 'drinks', 'tags' => ['tea']],
+                    // A 1,000₮ item for end-to-end payment tests on a live QPay merchant.
+                    'test-item'     => ['name' => 'Туршилтын бараа', 'description' => 'Төлбөрийн туршилтад зориулсан 1,000₮-ийн бараа.', 'price' => 1000, 'category' => 'drinks', 'tags' => ['test']],
+                    'aaruul-shake'  => ['name' => 'Ааруулын коктейль', 'description' => 'Ааруул, сүү, зөгийн бал.', 'price' => 6500, 'category' => 'drinks', 'tags' => ['drink']],
                 ],
-                'catalog' => ['name' => 'Хаан Буузын цэс', 'categories' => ['Бууз' => ['buuz', 'buuz-mix'], 'Хуушуур' => ['khuushuur'], 'Шөл' => ['guriltai-shul'], 'Ундаа' => ['suutei-tsai', 'aaruul-shake']]],
+                'catalog' => ['name' => 'Хаан Буузын цэс', 'categories' => ['Бууз' => ['buuz', 'buuz-mix'], 'Хуушуур' => ['khuushuur'], 'Шөл' => ['guriltai-shul'], 'Ундаа' => ['suutei-tsai', 'aaruul-shake', 'test-item']]],
             ],
             $common + [
                 'key'              => 'modern-salon',
@@ -619,9 +632,9 @@ class MongoliaSeeder extends Seeder
                     'nails' => ['name' => 'Хумс', 'description' => 'Маникюр, педикюр.'],
                 ],
                 'products' => [
-                    'haircut'  => ['name' => 'Эмэгтэй үс засалт', 'description' => 'Угаалт, засалт, хатаалт.', 'price' => 3500000, 'category' => 'hair', 'tags' => ['hair'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 60], 'recommended' => true],
-                    'barber'   => ['name' => 'Эрэгтэй үс засалт', 'description' => 'Сахал засалттай.', 'price' => 2500000, 'category' => 'hair', 'tags' => ['hair'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 45]],
-                    'manicure' => ['name' => 'Гель маникюр', 'description' => 'Өнгө сонгох боломжтой.', 'price' => 4000000, 'category' => 'nails', 'tags' => ['nails'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 90]],
+                    'haircut'  => ['name' => 'Эмэгтэй үс засалт', 'description' => 'Угаалт, засалт, хатаалт.', 'price' => 35000, 'category' => 'hair', 'tags' => ['hair'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 60], 'recommended' => true],
+                    'barber'   => ['name' => 'Эрэгтэй үс засалт', 'description' => 'Сахал засалттай.', 'price' => 25000, 'category' => 'hair', 'tags' => ['hair'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 45]],
+                    'manicure' => ['name' => 'Гель маникюр', 'description' => 'Өнгө сонгох боломжтой.', 'price' => 40000, 'category' => 'nails', 'tags' => ['nails'], 'is_service' => true, 'is_bookable' => true, 'meta' => ['duration' => 90]],
                 ],
                 'catalog' => ['name' => 'Модерн Салоны үйлчилгээ', 'categories' => ['Үс засалт' => ['haircut', 'barber'], 'Хумс' => ['manicure']]],
             ],
