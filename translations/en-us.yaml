@@ -312,6 +312,39 @@ storefront:
   home:
     title: Storefront Dashboard
   customers:
+    panel:
+      tabs:
+        overview: Overview
+        orders: Orders
+        places: Places
+        activity: Activity and notes
+      new-order: New order
+      copy-id: Copy customer ID
+      copy-email: Copy email
+      copied: "Copied {value}"
+      since: "since {date}"
+      lifetime: Lifetime
+      average: Average
+      last-order: Last order
+      first-order: First order
+      never: Never
+      prefers-delivery: Prefers delivery
+      prefers-pickup: Prefers pickup
+      preferred-fulfillment: Preferred fulfillment
+      account: Account
+      guest: Guest
+      saved-places: Saved places
+      default: Default
+      set-default: Set default
+      default-saved: "{name} is now the default place."
+      no-places: No saved places yet. Places are added when the customer checks out.
+      places-lede: The customer's Fleet-Ops places. Open a place from its pill to edit it in Fleet-Ops.
+      places-note: Places belong to Fleet-Ops; the default is the one the app proposes at checkout.
+      stores-ordered-from: Stores ordered from
+      recent-orders: Recent orders
+      no-orders: No orders yet.
+      canceled-orders: Canceled orders
+      notes: Internal notes
     index:
       internal-id: Internal ID
       create-at: Created At

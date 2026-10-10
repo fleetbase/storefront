@@ -1,17 +1,19 @@
-<div class="px-4 py-2">
-    <div class="flex flex-1 flex-row items-start justify-between">
-        <div class="flex flex-row space-x-3">
-            <div class="flex items-start justify-start rounded-full">
-                <Image src={{@resource.photo_url}} @fallbackSrc={{config "defaultValues.customerImage"}} alt={{@resource.name}} height="48" width="48" class="h-14 w-14 rounded-full shadow-sm" />
-                <Attach::Tooltip @class="clean" @animation="scale" @placement="top">
-                    <InputInfo @text={{@resource.public_id}} />
-                </Attach::Tooltip>
-            </div>
-            <div class="flex flex-col">
-                <h1 class="text-gray-900 dark:text-white font-semibold text-2xl">{{@resource.name}}</h1>
-                <div class="mt-1 flex flex-row items-center space-x-2">
-                    <Badge @status={{@resource.type}} />
-                    <Badge @status={{@resource.public_id}} @type="info" @hideStatusDot={{true}} />
+<div class="storefront-customer-header" data-test-customer-panel-header>
+    <div class="storefront-customer-header__row">
+        <div class="storefront-customer-header__identity">
+            <Image src={{@resource.photo_url}} @fallbackSrc={{config "defaultValues.customerImage"}} alt={{@resource.name}} class="storefront-customer-header__photo" />
+            <div class="min-w-0">
+                <div class="storefront-customer-header__name">
+                    <span>{{n-a @resource.name}}</span>
+                    {{#if @resource.type}}<Badge @status={{@resource.type}} @size="xs" @hideStatusDot={{true}} />{{/if}}
+                    {{#if @insights.preferred_fulfillment}}
+                        <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t (concat "storefront.customers.panel.prefers-" @insights.preferred_fulfillment)}} />
+                    {{/if}}
+                </div>
+                <div class="storefront-customer-header__meta">
+                    <ClickToCopy @value={{@resource.public_id}} class="storefront-customer-header__id">{{@resource.public_id}}</ClickToCopy>
+                    {{#if @insights.since}}<span>{{t "storefront.customers.panel.since" date=(format-date-fns @insights.since "MMM yyyy")}}</span>{{/if}}
+                    {{#if @resource.email}}<span>{{@resource.email}}</span>{{/if}}
                 </div>
             </div>
         </div>
@@ -28,6 +30,24 @@
             >
                 {{yield}}
             </Layout::Resource::Panel::HeaderActions>
+        </div>
+    </div>
+    <div class="storefront-identity-strip storefront-customer-header__strip" data-test-customer-lifetime>
+        <div class="storefront-identity-strip__cell">
+            <div class="storefront-identity-strip__label">{{t "storefront.common.orders"}}</div>
+            <div class="storefront-identity-strip__value storefront-identity-strip__value--strong">{{if @isLoadingInsights "…" (n-a @insights.orders 0)}}</div>
+        </div>
+        <div class="storefront-identity-strip__cell">
+            <div class="storefront-identity-strip__label">{{t "storefront.customers.panel.lifetime"}}</div>
+            <div class="storefront-identity-strip__value storefront-identity-strip__value--strong">{{if @isLoadingInsights "…" (format-currency (or @insights.spend 0) (or @insights.currency "USD"))}}</div>
+        </div>
+        <div class="storefront-identity-strip__cell">
+            <div class="storefront-identity-strip__label">{{t "storefront.customers.panel.average"}}</div>
+            <div class="storefront-identity-strip__value">{{if @isLoadingInsights "…" (format-currency (or @insights.average 0) (or @insights.currency "USD"))}}</div>
+        </div>
+        <div class="storefront-identity-strip__cell">
+            <div class="storefront-identity-strip__label">{{t "storefront.customers.panel.last-order"}}</div>
+            <div class="storefront-identity-strip__value">{{#if @insights.last_order_at}}{{format-date-fns @insights.last_order_at "d MMM yyyy"}}{{else}}{{t "storefront.customers.panel.never"}}{{/if}}</div>
         </div>
     </div>
 </div>

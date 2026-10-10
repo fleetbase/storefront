@@ -1,0 +1,23 @@
+<div class="p-4 space-y-3" data-test-customer-places>
+    <p class="storefront-settings-section__lede">{{t "storefront.customers.panel.places-lede"}}</p>
+    {{#if this.rows.length}}
+        <div class="storefront-member-list storefront-catalog-served-by">
+            {{#each this.rows as |row|}}
+                <div class="storefront-member-row" data-test-customer-place={{row.place.id}}>
+                    <Place::Pill @place={{row.place}} @size="xs" />
+                    <div class="storefront-member-row__identity">
+                        <div class="storefront-member-row__meta">{{n-a row.place.address}}</div>
+                    </div>
+                    {{#if row.isDefault}}
+                        <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.customers.panel.default"}} />
+                    {{else}}
+                        <Button @size="xs" @icon="star" @text={{t "storefront.customers.panel.set-default"}} @onClick={{perform this.setDefault row.place}} @isLoading={{this.setDefault.isRunning}} @permission="storefront update customer" />
+                    {{/if}}
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-places"}}</span></div>
+    {{/if}}
+    <p class="storefront-invitation-list__note">{{t "storefront.customers.panel.places-note"}}</p>
+</div>

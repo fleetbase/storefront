@@ -1,0 +1,23 @@
+<div class="p-4 space-y-4" data-test-customer-activity>
+    <div class="storefront-customer-facts">
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.panel.first-order"}}</div>
+            <div class="field-value">{{#if @insights.first_order_at}}{{format-date-fns @insights.first_order_at "d MMM yyyy"}}{{else}}{{t "storefront.customers.panel.never"}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.panel.last-order"}}</div>
+            <div class="field-value">{{#if @insights.last_order_at}}{{format-date-fns @insights.last_order_at "d MMM yyyy"}} · {{@insights.last_order_public_id}}{{else}}{{t "storefront.customers.panel.never"}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.panel.canceled-orders"}}</div>
+            <div class="field-value">{{n-a @insights.canceled 0}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.created"}}</div>
+            <div class="field-value">{{n-a (format-date-fns @customer.created_at "d MMM yyyy HH:mm")}}</div>
+        </div>
+    </div>
+    <ContentPanel @title={{t "storefront.customers.panel.notes"}} @open={{true}} @wrapperClass="bordered-top">
+        <CommentThread @subject={{@customer}} @subjectType="fleet-ops:contact" />
+    </ContentPanel>
+</div>

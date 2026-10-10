@@ -243,7 +243,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->get('{id}/overview', $controller('overview'));
                             }
                         );
-                        $router->fleetbaseRoutes('customers');
+                        $router->fleetbaseRoutes(
+                            'customers',
+                            function ($router, $controller) {
+                                $router->get('{id}/insights', $controller('insights'));
+                            }
+                        );
                         $router->fleetbaseRoutes('stores');
                         $router->fleetbaseRoutes('store-hours');
                         $router->fleetbaseRoutes('store-locations');

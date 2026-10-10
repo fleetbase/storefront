@@ -2,17 +2,17 @@
     @registry="storefront:customer:details"
     @resource={{this.customer}}
     @controller={{this}}
-    @headerComponent={{component "customer-panel/panel-header" resource=this.customer actionButtons=this.actionButtons}}
+    @headerComponent={{component "customer-panel/panel-header" resource=this.customer actionButtons=this.actionButtons insights=this.insights isLoadingInsights=this.loadInsights.isRunning}}
     @headerTitle={{or this.customer.name}}
     @actionButtons={{this.actionButtons}}
     @onPressCancel={{this.onPressCancel}}
     @onOverlayReady={{this.setOverlayContext}}
     @headerClass="no-bottom-border"
     @bodyClass="no-scroll"
-    @width={{or this.width @width "570px"}}
+    @width={{or this.width @width "600px"}}
     @isResizable={{or this.isResizable @isResizable}}
 >
     <TabNavigation @tabs={{this.tabs}} @activeTabId={{this.tab.id}} @onTabChange={{this.onTabChanged}} @contentClass="scrollable" @tablistClass="pl-2" as |activeTab|>
-        {{component activeTab.component customer=this.customer tabOptions=activeTab options=activeTab.componentParams}}
+        {{component activeTab.component customer=this.customer tabOptions=activeTab options=activeTab.componentParams insights=this.insights onChange=this.reload}}
     </TabNavigation>
 </Layout::Resource::Panel>

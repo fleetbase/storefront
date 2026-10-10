@@ -1,0 +1,83 @@
+<div class="storefront-customer-overview p-4 space-y-4" data-test-customer-overview>
+    <div class="storefront-customer-facts">
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.email"}}</div>
+            <div class="field-value">{{#if this.customer.email}}<a href="mailto:{{this.customer.email}}">{{this.customer.email}}</a>{{else}}{{n-a null}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.phone"}}</div>
+            <div class="field-value">{{#if this.customer.phone}}<a href="tel:{{this.customer.phone}}">{{this.customer.phone}}</a>{{else}}{{n-a null}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.panel.preferred-fulfillment"}}</div>
+            <div class="field-value">{{#if this.insights.preferred_fulfillment}}{{t (concat "storefront.customers.panel.prefers-" this.insights.preferred_fulfillment)}}{{else}}{{n-a null}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.customers.panel.account"}}</div>
+            <div class="field-value">{{#if this.accountLabel}}{{smart-humanize this.accountLabel}}{{else}}{{t "storefront.customers.panel.guest"}}{{/if}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.internal-id"}}</div>
+            <div class="field-value">{{n-a this.customer.internal_id}}</div>
+        </div>
+        <div class="field-info-container">
+            <div class="field-name">{{t "storefront.common.title"}}</div>
+            <div class="field-value">{{n-a this.customer.title}}</div>
+        </div>
+    </div>
+
+    <ContentPanel @title={{t "storefront.customers.panel.saved-places"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0">
+        {{#if this.placeRows.length}}
+            <div class="storefront-member-list">
+                {{#each this.placeRows as |row|}}
+                    <div class="storefront-member-row" data-test-customer-place={{row.place.id}}>
+                        <Place::Pill @place={{row.place}} @size="xs" />
+                        <div class="storefront-member-row__identity">
+                            <div class="storefront-member-row__meta">{{n-a row.place.address}}</div>
+                        </div>
+                        {{#if row.isDefault}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.customers.panel.default"}} />{{/if}}
+                    </div>
+                {{/each}}
+            </div>
+        {{else}}
+            <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-places"}}</span></div>
+        {{/if}}
+    </ContentPanel>
+
+    {{#if this.showStores}}
+        <ContentPanel @title={{t "storefront.customers.panel.stores-ordered-from"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0">
+            {{#if this.stores.length}}
+                <div class="storefront-member-list">
+                    {{#each this.stores as |store|}}
+                        <div class="storefront-member-row">
+                            <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="store" /></div>
+                            <div class="storefront-member-row__identity"><div class="storefront-member-row__name">{{n-a store.name store.public_id}}</div></div>
+                            <span class="storefront-member-row__meta">{{t "storefront.networks.orders.items-count" count=store.orders}}</span>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-orders"}}</span></div>
+            {{/if}}
+        </ContentPanel>
+    {{/if}}
+
+    <ContentPanel @title={{t "storefront.customers.panel.recent-orders"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0" @isLoading={{this.loadOrders.isRunning}}>
+        {{#if this.orders.length}}
+            <div class="storefront-member-list">
+                {{#each this.orders as |order|}}
+                    <div class="storefront-member-row" data-test-customer-order={{order.public_id}}>
+                        <div class="storefront-member-row__identity">
+                            <a href="javascript:;" class="storefront-member-row__name storefront-order-ref__id--link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a>
+                            <div class="storefront-member-row__meta">{{order.createdAgo}} · {{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}{{#if order.meta.storefront}} · {{order.meta.storefront}}{{/if}}</div>
+                        </div>
+                        <div class="storefront-member-row__amount">{{format-currency (or order.meta.total order.transaction_amount 0) order.meta.currency}}</div>
+                        <Badge @status={{order.status}} @size="xs" />
+                    </div>
+                {{/each}}
+            </div>
+        {{else unless this.loadOrders.isRunning}}
+            <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-orders"}}</span></div>
+        {{/if}}
+    </ContentPanel>
+</div>

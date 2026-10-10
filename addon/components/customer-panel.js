@@ -4,8 +4,11 @@ import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { isArray } from '@ember/array';
 import { dasherize } from '@ember/string';
-import CustomerPanelDetailsComponent from './customer-panel/details';
+import CustomerPanelOverviewComponent from './customer-panel/overview';
 import CustomerPanelOrdersComponent from './customer-panel/orders';
+import CustomerPanelPlacesComponent from './customer-panel/places';
+import CustomerPanelActivityComponent from './customer-panel/activity';
+import { task } from 'ember-concurrency';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
 import applyContextComponentArguments from '@fleetbase/ember-core/utils/apply-context-component-arguments';
 
@@ -80,6 +83,7 @@ export default class CustomerPanelComponent extends Component {
     constructor() {
         super(...arguments);
         this.customer = this.args.customer;
+        this.loadInsights.perform();
 
         this.tab = this.getTabUsingSlug(this.args.tab);
         applyContextComponentArguments(this);
@@ -95,8 +99,10 @@ export default class CustomerPanelComponent extends Component {
         const registeredTabs = this.universe.getMenuItemsFromRegistry('component:customer-panel');
 
         const defaultTabs = [
-            this.universe._createMenuItem('Details', null, { icon: 'circle-info', component: CustomerPanelDetailsComponent }),
-            this.universe._createMenuItem('Orders', null, { icon: 'circle-info', component: CustomerPanelOrdersComponent }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.overview'), null, { icon: 'circle-info', component: CustomerPanelOverviewComponent, componentParams: { insights: this.insights, onChange: this.reload } }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.orders'), null, { icon: 'file-invoice-dollar', component: CustomerPanelOrdersComponent }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.places'), null, { icon: 'map-marker-alt', component: CustomerPanelPlacesComponent, componentParams: { onChange: this.reload } }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.activity'), null, { icon: 'wave-square', component: CustomerPanelActivityComponent, componentParams: { insights: this.insights } }),
         ];
 
         if (isArray(registeredTabs)) {
@@ -109,12 +115,76 @@ export default class CustomerPanelComponent extends Component {
     get actionButtons() {
         return [
             {
+                icon: 'plus',
+                text: this.intl.t('storefront.customers.panel.new-order'),
+                size: 'sm',
+                type: 'primary',
+                onClick: this.newOrder,
+                permission: 'storefront create order',
+            },
+            {
                 icon: 'pencil',
-                helpText: 'Edit customer',
+                text: this.intl.t('common.edit'),
+                size: 'sm',
                 onClick: this.onEdit,
                 permission: 'storefront update customer',
             },
+            {
+                items: [
+                    { text: this.intl.t('storefront.customers.panel.copy-id'), icon: 'copy', fn: this.copyId },
+                    { text: this.intl.t('storefront.customers.panel.copy-email'), icon: 'at', fn: this.copyEmail, disabled: !this.customer?.email },
+                ],
+            },
         ];
+    }
+
+    @task *loadInsights() {
+        const customer = this.customer;
+
+        if (!customer?.id) {
+            return;
+        }
+
+        const scope = this.storefront.isNetworkContext ? { network: this.storefront.getActiveNetwork('public_id') } : { storefront: this.storefront.getActiveStore('public_id') };
+
+        try {
+            this.insights = yield this.fetch.get(`customers/${customer.id}/insights`, scope, { namespace: 'storefront/int/v1' });
+        } catch {
+            this.insights = null;
+        }
+    }
+
+    @action reload() {
+        return this.loadInsights.perform();
+    }
+
+    @action newOrder() {
+        try {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.new', { queryParams: { customer: this.customer?.public_id } });
+        } catch {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.new');
+        }
+    }
+
+    @action async copyId() {
+        return this.copy(this.customer?.public_id);
+    }
+
+    @action async copyEmail() {
+        return this.copy(this.customer?.email);
+    }
+
+    async copy(value) {
+        if (!value) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(value);
+            this.notifications.success(this.intl.t('storefront.customers.panel.copied', { value }));
+        } catch {
+            this.notifications.info(value);
+        }
     }
     /**
      * Sets the overlay context.
