@@ -63,6 +63,14 @@ export default class OrdersIndexController extends BaseController {
     get actionButtons() {
         return [
             {
+                id: 'new-order',
+                type: 'primary',
+                icon: 'plus',
+                text: this.intl.t('storefront.orders.create.title'),
+                permission: 'storefront create order',
+                onClick: this.createOrder,
+            },
+            {
                 id: 'export',
                 icon: 'long-arrow-up',
                 iconClass: 'rotate-icon-45',
@@ -414,6 +422,10 @@ export default class OrdersIndexController extends BaseController {
         }
 
         return this.transitionToRoute('customers.index.view', customer.public_id);
+    }
+
+    @action createOrder() {
+        return this.transitionToRoute('orders.index.new');
     }
 
     @action viewOrder(order) {

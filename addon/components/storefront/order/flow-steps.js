@@ -86,15 +86,20 @@ export default class StorefrontOrderFlowStepsComponent extends Component {
         return this.codes.map((code, index) => ({
             code,
             number: index + 1,
-            label: flow[code]?.status ?? this.labelFor(code),
+            label: this.labelFor(code, flow[code]?.status),
             isComplete: index < current || (index === current && rankOf(this.status) >= 4),
             isCurrent: index === current && rankOf(this.status) < 4,
             isUpcoming: index > current,
         }));
     }
 
-    labelFor(code) {
+    /** The short translated step name wins; a custom flow's own status name is the fallback. */
+    labelFor(code, fallback = null) {
         const key = `storefront.order.flow.${code}`;
+
+        if (!this.intl.exists(key) && fallback) {
+            return fallback;
+        }
 
         return this.intl.exists(key) ? this.intl.t(key) : String(code).replace(/_/g, ' ');
     }
