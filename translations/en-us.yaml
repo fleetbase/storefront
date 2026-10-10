@@ -428,7 +428,7 @@ storefront:
       trucks-help: Trucks that serve this catalog while they are online.
       pick-trucks: Pick trucks
       unsaved: Unsaved changes
-      unsaved-summary: "Unsaved: {added, plural, =0 {} one {# product added} other {# products added}} {removed, plural, =0 {} one {# removed} other {# removed}} {categories, plural, =0 {} other {categories changed}}"
+      unsaved-summary: "Unsaved: {added, plural, =0 {} one {# product added} other {# products added}} {removed, plural, =0 {} one {# removed} other {# removed}} {categories, plural, =0 {} other {categories changed}} {overrides, plural, =0 {} one {# price or availability change} other {# price or availability changes}}"
       save: Save catalog
       saved: Catalog saved.
       created: Catalog created. Add categories and products next.

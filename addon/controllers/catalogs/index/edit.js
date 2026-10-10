@@ -229,8 +229,17 @@ export default class CatalogsIndexEditController extends Controller {
             const added = [...afterIds].filter((id) => !beforeIds.has(id)).length;
             const removed = [...beforeIds].filter((id) => !afterIds.has(id)).length;
             const categoriesChanged = (before.categories ?? []).length !== (after.categories ?? []).length;
+            const overridesBefore = Object.assign({}, ...(before.categories ?? []).map((category) => category.overrides ?? {}));
+            const overridesAfter = Object.assign({}, ...(after.categories ?? []).map((category) => category.overrides ?? {}));
+            const overrides = [...new Set([...Object.keys(overridesBefore), ...Object.keys(overridesAfter)])].filter(
+                (id) => JSON.stringify(overridesBefore[id] ?? null) !== JSON.stringify(overridesAfter[id] ?? null)
+            ).length;
 
-            return this.intl.t('storefront.catalogs.editor.unsaved-summary', { added, removed, categories: categoriesChanged ? 1 : 0 });
+            if (!added && !removed && !categoriesChanged && !overrides) {
+                return this.intl.t('storefront.catalogs.editor.unsaved');
+            }
+
+            return this.intl.t('storefront.catalogs.editor.unsaved-summary', { added, removed, categories: categoriesChanged ? 1 : 0, overrides });
         } catch {
             return this.intl.t('storefront.catalogs.editor.unsaved');
         }
