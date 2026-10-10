@@ -55,7 +55,7 @@
                     <Button @size="xs" @type="primary" @icon="eye" @text={{t "storefront.common.view"}} @onClick={{fn this.viewOrder order}} />
                     <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{true}} />
                 </div>
-                <ContentPanel @title={{t "storefront.component.widget.orders.title"}} class="mt-2">
+                <ContentPanel @title={{t "storefront.component.widget.orders.widget-title"}} class="mt-2">
                     <div class="flex flex-col py-2 border-t dark:border-gray-800">
                         <div>{{t "storefront.component.widget.orders.customer"}}: {{n-a order.customer_name}}</div>
                         <div>{{t "storefront.component.widget.orders.driver"}}: {{n-a order.driver_name}}</div>
@@ -73,18 +73,18 @@
                         {{/unless}}
                         {{#if order.meta.tip}}
                             <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">{{t "storefront.component.widget.order.tip"}}</span>
+                                <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.tip"}}</span>
                                 <span class="dark:text-gray-50">{{get-tip-amount order.meta.tip order.meta.subtotal order.meta.currency}}</span>
                             </div>
                         {{/if}}
                         {{#if order.meta.delivery_tip}}
                             <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50">{{t "storefront.component.widget.order.delivery-tip"}}</span>
+                                <span class="dark:text-gray-50">{{t "storefront.component.widget.orders.delivery-tip"}}</span>
                                 <span class="dark:text-gray-50">{{get-tip-amount order.meta.delivery_tip order.meta.subtotal order.meta.currency}}</span>
                             </div>
                         {{/if}}
                         <div class="flex items-center justify-between">
-                            <span class="dark:text-gray-50 font-bold">{{t "storefront.component.widget.order.tip"}}</span>
+                            <span class="dark:text-gray-50 font-bold">{{t "storefront.component.widget.orders.tip"}}</span>
                             <span class="dark:text-gray-50 font-bold">{{format-currency order.meta.total order.meta.currency}}</span>
                         </div>
                     </div>

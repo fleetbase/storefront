@@ -1,6 +1,7 @@
 storefront:
   extension-name: Storefront
   common:
+    save: Save
     off: Off
     on: On
     all: All
@@ -368,6 +369,7 @@ storefront:
       cancel-new-button: Cancel new customer
   catalogs:
     editor:
+      rename-category: Rename category
       back: All catalogs
       name-placeholder: Catalog name
       categories-count: "{count, plural, =0 {no categories} one {# category} other {# categories}}"
@@ -705,6 +707,8 @@ storefront:
       success-message: Yout new storefront network has been created!
       delete-this-network-all-assigned-stores-customer-order: Are you sure you wish to delete this network ({networkName})? All assigned stores, customers, orders will no longer be reachable.
       network:
+        unsaved-title: Unsaved network changes
+        unsaved-body: Going back will roll back every unsaved change to this network.
         manage-network: Manage Network
         all-networks: All networks
         overview: Overview
@@ -716,6 +720,7 @@ storefront:
         Network-changes-not-save: Network changes not saved!
         going-back-will-rollback-all-unsaved-changes: Going back will rollback all unsaved changes, are you sure you wish to continue?
         index:
+          placeholder-tax: Tax percentage
           change-network-saved: Changes to network saved.
           create-new-payment-gateway: Create a new payment gateway
           save-gateway: Save Gateway
