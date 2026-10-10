@@ -14,7 +14,7 @@ export default class NetworksIndexNetworkOrdersRoute extends Route {
     }
 
     buildQueryParams(params = {}) {
-        return Object.entries({ ...params, storefront: this.modelFor('networks.index.network').public_id }).reduce((queryParams, [key, value]) => {
+        return Object.entries({ ...params, network: this.modelFor('networks.index.network').public_id }).reduce((queryParams, [key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
                 queryParams[key] = value;
             }

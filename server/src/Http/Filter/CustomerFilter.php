@@ -15,4 +15,17 @@ class CustomerFilter extends ContactFilter
             }
         );
     }
+
+    /**
+     * Customers who ordered through a network.
+     */
+    public function network($network)
+    {
+        $this->builder->whereHas(
+            'customerOrders',
+            function ($query) use ($network) {
+                $query->where('meta->storefront_network_id', $network);
+            }
+        );
+    }
 }

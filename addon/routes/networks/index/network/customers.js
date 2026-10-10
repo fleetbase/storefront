@@ -20,6 +20,6 @@ export default class NetworksIndexNetworkCustomersRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('customer', { ...params, storefront: this.modelFor('networks.index.network').public_id });
+        return this.store.query('customer', { ...params, network: this.modelFor('networks.index.network').public_id });
     }
 }

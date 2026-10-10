@@ -39,6 +39,7 @@ export default buildRoutes(function () {
                 this.route('trucks');
                 this.route('customers');
                 this.route('orders');
+                this.route('settings');
             });
         });
     });

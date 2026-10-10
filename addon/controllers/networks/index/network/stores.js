@@ -4,9 +4,8 @@ import { inject as service } from '@ember/service';
 import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
-import createShareableLink from '../../../../utils/create-shareable-link';
-import isEmail from '@fleetbase/ember-core/utils/is-email';
 import isModel from '@fleetbase/ember-core/utils/is-model';
+import { formatDistanceToNow } from 'date-fns';
 
 export default class NetworksIndexNetworkStoresController extends BaseController {
     @service notifications;
@@ -94,6 +93,89 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @tracked categoryModel;
 
     /**
+     * Invitations this network has sent, loaded by the route.
+     *
+     * @var {Array}
+     */
+    @tracked invitations = [];
+
+    /**
+     * Which membership state the table shows: all, online, offline or invited.
+     *
+     * @var {String}
+     */
+    @tracked statusTab = 'all';
+
+    /**
+     * The table instance, for bulk actions on the selected rows.
+     *
+     * @var {Object}
+     */
+    @tracked table;
+
+    /**
+     * Whether the invite panel is open and which tab it starts on.
+     */
+    @tracked isInvitePanelOpen = false;
+    @tracked invitePanelTab = 'email';
+
+    get openInvitations() {
+        return this.invitations
+            .filter((invitation) => ['pending', 'declined', 'expired'].includes(invitation.status))
+            .map((invitation) => ({ ...invitation, sentAgo: this.sentAgo(invitation) }));
+    }
+
+    get pendingInvitations() {
+        return this.openInvitations.filter((invitation) => invitation.status === 'pending');
+    }
+
+    get members() {
+        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+    }
+
+    get statusTabs() {
+        const members = this.members;
+
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: members.length + this.openInvitations.length },
+            { id: 'online', label: this.intl.t('storefront.common.online'), count: members.filter((store) => store.online).length },
+            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: members.filter((store) => !store.online).length },
+            { id: 'invited', label: this.intl.t('storefront.networks.invitations.invited'), count: this.openInvitations.length },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    get visibleStores() {
+        switch (this.statusTab) {
+            case 'online':
+                return this.members.filter((store) => store.online);
+            case 'offline':
+                return this.members.filter((store) => !store.online);
+            case 'invited':
+                return [];
+            default:
+                return this.members;
+        }
+    }
+
+    get showInvitations() {
+        return ['all', 'invited'].includes(this.statusTab) && this.openInvitations.length > 0;
+    }
+
+    get selectedStores() {
+        return this.table?.selectedRows ?? [];
+    }
+
+    get hasSelection() {
+        return this.selectedStores.length > 0;
+    }
+
+    sentAgo(invitation) {
+        const sentAt = invitation.resent_at ?? invitation.created_at;
+
+        return sentAt ? formatDistanceToNow(new Date(sentAt), { addSuffix: true }) : null;
+    }
+
+    /**
      * All columns applicable for network stores
      *
      * @var {Array}
@@ -103,6 +185,9 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             id: 'name',
             label: this.intl.t('storefront.networks.index.network.stores.store'),
             valuePath: 'name',
+            cellComponent: 'table/cell/identity',
+            resourceType: 'store',
+            popover: true,
             width: '130px',
             resizable: true,
             sortable: true,
@@ -528,8 +613,10 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @action async removeStore(store) {
         this.modalsManager.confirm({
             title: this.intl.t('storefront.networks.index.network.stores.remove-this-store', { storeName: store.name, networkName: this.network.name }),
-            body: this.intl.t('storefront.networks.index.network.stores.longer-findable-by-this-network'),
-            acceptButtonIcon: 'check',
+            body: this.intl.t('storefront.networks.invitations.remove-body'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'trash',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
@@ -603,59 +690,141 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      *
      * @action
      */
-    @action invite() {
-        const shareableLink = createShareableLink(`join/network/${this.network.public_id}`);
+    @action invite(network, tab = 'email') {
+        if (isModel(network) && network !== this.network) {
+            this.network = network;
+        }
 
-        this.modalsManager.show('modals/share-network', {
-            title: this.intl.t('storefront.networks.index.network.stores.add-stores-to-network'),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.send-invitations'),
-            acceptButtonIcon: 'paper-plane',
-            acceptButtonDisabled: true,
-            shareableLink,
-            recipients: [],
-            network: this.network,
-            addRecipient: (email) => {
-                const recipients = this.modalsManager.getOption('recipients');
-                recipients.pushObject(email);
+        this.invitePanelTab = typeof tab === 'string' ? tab : 'email';
+        this.isInvitePanelOpen = true;
+    }
 
-                if (recipients.length === 0) {
-                    this.modalsManager.setOption('acceptButtonDisabled', true);
-                } else {
-                    this.modalsManager.setOption('acceptButtonDisabled', false);
-                }
-            },
-            removeRecipient: (index) => {
-                const recipients = this.modalsManager.getOption('recipients');
-                recipients.removeAt(index);
+    @action closeInvitePanel() {
+        this.isInvitePanelOpen = false;
+    }
 
-                if (recipients.length === 0) {
-                    this.modalsManager.setOption('acceptButtonDisabled', true);
-                } else {
-                    this.modalsManager.setOption('acceptButtonDisabled', false);
-                }
-            },
-            toggleShareableLink: (enabled) => {
-                set(this.network, 'options.shareable_link_enabled', enabled);
-                this.network.save();
-            },
-            confirm: (modal) => {
+    @action selectStatusTab(tab) {
+        this.statusTab = tab.id ?? tab;
+    }
+
+    @action async refreshInvitations() {
+        try {
+            this.invitations = await this.network.loadInvitations();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action async afterInvitationsSent() {
+        await this.refreshInvitations();
+        return this.hostRouter.refresh();
+    }
+
+    @action async resendInvitation(invitation) {
+        try {
+            await this.network.resendInvitation(invitation);
+            this.notifications.success(this.intl.t('storefront.networks.invitations.resent', { email: invitation.email }));
+            await this.refreshInvitations();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action revokeInvitation(invitation) {
+        return this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.invitations.revoke-title', { email: invitation.email }),
+            body: this.intl.t('storefront.networks.invitations.revoke-body'),
+            acceptButtonText: this.intl.t('storefront.networks.invitations.revoke'),
+            acceptButtonScheme: 'danger',
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                const recipients = modal.getOption('recipients');
-                const isValid = recipients.every((email) => isEmail(email));
-
-                if (!isValid) {
+                try {
+                    await this.network.revokeInvitation(invitation);
+                    await this.refreshInvitations();
+                    modal.done();
+                } catch (error) {
                     modal.stopLoading();
-
-                    return this.notifications.error(this.intl.t('storefront.networks.index.network.stores.invalid-emails-provided-error'));
+                    this.notifications.serverError(error);
                 }
-
-                return this.network.sendInvites(recipients).then(() => {
-                    modal.stopLoading();
-                    this.notifications.success(this.intl.t('storefront.networks.index.network.stores.invitation-sent-recipients'));
-                });
             },
         });
+    }
+
+    /**
+     * Assign one category to every selected store.
+     */
+    @action assignCategoryToSelected() {
+        const stores = this.selectedStores;
+
+        if (!stores.length) {
+            return;
+        }
+
+        this.modalsManager.show('modals/add-store-to-category', {
+            title: this.intl.t('storefront.networks.invitations.assign-category-count', { count: stores.length }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.assign-category'),
+            acceptButtonIcon: 'check',
+            network: this.network,
+            store: stores[0],
+            category: null,
+            setCategory: (category) => this.modalsManager.setOption('category', category),
+            confirm: async (modal) => {
+                const category = modal.getOption('category');
+
+                if (!category) {
+                    return this.notifications.warning(this.intl.t('storefront.networks.invitations.pick-a-category'));
+                }
+
+                modal.startLoading();
+
+                try {
+                    for (const store of stores) {
+                        await this.fetch.post(`networks/${this.network.id}/set-store-category`, { store: store.id, category: category.id }, { namespace: 'storefront/int/v1' });
+                    }
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    /**
+     * Remove every selected store from the network.
+     */
+    @action removeSelected() {
+        const stores = this.selectedStores;
+
+        if (!stores.length) {
+            return;
+        }
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.invitations.remove-count-title', { count: stores.length, networkName: this.network.name }),
+            body: this.intl.t('storefront.networks.invitations.remove-body'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'trash',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.network.removeStores(stores);
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    @action clearSelection() {
+        this.selectedStores.forEach((row) => set(row, 'checked', false));
     }
 
     /**

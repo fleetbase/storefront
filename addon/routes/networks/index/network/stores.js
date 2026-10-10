@@ -23,6 +23,7 @@ export default class NetworksIndexNetworkStoresRoute extends Route {
 
         // set the network to controller
         controller.network = this.network;
+        controller.invitations = (await this.network.loadInvitations().catch(() => [])) ?? [];
 
         // set the cateogry if set
         const { category: categoryId } = this.paramsFor(this.routeName);

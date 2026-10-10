@@ -49,4 +49,13 @@ class OrderFilter extends FleetOpsOrderFilter
     {
         $this->builder->where('meta->storefront_id', $storefront);
     }
+
+    /**
+     * Orders placed through a network: the store is always `storefront_id`, the network
+     * that sold it is `storefront_network_id`.
+     */
+    public function network(string $network)
+    {
+        $this->builder->where('meta->storefront_network_id', $network);
+    }
 }

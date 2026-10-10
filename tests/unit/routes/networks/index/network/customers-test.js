@@ -21,6 +21,6 @@ module('Unit | Route | networks/index/network/customers', function (hooks) {
 
         await route.model({ page: 1 });
 
-        assert.deepEqual(requests, [{ modelName: 'customer', params: { page: 1, storefront: 'network_123' } }]);
+        assert.deepEqual(requests, [{ modelName: 'customer', params: { page: 1, network: 'network_123' } }]);
     });
 });

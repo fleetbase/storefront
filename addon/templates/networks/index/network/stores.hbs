@@ -1,39 +1,79 @@
-<Layout::Section::Header @title={{t "storefront.networks.index.network.stores.store"}} @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
-    <Button
-        @type="primary"
-        @icon="plus"
-        @text={{t "storefront.networks.index.network.stores.add-stores-button-text"}}
-        @textClass="truncate"
-        @size="sm"
-        @onClick={{this.addStores}}
-        @wrapperClass="mr-2"
-    />
-    <Button
-        @type="primary"
-        @icon="envelope-open-text"
-        @textClass="truncate"
-        @size="sm"
-        @text={{t "storefront.networks.index.network.stores.invite-stores-button-text"}}
-        @onClick={{this.invite}}
-    />
+<Layout::Section::Header
+    @title={{t "storefront.networks.index.network.stores.store"}}
+    @subtitle={{t "storefront.networks.invitations.stores-subtitle" members=this.members.length pending=this.pendingInvitations.length}}
+    @searchQuery={{this.storeQuery}}
+    @onSearch={{perform this.search}}
+>
+    <Button @icon="plus" @text={{t "storefront.networks.invitations.add-existing-store"}} @textClass="truncate" @size="sm" @onClick={{fn this.invite this.network "own"}} @wrapperClass="mr-2" @permission="storefront update network" />
+    <Button @type="primary" @icon="envelope-open-text" @textClass="truncate" @size="sm" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} @permission="storefront update network" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
-<Layout::Section::Body>
-    <div class="flex flex-row items-center space-x-2">
-        <NetworkCategoryPicker
-            @network={{this.network}}
-            @category={{this.category}}
-            @onCreateNewCategory={{this.createNewCategory}}
-            @onSelect={{this.selectCategory}}
-            @onReady={{this.setCategoryPickerContext}}
-            @wrapperClass="w-64 my-4 ml-9"
-        />
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-network-store-tabs>
+        {{#each this.statusTabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                <span>{{tab.label}}</span>
+                <span class="storefront-status-tab__count">{{tab.count}}</span>
+            </button>
+        {{/each}}
+    </div>
+
+    <div class="flex flex-row items-center flex-wrap gap-2 px-4 my-3">
+        <NetworkCategoryPicker @network={{this.network}} @category={{this.category}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @onReady={{this.setCategoryPickerContext}} @wrapperClass="w-64" />
         {{#if this.categoryModel}}
             <Button @icon="arrow-left" @size="xs" @onClick={{this.categoryPicker.loadParentCategories}} />
-            <Button @icon="cog" @text="Edit Category" @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />
-            <Button @icon="trash" @text="Delete Category" @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
+            <Button @icon="cog" @text={{t "storefront.networks.invitations.edit-category"}} @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />
+            <Button @icon="trash" @text={{t "storefront.networks.invitations.delete-category"}} @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
         {{/if}}
     </div>
-    <Table @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
+
+    {{#if this.hasSelection}}
+        <div class="storefront-bulk-bar mx-4 mb-3" data-test-network-store-bulk-bar>
+            <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selectedStores.length}}</span>
+            <Button @size="xs" @icon="folder-tree" @text={{t "storefront.networks.index.network.stores.assign-category"}} @onClick={{this.assignCategoryToSelected}} @permission="storefront update network" />
+            <Button @size="xs" @type="danger" @icon="trash" @text={{t "storefront.networks.index.network.stores.remove-store-from-network"}} @onClick={{this.removeSelected}} @permission="storefront update network" />
+            <Button @size="xs" @text={{t "storefront.networks.invitations.clear"}} @onClick={{this.clearSelection}} />
+        </div>
+    {{/if}}
+
+    {{#if (eq this.statusTab "invited")}}
+        {{#unless this.openInvitations.length}}
+            <div class="storefront-empty-row mx-4">
+                <span>{{t "storefront.networks.invitations.none"}}</span>
+                <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} />
+            </div>
+        {{/unless}}
+    {{else}}
+        <Table @rows={{this.visibleStores}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
+    {{/if}}
+
+    {{#if this.showInvitations}}
+        <div class="storefront-invitation-list mx-4 my-4" data-test-network-invitations>
+            <div class="storefront-invitation-list__title">{{t "storefront.networks.invitations.title"}}</div>
+            {{#each this.openInvitations as |invitation|}}
+                <div class="storefront-member-row" data-test-invitation-row={{invitation.id}}>
+                    <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="at" /></div>
+                    <div class="storefront-member-row__identity">
+                        <div class="storefront-member-row__name">{{invitation.email}}</div>
+                        <div class="storefront-member-row__meta">{{t "storefront.networks.invitations.sent-ago" ago=invitation.sentAgo}}</div>
+                    </div>
+                    <Badge @status={{invitation.status}} @text={{t (concat "storefront.networks.invitations.status." invitation.status)}} @size="xs" />
+                    <div class="storefront-card__buttons">
+                        {{#if (eq invitation.status "pending")}}
+                            <Button @size="xs" @icon="paper-plane" @text={{t "storefront.networks.invitations.resend"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
+                            <Button @size="xs" @icon="ban" @text={{t "storefront.networks.invitations.revoke"}} @onClick={{fn this.revokeInvitation invitation}} @permission="storefront update network" />
+                        {{else}}
+                            <Button @size="xs" @icon="redo" @text={{t "storefront.networks.invitations.invite-again"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
+                        {{/if}}
+                    </div>
+                </div>
+            {{/each}}
+            <p class="storefront-invitation-list__note">{{t "storefront.networks.invitations.rows-note"}}</p>
+        </div>
+    {{/if}}
 </Layout::Section::Body>
+
+{{#if this.isInvitePanelOpen}}
+    <Storefront::Network::InvitePanel @network={{this.network}} @activeTab={{this.invitePanelTab}} @onClose={{this.closeInvitePanel}} @onSent={{this.afterInvitationsSent}} />
+{{/if}}

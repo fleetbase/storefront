@@ -56,7 +56,7 @@ module('Unit | Route | networks/index/network/orders', function (hooks) {
         let request = fetch.calls[0];
 
         assert.strictEqual(request.path, 'orders');
-        assert.deepEqual(request.params, { page: 2, sort: '-created_at', storefront: 'network_123' });
+        assert.deepEqual(request.params, { page: 2, sort: '-created_at', network: 'network_123' });
         assert.deepEqual(request.options, { namespace: 'storefront/int/v1' });
         assert.strictEqual(fetch.normalized.modelType, 'orders');
         assert.strictEqual(orders[0].constructor.modelName, 'order');

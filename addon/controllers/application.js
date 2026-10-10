@@ -52,6 +52,13 @@ export default class ApplicationController extends Controller {
         };
 
         return [
+            networkItem('index', {
+                label: this.intl.t('storefront.networks.index.network.overview'),
+                description: 'Members, invitations, orders and revenue across the network.',
+                icon: 'gauge-high',
+                permission: 'storefront view network',
+                keywords: ['overview', 'dashboard', 'network'],
+            }),
             networkItem('stores', {
                 label: this.intl.t('storefront.networks.index.network.stores.store'),
                 description: 'Stores selling through this network, their categories and invitations.',
@@ -83,7 +90,7 @@ export default class ApplicationController extends Controller {
                 visible: this.can('storefront see user'),
                 keywords: ['contacts', 'buyers', 'users'],
             }),
-            networkItem('index', {
+            networkItem('settings', {
                 label: this.intl.t('storefront.networks.index.network.settings'),
                 description: 'Network details, gateways and notification channels.',
                 icon: 'cog',

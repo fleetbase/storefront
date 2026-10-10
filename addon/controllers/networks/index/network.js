@@ -9,8 +9,8 @@ export default class NetworksIndexNetworkController extends BaseController {
     get tabs() {
         return [
             {
-                label: this.intl.t('storefront.networks.index.network.settings'),
-                icon: 'cog',
+                label: this.intl.t('storefront.networks.index.network.overview'),
+                icon: 'gauge-high',
                 route: 'networks.index.network.index',
             },
             {
@@ -27,6 +27,11 @@ export default class NetworksIndexNetworkController extends BaseController {
                 label: this.intl.t('storefront.networks.index.network.customers'),
                 icon: 'users',
                 route: 'networks.index.network.customers',
+            },
+            {
+                label: this.intl.t('storefront.networks.index.network.settings'),
+                icon: 'cog',
+                route: 'networks.index.network.settings',
             },
         ];
     }

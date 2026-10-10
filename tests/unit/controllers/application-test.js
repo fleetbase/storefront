@@ -370,12 +370,19 @@ module('Unit | Controller | application', function (hooks) {
         assert.true(controller.isNetworkContext);
         assert.deepEqual(
             items.map((item) => item.label),
-            ['Stores', 'Trucks', 'Orders', 'Customers', 'Settings'],
+            ['Overview', 'Stores', 'Trucks', 'Orders', 'Customers', 'Settings'],
             'network sections replace the store sections'
         );
         assert.deepEqual(
             items.map((item) => item.id),
-            ['network:network_123:stores', 'network:network_123:trucks', 'network:network_123:orders', 'network:network_123:customers', 'network:network_123:index'],
+            [
+                'network:network_123:index',
+                'network:network_123:stores',
+                'network:network_123:trucks',
+                'network:network_123:orders',
+                'network:network_123:customers',
+                'network:network_123:settings',
+            ],
             'items are keyed by network so two networks never share an entry'
         );
         assert.ok(
@@ -384,10 +391,10 @@ module('Unit | Controller | application', function (hooks) {
         );
 
         hostRouter.isActive = (route, publicId) => route === 'console.storefront.networks.index.network.trucks' && publicId === 'network_123';
-        assert.true(items[1].activeWhen(), 'the trucks section is active on the network trucks route');
-        assert.false(items[0].activeWhen(), 'the stores section is not');
+        assert.true(items[2].activeWhen(), 'the trucks section is active on the network trucks route');
+        assert.false(items[1].activeWhen(), 'the stores section is not');
 
-        items[2].onClick();
+        items[3].onClick();
         assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.orders', 'network_123']], 'sections transition with the network id');
     });
 

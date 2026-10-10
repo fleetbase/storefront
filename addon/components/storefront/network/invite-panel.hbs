@@ -1,0 +1,83 @@
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="600px" @minResizeWidth={{480}} @fullHeight={{true}} @isOpen={{true}}>
+    <Overlay::Header @title={{t "storefront.networks.invitations.panel-title" network=this.network.name}} @onPressCancel={{this.close}} />
+    <Overlay::Body class="p-0i" @wrapperClass="storefront-invite-panel" data-test-invite-panel>
+        <p class="storefront-invite-panel__lede">{{t "storefront.networks.invitations.panel-lede"}}</p>
+
+        <div class="storefront-invite-panel__tabs" role="tablist">
+            {{#each this.tabItems as |tab|}}
+                <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-invite-panel__tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-invite-tab={{tab.id}}>
+                    {{tab.label}}
+                </button>
+            {{/each}}
+        </div>
+
+        {{#if (eq this.activeTab "email")}}
+            <div class="storefront-invite-panel__section space-y-4">
+                <InputGroup @name={{t "storefront.networks.invitations.email-addresses"}} @helpText={{t "storefront.networks.invitations.email-help"}}>
+                    <TagInput class="form-input" @placeholder={{t "storefront.component.modals.share-network.add-email"}} @tags={{this.recipients}} @addTag={{this.addRecipient}} @removeTagAtIndex={{this.removeRecipient}} as |tag|>
+                        <span class={{if (in-array tag this.flaggedRecipients) "line-through opacity-60"}}>{{tag}}</span>
+                    </TagInput>
+                    {{#if this.flaggedRecipients.length}}
+                        <div class="storefront-invite-panel__flag">{{t "storefront.networks.invitations.already-flagged" count=this.flaggedRecipients.length}}</div>
+                    {{/if}}
+                    {{#if this.invalidRecipients.length}}
+                        <div class="storefront-invite-panel__flag storefront-invite-panel__flag--error">{{t "storefront.networks.invitations.invalid-flagged" count=this.invalidRecipients.length}}</div>
+                    {{/if}}
+                </InputGroup>
+
+                <InputGroup @name={{t "storefront.networks.invitations.category-on-joining"}}>
+                    <PowerSelect @options={{this.categories}} @selected={{this.category}} @searchEnabled={{true}} @searchField="name" @allowClear={{true}} @placeholder={{t "storefront.networks.invitations.let-store-choose"}} @onChange={{this.setCategory}} @triggerClass="form-select form-input" as |category|>
+                        {{category.name}}
+                    </PowerSelect>
+                </InputGroup>
+
+                <InputGroup @name={{t "storefront.networks.invitations.expires"}}>
+                    <PowerSelect @options={{this.expiryItems}} @selected={{this.selectedExpiry}} @onChange={{this.setExpiry}} @triggerClass="form-select form-input" as |option|>
+                        {{option.label}}
+                    </PowerSelect>
+                </InputGroup>
+
+                <InputGroup @name={{t "storefront.networks.invitations.message"}}>
+                    <Textarea class="form-input w-full" rows="3" @value={{this.message}} placeholder={{t "storefront.networks.invitations.message-placeholder" network=this.network.name}} />
+                </InputGroup>
+
+                <Toggle @isToggled={{this.requireApproval}} @onToggle={{this.setRequireApproval}} @label={{t "storefront.networks.invitations.require-approval"}} @helpText={{t "storefront.networks.invitations.require-approval-help"}} />
+
+                <div class="storefront-invite-panel__footer">
+                    <Button @text={{t "common.cancel"}} @onClick={{this.close}} />
+                    <Button @type="primary" @icon="paper-plane" @text={{t "storefront.networks.invitations.send-count" count=this.sendableRecipients.length}} @disabled={{not this.canSend}} @isLoading={{this.send.isRunning}} @onClick={{perform this.send}} data-test-invite-send />
+                </div>
+            </div>
+        {{else if (eq this.activeTab "link")}}
+            <div class="storefront-invite-panel__section space-y-4">
+                <Toggle @isToggled={{this.shareableLinkEnabled}} @onToggle={{perform this.toggleShareableLink}} @label={{t "storefront.component.modals.share-network.enable-shareable-link"}} @helpText={{t "storefront.component.modals.share-network.anyone-with-this-link-able-to-join-your-network"}} />
+                {{#if this.shareableLinkEnabled}}
+                    <InputGroup @name={{t "storefront.networks.invitations.link"}}>
+                        <ClickToCopy @value={{this.shareableLink}} class="rounded-md border dark:border-gray-900 dark:bg-gray-900 truncate px-4 py-2.5 text-sm text-green-500 dark:text-green-300" />
+                    </InputGroup>
+                    <p class="storefront-invite-panel__hint">{{t "storefront.networks.invitations.link-hint"}}</p>
+                {{/if}}
+                <div class="storefront-invite-panel__footer">
+                    <Button @type="primary" @text={{t "storefront.networks.index.network.stores.done"}} @onClick={{this.close}} />
+                </div>
+            </div>
+        {{else}}
+            <div class="storefront-invite-panel__section space-y-4">
+                <InputGroup @name={{t "storefront.networks.invitations.own-stores"}} @helpText={{t "storefront.networks.invitations.own-stores-help"}}>
+                    <PowerSelectMultiple @options={{this.availableOwnStores}} @selected={{this.selectedStores}} @searchEnabled={{true}} @searchField="name" @placeholder={{t "storefront.networks.invitations.pick-stores"}} @onChange={{this.setSelectedStores}} @triggerClass="form-select form-input" as |store|>
+                        <SelectOption::Store @model={{store}} />
+                    </PowerSelectMultiple>
+                </InputGroup>
+                <InputGroup @name={{t "storefront.common.category"}}>
+                    <PowerSelect @options={{this.categories}} @selected={{this.ownStoreCategory}} @searchEnabled={{true}} @searchField="name" @allowClear={{true}} @placeholder={{t "storefront.networks.invitations.let-store-choose"}} @onChange={{this.setOwnStoreCategory}} @triggerClass="form-select form-input" as |category|>
+                        {{category.name}}
+                    </PowerSelect>
+                </InputGroup>
+                <div class="storefront-invite-panel__footer">
+                    <Button @text={{t "common.cancel"}} @onClick={{this.close}} />
+                    <Button @type="primary" @icon="plus" @text={{t "storefront.networks.invitations.add-to-network"}} @disabled={{not this.canAddOwnStores}} @isLoading={{this.addOwnStores.isRunning}} @onClick={{perform this.addOwnStores}} data-test-invite-add-own />
+                </div>
+            </div>
+        {{/if}}
+    </Overlay::Body>
+</Overlay>

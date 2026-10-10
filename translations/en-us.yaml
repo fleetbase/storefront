@@ -1,6 +1,10 @@
 storefront:
   extension-name: Storefront
   common:
+    off: Off
+    on: On
+    all: All
+    store: Store
     address: Address
     alerts: Alerts
     amount: Amount
@@ -349,6 +353,81 @@ storefront:
   networks:
     card:
       stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"
+    overview:
+      online-count: "{count, plural, =0 {none online} one {# online} other {# online}}"
+      invitations-hint: "pending, {declined} declined"
+      orders-7d: Orders · 7 days
+      multi-store-count: "{count, plural, =0 {no multi-store} one {# multi-store} other {# multi-store}}"
+      revenue-7d: Revenue · 7 days
+      tips-hint: "tips {tips}, split across stores"
+      new-customers: "{count, plural, =0 {none new this month} one {# new this month} other {# new this month}}"
+      members-title: "{count, plural, =0 {Stores} one {Stores · # member} other {Stores · # members}}"
+      orders-count-7d: "{count, plural, =0 {no orders · 7d} one {# order · 7d} other {# orders · 7d}}"
+      share-of-network: "{share}% of network"
+      no-members: No stores sell through this network yet.
+      recent-orders: Recent network orders
+      all-orders: All orders
+      no-orders: No orders through this network in the last seven days.
+    invitations:
+      title: Invitations
+      invite-stores: Invite stores
+      invited: Invited
+      none: No open invitations.
+      sent-ago: "Sent {ago}"
+      resend: Resend
+      revoke: Revoke
+      invite-again: Invite again
+      resent: "Invitation re-sent to {email}."
+      revoke-title: "Revoke the invitation to {email}?"
+      revoke-body: The link in the email stops working immediately. You can invite this address again later.
+      shareable-link: Shareable link
+      manage-link: Manage link
+      link: Link
+      link-hint: Anyone with the link can request to join. Turning the link off invalidates it immediately.
+      status:
+        pending: Pending
+        declined: Declined
+        expired: Expired
+        accepted: Accepted
+        revoked: Revoked
+      stores-subtitle: "{members, plural, =0 {No members} one {# member} other {# members}} · {pending, plural, =0 {no invitations pending} one {# invitation pending} other {# invitations pending}}"
+      add-existing-store: Add existing store
+      edit-category: Edit category
+      delete-category: Delete category
+      selected-count: "{count, plural, one {# selected} other {# selected}}"
+      clear: Clear
+      rows-note: Invited rows are invitations, not members; they leave the list when accepted or revoked.
+      assign-category-count: "Assign a category to {count, plural, one {# store} other {# stores}}"
+      pick-a-category: Pick a category first.
+      remove-count-title: "Remove {count, plural, one {# store} other {# stores}} from {networkName}?"
+      remove-body: The store keeps its own catalog and orders. Open network orders that include this store stay open; new multi-store carts will no longer offer its products.
+      panel-title: "Invite stores to {network}"
+      panel-lede: A store that accepts joins with its own catalog, prices and hours. You choose its category.
+      tab-email: By email
+      tab-link: Shareable link
+      tab-own: Add a store you manage
+      email-addresses: Email addresses
+      email-help: Paste a list; one invitation per address. Members and pending invitees are flagged before sending.
+      already-flagged: "{count, plural, one {# address is already a member or already invited and will be skipped.} other {# addresses are already members or already invited and will be skipped.}}"
+      invalid-flagged: "{count, plural, one {# address is not a valid email.} other {# addresses are not valid emails.}}"
+      category-on-joining: Category on joining
+      let-store-choose: Let the store choose
+      expires: Invitation expires
+      expires-14: In 14 days
+      expires-7: In 7 days
+      expires-30: In 30 days
+      expires-never: Never
+      message: Message (optional)
+      message-placeholder: "Hi, we would like your store on {network}. Accept to list your catalog in the app."
+      require-approval: Require my approval after the store accepts
+      require-approval-help: You review the store before it appears in the app.
+      send-count: "{count, plural, =0 {Send invitations} one {Send # invitation} other {Send # invitations}}"
+      sent: "{count, plural, one {# invitation sent.} other {# invitations sent.}}"
+      own-stores: Stores in your organisation
+      own-stores-help: Stores you administer join immediately; no invitation is sent.
+      pick-stores: Pick stores
+      add-to-network: Add to network
+      own-stores-added: "{count, plural, one {# store added to the network.} other {# stores added to the network.}}"
     index:
       empty-state: Create a network to sell from several stores through one app.
       create-network: Create network
@@ -362,6 +441,7 @@ storefront:
       network:
         manage-network: Manage Network
         all-networks: All networks
+        overview: Overview
         settings: Settings
         customers: Customers
         orders: Orders
