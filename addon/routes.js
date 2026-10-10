@@ -42,7 +42,9 @@ export default buildRoutes(function () {
                 this.route('stores');
                 this.route('trucks');
                 this.route('customers');
-                this.route('orders');
+                this.route('orders', function () {
+                    this.route('new');
+                });
                 this.route('categories');
                 this.route('settings');
             });

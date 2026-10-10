@@ -18,12 +18,19 @@ export default class OrdersIndexNewController extends Controller {
     @service storefront;
     @service storefrontOrderActions;
     @service modalsManager;
+    @service store;
     queryParams = [{ customer: 'for_customer' }];
     @tracked customer = null;
 
     @tracked activeStore = null;
     @tracked locations = [];
     @tracked products = [];
+    /** Network context: the member stores the order can be placed with (empty in store context). */
+    @tracked storeOptions = [];
+    @tracked network = null;
+    /** Where cancel and a placed order return to. */
+    returnRoute = 'console.storefront.orders.index';
+    returnModel = null;
     @tracked selectedCustomer = null;
     @tracked isPickup = false;
     @tracked isScheduled = false;
@@ -65,6 +72,55 @@ export default class OrdersIndexNewController extends Controller {
         this.quoteError = null;
         this.pickerQuery = '';
         this.configuring = null;
+    }
+
+    get isNetworkContext() {
+        return this.storeOptions.length > 0;
+    }
+
+    /**
+     * Step numbers shift by one in network context, where picking the store comes first.
+     */
+    get stepNumbers() {
+        const offset = this.isNetworkContext ? 1 : 0;
+
+        return { store: 1, customer: 1 + offset, fulfillment: 2 + offset, items: 3 + offset };
+    }
+
+    get storeOptionRows() {
+        return this.storeOptions.map((store) => ({ store, isSelected: store === this.activeStore }));
+    }
+
+    /**
+     * Network context: picking the store loads its locations and products; lines are
+     * cleared because they belong to the previous store's catalog.
+     */
+    @task({ restartable: true }) *selectStore(store) {
+        this.activeStore = store;
+        this.lines = [];
+        this.configuring = null;
+        this.quote = null;
+        this.quoteError = null;
+        this.locations = [];
+        this.products = [];
+        this.pickupLocation = null;
+
+        if (!store) {
+            return;
+        }
+
+        const [locations, products] = yield Promise.all([
+            this.store.query('store-location', { store: store.id, limit: -1 }).catch(() => []),
+            this.store.query('product', { store_uuid: store.id, limit: -1, status: 'published' }).catch(() => []),
+        ]);
+
+        this.locations = locations?.toArray?.() ?? Array.from(locations ?? []);
+        this.products = products?.toArray?.() ?? Array.from(products ?? []);
+        this.pickupLocation = this.locations[0] ?? null;
+    }
+
+    returnToOrders() {
+        return this.returnModel ? this.hostRouter.transitionTo(this.returnRoute, this.returnModel) : this.hostRouter.transitionTo(this.returnRoute);
     }
 
     get currency() {
@@ -164,6 +220,10 @@ export default class OrdersIndexNewController extends Controller {
 
     get issues() {
         const issues = [];
+
+        if (this.isNetworkContext && !this.activeStore) {
+            issues.push(this.intl.t('storefront.orders.create.issues.store'));
+        }
 
         if (!this.selectedCustomer) {
             issues.push(this.intl.t('storefront.orders.create.issues.customer'));
@@ -268,7 +328,7 @@ export default class OrdersIndexNewController extends Controller {
                 { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' }
             );
             this.notifications.success(this.intl.t('storefront.orders.create.placed', { id: order?.public_id ?? '' }));
-            yield this.hostRouter.transitionTo('console.storefront.orders.index');
+            yield this.returnToOrders();
             this.hostRouter.refresh();
 
             if (order) {
@@ -482,6 +542,6 @@ export default class OrdersIndexNewController extends Controller {
     }
 
     @action cancel() {
-        return this.hostRouter.transitionTo('console.storefront.orders.index');
+        return this.returnToOrders();
     }
 }

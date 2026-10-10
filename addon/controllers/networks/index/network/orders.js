@@ -245,4 +245,8 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     get registeredActionButtons() {
         return this.registeredTableActions('network-order');
     }
+
+    @action createOrder() {
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders.new', this.network.public_id);
+    }
 }

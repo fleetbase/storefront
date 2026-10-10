@@ -1,7 +1,10 @@
 <Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
     <Storefront::ViewToggle @options={{array (hash id="grouped" label=(t "storefront.networks.orders.group-by-checkout")) (hash id="flat" label=(t "storefront.networks.orders.flat"))}} @value={{if this.isGrouped "grouped" "flat"}} @onChange={{this.setView}} @wrapperClass="mr-2" data-test-order-view-toggle />
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.createOrder}} @permission="storefront create order" class="ml-2" data-test-network-new-order />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
+
+{{outlet}}
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
     <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-order-status-tabs>

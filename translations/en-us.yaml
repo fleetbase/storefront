@@ -887,6 +887,7 @@ storefront:
       other-address: Another address
       pick-customer-first: Pick a customer to see their saved places.
       items-hint: from the store's published products
+      store-hint: the member store this order is placed with
       each: each
       choose-options: Choose the options, then add it to the order.
       add-to-order: Add to order
@@ -917,6 +918,7 @@ storefront:
       place: "Place order · {total}"
       placed: "Order {id} placed."
       issues:
+        store: Pick the store the order is placed with.
         customer: Pick a customer.
         items: Add at least one product.
         dropoff: Pick where the order is delivered to.
