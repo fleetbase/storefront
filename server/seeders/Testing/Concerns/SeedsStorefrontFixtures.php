@@ -82,9 +82,10 @@ trait SeedsStorefrontFixtures
     protected array $customerPlaces = [];
 
     /**
-     * uuid, public id and key of the stores and networks this seeder created before, by
-     * class and seed id, so re-seeding keeps them. Apps are built against a storefront key,
-     * so a new key would need an app rebuild.
+     * uuid, public id and key of the stores, networks, products and vehicles this seeder
+     * created before, by class and seed id, so re-seeding keeps them. Apps are built against
+     * a storefront key, so a new key would need an app rebuild, and carts left open in an
+     * app point at products by id.
      *
      * @var array<string, array<string, array{uuid: string, public_id: ?string, key: ?string}>>
      */
@@ -189,7 +190,8 @@ trait SeedsStorefrontFixtures
     {
         $this->seededIdentities = [];
 
-        foreach ([Store::class => 'meta', Network::class => 'options'] as $modelClass => $column) {
+        // Products and vehicles too: open carts point at products, and food trucks at vehicles.
+        foreach ([Store::class => 'meta', Network::class => 'options', Product::class => 'meta', \Fleetbase\FleetOps\Models\Vehicle::class => 'meta'] as $modelClass => $column) {
             foreach ($this->seededQuery($modelClass)->get() as $model) {
                 $tag    = (array) $model->{$column};
                 $seedId = $tag['seed_id'] ?? null;
@@ -508,7 +510,8 @@ trait SeedsStorefrontFixtures
     {
         $salePrice = (int) ($product['sale_price'] ?? 0);
 
-        return $this->createRecord(Product::class, [
+        // Same id as last time, so carts left open in an app still find the product.
+        return $this->createWithSeededIdentity(Product::class, 'product:' . $storeKey . ':' . $productKey, [
             'company_uuid'    => $company->uuid,
             'created_by_uuid' => session('user'),
             'store_uuid'      => $store->uuid,

@@ -153,13 +153,31 @@ class MongoliaSeeder extends Seeder
         $storeUuids = $this->seededUuids(Store::class);
         $truckUuids = DB::connection($this->storefrontConnection())->table('food_trucks')->whereIn('store_uuid', $storeUuids)->pluck('uuid')->all();
 
+        // Food trucks have no tag of their own: remember each by its vehicle's seed id, so the
+        // truck keeps its id and carts holding it still find their delivery origin.
+        $truckIdentities = [];
+        $vehicleSeeds    = $this->seededQuery(Vehicle::class)->get(['uuid', 'meta'])->mapWithKeys(fn ($vehicle) => [$vehicle->uuid => data_get($vehicle, 'meta.seed_id')]);
+        foreach (DB::connection($this->storefrontConnection())->table('food_trucks')->whereIn('uuid', $truckUuids)->get(['uuid', 'public_id', 'vehicle_uuid']) as $truck) {
+            $vehicleSeed = $vehicleSeeds[$truck->vehicle_uuid] ?? null;
+            if ($vehicleSeed) {
+                $truckIdentities['food-truck:' . Str::after($vehicleSeed, 'vehicle:')] = ['uuid' => $truck->uuid, 'public_id' => $truck->public_id, 'key' => null];
+            }
+        }
+
         $this->deleteFrom($this->storefrontConnection(), 'catalog_subjects', fn ($query) => $query->whereIn('subject_uuid', $truckUuids));
         $this->deleteFrom($this->storefrontConnection(), 'food_trucks', fn ($query) => $query->whereIn('uuid', $truckUuids));
+
+        // Vehicles are purged here, before purgeStorefrontFixtures() remembers identities
+        // again, so remember theirs first and put them back afterwards.
+        $this->rememberSeededIdentities();
+        $vehicleIdentities = $this->seededIdentities[Vehicle::class] ?? [];
         $this->purgeModel(Vehicle::class);
         $this->purgeModel(Zone::class);
         $this->purgeModel(ServiceArea::class);
 
         $this->purgeStorefrontFixtures();
+        $this->seededIdentities[Vehicle::class]   = $vehicleIdentities;
+        $this->seededIdentities[FoodTruck::class] = $truckIdentities;
     }
 
     /*
@@ -302,7 +320,7 @@ class MongoliaSeeder extends Seeder
 
         foreach ($this->truckDefinitions() as $truckKey => $definition) {
             $seedId  = 'vehicle:' . $truckKey;
-            $vehicle = $this->createRecord(Vehicle::class, [
+            $vehicle = $this->createWithSeededIdentity(Vehicle::class, $seedId, [
                 'company_uuid' => $company->uuid,
                 'name'         => $definition['name'],
                 'make'         => 'Hyundai',
@@ -316,7 +334,7 @@ class MongoliaSeeder extends Seeder
                 'meta'         => $this->meta($seedId),
             ]);
 
-            $truck = $this->createRecord(FoodTruck::class, [
+            $truck = $this->createWithSeededIdentity(FoodTruck::class, 'food-truck:' . $truckKey, [
                 'company_uuid'      => $company->uuid,
                 'created_by_uuid'   => session('user'),
                 'store_uuid'        => $store->uuid,
