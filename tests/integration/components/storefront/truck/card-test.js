@@ -17,7 +17,7 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         this.set('truck', {
             status: 'active',
             online: true,
-            vehicle: { id: 'vehicle_1', resourceType: 'vehicle', display_name: 'Truck 10', plate_number: 'SKZ 1049 A', photo_url: 'https://cdn.test/truck.png' },
+            vehicle: { id: 'vehicle_1', resourceType: 'vehicle', display_name: 'Truck 10', plate_number: 'SKZ 1049 A', photo_url: 'https://cdn.test/truck.png', online: true },
             service_area: { name: 'Central' },
             zone: { name: 'Zone 3' },
             catalogs: [{ name: 'Lunch menu' }, { name: 'Breakfast' }],

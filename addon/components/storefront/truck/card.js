@@ -18,7 +18,13 @@ export default class StorefrontTruckCardComponent extends Component {
     }
 
     get isOnline() {
-        return Boolean(get(this.truck, 'online') ?? get(this.vehicle, 'online'));
+        const online = get(this.truck, 'online');
+
+        if (typeof online === 'boolean') {
+            return online;
+        }
+
+        return Boolean(this.vehicle && get(this.vehicle, 'online'));
     }
 
     get status() {
@@ -30,7 +36,7 @@ export default class StorefrontTruckCardComponent extends Component {
     }
 
     get photoUrl() {
-        return resolveResourceImage(get(this.vehicle, 'photo_url'), 'vehicle');
+        return resolveResourceImage(this.vehicle ? get(this.vehicle, 'photo_url') : null, 'vehicle');
     }
 
     get placeholder() {

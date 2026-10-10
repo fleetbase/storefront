@@ -3,7 +3,7 @@
         <RegistryYield @registry="storefront:component:truck:card:header:start" as |RegistryComponent|>
             <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
         </RegistryYield>
-        <Vehicle::Pill @vehicle={{this.vehicle}} @titleFallback={{t "storefront.trucks.card.no-vehicle"}} @online={{this.isOnline}} @showOnlineIndicator={{true}} @static={{not this.vehicle.id}} class="storefront-card__identity" data-test-truck-vehicle />
+        <Vehicle::Pill @vehicle={{this.vehicle}} @titleFallback={{t "storefront.trucks.card.no-vehicle"}} @showOnlineIndicator={{true}} @static={{not this.vehicle.id}} class="storefront-card__identity" data-test-truck-vehicle />
         <div class="storefront-card__subtitle" data-test-truck-area>
             {{#if this.serviceAreaName}}
                 {{this.serviceAreaName}}{{#if this.zoneName}} · {{this.zoneName}}{{/if}}
