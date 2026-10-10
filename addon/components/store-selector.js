@@ -3,6 +3,13 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 
+/**
+ * The context switcher at the top of the sidebar: stores and networks as peers. The
+ * chosen one owns the navigation, the dashboard and the data scope.
+ *
+ * The menu is built in the DOM and positioned fixed so the sidebar's overflow clipping
+ * cannot cut it off.
+ */
 export default class StoreSelectorComponent extends Component {
     @service intl;
     @tracked isOpen = false;
@@ -15,12 +22,12 @@ export default class StoreSelectorComponent extends Component {
         return Array.from(this.args.stores ?? []);
     }
 
-    get hasStores() {
-        return this.stores.length > 0;
-    }
-
     get networks() {
         return Array.from(this.args.networks ?? []);
+    }
+
+    get hasStores() {
+        return this.stores.length > 0;
     }
 
     get hasNetworks() {
@@ -28,8 +35,8 @@ export default class StoreSelectorComponent extends Component {
     }
 
     /**
-     * The networks group only appears once there is something to show in it: a user with
-     * one store and no networks sees the plain store menu.
+     * The networks group appears once there is something to put in it: a user with one
+     * store and no networks sees the plain store menu.
      */
     get showNetworks() {
         return this.hasNetworks || typeof this.args.onCreateNetwork === 'function';
@@ -45,6 +52,12 @@ export default class StoreSelectorComponent extends Component {
 
     get contextLabel() {
         return this.intl.t(`storefront.component.store-selector.${this.isNetworkContext ? 'network' : 'store'}`);
+    }
+
+    get badge() {
+        const badge = Number(this.args.badge ?? 0);
+
+        return Number.isFinite(badge) && badge > 0 ? badge : null;
     }
 
     willDestroy() {
@@ -92,123 +105,158 @@ export default class StoreSelectorComponent extends Component {
     }
 
     createMenuElement() {
+        const t = (key) => this.intl.t(`storefront.component.store-selector.${key}`);
         const menu = document.createElement('div');
         menu.setAttribute('role', 'menu');
-        menu.className = 'store-selector-dropdown-menu next-dd-menu py-1';
-        menu.style.position = 'fixed';
-        menu.style.zIndex = '900';
-        menu.style.margin = '0';
-        menu.style.height = 'auto';
-        menu.style.minHeight = '0';
-        menu.style.maxHeight = 'calc(100vh - 16px)';
-        menu.style.overflowX = 'hidden';
-        menu.style.overflowY = 'visible';
+        menu.className = 'store-selector-dropdown-menu storefront-switcher-menu';
+        menu.setAttribute('data-theme', document.body.dataset.theme ?? 'light');
 
-        const storeList = document.createElement('div');
-        storeList.setAttribute('role', 'group');
-        storeList.setAttribute('data-test-store-selector-stores', '');
-        storeList.className = 'px-1';
-        storeList.style.maxHeight = '18rem';
-        storeList.style.overflowY = 'auto';
-
-        if (this.showNetworks) {
-            storeList.appendChild(this.createGroupLabel(this.intl.t('storefront.component.store-selector.stores')));
-        }
+        const storeList = this.createGroup('stores', this.showNetworks ? t('stores') : null);
 
         if (this.hasStores) {
             this.stores.forEach((store) => {
-                const isActive = !this.isNetworkContext && store?.id === this.args.activeStore?.id;
-                storeList.appendChild(this.createMenuItem(store?.name || '-', () => this.onSwitchStore(store), { isActive }));
+                storeList.appendChild(
+                    this.createMenuItem({
+                        label: store?.name || '—',
+                        meta: store?.currency ?? null,
+                        icon: 'store',
+                        tone: 'store',
+                        isActive: !this.isNetworkContext && store?.id === this.args.activeStore?.id,
+                        onClick: () => this.onSwitchStore(store),
+                    })
+                );
             });
         } else {
-            storeList.appendChild(this.createEmptyItem(this.intl.t('storefront.component.store-selector.no-stores')));
+            storeList.appendChild(this.createEmptyItem(t('no-stores')));
         }
 
-        menu.append(storeList);
+        menu.appendChild(storeList);
 
         if (this.showNetworks) {
-            const networkList = document.createElement('div');
-            networkList.setAttribute('role', 'group');
-            networkList.setAttribute('data-test-store-selector-networks', '');
-            networkList.className = 'px-1';
-            networkList.style.maxHeight = '12rem';
-            networkList.style.overflowY = 'auto';
-            networkList.appendChild(this.createSeparator());
-            networkList.appendChild(this.createGroupLabel(this.intl.t('storefront.component.store-selector.networks')));
+            const networkList = this.createGroup('networks', t('networks'));
 
             if (this.hasNetworks) {
                 this.networks.forEach((network) => {
-                    const isActive = network?.id === this.args.activeNetwork?.id;
-                    networkList.appendChild(this.createMenuItem(network?.name || '-', () => this.onSwitchNetwork(network), { isActive }));
+                    const count = network?.stores_count ?? network?.stores?.length ?? null;
+
+                    networkList.appendChild(
+                        this.createMenuItem({
+                            label: network?.name || '—',
+                            meta: count === null ? null : this.intl.t('storefront.networks.card.stores-count', { count }),
+                            icon: 'network-wired',
+                            tone: 'network',
+                            isActive: this.isNetworkContext && network?.id === this.args.activeNetwork?.id,
+                            onClick: () => this.onSwitchNetwork(network),
+                        })
+                    );
                 });
             } else {
-                networkList.appendChild(this.createEmptyItem(this.intl.t('storefront.component.store-selector.no-networks')));
+                networkList.appendChild(this.createEmptyItem(t('no-networks')));
             }
 
-            menu.append(networkList);
+            menu.appendChild(networkList);
         }
 
-        const footer = document.createElement('div');
-        footer.className = 'px-1';
+        const footer = this.createGroup('actions', null);
+        footer.classList.add('storefront-switcher-menu__footer');
 
-        const footerGroup = document.createElement('div');
-        footerGroup.setAttribute('role', 'group');
-        footerGroup.setAttribute('data-test-store-selector-actions', '');
-        footerGroup.className = 'px-1';
-        footerGroup.appendChild(this.createMenuItem(this.intl.t('storefront.component.store-selector.create-storefront'), () => this.onCreateStore()));
+        if (typeof this.args.onCreateStore === 'function') {
+            footer.appendChild(this.createMenuItem({ label: t('new-store'), icon: 'plus', tone: 'muted', onClick: () => this.onCreateStore() }));
+        }
 
         if (typeof this.args.onCreateNetwork === 'function') {
-            footerGroup.appendChild(this.createMenuItem(this.intl.t('storefront.component.store-selector.create-network'), () => this.onCreateNetwork()));
+            footer.appendChild(this.createMenuItem({ label: t('new-network'), icon: 'plus', tone: 'muted', onClick: () => this.onCreateNetwork() }));
         }
 
-        footer.append(this.createSeparator(), footerGroup);
-        menu.append(footer);
+        if (footer.childElementCount) {
+            menu.appendChild(footer);
+        }
 
         return menu;
     }
 
-    createSeparator() {
-        const separator = document.createElement('div');
-        separator.className = 'next-dd-menu-seperator';
+    createGroup(name, heading) {
+        const group = document.createElement('div');
+        group.setAttribute('role', 'group');
+        group.setAttribute(`data-test-store-selector-${name}`, '');
+        group.className = 'storefront-switcher-menu__group';
 
-        return separator;
+        if (heading) {
+            const head = document.createElement('div');
+            head.className = 'storefront-switcher-menu__head';
+            head.setAttribute('role', 'presentation');
+            head.textContent = heading;
+            group.appendChild(head);
+        }
+
+        return group;
     }
 
-    createGroupLabel(text) {
-        const label = document.createElement('div');
-        label.className = 'storefront-context-switcher__label';
-        label.setAttribute('role', 'presentation');
-        label.textContent = text;
-
-        return label;
-    }
-
-    createEmptyItem(text) {
-        const emptyItem = document.createElement('div');
-        emptyItem.className = 'next-dd-item storefront-context-switcher__empty';
-        emptyItem.setAttribute('role', 'menuitem');
-        emptyItem.setAttribute('aria-disabled', 'true');
-        emptyItem.textContent = text;
-
-        return emptyItem;
-    }
-
-    createMenuItem(label, callback, { isActive = false } = {}) {
-        const item = document.createElement('a');
-        item.href = 'javascript:;';
-        item.className = `next-dd-item${isActive ? ' storefront-context-switcher__item--active' : ''}`;
+    createMenuItem({ label, meta = null, icon, tone = 'store', isActive = false, onClick }) {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = `storefront-switcher-menu__item${isActive ? ' is-active' : ''}`;
         item.setAttribute('role', 'menuitem');
+
         if (isActive) {
             item.setAttribute('aria-current', 'true');
         }
-        item.textContent = label;
+
+        const tile = document.createElement('span');
+        tile.className = `storefront-switcher-tile storefront-switcher-tile--${tone}`;
+        tile.innerHTML = this.iconMarkup(icon);
+
+        const text = document.createElement('span');
+        text.className = 'storefront-switcher-menu__label';
+        text.textContent = label;
+
+        item.append(tile, text);
+
+        if (meta) {
+            const metaElement = document.createElement('span');
+            metaElement.className = 'storefront-switcher-menu__meta';
+            metaElement.textContent = meta;
+            item.appendChild(metaElement);
+        }
+
+        if (isActive) {
+            const check = document.createElement('span');
+            check.className = 'storefront-switcher-menu__check';
+            check.innerHTML = this.iconMarkup('check');
+            item.appendChild(check);
+        }
+
         item.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            callback();
+            onClick();
         });
 
         return item;
+    }
+
+    createEmptyItem(text) {
+        const item = document.createElement('div');
+        item.className = 'storefront-switcher-menu__empty';
+        item.setAttribute('role', 'presentation');
+        item.textContent = text;
+
+        return item;
+    }
+
+    /**
+     * Inline SVG for the few icons the menu needs; the menu lives outside the component tree,
+     * so it cannot use the FaIcon component.
+     */
+    iconMarkup(name) {
+        const paths = {
+            store: '<path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>',
+            'network-wired': '<rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/>',
+            plus: '<path d="M12 5v14M5 12h14"/>',
+            check: '<path d="M5 12l5 5L20 7"/>',
+        };
+
+        return `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] ?? ''}</svg>`;
     }
 
     addListeners() {
@@ -260,16 +308,16 @@ export default class StoreSelectorComponent extends Component {
 
         const rect = this.triggerElement.getBoundingClientRect();
         const viewportPadding = 8;
-        const width = Math.max(rect.width, 220);
+        const width = Math.max(rect.width, 260);
         const maxLeft = window.innerWidth - width - viewportPadding;
         const left = Math.max(viewportPadding, Math.min(rect.left, maxLeft));
-        let top = rect.bottom + 4;
+        let top = rect.bottom + 6;
 
         this.menuElement.style.width = `${width}px`;
 
         const menuHeight = this.menuElement.offsetHeight;
-        if (top + menuHeight > window.innerHeight - viewportPadding && rect.top - menuHeight - 4 > viewportPadding) {
-            top = rect.top - menuHeight - 4;
+        if (top + menuHeight > window.innerHeight - viewportPadding && rect.top - menuHeight - 6 > viewportPadding) {
+            top = rect.top - menuHeight - 6;
         }
 
         this.menuElement.style.left = `${left}px`;
@@ -277,42 +325,22 @@ export default class StoreSelectorComponent extends Component {
     };
 
     @action onSwitchStore(store) {
-        const { onSwitchStore } = this.args;
-
-        if (typeof onSwitchStore === 'function') {
-            onSwitchStore(store);
-        }
-
-        this.close();
-    }
-
-    @action onCreateStore() {
-        const { onCreateStore } = this.args;
-
-        if (typeof onCreateStore === 'function') {
-            onCreateStore();
-        }
-
+        this.args.onSwitchStore?.(store);
         this.close();
     }
 
     @action onSwitchNetwork(network) {
-        const { onSwitchNetwork } = this.args;
+        this.args.onSwitchNetwork?.(network);
+        this.close();
+    }
 
-        if (typeof onSwitchNetwork === 'function') {
-            onSwitchNetwork(network);
-        }
-
+    @action onCreateStore() {
+        this.args.onCreateStore?.();
         this.close();
     }
 
     @action onCreateNetwork() {
-        const { onCreateNetwork } = this.args;
-
-        if (typeof onCreateNetwork === 'function') {
-            onCreateNetwork();
-        }
-
+        this.args.onCreateNetwork?.();
         this.close();
     }
 }

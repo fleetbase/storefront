@@ -152,25 +152,25 @@ module('Unit | Controller | application', function (hooks) {
 
         assert.deepEqual(
             items.map((item) => item.label),
-            ['Dashboard', 'Products', 'Catalogs', 'Customers', 'Orders', 'Networks', 'Food Trucks', 'Promotions', 'Settings', 'Launch App'],
+            ['Dashboard', 'Orders', 'Products', 'Catalogs', 'Customers', 'Trucks', 'Promotions', 'Settings', 'Launch App'],
             'root items match the Storefront sidebar sections'
         );
         assert.deepEqual(
             items.map((item) => item.icon),
-            ['home', 'box', 'book-open', 'users', 'file-invoice-dollar', 'network-wired', 'truck', 'bullhorn', 'cogs', 'rocket'],
+            ['home', 'file-invoice-dollar', 'box', 'book-open', 'users', 'truck', 'bullhorn', 'cogs', 'rocket'],
             'root items keep Storefront-specific icons'
         );
         assert.strictEqual(items[0].route, 'console.storefront.home');
-        assert.strictEqual(items[1].permission, 'storefront list product');
-        assert.true(items[1].visible, 'product visibility uses the abilities service');
-        assert.false(items[1].disabled, 'resource items are enabled when an active store exists');
+        assert.strictEqual(items[2].permission, 'storefront list product');
+        assert.true(items[2].visible, 'product visibility uses the abilities service');
+        assert.false(items[2].disabled, 'resource items are enabled when an active store exists');
         assert.deepEqual(
-            items[1].children.map((item) => item.label),
+            items[2].children.map((item) => item.label),
             ['All Products', 'Pizza'],
             'products includes all products plus active store product categories'
         );
-        assert.strictEqual(items[1].children[0].route, 'console.storefront.products.index.index', 'all products does not match category routes');
-        const categoryItem = items[1].children[1];
+        assert.strictEqual(items[2].children[0].route, 'console.storefront.products.index.index', 'all products does not match category routes');
+        const categoryItem = items[2].children[1];
         assert.strictEqual(categoryItem.id, 'product-category:category_uuid', 'category navigation has a stable unique identifier');
         assert.strictEqual(categoryItem.route, undefined, 'categories do not fall back to shared route-name matching');
         const hostRouter = this.owner.lookup('service:host-router');
@@ -188,7 +188,7 @@ module('Unit | Controller | application', function (hooks) {
         };
         categoryItem.onClick();
         assert.deepEqual(
-            items[8].children.map((item) => item.route),
+            items[7].children.map((item) => item.route),
             [
                 'console.storefront.settings.index',
                 'console.storefront.settings.locations',
@@ -198,7 +198,7 @@ module('Unit | Controller | application', function (hooks) {
             ],
             'settings children use the requested order'
         );
-        assert.strictEqual(items[9].url, 'https://github.com/fleetbase/storefront-app', 'launch app remains an external URL item');
+        assert.strictEqual(items[8].url, 'https://github.com/fleetbase/storefront-app', 'launch app remains an external URL item');
     });
 
     test('it loads active store product categories for the sidebar navigator', async function (assert) {
@@ -305,8 +305,8 @@ module('Unit | Controller | application', function (hooks) {
         const items = controller.navigationItems;
 
         assert.false(items[0].disabled, 'dashboard remains available');
-        assert.true(items[1].disabled, 'products are disabled without an active store');
-        assert.true(items[8].disabled, 'settings are disabled without an active store');
+        assert.true(items[2].disabled, 'products are disabled without an active store');
+        assert.true(items[7].disabled, 'settings are disabled without an active store');
     });
 
     test('it fetches Storefront resource search results for the sidebar navigator', async function (assert) {

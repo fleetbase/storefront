@@ -1,19 +1,23 @@
 {{#if this.activeContext}}
-    <div class={{@wrapperClass}} {{did-insert this.setupTrigger}} {{will-destroy this.close}} ...attributes>
-        <Button
+    <div class="storefront-switcher {{@wrapperClass}}" {{did-insert this.setupTrigger}} {{will-destroy this.close}} ...attributes>
+        <button
+            type="button"
+            class="storefront-switcher__trigger storefront-switcher__trigger--{{if this.isNetworkContext 'network' 'store'}} {{if this.isOpen 'is-open'}} {{@buttonClass}}"
             title={{concat this.contextLabel ": " this.activeContext.name}}
-            class="{{concat "w-full " @buttonClass}} {{if this.isOpen "dd-is-open"}}"
-            @wrapperClass={{concat "w-full " @buttonWrapperClass}}
-            @size="xs"
-            @type="primary"
-            @icon={{if this.isNetworkContext "network-wired" "store"}}
-            @iconSize="sm"
-            @text={{this.activeContext.name}}
-            @textClass="truncate"
-            @onClick={{this.toggle}}
+            aria-haspopup="menu"
+            aria-expanded={{if this.isOpen "true" "false"}}
             data-test-store-selector-trigger
             data-context={{if this.isNetworkContext "network" "store"}}
-        />
+            {{on "click" this.toggle}}
+        >
+            <span class="storefront-switcher__icon"><FaIcon @icon={{if this.isNetworkContext "network-wired" "store"}} @size="sm" /></span>
+            <span class="storefront-switcher__name">{{this.activeContext.name}}</span>
+            <span class="storefront-switcher__kind">{{this.contextLabel}}</span>
+            <span class="storefront-switcher__caret"><FaIcon @icon="chevron-down" @size="xs" /></span>
+            {{#if this.badge}}
+                <span class="storefront-switcher__badge" title={{t "storefront.component.store-selector.badge-title" count=this.badge}} data-test-store-selector-badge>{{this.badge}}</span>
+            {{/if}}
+        </button>
     </div>
 {{else if (has-block)}}
     {{yield}}

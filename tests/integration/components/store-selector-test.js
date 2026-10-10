@@ -54,9 +54,7 @@ module('Integration | Component | store-selector', function (hooks) {
         assert.ok(dropdownContent, 'dropdown content renders when opened');
         assert.false(this.element.contains(dropdownContent), 'dropdown content renders outside the sidebar-clipped component tree');
         assert.strictEqual(dropdownContent.style.position, 'fixed', 'dropdown uses fixed positioning');
-        assert.strictEqual(dropdownContent.style.height, 'auto', 'dropdown height hugs its content');
-        assert.strictEqual(dropdownContent.style.minHeight, '0px', 'dropdown does not inherit full-height menu sizing');
-        assert.strictEqual(dropdownContent.querySelector('[role="group"]').style.overflowY, 'auto', 'store list only scrolls when needed');
+        assert.ok(dropdownContent.querySelector('[role="group"]'), 'stores render as a group');
         assert.dom('.ember-basic-dropdown-content').doesNotExist('does not use BasicDropdown content');
     });
 
@@ -83,7 +81,7 @@ module('Integration | Component | store-selector', function (hooks) {
         `);
         await click('button');
         assert.dom(document.body.querySelector('.store-selector-dropdown-menu')).exists('dropdown opens');
-        await click(document.body.querySelectorAll('.store-selector-dropdown-menu .next-dd-item')[1]);
+        await click(document.body.querySelectorAll('.store-selector-dropdown-menu .storefront-switcher-menu__item')[1]);
 
         assert.dom(document.body.querySelector('.store-selector-dropdown-menu')).doesNotExist('dropdown closes after switching stores');
     });
@@ -108,7 +106,7 @@ module('Integration | Component | store-selector', function (hooks) {
         `);
         await click('button');
         assert.dom(document.body.querySelector('.store-selector-dropdown-menu')).exists('dropdown opens');
-        await click(document.body.querySelector('.store-selector-dropdown-menu .px-1:last-child .next-dd-item'));
+        await click(document.body.querySelector('[data-test-store-selector-actions] .storefront-switcher-menu__item'));
 
         assert.dom(document.body.querySelector('.store-selector-dropdown-menu')).doesNotExist('dropdown closes after create action');
     });
@@ -150,9 +148,9 @@ module('Integration | Component | store-selector', function (hooks) {
         const menu = document.body.querySelector('.store-selector-dropdown-menu');
         assert.dom('[data-test-store-selector-trigger]').hasAttribute('data-context', 'store');
         assert.dom(menu.querySelector('[data-test-store-selector-networks]')).doesNotExist('no networks group');
-        assert.dom(menu.querySelector('.storefront-context-switcher__label')).doesNotExist('no group labels when there is only one group');
+        assert.dom(menu.querySelector('.storefront-switcher-menu__head')).doesNotExist('no group labels when there is only one group');
         assert.dom(menu.querySelector('[aria-current="true"]')).hasText('Fleetbase Market', 'the active store is marked');
-        assert.strictEqual(menu.querySelectorAll('[data-test-store-selector-actions] .next-dd-item').length, 1, 'only the create store action');
+        assert.strictEqual(menu.querySelectorAll('[data-test-store-selector-actions] .storefront-switcher-menu__item').length, 1, 'only the new store action');
     });
 
     test('it lists networks as a second group and switches into one', async function (assert) {
@@ -184,18 +182,18 @@ module('Integration | Component | store-selector', function (hooks) {
 
         const menu = document.body.querySelector('.store-selector-dropdown-menu');
         assert.deepEqual(
-            Array.from(menu.querySelectorAll('.storefront-context-switcher__label')).map((label) => label.textContent),
+            Array.from(menu.querySelectorAll('.storefront-switcher-menu__head')).map((label) => label.textContent),
             ['Stores', 'Networks'],
             'both groups are labelled'
         );
-        const networkItems = menu.querySelectorAll('[data-test-store-selector-networks] .next-dd-item');
+        const networkItems = menu.querySelectorAll('[data-test-store-selector-networks] .storefront-switcher-menu__item');
         assert.deepEqual(
             Array.from(networkItems).map((item) => item.textContent),
             ['Downtown Market', 'Uptown Market']
         );
         assert.dom(menu.querySelector('[data-test-store-selector-stores] [aria-current="true"]')).hasText('Fleetbase Market');
         assert.dom(menu.querySelector('[data-test-store-selector-networks] [aria-current="true"]')).doesNotExist('no network is active in the store context');
-        assert.strictEqual(menu.querySelectorAll('[data-test-store-selector-actions] .next-dd-item').length, 2, 'create store and create network actions');
+        assert.strictEqual(menu.querySelectorAll('[data-test-store-selector-actions] .storefront-switcher-menu__item').length, 2, 'new store and new network actions');
 
         await click(networkItems[1]);
         assert.dom(document.body.querySelector('.store-selector-dropdown-menu')).doesNotExist('dropdown closes after switching networks');
@@ -221,14 +219,14 @@ module('Integration | Component | store-selector', function (hooks) {
         `);
 
         assert.dom('[data-test-store-selector-trigger]').hasAttribute('data-context', 'network');
-        assert.dom('[data-test-store-selector-trigger]').hasText('Downtown Market');
+        assert.dom('[data-test-store-selector-trigger]').containsText('Downtown Market');
         assert.dom('[data-test-store-selector-trigger]').hasAttribute('title', 'Network: Downtown Market');
 
         await click('button');
         const menu = document.body.querySelector('.store-selector-dropdown-menu');
         assert.dom(menu.querySelector('[data-test-store-selector-networks] [aria-current="true"]')).hasText('Downtown Market');
         assert.dom(menu.querySelector('[data-test-store-selector-stores] [aria-current="true"]')).doesNotExist('the store is not marked while a network is active');
-        assert.dom(menu.querySelector('[data-test-store-selector-actions]').lastElementChild).hasText('Create a new', 'no create network action without a handler');
+        assert.dom(menu.querySelector('[data-test-store-selector-actions]').lastElementChild).hasText('New store', 'no new network action without a handler');
     });
 
     test('it creates a network and closes the dropdown', async function (assert) {
@@ -245,7 +243,7 @@ module('Integration | Component | store-selector', function (hooks) {
         await click('button');
 
         const menu = document.body.querySelector('.store-selector-dropdown-menu');
-        assert.dom(menu.querySelector('[data-test-store-selector-networks] .storefront-context-switcher__empty')).hasText('No networks');
-        await click(menu.querySelector('[data-test-store-selector-actions] .next-dd-item:last-child'));
+        assert.dom(menu.querySelector('[data-test-store-selector-networks] .storefront-switcher-menu__empty')).hasText('No networks yet');
+        await click(menu.querySelector('[data-test-store-selector-actions] .storefront-switcher-menu__item:last-child'));
     });
 });

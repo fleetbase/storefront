@@ -3318,9 +3318,127 @@ body[data-theme='dark'] .storefront-hours-strip__day.is-open .storefront-hours-s
     background: #16a34a;
 }
 
-/* Context switcher: the store selector grown to cover networks */
-.storefront-context-switcher__label {
-    padding: 0.375rem 0.75rem 0.125rem;
+/* Context switcher: stores and networks as peers at the top of the sidebar */
+.storefront-switcher {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.storefront-switcher__trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #2563eb;
+    border-radius: 0.375rem;
+    background-color: #2563eb;
+    color: #ffffff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.storefront-switcher__trigger:hover,
+.storefront-switcher__trigger.is-open {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.storefront-switcher__trigger--network {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.storefront-switcher__trigger--network:hover,
+.storefront-switcher__trigger--network.is-open {
+    background-color: #4338ca;
+    border-color: #4338ca;
+}
+
+.storefront-switcher__icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    opacity: 0.95;
+}
+
+.storefront-switcher__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-switcher__kind {
+    flex-shrink: 0;
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.storefront-switcher__caret {
+    display: inline-flex;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.storefront-switcher__badge {
+    position: absolute;
+    top: -0.375rem;
+    right: -0.25rem;
+    min-width: 1.125rem;
+    padding: 0 0.3rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.125rem;
+    text-align: center;
+    color: #ffffff;
+    background-color: #f59e0b;
+    pointer-events: none;
+}
+
+.storefront-switcher-menu {
+    position: fixed;
+    z-index: 900;
+    margin: 0;
+    padding: 0.375rem;
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    box-shadow: 0 10px 25px rgb(0 0 0 / 12%);
+    color: #111827;
+}
+
+.storefront-switcher-menu[data-theme='dark'] {
+    border-color: #374151;
+    background-color: #1f2937;
+    color: #f3f4f6;
+}
+
+.storefront-switcher-menu__group + .storefront-switcher-menu__group {
+    margin-top: 0.25rem;
+}
+
+.storefront-switcher-menu__footer {
+    margin-top: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__footer {
+    border-color: #374151;
+}
+
+.storefront-switcher-menu__head {
+    padding: 0.5rem 0.625rem 0.25rem;
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -3328,17 +3446,123 @@ body[data-theme='dark'] .storefront-hours-strip__day.is-open .storefront-hours-s
     color: #6b7280;
 }
 
-body[data-theme='dark'] .storefront-context-switcher__label {
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__head {
     color: #9ca3af;
 }
 
-.store-selector-dropdown-menu .next-dd-item.storefront-context-switcher__item--active {
+.storefront-switcher-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: #111827;
+    text-align: left;
+    cursor: pointer;
+}
+
+.storefront-switcher-menu__item:hover,
+.storefront-switcher-menu__item:focus-visible {
+    background-color: #f3f4f6;
+    outline: none;
+}
+
+.storefront-switcher-menu__item.is-active {
+    background-color: #eff6ff;
     font-weight: 600;
 }
 
-.store-selector-dropdown-menu .next-dd-item.storefront-context-switcher__empty {
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__item {
+    color: #f3f4f6;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__item:hover,
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__item:focus-visible {
+    background-color: #374151;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__item.is-active {
+    background-color: rgb(55 65 81 / 80%);
+}
+
+.storefront-switcher-menu__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-switcher-menu__meta {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: #6b7280;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__meta {
     color: #9ca3af;
-    cursor: default;
+}
+
+.storefront-switcher-menu__check {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: #2563eb;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__check {
+    color: #60a5fa;
+}
+
+.storefront-switcher-menu__empty {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+}
+
+.storefront-switcher-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+}
+
+.storefront-switcher-tile--store {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.storefront-switcher-tile--network {
+    background-color: #e0e7ff;
+    color: #4338ca;
+}
+
+.storefront-switcher-tile--muted {
+    background-color: #f3f4f6;
+    color: #1d4ed8;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-tile--store {
+    background-color: rgb(29 78 216 / 35%);
+    color: #93c5fd;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-tile--network {
+    background-color: rgb(67 56 202 / 35%);
+    color: #a5b4fc;
+}
+
+.storefront-switcher-menu[data-theme='dark'] .storefront-switcher-tile--muted {
+    background-color: #374151;
+    color: #93c5fd;
 }
 
 /* Network page: full-page container for the network sections */

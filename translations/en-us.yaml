@@ -302,8 +302,10 @@ storefront:
       network: Network
       stores: Stores
       networks: Networks
-      no-networks: No networks
-      create-network: Create network
+      no-networks: No networks yet
+      new-store: New store
+      new-network: New network
+      badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
   home:
     title: Storefront Dashboard
   customers:
