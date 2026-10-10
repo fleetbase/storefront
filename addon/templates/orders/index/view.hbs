@@ -7,10 +7,15 @@
     @onPressCancel={{this.transitionBack}}
     @headerClass="storefront-order-panel-header no-bottom-border"
     @bodyClass="no-scroll"
-    @width="560px"
+    @width="600px"
     @isResizable={{true}}
 >
-    <TabNavigation @tabs={{this.tabs}} @contentClass="scrollable storefront-order-panel-tab-content" @tablistClass="pl-2 storefront-order-panel-tablist">
-        {{outlet}}
+    <TabNavigation @tabs={{this.tabs}} @contentClass="scrollable storefront-order-panel-tab-content" @tablistClass="pl-2 storefront-order-panel-tablist" as |activeTab|>
+        {{#if activeTab.registeredSlug}}
+            <Storefront::Order::Details::RegisteredTab @class={{activeTab.registeredSlug}} @resource={{@model}} />
+        {{else if activeTab.component}}
+            {{component activeTab.component resource=@model order=@model refresh=this.refreshOrder}}
+        {{/if}}
     </TabNavigation>
+    {{outlet}}
 </Layout::Resource::Panel>
