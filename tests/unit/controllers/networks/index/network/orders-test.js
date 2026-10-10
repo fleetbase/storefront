@@ -28,6 +28,5 @@ module('Unit | Controller | networks/index/network/orders', function (hooks) {
             assert.strictEqual(byId[id].resourceType, resourceType, `${id} is a ${resourceType}`);
             assert.strictEqual(typeof byId[id].resourcePath, 'function', `${id} resolves its resource`);
         }
-
     });
 });
