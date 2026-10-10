@@ -796,6 +796,56 @@ storefront:
           remove-store-category: Remove store category
           remove-store-category-body: You are about to remove {storeName} from the category {categoryName}, do you wish to proceed?
   orders:
+    create:
+      title: New order
+      subtitle: a console order follows the same flow as an app order
+      change-customer: Change customer
+      customer-placeholder: Search customers by name, phone or email
+      customer-help: Picking a customer fills the places below.
+      schedule: Schedule
+      pickup-from: Pickup from
+      leaves-from: Leaves from
+      location-help: A store location; its hours decide what the catalog offers.
+      deliver-to: Deliver to
+      no-places: This customer has no saved places yet; pick any place below.
+      other-address: Another address
+      pick-customer-first: Pick a customer to see their saved places.
+      items-hint: from the store's published products
+      each: each
+      choose-options: Choose the options, then add it to the order.
+      add-to-order: Add to order
+      max: "(up to {max})"
+      max-addons: "Up to {max} from {category}."
+      variant-required: "Choose a {variant}."
+      picker-hint: Click a product to add it; products with options ask first.
+      no-products: No published products match.
+      notes: Order notes
+      notes-placeholder: Anything the store or driver should know
+      summary: Summary
+      promo-placeholder: Promotion code
+      apply: Apply
+      promo-applied: "{name} applied"
+      promo-rejected: "{code} cannot be applied ({reason})."
+      payment-cash: Cash on delivery
+      payment-paid: Mark as paid (phone order)
+      payment-help: Card payments are collected in the app; a console order is cash or already paid.
+      tip: Tip
+      tip-none: None
+      tip-custom: Custom
+      subtotal: "Subtotal · {count, plural, one {# item} other {# items}}"
+      discount: Promotion
+      delivery-fee: Delivery fee
+      pricing: Pricing through the API…
+      minimum-met: "Minimum order {amount} met"
+      ready: Ready to place
+      place: "Place order · {total}"
+      placed: "Order {id} placed."
+      issues:
+        customer: Pick a customer.
+        items: Add at least one product.
+        dropoff: Pick where the order is delivered to.
+        location: Pick the store location.
+        minimum: "Minimum order {amount} not met."
     index:
       internal-id: Internal ID
       customer: Customer

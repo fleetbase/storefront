@@ -216,6 +216,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->get('customer-insights', 'AnalyticsController@customerInsights');
                             }
                         );
+                        $router->post('orders/console/quote', 'ConsoleOrderController@quote');
+                        $router->post('orders/console/place', 'ConsoleOrderController@place');
                         $router->fleetbaseRoutes(
                             'orders',
                             function ($router, $controller) {

@@ -1,1 +1,240 @@
-{{outlet}}
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="1040px" @minResizeWidth={{760}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+    <Overlay::Header @title={{t "storefront.orders.create.title"}} @onPressCancel={{this.cancel}}>
+        <:actions>
+            <span class="storefront-create-order__store">{{this.activeStore.name}} · {{t "storefront.orders.create.subtitle"}}</span>
+        </:actions>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i" @wrapperClass="storefront-create-order" data-test-create-order>
+        <div class="storefront-create-order__steps">
+            {{! 1 · Customer }}
+            <section class="storefront-create-order__step" data-test-create-order-step="customer">
+                <div class="storefront-create-order__step-title"><span class="storefront-flow-step__marker">1</span>{{t "storefront.common.customer"}}</div>
+                <div class="storefront-create-order__step-body">
+                    {{#if this.selectedCustomer}}
+                        <div class="storefront-member-row storefront-create-order__picked">
+                            <Customer::Pill @customer={{this.selectedCustomer}} @size="xs" />
+                            <div class="storefront-member-row__identity">
+                                <div class="storefront-member-row__meta">{{n-a this.selectedCustomer.phone}}{{#if this.selectedCustomer.email}} · {{this.selectedCustomer.email}}{{/if}}</div>
+                            </div>
+                            <Button @size="xs" @icon="times" @helpText={{t "storefront.orders.create.change-customer"}} @onClick={{fn this.selectCustomer null}} />
+                        </div>
+                    {{else}}
+                        <ModelSelect @modelName="customer" @selectedModel={{this.selectedCustomer}} @placeholder={{t "storefront.orders.create.customer-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectCustomer}} as |model|>
+                            <SelectOption::Customer @option={{model}} />
+                        </ModelSelect>
+                        <p class="storefront-invite-panel__hint">{{t "storefront.orders.create.customer-help"}}</p>
+                    {{/if}}
+                </div>
+            </section>
+
+            {{! 2 · Fulfillment }}
+            <section class="storefront-create-order__step" data-test-create-order-step="fulfillment">
+                <div class="storefront-create-order__step-title"><span class="storefront-flow-step__marker">2</span>{{t "storefront.networks.orders.columns.fulfillment"}}</div>
+                <div class="storefront-create-order__step-body space-y-3">
+                    <div class="flex flex-wrap gap-4">
+                        <div class="storefront-view-toggle" role="group">
+                            <button type="button" class="storefront-view-toggle__option {{unless this.isPickup 'is-active'}}" {{on "click" (fn this.setPickup false)}} data-test-fulfillment="delivery">{{t "storefront.networks.orders.delivery"}}</button>
+                            <button type="button" class="storefront-view-toggle__option {{if this.isPickup 'is-active'}}" {{on "click" (fn this.setPickup true)}} data-test-fulfillment="pickup">{{t "storefront.common.pickup"}}</button>
+                        </div>
+                        <div class="storefront-view-toggle" role="group">
+                            <button type="button" class="storefront-view-toggle__option {{unless this.isScheduled 'is-active'}}" {{on "click" (fn this.setScheduled false)}}>{{t "storefront.order.asap"}}</button>
+                            <button type="button" class="storefront-view-toggle__option {{if this.isScheduled 'is-active'}}" {{on "click" (fn this.setScheduled true)}}>{{t "storefront.orders.create.schedule"}}</button>
+                        </div>
+                        {{#if this.isScheduled}}
+                            <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
+                        {{/if}}
+                    </div>
+                    <InputGroup @name={{if this.isPickup (t "storefront.orders.create.pickup-from") (t "storefront.orders.create.leaves-from")}} @helpText={{t "storefront.orders.create.location-help"}}>
+                        <PowerSelect @options={{this.locations}} @selected={{this.pickupLocation}} @onChange={{this.selectLocation}} @triggerClass="form-select form-input" @renderInPlace={{true}} as |location|>
+                            <span class="font-semibold">{{location.name}}</span> <span class="text-gray-500 text-xs">{{n-a location.place.address location.address}}</span>
+                        </PowerSelect>
+                    </InputGroup>
+                    {{#unless this.isPickup}}
+                        <div>
+                            <div class="field-name mb-1">{{t "storefront.orders.create.deliver-to"}}</div>
+                            {{#if this.selectedCustomer}}
+                                {{#if this.placeRows.length}}
+                                    <div class="storefront-create-order__places">
+                                        {{#each this.placeRows as |row|}}
+                                            <button type="button" class="storefront-create-order__place {{if row.isSelected 'is-selected'}}" {{on "click" (fn this.selectDropoff row.place)}} data-test-dropoff={{row.place.id}}>
+                                                <Place::Pill @place={{row.place}} @size="xs" />
+                                                <span class="storefront-create-order__place-address">{{n-a row.place.address}}</span>
+                                                {{#if row.isDefault}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.customers.panel.default"}} />{{/if}}
+                                            </button>
+                                        {{/each}}
+                                    </div>
+                                {{else}}
+                                    <p class="storefront-invite-panel__hint">{{t "storefront.orders.create.no-places"}}</p>
+                                {{/if}}
+                                <div class="mt-2">
+                                    <ModelSelect @modelName="place" @selectedModel={{this.dropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
+                                        <SelectOption::Place @option={{model}} />
+                                    </ModelSelect>
+                                </div>
+                            {{else}}
+                                <p class="storefront-invite-panel__hint">{{t "storefront.orders.create.pick-customer-first"}}</p>
+                            {{/if}}
+                        </div>
+                    {{/unless}}
+                </div>
+            </section>
+
+            {{! 3 · Items }}
+            <section class="storefront-create-order__step" data-test-create-order-step="items">
+                <div class="storefront-create-order__step-title"><span class="storefront-flow-step__marker">3</span>{{t "storefront.order.tabs.items"}}<span class="storefront-create-order__step-hint">{{t "storefront.orders.create.items-hint"}}</span></div>
+                <div class="storefront-create-order__step-body space-y-3">
+                    {{#if this.lineRows.length}}
+                        <div class="storefront-create-order__lines" data-test-order-lines>
+                            {{#each this.lineRows as |line|}}
+                                <div class="storefront-create-order__line {{if line.unavailable 'is-unavailable'}}" data-test-order-line={{line.key}}>
+                                    <Image src={{line.product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{line.product.name}} class="storefront-catalog-product__image" />
+                                    <div class="storefront-catalog-product__identity">
+                                        <div class="storefront-catalog-product__name">{{line.product.name}}</div>
+                                        <div class="storefront-catalog-product__meta">{{#if line.optionsLabel}}{{line.optionsLabel}}{{else}}{{n-a line.product.category.name}}{{/if}}{{#if line.unavailable}} · <span class="text-red-500">{{t "storefront.catalogs.editor.out-of-stock"}}</span>{{/if}}</div>
+                                    </div>
+                                    <div class="storefront-create-order__qty">
+                                        <Button @size="xs" @icon="minus" @onClick={{fn this.changeQuantity line -1}} @disabled={{eq line.quantity 1}} />
+                                        <span>{{line.quantity}}</span>
+                                        <Button @size="xs" @icon="plus" @onClick={{fn this.changeQuantity line 1}} />
+                                    </div>
+                                    <div class="storefront-catalog-product__price">{{format-currency line.total this.currency}}<span class="storefront-catalog-product__price-note">{{format-currency line.unitPrice this.currency}} {{t "storefront.orders.create.each"}}</span></div>
+                                    <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} @onClick={{fn this.removeLine line}} />
+                                </div>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+
+                    {{#if this.configuring}}
+                        <div class="storefront-catalog-picker" data-test-line-config>
+                            <div class="storefront-catalog-picker__header">
+                                <div class="min-w-0">
+                                    <div class="storefront-catalog-products__title">{{this.configuring.name}}</div>
+                                    <div class="storefront-catalog-products__meta">{{t "storefront.orders.create.choose-options"}}</div>
+                                </div>
+                                <div class="storefront-create-order__qty">
+                                    <Button @size="xs" @icon="minus" @onClick={{fn this.setConfigQuantity -1}} @disabled={{eq this.configQuantity 1}} />
+                                    <span>{{this.configQuantity}}</span>
+                                    <Button @size="xs" @icon="plus" @onClick={{fn this.setConfigQuantity 1}} />
+                                </div>
+                            </div>
+                            <div class="storefront-catalog-picker__list storefront-create-order__options">
+                                {{#each this.configVariantRows as |row|}}
+                                    <div class="storefront-create-order__option-group">
+                                        <div class="storefront-create-order__option-title">{{row.variant.name}}{{#if row.variant.is_required}} <span class="text-red-500">*</span>{{/if}}</div>
+                                        <div class="storefront-create-order__option-list">
+                                            {{#each row.options as |item|}}
+                                                <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleVariantOption row.variant item.option)}}>
+                                                    <FaIcon @icon={{if item.isSelected (if row.variant.is_multiselect "check-square" "dot-circle") (if row.variant.is_multiselect "square" "circle")}} @prefix="far" class="mr-1" />
+                                                    {{item.option.name}}{{#if item.option.additional_cost}} <span class="text-gray-500">+{{format-currency item.option.additional_cost this.currency}}</span>{{/if}}
+                                                </button>
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                {{/each}}
+                                {{#each this.configAddonRows as |row|}}
+                                    <div class="storefront-create-order__option-group">
+                                        <div class="storefront-create-order__option-title">{{row.category.name}}{{#if row.category.max_selectable}} <span class="text-gray-500">{{t "storefront.orders.create.max" max=row.category.max_selectable}}</span>{{/if}}</div>
+                                        <div class="storefront-create-order__option-list">
+                                            {{#each row.addons as |item|}}
+                                                <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleAddon row.category item.addon)}}>
+                                                    <FaIcon @icon={{if item.isSelected "check-square" "square"}} @prefix="far" class="mr-1" />
+                                                    {{item.addon.name}} <span class="text-gray-500">+{{format-currency (if item.addon.is_on_sale item.addon.sale_price item.addon.price) this.currency}}</span>
+                                                </button>
+                                            {{/each}}
+                                        </div>
+                                    </div>
+                                {{/each}}
+                            </div>
+                            <div class="storefront-catalog-picker__footer">
+                                <Button @size="sm" @text={{t "common.cancel"}} @onClick={{this.cancelConfig}} />
+                                <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.orders.create.add-to-order"}} @onClick={{this.confirmConfig}} data-test-line-config-add />
+                            </div>
+                        </div>
+                    {{else}}
+                        <div class="storefront-catalog-picker" data-test-product-picker>
+                            <div class="storefront-catalog-picker__header">
+                                <Input class="form-input form-input-sm w-full" @value={{this.pickerQuery}} placeholder={{t "storefront.catalogs.editor.search-products"}} {{on "input" this.setPickerQuery}} />
+                                <span class="storefront-catalog-picker__hint">{{t "storefront.orders.create.picker-hint"}}</span>
+                            </div>
+                            <div class="storefront-catalog-picker__list">
+                                {{#each this.pickerProducts as |product|}}
+                                    <button type="button" class="storefront-catalog-picker__item" {{on "click" (fn this.pickProduct product)}} data-test-picker-product={{product.id}}>
+                                        <Image src={{product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{product.name}} class="storefront-catalog-picker__image" />
+                                        <span class="storefront-catalog-picker__name">{{product.name}}{{#if product.category.name}} <span class="text-gray-400">· {{product.category.name}}</span>{{/if}}</span>
+                                        <span class="storefront-catalog-picker__price">{{format-currency (if product.is_on_sale product.sale_price product.price) product.currency}}</span>
+                                        {{#if product.variants.length}}<span class="storefront-status-tab__count">{{t "storefront.catalogs.editor.variants-count" count=product.variants.length}}</span>{{/if}}
+                                        <FaIcon @icon="plus" />
+                                    </button>
+                                {{else}}
+                                    <div class="storefront-empty-row"><span>{{t "storefront.orders.create.no-products"}}</span></div>
+                                {{/each}}
+                            </div>
+                        </div>
+                    {{/if}}
+
+                    <InputGroup @name={{t "storefront.orders.create.notes"}}>
+                        <Textarea class="form-input w-full" rows="2" @value={{this.notes}} placeholder={{t "storefront.orders.create.notes-placeholder"}} {{on "input" this.setNotes}} />
+                    </InputGroup>
+                </div>
+            </section>
+        </div>
+
+        <aside class="storefront-create-order__summary" data-test-create-order-summary>
+            <div class="storefront-create-order__summary-title">{{t "storefront.orders.create.summary"}}</div>
+
+            <form class="storefront-create-order__promo" {{on "submit" this.applyPromoCode}}>
+                <Input class="form-input form-input-sm w-full uppercase" @value={{this.promoCode}} placeholder={{t "storefront.orders.create.promo-placeholder"}} {{on "input" this.setPromoCode}} />
+                {{#if this.appliedPromoCode}}
+                    <Button @size="xs" @icon="times" @onClick={{this.clearPromoCode}} />
+                {{else}}
+                    <Button @size="xs" @buttonType="submit" @text={{t "storefront.orders.create.apply"}} @onClick={{this.applyPromoCode}} />
+                {{/if}}
+            </form>
+            {{#each this.quote.promotions.applied as |promotion|}}
+                <div class="storefront-create-order__promo-applied"><FaIcon @icon="tag" @size="xs" class="mr-1" />{{t "storefront.orders.create.promo-applied" name=(or promotion.name promotion.code)}}</div>
+            {{/each}}
+
+            <div class="storefront-create-order__group">
+                <div class="field-name mb-1">{{t "storefront.order.tabs.payment"}}</div>
+                <div class="storefront-create-order__option-list">
+                    <button type="button" class="storefront-create-order__option {{if (eq this.payment 'cash') 'is-selected'}}" {{on "click" (fn this.setPayment "cash")}} data-test-payment="cash"><FaIcon @icon={{if (eq this.payment "cash") "dot-circle" "circle"}} @prefix="far" class="mr-1" />{{t "storefront.orders.create.payment-cash"}}</button>
+                    <button type="button" class="storefront-create-order__option {{if (eq this.payment 'paid') 'is-selected'}}" {{on "click" (fn this.setPayment "paid")}} data-test-payment="paid"><FaIcon @icon={{if (eq this.payment "paid") "dot-circle" "circle"}} @prefix="far" class="mr-1" />{{t "storefront.orders.create.payment-paid"}}</button>
+                </div>
+                <p class="storefront-invite-panel__hint">{{t "storefront.orders.create.payment-help"}}</p>
+            </div>
+
+            <div class="storefront-create-order__group">
+                <div class="field-name mb-1">{{t "storefront.orders.create.tip"}}</div>
+                <div class="storefront-create-order__option-list">
+                    <button type="button" class="storefront-create-order__option {{if (eq this.tipMode 'none') 'is-selected'}}" {{on "click" (fn this.setTipMode "none")}}>{{t "storefront.orders.create.tip-none"}}</button>
+                    <button type="button" class="storefront-create-order__option {{if (eq this.tipMode 'fixed') 'is-selected'}}" {{on "click" (fn this.setTipMode "fixed")}}>{{format-currency 350 this.currency}}</button>
+                    <button type="button" class="storefront-create-order__option {{if (eq this.tipMode 'percent') 'is-selected'}}" {{on "click" (fn this.setTipMode "percent")}}>10%</button>
+                    <button type="button" class="storefront-create-order__option {{if (eq this.tipMode 'custom') 'is-selected'}}" {{on "click" (fn this.setTipMode "custom")}}>{{t "storefront.orders.create.tip-custom"}}</button>
+                </div>
+                {{#if (eq this.tipMode "custom")}}
+                    <MoneyInput class="w-full mt-2" @currency={{this.currency}} @value={{this.tipCustom}} @canSelectCurrency={{false}} @onChange={{this.setTipCustom}} />
+                {{/if}}
+            </div>
+
+            <dl class="storefront-create-order__totals">
+                <div><dt>{{t "storefront.orders.create.subtotal" count=this.totals.items}}</dt><dd>{{format-currency this.totals.subtotal this.currency}}</dd></div>
+                {{#if this.totals.discount}}<div class="is-discount"><dt>{{t "storefront.orders.create.discount"}}</dt><dd>−{{format-currency this.totals.discount this.currency}}</dd></div>{{/if}}
+                {{#unless this.isPickup}}<div><dt>{{t "storefront.orders.create.delivery-fee"}}</dt><dd>{{#if this.quote}}{{format-currency this.totals.delivery_fee this.currency}}{{else}}—{{/if}}</dd></div>{{/unless}}
+                {{#if this.totals.tip}}<div><dt>{{t "storefront.orders.create.tip"}}</dt><dd>{{format-currency this.totals.tip this.currency}}</dd></div>{{/if}}
+                <div class="is-total"><dt>{{t "storefront.networks.orders.columns.total"}}</dt><dd>{{format-currency this.totals.total this.currency}}</dd></div>
+            </dl>
+
+            <div class="storefront-create-order__status">
+                {{#if this.requote.isRunning}}
+                    <Spinner @loadingMessage={{t "storefront.orders.create.pricing"}} />
+                {{else if this.issues.length}}
+                    {{#each this.issues as |issue|}}<div class="storefront-create-order__issue"><FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{issue}}</div>{{/each}}
+                {{else if this.quote}}
+                    <div class="storefront-create-order__ok"><FaIcon @icon="check" @size="xs" class="mr-1" />{{#if this.minimum.required}}{{t "storefront.orders.create.minimum-met" amount=(format-currency this.minimum.amount this.currency)}}{{else}}{{t "storefront.orders.create.ready"}}{{/if}}</div>
+                {{/if}}
+            </div>
+
+            <Button @type="primary" @size="lg" @icon="check" @text={{t "storefront.orders.create.place" total=(format-currency this.totals.total this.currency)}} @disabled={{not this.canPlace}} @isLoading={{this.place.isRunning}} @onClick={{perform this.place}} @permission="storefront create order" class="w-full" data-test-place-order />
+        </aside>
+    </Overlay::Body>
+</Overlay>
