@@ -1329,6 +1329,8 @@ storefront:
     list:
       tab-title: Promotions
       header: Promotions
+      duplicate: Duplicate
+      view-redemptions: View redemptions
       new-promotion: New promotion
       edit-promotion: Edit promotion
       type: Type

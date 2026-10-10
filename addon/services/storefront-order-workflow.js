@@ -31,7 +31,8 @@ export default class StorefrontOrderWorkflowService extends Service {
             return orderConfig.namespace === DEFAULT_STOREFRONT_CONFIG_NAMESPACE || orderConfig.key === 'storefront';
         }
 
-        return order?.type === 'storefront';
+        // Every order this engine lists is a storefront order; without an explicit config or type, use the storefront flow.
+        return !order?.type || order.type === 'storefront';
     }
 
     isTerminal(orderOrStatus) {

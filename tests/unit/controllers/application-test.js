@@ -395,6 +395,7 @@ module('Unit | Controller | application', function (hooks) {
                 'network:network_123:trucks',
                 'network:network_123:orders',
                 'network:network_123:customers',
+                'network:network_123:categories',
                 'network:network_123:settings',
             ],
             'items are keyed by network so two networks never share an entry'

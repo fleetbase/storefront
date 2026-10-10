@@ -24,7 +24,7 @@ module('Unit | Extension', function () {
             storefrontRegistration.widgets.map((widget) => widget.id),
             [
                 'storefront-attention-strip-widget',
-            'storefront-kpi-revenue-widget',
+                'storefront-kpi-revenue-widget',
                 'storefront-kpi-orders-widget',
                 'storefront-kpi-aov-widget',
                 'storefront-kpi-active-orders-widget',
@@ -33,11 +33,11 @@ module('Unit | Extension', function () {
                 'storefront-kpi-cart-conversion-widget',
                 'storefront-kpi-cancellation-rate-widget',
                 'storefront-revenue-trend-widget',
-                'storefront-orders-by-status-widget',
                 'storefront-top-products-widget',
-                'storefront-customer-insights-widget',
-                'storefront-metrics-widget',
                 'storefront-orders-widget',
+                'storefront-customer-insights-widget',
+                'storefront-orders-by-status-widget',
+                'storefront-metrics-widget',
                 'storefront-customers-widget',
             ]
         );
