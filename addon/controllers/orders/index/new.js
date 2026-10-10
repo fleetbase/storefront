@@ -18,7 +18,7 @@ export default class OrdersIndexNewController extends Controller {
     @service storefront;
     @service storefrontOrderActions;
     @service modalsManager;
-    queryParams = ['customer'];
+    queryParams = [{ customer: 'for_customer' }];
     @tracked customer = null;
 
     @tracked activeStore = null;

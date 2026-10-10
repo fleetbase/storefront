@@ -15,7 +15,8 @@ export default class OrdersIndexNewRoute extends Route {
     @service storefront;
 
     queryParams = {
-        customer: { refreshModel: false },
+        // The orders list already owns the `customer` URL key.
+        customer: { refreshModel: false, as: 'for_customer' },
     };
 
     beforeModel() {
@@ -44,7 +45,7 @@ export default class OrdersIndexNewRoute extends Route {
         controller.products = model.products?.toArray?.() ?? Array.from(model.products ?? []);
         controller.pickupLocation = controller.locations[0] ?? null;
 
-        const customerId = transition?.to?.queryParams?.customer ?? controller.customer;
+        const customerId = transition?.to?.queryParams?.for_customer ?? transition?.to?.queryParams?.customer ?? controller.customer;
 
         if (typeof customerId === 'string' && customerId) {
             try {
