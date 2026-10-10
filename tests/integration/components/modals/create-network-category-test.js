@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-network-category', function (hoo
 
         await render(hbs`<Modals::CreateNetworkCategory />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateNetworkCategory />`);

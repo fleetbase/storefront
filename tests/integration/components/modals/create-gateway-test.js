@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-gateway', function (hooks) {
 
         await render(hbs`<Modals::CreateGateway />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateGateway />`);

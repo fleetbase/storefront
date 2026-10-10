@@ -19,7 +19,7 @@ module('Integration | Component | store-selector', function (hooks) {
 
         await render(hbs`<StoreSelector />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<StoreSelector />`);

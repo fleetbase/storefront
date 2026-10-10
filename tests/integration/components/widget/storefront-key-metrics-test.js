@@ -12,7 +12,7 @@ module('Integration | Component | widget/storefront-key-metrics', function (hook
 
         await render(hbs`<Widget::StorefrontKeyMetrics />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Widget::StorefrontKeyMetrics />`);

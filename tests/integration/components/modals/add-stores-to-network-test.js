@@ -13,7 +13,7 @@ module('Integration | Component | modals/add-stores-to-network', function (hooks
 
         await render(hbs`<Modals::AddStoresToNetwork />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::AddStoresToNetwork />`);

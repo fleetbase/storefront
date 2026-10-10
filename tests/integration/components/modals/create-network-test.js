@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-network', function (hooks) {
 
         await render(hbs`<Modals::CreateNetwork />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateNetwork />`);

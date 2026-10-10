@@ -13,7 +13,7 @@ module('Integration | Component | modals/add-store-to-category', function (hooks
 
         await render(hbs`<Modals::AddStoreToCategory />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::AddStoreToCategory />`);

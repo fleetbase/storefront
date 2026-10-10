@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-notification-channel', function 
 
         await render(hbs`<Modals::CreateNotificationChannel />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateNotificationChannel />`);

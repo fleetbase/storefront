@@ -19,6 +19,6 @@ module('Integration | Component | modals/create-product-category', function (hoo
         await render(hbs`<Modals::CreateProductCategory @modalIsOpened={{true}} @options={{this.options}} />`);
 
         assert.dom('.storefront-product-category-form__media').exists();
-        assert.dom(this.element).includesText('Lunch');
+        assert.dom('input[type="text"]').hasValue('Lunch');
     });
 });

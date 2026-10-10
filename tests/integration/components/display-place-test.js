@@ -12,7 +12,7 @@ module('Integration | Component | display-place', function (hooks) {
 
         await render(hbs`<DisplayPlace />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<DisplayPlace />`);

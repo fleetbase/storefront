@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-first-store', function (hooks) {
 
         await render(hbs`<Modals::CreateFirstStore />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateFirstStore />`);

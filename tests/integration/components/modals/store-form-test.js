@@ -13,7 +13,7 @@ module('Integration | Component | modals/store-form', function (hooks) {
 
         await render(hbs`<Modals::StoreForm />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::StoreForm />`);

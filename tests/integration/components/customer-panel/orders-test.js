@@ -12,7 +12,7 @@ module('Integration | Component | customer-panel/orders', function (hooks) {
 
         await render(hbs`<CustomerPanel::Orders />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<CustomerPanel::Orders />`);

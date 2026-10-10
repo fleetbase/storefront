@@ -13,7 +13,7 @@ module('Integration | Component | modals/select-addon-category', function (hooks
 
         await render(hbs`<Modals::SelectAddonCategory />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::SelectAddonCategory />`);

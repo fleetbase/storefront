@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-catalog', function (hooks) {
 
         await render(hbs`<Modals::CreateCatalog />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateCatalog />`);

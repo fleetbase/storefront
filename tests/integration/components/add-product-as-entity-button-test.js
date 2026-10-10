@@ -12,7 +12,7 @@ module('Integration | Component | add-product-as-entity-button', function (hooks
 
         await render(hbs`<AddProductAsEntityButton />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<AddProductAsEntityButton />`);

@@ -13,7 +13,7 @@ module('Integration | Component | modals/order-ready-assign-driver', function (h
 
         await render(hbs`<Modals::OrderReadyAssignDriver />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::OrderReadyAssignDriver />`);

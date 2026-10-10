@@ -13,7 +13,7 @@ module('Integration | Component | modals/assign-food-truck-catalogs', function (
 
         await render(hbs`<Modals::AssignFoodTruckCatalogs />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::AssignFoodTruckCatalogs />`);

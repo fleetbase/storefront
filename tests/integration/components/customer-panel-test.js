@@ -97,9 +97,9 @@ module('Integration | Component | customer-panel', function (hooks) {
 
         await render(hbs`<CustomerPanel @customer={{this.customer}} />`);
 
-        assert.dom('.resource-panel-header').includesText('Ava Chen');
-        assert.dom('[role="tab"]').exists({ count: 2 });
-        assert.dom('[role="tab"]').includesText('Details');
+        assert.dom('[data-test-customer-panel-header]').includesText('Ava Chen');
+        assert.dom('[role="tab"]').exists({ count: 4 });
+        assert.dom('[role="tab"]').includesText('Overview');
         assert.dom('[role="tab"]').includesText('Orders');
         assert.dom('[role="tabpanel"]').includesText('ava.chen@example.test');
 

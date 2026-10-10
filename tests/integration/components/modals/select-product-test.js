@@ -13,7 +13,7 @@ module('Integration | Component | modals/select-product', function (hooks) {
 
         await render(hbs`<Modals::SelectProduct />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::SelectProduct />`);

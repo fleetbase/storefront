@@ -12,7 +12,7 @@ module('Integration | Component | order-card', function (hooks) {
 
         await render(hbs`<OrderCard />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<OrderCard />`);

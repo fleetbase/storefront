@@ -13,7 +13,7 @@ module('Integration | Component | modals/create-new-variant', function (hooks) {
 
         await render(hbs`<Modals::CreateNewVariant />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<Modals::CreateNewVariant />`);

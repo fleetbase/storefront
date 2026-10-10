@@ -5,6 +5,8 @@ storefront:
     on: On
     all: All
     active: Active
+    select: Select
+    preview: Preview
     actions: Actions
     address: Address
     alerts: Alerts
@@ -941,6 +943,11 @@ storefront:
       published: Published
       draft: Draft
     card:
+      untitled: Untitled product
+      variants: "{count, plural, =0 {No variants} one {# variant} other {# variants}}"
+      addons: "{count, plural, =0 {No add-ons} one {# add-on} other {# add-ons}}"
+      service: Service
+      bookable: Bookable
       missing: "Missing: {items}"
       restock-hint: Out of stock and still published. Restock or unpublish.
     bulk:

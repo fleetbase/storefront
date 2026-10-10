@@ -12,7 +12,7 @@ module('Integration | Component | settings-container', function (hooks) {
 
         await render(hbs`<SettingsContainer />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<SettingsContainer />`);

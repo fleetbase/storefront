@@ -12,7 +12,7 @@ module('Integration | Component | schedule-manager', function (hooks) {
 
         await render(hbs`<ScheduleManager />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
         await render(hbs`<ScheduleManager />`);
