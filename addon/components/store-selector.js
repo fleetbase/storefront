@@ -109,6 +109,8 @@ export default class StoreSelectorComponent extends Component {
         const menu = document.createElement('div');
         menu.setAttribute('role', 'menu');
         menu.className = 'store-selector-dropdown-menu storefront-switcher-menu';
+        // Fixed so the sidebar's overflow clipping never cuts the menu; set inline so it holds without the stylesheet.
+        menu.style.position = 'fixed';
         menu.setAttribute('data-theme', document.body.dataset.theme ?? 'light');
 
         const storeList = this.createGroup('stores', this.showNetworks ? t('stores') : null);

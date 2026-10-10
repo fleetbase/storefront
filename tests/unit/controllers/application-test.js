@@ -2,6 +2,10 @@ import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
 
 class FetchStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     requests = [];
     response = {
         results: [
@@ -24,6 +28,10 @@ class FetchStub {
 }
 
 class StorefrontStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     activeStore = {
         id: 'store_uuid',
         public_id: 'store_123',
@@ -46,12 +54,20 @@ class StorefrontStub {
 }
 
 class AbilitiesStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     can() {
         return true;
     }
 }
 
 class StoreStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     requests = [];
     categoriesByStore = {
         store_uuid: [
@@ -102,6 +118,10 @@ class StoreStub {
 }
 
 class LoaderStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     show() {
         return {};
     }
@@ -110,6 +130,10 @@ class LoaderStub {
 }
 
 class HostRouterStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     refreshCount = 0;
     transitions = [];
 

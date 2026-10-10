@@ -1,0 +1,15 @@
+<Layout::Section::Header @title={{t "storefront.networks.categories.title"}}>
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.networks.categories.new-category"}} @onClick={{this.createCategory}} @permission="storefront update network" />
+</Layout::Section::Header>
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    {{#if this.rows.length}}
+        <Table @rows={{this.rows}} @columns={{this.columns}} @selectable={{false}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
+        <p class="storefront-invitation-list__note px-4 pb-4">{{t "storefront.networks.categories.note"}}</p>
+    {{else}}
+        <div class="storefront-empty-row mx-4 mt-4">
+            <span>{{t "storefront.networks.categories.empty"}}</span>
+            <Button @size="xs" @icon="plus" @text={{t "storefront.networks.categories.new-category"}} @onClick={{this.createCategory}} @permission="storefront update network" />
+        </div>
+    {{/if}}
+</Layout::Section::Body>

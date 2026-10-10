@@ -74,6 +74,10 @@ export default class StorefrontProductCategorySidebarComponent extends Component
         ].map((group) => ({ ...group, isActive: this.args.activeGroup === group.id }));
     }
 
+    @action selectGroup(group) {
+        return this.args.onSelectGroup?.(group);
+    }
+
     @action toggleCollapse(category, event) {
         event?.stopPropagation?.();
         const next = new Set(this.collapsed);

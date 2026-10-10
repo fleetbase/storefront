@@ -16,6 +16,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @service fetch;
     @service store;
     @service hostRouter;
+    @service networkCategories;
 
     /**
      * Queryable parameters for this controller's model
@@ -401,17 +402,10 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      * @param {CategoryModel} category - The category object containing the ID to be deleted.
      */
     @action deleteCategory(category) {
-        this.modalsManager.confirm({
-            title: this.intl.t('storefront.networks.index.network.stores.delete-network-category'),
-            body: this.intl.t('storefront.networks.index.network.stores.deleting-category-move-all-stores-inside-on-top-level'),
-            confirm: (modal) => {
-                modal.startLoading();
-
-                this.fetch.delete(`networks/${this.network.id}/remove-category`, { category: category.id }, { namespace: 'storefront/int/v1' }).then(() => {
-                    this.categories.removeObject(category);
-                    this.leaveCategory();
-                    modal.done();
-                });
+        return this.networkCategories.remove(this.network, category, {
+            onDeleted: () => {
+                this.categories?.removeObject?.(category);
+                this.leaveCategory?.();
             },
         });
     }
@@ -521,112 +515,16 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      * @returns {Promise} A promise that resolves when the category is created.
      */
     @action createNewCategory(networkCategoriesPicker, parentCategory, options = {}) {
-        const categoryAttrs = {
-            owner_uuid: this.network.id,
-            owner_type: 'storefront:network',
-            for: 'storefront_network',
-        };
-
-        if (isModel(parentCategory)) {
-            categoryAttrs.parent_uuid = parentCategory.id;
-            categoryAttrs.owner_uuid = parentCategory.owner_uuid;
-        }
-
-        const category = this.store.createRecord('category', categoryAttrs);
-
-        return this.editCategory(category, {
-            title: this.intl.t('storefront.networks.index.network.stores.add-new-network-category'),
-            acceptButtonIcon: 'check',
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.create-new-category'),
-            successMessage: this.intl.t('storefront.networks.index.network.stores.new-category-created'),
-            parentCategory,
-            category,
-            confirm: (modal) => {
-                modal.startLoading();
-
-                category
-                    .save()
-                    .then((category) => {
-                        this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-category-create'));
-                        networkCategoriesPicker.categories.pushObject(category);
-                        modal.done();
-                    })
-                    .catch((error) => {
-                        this.notifications.serverError(error);
-                    });
-            },
+        return this.networkCategories.create(this.network, parentCategory, {
+            onCreated: (category) => networkCategoriesPicker?.categories?.pushObject?.(category),
             ...options,
         });
     }
 
-    /**
-     * Displays a modal to edit a specified category.
-     * Allows the user to set or clear the parent category, upload an icon, and confirm the changes.
-     *
-     * @action
-     * @param {CategoryModel} category - The category object to be edited.
-     * @param {Object} [options={}] - Additional options for the modal.
-     */
     @action editCategory(category, options = {}) {
-        this.modalsManager.show('modals/create-network-category', {
-            title: this.intl.t('storefront.networks.index.network.stores.edit-category', { categoryName: category.name }),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
-            acceptButtonIcon: 'save',
-            iconType: category.icon_file_uuid ? 'image' : 'svg',
-            network: this.network,
-            category,
-            parentCategory: null,
-            setParentCategory: (parentCategory) => {
-                this.modalsManager.setOption('parentCategory', parentCategory);
-
-                // update on category
-                category.setProperties({
-                    parent_uuid: parentCategory.id,
-                });
-            },
-            clearImage: () => {
-                category.setProperties({
-                    icon_file_uuid: null,
-                    icon_url: null,
-                    icon_file: null,
-                });
-            },
-            uploadIcon: (file) => {
-                this.fetch.uploadFile.perform(
-                    file,
-                    {
-                        path: `uploads/${category.company_uuid}/icons/${category.slug}`,
-                        key_uuid: category.id,
-                        key_type: `category`,
-                        type: `category_icon`,
-                    },
-                    (uploadedFile) => {
-                        category.setProperties({
-                            icon_file_uuid: uploadedFile.id,
-                            icon_url: uploadedFile.url,
-                            icon_file: uploadedFile,
-                        });
-                    }
-                );
-            },
-            confirm: (modal) => {
-                modal.startLoading();
-
-                return category.save().then(() => {
-                    this.notifications.success(options.successMessage ?? 'Category changes saved.');
-                });
-            },
-            ...options,
-        });
+        return this.networkCategories.edit(this.network, category, options);
     }
 
-    /**
-     * Displays a loader and shows a modal to add stores to the network.
-     * Allows the user to select stores, update the selection, and confirm the addition.
-     *
-     * @action
-     * @returns {Promise} A promise that resolves when the stores are added.
-     */
     @action async addStores() {
         this.modalsManager.displayLoader();
 

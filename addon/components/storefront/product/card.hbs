@@ -56,7 +56,7 @@
                 <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-card__title-text" data-test-product-name>{{n-a @product.name (t "storefront.products.card.untitled")}}</LinkTo>
                 <Badge @status={{this.displayStatus}} @size="xs" @hideStatusDot={{true}} data-test-product-status />
             </div>
-            <div class="storefront-card__subtitle">{{n-a this.categoryName (t "storefront.products.sidebar.groups.uncategorized")}}{{#if @product.sku}} · {{@product.sku}}{{/if}}</div>
+            <div class="storefront-card__subtitle">{{n-a this.categoryName (t "storefront.products.groups.uncategorized")}}{{#if @product.sku}} · {{@product.sku}}{{/if}}</div>
             <RegistryYield @registry="storefront:component:product:card:header:end" as |RegistryComponent|>
                 <RegistryComponent @product={{@product}} @resource={{@product}} />
             </RegistryYield>
@@ -67,8 +67,8 @@
             </LinkTo>
             {{#if (or @product.is_recommended @product.is_on_sale this.isOutOfStock)}}
                 <div class="storefront-card__media-badges">
-                    {{#if @product.is_recommended}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.sidebar.groups.recommended"}} />{{/if}}
-                    {{#if @product.is_on_sale}}<Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.sidebar.groups.on-sale"}} />{{/if}}
+                    {{#if @product.is_recommended}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.recommended"}} />{{/if}}
+                    {{#if @product.is_on_sale}}<Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.on-sale"}} />{{/if}}
                     {{#if this.isOutOfStock}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.catalogs.editor.out-of-stock"}} />{{/if}}
                 </div>
             {{/if}}

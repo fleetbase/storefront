@@ -47,7 +47,7 @@
     <div class="storefront-product-sidebar__groups" data-test-storefront-product-groups>
         <div class="storefront-product-sidebar__groups-title">{{t "storefront.products.sidebar.smart-groups"}}</div>
         {{#each this.groups as |group|}}
-            <button type="button" class="storefront-product-category storefront-product-category--group {{if group.isActive 'is-active'}}" {{on "click" (fn @onSelectGroup group)}} data-test-storefront-product-group={{group.id}}>
+            <button type="button" class="storefront-product-category storefront-product-category--group {{if group.isActive 'is-active'}}" {{on "click" (fn this.selectGroup group)}} data-test-storefront-product-group={{group.id}}>
                 <span class="storefront-product-category__icon"><FaIcon @icon={{group.icon}} @size="xs" /></span>
                 <span class="storefront-product-category__content"><strong>{{group.label}}</strong></span>
                 <span class="storefront-product-category__count">{{group.count}}</span>

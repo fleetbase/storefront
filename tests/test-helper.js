@@ -16,6 +16,13 @@ if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetb
     });
 }
 
+// The addon-category model extends the console's category model; the dummy app has no console.
+if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetbase/console/models/category']) {
+    window.define('@fleetbase/console/models/category', ['exports', '@ember-data/model'], function (exports, model) {
+        exports.default = class CategoryModel extends model.default {};
+    });
+}
+
 setApplication(Application.create(config.APP));
 
 setup(QUnit.assert);

@@ -35,7 +35,7 @@ module('Integration | Component | storefront/product/category-sidebar', function
         `);
 
         assert.dom('[data-test-storefront-product-category-sidebar]').exists();
-        assert.dom('[data-test-storefront-product-category-sidebar]').includesText('All Products');
+        assert.dom('[data-test-storefront-product-category-sidebar]').includesText('All products');
         assert.dom('[data-test-storefront-product-category-sidebar]').includesText('Lunch');
         assert.dom('[data-test-storefront-product-category-sidebar]').includesText('Drinks');
 

@@ -71,6 +71,18 @@ class ChartStubComponent extends Component {
     }
 }
 
+setComponentTemplate(
+    hbs`
+                    <div class="chart-stub">{{this.legendBoxWidth}}/{{this.maxTicksLimit}}/{{this.xTickFontSize}}</div>
+                    <div data-test-revenue-data>{{this.revenueData}}</div>
+                    <div data-test-orders-data>{{this.ordersData}}</div>
+                    <div data-test-revenue-tick>{{this.revenueTick}}</div>
+                    <div data-test-revenue-tooltip>{{this.revenueTooltip}}</div>
+                    <div data-test-orders-tooltip>{{this.ordersTooltip}}</div>
+                `,
+    ChartStubComponent
+);
+
 module('Integration | Component | widget/revenue-trend', function (hooks) {
     setupRenderingTest(hooks);
 
@@ -87,20 +99,7 @@ module('Integration | Component | widget/revenue-trend', function (hooks) {
         this.owner.register('service:storefront', StorefrontStubService);
         this.owner.register('service:storefront-dashboard', StorefrontDashboardStubService);
         this.owner.register('service:fetch', FetchStubService);
-        this.owner.register(
-            'component:chart',
-            setComponentTemplate(
-                hbs`
-                    <div class="chart-stub">{{this.legendBoxWidth}}/{{this.maxTicksLimit}}/{{this.xTickFontSize}}</div>
-                    <div data-test-revenue-data>{{this.revenueData}}</div>
-                    <div data-test-orders-data>{{this.ordersData}}</div>
-                    <div data-test-revenue-tick>{{this.revenueTick}}</div>
-                    <div data-test-revenue-tooltip>{{this.revenueTooltip}}</div>
-                    <div data-test-orders-tooltip>{{this.ordersTooltip}}</div>
-                `,
-                ChartStubComponent
-            )
-        );
+        this.owner.register('component:chart', ChartStubComponent);
     });
 
     test('it passes compact chart options to the chart', async function (assert) {

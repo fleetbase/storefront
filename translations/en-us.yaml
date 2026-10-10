@@ -594,6 +594,15 @@ storefront:
       banner-title: "{network} invited this store to join"
       review: Review
       badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
+    categories:
+      title: Categories
+      new-category: New category
+      parent: Parent
+      add-subcategory: Add subcategory
+      saved: Category changes saved.
+      deleted: Category deleted; its stores moved to the top level.
+      empty: No categories yet. Categories group the stores customers browse in the network app.
+      note: A store sits in one category; removing a category moves its stores to the top level.
     invitations:
       title: Invitations
       invite-stores: Invite stores

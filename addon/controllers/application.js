@@ -90,6 +90,13 @@ export default class ApplicationController extends Controller {
                 visible: this.can('storefront see user'),
                 keywords: ['contacts', 'buyers', 'users'],
             }),
+            networkItem('categories', {
+                label: this.intl.t('storefront.networks.categories.title'),
+                description: 'The categories stores are grouped under in the network app.',
+                icon: 'folder-tree',
+                permission: 'storefront view network',
+                keywords: ['categories', 'groups', 'sections'],
+            }),
             networkItem('settings', {
                 label: this.intl.t('storefront.networks.index.network.settings'),
                 description: 'Network details, gateways and notification channels.',

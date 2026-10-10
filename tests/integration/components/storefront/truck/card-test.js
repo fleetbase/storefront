@@ -21,7 +21,7 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
             service_area: { name: 'Central' },
             zone: { name: 'Zone 3' },
             catalogs: [{ name: 'Lunch menu' }, { name: 'Breakfast' }],
-            store: { name: 'Fleetbase Market' },
+            store_summary: { name: 'Fleetbase Market' },
         });
         this.set('noop', () => {});
 

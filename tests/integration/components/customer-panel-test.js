@@ -99,8 +99,8 @@ module('Integration | Component | customer-panel', function (hooks) {
 
         assert.dom('[data-test-customer-panel-header]').includesText('Ava Chen');
         assert.dom('[role="tab"]').exists({ count: 4 });
-        assert.dom('[role="tab"]').includesText('Overview');
-        assert.dom('[role="tab"]').includesText('Orders');
+        assert.dom('[data-tab-id="overview"]').includesText('Overview');
+        assert.dom('[data-tab-id="orders"]').includesText('Orders');
         assert.dom('[role="tabpanel"]').includesText('ava.chen@example.test');
 
         await click('[data-tab-id="orders"]');

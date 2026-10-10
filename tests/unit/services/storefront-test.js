@@ -2,6 +2,10 @@ import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
 
 class CurrentUserStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     options = {};
 
     getOption(key) {
@@ -14,6 +18,10 @@ class CurrentUserStub {
 }
 
 class StoreStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
     stores = [
         { id: 'store_uuid', name: 'Fleetbase Market' },
         { id: 'next_store_uuid', name: 'Next Store' },
