@@ -12,11 +12,11 @@ use Fleetbase\Storefront\Mail\StorefrontNetworkInvite;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Support\ApiModelCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\ResponseCache\Facades\ResponseCache;
 
 class NetworkController extends StorefrontController
 {
@@ -508,13 +508,14 @@ class NetworkController extends StorefrontController
     }
 
     /**
-     * Membership changes happen outside the resource controllers, so the cached GET
-     * responses (store listings with their membership status) are cleared here.
+     * Membership rows change through the query builder, which raises no model events,
+     * so the cached store listings (which carry category and membership status) are
+     * invalidated here the way a store update would.
      */
     protected function forgetCachedResponses(): void
     {
-        if (class_exists(ResponseCache::class)) {
-            ResponseCache::clear();
+        if (class_exists(ApiModelCache::class)) {
+            ApiModelCache::invalidateModelCache(new Store(), session('company'));
         }
     }
 
