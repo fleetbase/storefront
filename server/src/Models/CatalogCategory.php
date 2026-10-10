@@ -56,6 +56,7 @@ class CatalogCategory extends Category
             'product_uuid'
         )
         ->using(CatalogProduct::class)
+        ->withPivot(['price', 'is_available'])
         ->withTimestamps()
         ->wherePivotNull('deleted_at');
     }
@@ -71,7 +72,7 @@ class CatalogCategory extends Category
      *
      * @return $this
      */
-    public function setProducts(array $products = []): CatalogCategory
+    public function setProducts(array $products = [], array $overrides = []): CatalogCategory
     {
         // Ensure products relation is loaded if needed (optional).
         $this->loadMissing('products');
@@ -80,21 +81,30 @@ class CatalogCategory extends Category
         $existingPivotRecords = CatalogProduct::where('catalog_category_uuid', $this->uuid)->get();
         $existingProductUuids = $existingPivotRecords->pluck('product_uuid')->toArray();
 
-        // Normalize incoming product UUIDs
-        $incomingProductUuids = collect($products)
-            ->map(function ($item) {
-                // If $item is simply a UUID string, use it
-                if (is_string($item) && Str::isUuid($item)) {
-                    return $item;
-                }
+        // Normalize incoming product UUIDs, and collect the per-catalog overrides carried
+        // either on the product entries (`price`, `is_available`) or in `$overrides` by uuid.
+        $incomingProductUuids = [];
+        $overridesByUuid      = [];
+        foreach ($products as $item) {
+            $uuid = is_string($item) ? $item : data_get($item, 'uuid');
+            if (!is_string($uuid) || !Str::isUuid($uuid)) {
+                continue;
+            }
 
-                // If $item is an array/object, try to extract 'uuid'
-                return data_get($item, 'uuid');
-            })
-            ->filter(fn ($uuid) => Str::isUuid($uuid)) // only valid UUIDs
-            ->unique()
-            ->values()
-            ->toArray();
+            $incomingProductUuids[] = $uuid;
+            if (!is_string($item)) {
+                $entry = array_merge((array) data_get($overrides, $uuid, []), array_filter([
+                    'price'        => data_get($item, 'catalog_price', data_get($item, 'price_override')),
+                    'is_available' => data_get($item, 'catalog_available'),
+                ], fn ($value) => $value !== null));
+                if ($entry !== []) {
+                    $overridesByUuid[$uuid] = $entry;
+                }
+            } elseif (data_get($overrides, $uuid) !== null) {
+                $overridesByUuid[$uuid] = (array) $overrides[$uuid];
+            }
+        }
+        $incomingProductUuids = array_values(array_unique($incomingProductUuids));
 
         // 1) Remove pivot rows for products not in incoming list
         $toRemove = array_diff($existingProductUuids, $incomingProductUuids);
@@ -104,15 +114,63 @@ class CatalogCategory extends Category
                 ->delete();
         }
 
-        // 2) Create pivot rows for new products
+        // 2) Create pivot rows for new products, carrying their overrides
         $toAdd = array_diff($incomingProductUuids, $existingProductUuids);
         foreach ($toAdd as $productUuid) {
-            CatalogProduct::create([
+            CatalogProduct::create(array_merge([
                 'catalog_category_uuid' => $this->uuid,
                 'product_uuid'          => $productUuid,
-            ]);
+            ], static::normalizeOverride($overridesByUuid[$productUuid] ?? [])));
+        }
+
+        // 3) Apply overrides to products that stay; an entry with null values clears them
+        if ($overrides !== [] || $overridesByUuid !== []) {
+            foreach ($existingPivotRecords as $pivot) {
+                if (!in_array($pivot->product_uuid, $incomingProductUuids, true) || !array_key_exists($pivot->product_uuid, $overridesByUuid)) {
+                    continue;
+                }
+
+                CatalogProduct::where('catalog_category_uuid', $this->uuid)
+                    ->where('product_uuid', $pivot->product_uuid)
+                    ->update(static::normalizeOverride($overridesByUuid[$pivot->product_uuid]));
+            }
         }
 
         return $this;
+    }
+
+    /**
+     * The storable form of a per-catalog override: a price in minor units or null, and an
+     * availability flag or null (inherit from the store).
+     *
+     * @return array{price: int|null, is_available: bool|null}
+     */
+    public static function normalizeOverride(array $override): array
+    {
+        $price     = $override['price'] ?? null;
+        $available = $override['is_available'] ?? null;
+
+        return [
+            'price'        => $price === null || $price === '' ? null : (int) preg_replace('/[^0-9]/', '', (string) $price),
+            'is_available' => $available === null || $available === '' ? null : filter_var($available, FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+    /**
+     * Overrides keyed by product uuid, for the console editor.
+     *
+     * @return array<string, array{price: int|null, is_available: bool|null}>
+     */
+    public function productOverrides(): array
+    {
+        $overrides = [];
+        foreach ($this->products ?? [] as $product) {
+            $pivot = $product->pivot ?? null;
+            if ($pivot && ($pivot->price !== null || $pivot->is_available !== null)) {
+                $overrides[$product->uuid] = ['price' => $pivot->price === null ? null : (int) $pivot->price, 'is_available' => $pivot->is_available];
+            }
+        }
+
+        return $overrides;
     }
 }

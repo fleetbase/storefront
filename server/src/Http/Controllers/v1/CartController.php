@@ -65,10 +65,11 @@ class CartController extends Controller
         $addons          = $request->input('addons', []);
         $scheduledAt     = $request->input('scheduled_at');
         $storeLocationId = $request->input('store_location');
+        $catalogId       = $request->input('catalog');
         $cart            = $this->retrieveCart($cartId);
 
         try {
-            $cart->add($productId, $quantity, $variants, $addons, $storeLocationId, $scheduledAt);
+            $cart->add($productId, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, null, $catalogId);
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
         }

@@ -15,7 +15,8 @@ class CatalogProduct extends Pivot
     protected $table      = 'catalog_category_products';
     protected $primaryKey = 'uuid';
     public $incrementing  = false;
-    protected $fillable   = ['catalog_category_uuid', 'product_uuid'];
+    protected $fillable   = ['catalog_category_uuid', 'product_uuid', 'price', 'is_available'];
+    protected $casts      = ['is_available' => 'boolean'];
 
     public function __construct(array $attributes = [])
     {

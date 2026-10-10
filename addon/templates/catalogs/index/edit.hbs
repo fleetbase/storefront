@@ -86,16 +86,28 @@
 
                         {{#if this.selectedProducts.length}}
                             <div class="storefront-catalog-product-list">
-                                {{#each this.selectedProducts as |product|}}
-                                    <div class="storefront-catalog-product" data-test-catalog-product={{product.id}}>
-                                        <Image src={{product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{product.name}} class="storefront-catalog-product__image" />
+                                {{#each this.selectedProductRows as |row|}}
+                                    <div class="storefront-catalog-product {{if row.hiddenHere 'is-hidden-here'}}" data-test-catalog-product={{row.product.id}}>
+                                        <Image src={{row.product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{row.product.name}} class="storefront-catalog-product__image" />
                                         <div class="storefront-catalog-product__identity">
-                                            <div class="storefront-catalog-product__name">{{product.name}}</div>
-                                            <div class="storefront-catalog-product__meta">{{n-a product.sku}}{{#if product.variants.length}} · {{t "storefront.catalogs.editor.variants-count" count=product.variants.length}}{{/if}}{{#if product.addon_categories.length}} · {{t "storefront.catalogs.editor.addons-count" count=product.addon_categories.length}}{{/if}}</div>
+                                            <div class="storefront-catalog-product__name">{{row.product.name}}</div>
+                                            <div class="storefront-catalog-product__meta">{{n-a row.product.sku}}{{#if row.product.variants.length}} · {{t "storefront.catalogs.editor.variants-count" count=row.product.variants.length}}{{/if}}{{#if row.product.addon_categories.length}} · {{t "storefront.catalogs.editor.addons-count" count=row.product.addon_categories.length}}{{/if}}</div>
                                         </div>
-                                        <div class="storefront-catalog-product__price">{{format-currency product.price product.currency}}<span class="storefront-catalog-product__price-note">{{t "storefront.catalogs.editor.store-price"}}</span></div>
-                                        <Badge @status={{if product.is_available "success" "warning"}} @hideStatusDot={{true}} @size="xs" @text={{if product.is_available (t "storefront.catalogs.editor.in-stock") (t "storefront.catalogs.editor.out-of-stock")}} />
-                                        <Button @icon="times" @size="xs" @helpText={{t "storefront.catalogs.editor.remove-from-category"}} @onClick={{fn this.removeProduct this.selectedCategory product}} @permission="storefront update catalog" />
+                                        {{#if row.isEditingPrice}}
+                                            <div class="storefront-catalog-product__price-editor" data-test-catalog-price-editor>
+                                                <MoneyInput @wrapperClass="mb-0" @value={{row.price}} @currency={{row.product.currency}} @onChange={{fn this.setCatalogPrice this.selectedCategory row.product}} class="form-input-sm" />
+                                                <Button @size="xs" @icon="check" @helpText={{t "storefront.catalogs.editor.price-done"}} @onClick={{this.closeCatalogPrice}} data-test-catalog-price-done />
+                                                <Button @size="xs" @icon="rotate-left" @helpText={{t "storefront.catalogs.editor.use-store-price"}} @onClick={{fn this.clearCatalogPrice this.selectedCategory row.product}} @disabled={{not row.hasPriceOverride}} data-test-catalog-price-clear />
+                                            </div>
+                                        {{else}}
+                                            <button type="button" class="storefront-catalog-product__price storefront-catalog-product__price--button" title={{t "storefront.catalogs.editor.set-catalog-price"}} {{on "click" (fn this.editCatalogPrice row.product)}} data-test-catalog-price>
+                                                {{format-currency row.price row.product.currency}}
+                                                <span class="storefront-catalog-product__price-note">{{if row.hasPriceOverride (t "storefront.catalogs.editor.catalog-price") (t "storefront.catalogs.editor.store-price")}}</span>
+                                            </button>
+                                        {{/if}}
+                                        <Badge @status={{if row.hiddenHere "default" (if row.product.is_available "success" "warning")}} @hideStatusDot={{true}} @size="xs" @text={{if row.hiddenHere (t "storefront.catalogs.editor.hidden-here") (if row.product.is_available (t "storefront.catalogs.editor.in-stock") (t "storefront.catalogs.editor.out-of-stock"))}} />
+                                        <Toggle @isToggled={{not row.hiddenHere}} @onToggle={{fn this.setSoldHere this.selectedCategory row.product}} @helpText={{t "storefront.catalogs.editor.sold-here-help"}} data-test-catalog-sold-here />
+                                        <Button @icon="times" @size="xs" @helpText={{t "storefront.catalogs.editor.remove-from-category"}} @onClick={{fn this.removeProduct this.selectedCategory row.product}} @permission="storefront update catalog" />
                                     </div>
                                 {{/each}}
                             </div>

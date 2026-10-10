@@ -185,6 +185,7 @@ class Catalog extends StorefrontModel
         foreach ($categories as $index => $categoryData) {
             $categoryUuid = data_get($categoryData, 'uuid');
             $products     = data_get($categoryData, 'products', []);
+            $overrides    = (array) data_get($categoryData, 'product_overrides', []);
             $name         = data_get($categoryData, 'name');
             $order        = (int) data_get($categoryData, 'order', $index);
 
@@ -209,7 +210,7 @@ class Catalog extends StorefrontModel
             }
 
             // 3) Update products for this category
-            $categoryRecord->setProducts($products);
+            $categoryRecord->setProducts($products, $overrides);
         }
 
         return $this;

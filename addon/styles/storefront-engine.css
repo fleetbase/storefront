@@ -6509,3 +6509,37 @@ body[data-theme='dark'] .storefront-kv__key {
 body[data-theme='dark'] .storefront-kv__value {
     color: #f3f4f6;
 }
+
+/* Catalog editor: per-catalog price and availability */
+.storefront-catalog-product__price--button {
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    text-align: right;
+}
+
+.storefront-catalog-product__price--button:hover,
+.storefront-catalog-product__price--button:focus-visible {
+    background: #f3f4f6;
+    outline: none;
+}
+
+body[data-theme='dark'] .storefront-catalog-product__price--button:hover,
+body[data-theme='dark'] .storefront-catalog-product__price--button:focus-visible {
+    background: #374151;
+}
+
+.storefront-catalog-product__price-editor {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 14rem;
+}
+
+.storefront-catalog-product.is-hidden-here .storefront-catalog-product__name,
+.storefront-catalog-product.is-hidden-here .storefront-catalog-product__price {
+    color: #9ca3af;
+    text-decoration: line-through;
+}

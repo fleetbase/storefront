@@ -234,6 +234,8 @@ test('catalog observer removes category product pivots when a catalog is deleted
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid');
         $table->string('product_uuid');
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });

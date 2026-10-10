@@ -55,6 +55,76 @@ export default class CatalogsIndexEditController extends Controller {
         return this.selectedCategory?.products?.toArray?.() ?? Array.from(this.selectedCategory?.products ?? []);
     }
 
+    /**
+     * The selected category's products with their per-catalog overrides resolved:
+     * the price the app charges here and whether the product is sold here.
+     */
+    get selectedProductRows() {
+        this.revision;
+
+        const overrides = this.overridesFor(this.selectedCategory);
+
+        return this.selectedProducts.map((product) => {
+            const override = overrides[product.id] ?? {};
+            const hasPriceOverride = override.price !== null && override.price !== undefined && override.price !== '';
+            const hiddenHere = override.is_available === false;
+
+            return {
+                product,
+                hasPriceOverride,
+                price: hasPriceOverride ? override.price : product.price,
+                hiddenHere,
+                isEditingPrice: this.editingPriceFor === product.id,
+                isAvailable: !hiddenHere && product.is_available,
+            };
+        });
+    }
+
+    @tracked editingPriceFor = null;
+
+    overridesFor(category) {
+        const overrides = category?.product_overrides;
+
+        return overrides && typeof overrides === 'object' ? overrides : {};
+    }
+
+    setOverride(category, product, patch) {
+        const overrides = { ...this.overridesFor(category) };
+        const next = { price: null, is_available: null, ...(overrides[product.id] ?? {}), ...patch };
+
+        if (next.price === null && next.is_available === null) {
+            delete overrides[product.id];
+        } else {
+            overrides[product.id] = next;
+        }
+
+        category.set('product_overrides', overrides);
+        this.touch();
+    }
+
+    @action editCatalogPrice(product) {
+        this.editingPriceFor = product.id;
+    }
+
+    @action setCatalogPrice(category, product, value) {
+        const amount = value === null || value === undefined || value === '' ? null : String(value).replace(/[^0-9]/g, '');
+
+        this.setOverride(category, product, { price: amount === '' ? null : amount });
+    }
+
+    @action closeCatalogPrice() {
+        this.editingPriceFor = null;
+    }
+
+    @action clearCatalogPrice(category, product) {
+        this.setOverride(category, product, { price: null });
+        this.editingPriceFor = null;
+    }
+
+    @action setSoldHere(category, product, sold) {
+        this.setOverride(category, product, { is_available: sold ? null : false });
+    }
+
     get productIdsInCatalog() {
         this.revision;
 
@@ -137,6 +207,7 @@ export default class CatalogsIndexEditController extends Controller {
                 id: category.id,
                 name: category.name,
                 products: (category.products?.toArray?.() ?? Array.from(category.products ?? [])).map((product) => product.id),
+                overrides: this.overridesFor(category),
             })),
         });
     }
