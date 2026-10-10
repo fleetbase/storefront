@@ -744,6 +744,48 @@ storefront:
         delete-product: Are you sure you wish to delete this product?
         body-warning: Warning! Once this product is deleted it will no longer be accessible.
   settings:
+    shell:
+      copy-store-key: Copy store key
+      store-key-copied: Store key copied.
+    sections:
+      general: General
+      branding: Branding and media
+      checkout-rules: Checkout rules
+      checkout-rules-lede: What the app allows in the cart and at checkout.
+      alerts: Alerts
+      api-keys: API keys
+      store-key: Store key
+      store-key-help: Used by the app and the API; it cannot change.
+      default-order-config: Default order config
+      default-order-config-help: Applies to every order created for this store.
+      default-order-config-placeholder: Select default order config
+    rules:
+      online: Customers can see and order from this store in the app.
+      pickup-label: Pickup orders
+      pickup: Customers may collect from a store location instead of delivery.
+      tips-label: Store tips
+      tips: Customers can add a tip for the store at checkout.
+      delivery-tips-label: Delivery tips
+      delivery-tips: Customers can add a tip for the driver at checkout.
+      minimum-label: Minimum order amount
+      minimum: Carts below this amount cannot check out.
+      cod-label: Cash on delivery
+      cod: Customers can pay the driver in cash when the order arrives.
+      tax-label: Tax
+      tax: Add tax to every order at the percentage below.
+      auto-accept-label: Auto-accept incoming orders
+      auto-accept: New orders skip the confirmation step and start preparing.
+      auto-dispatch-label: Auto-dispatch orders
+      auto-dispatch: Orders are dispatched to Fleet-Ops as soon as they are ready.
+      pod-label: Proof of delivery
+      pod: The driver must capture proof before the order completes.
+      network-note: Network-level rules (multi-cart checkout, tip splitting) live in the network's settings.
+    save-bar:
+      unsaved: "{count, plural, one {# unsaved change} other {# unsaved changes}}"
+      saved: All changes saved
+      saved-toast: Changes saved.
+      discard: Discard
+      save: Save settings
     api:
       api-settings: API Settings
       access-key-for-storefront-api-integrations: Access key for Storefront API & Integrations.

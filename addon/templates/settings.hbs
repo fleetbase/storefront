@@ -1,8 +1,33 @@
-<TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="px-4 flex-row-reverse">
-    <:actions>
-        <h3 class="uppercase text-xs tracking-wide text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.common.settings"}}</h3>
-    </:actions>
-    <:default>
-        {{outlet}}
-    </:default>
-</TabNavigation>
+<div class="storefront-settings-shell" data-test-settings-shell>
+    <div class="storefront-settings-shell__header">
+        <div class="storefront-settings-shell__identity">
+            <Image src={{this.activeStore.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{this.activeStore.name}} class="storefront-settings-shell__logo" />
+            <div class="min-w-0">
+                <h2 class="storefront-settings-shell__title">{{t "storefront.common.settings"}}</h2>
+                <div class="storefront-settings-shell__meta">
+                    <span>{{this.activeStore.name}}</span>
+                    {{#if this.activeStore.public_id}}<span>{{this.activeStore.public_id}}</span>{{/if}}
+                    {{#if this.activeStore.currency}}<span>{{this.activeStore.currency}}</span>{{/if}}
+                    {{#if this.activeStore.timezone}}<span>{{this.activeStore.timezone}}</span>{{/if}}
+                </div>
+            </div>
+        </div>
+        <div class="storefront-settings-shell__actions">
+            <Button @size="sm" @icon="key" @text={{t "storefront.settings.shell.copy-store-key"}} @onClick={{this.copyStoreKey}} data-test-copy-store-key />
+        </div>
+    </div>
+    <div class="storefront-settings-shell__body">
+        <nav class="storefront-settings-rail" aria-label={{t "storefront.common.settings"}} data-test-settings-rail>
+            {{#each this.railItems as |item|}}
+                <button type="button" class="storefront-settings-rail__item {{if item.isActive 'is-active'}}" {{on "click" (fn this.openItem item)}} data-test-rail-item={{item.id}}>
+                    <FaIcon @icon={{item.icon}} @size="xs" class="storefront-settings-rail__icon" />
+                    <span class="storefront-settings-rail__label">{{item.label}}</span>
+                    {{#if item.badge}}<span class="storefront-settings-rail__badge">{{item.badge}}</span>{{/if}}
+                </button>
+            {{/each}}
+        </nav>
+        <div class="storefront-settings-content">
+            {{outlet}}
+        </div>
+    </div>
+</div>

@@ -21,6 +21,104 @@ export default class SettingsIndexController extends Controller {
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
     @tracked orderConfigs = [];
+    @tracked optionsRevision = 0;
+    optionsSnapshot = '{}';
+    alertableSnapshot = '{}';
+
+    sectionLabels = {
+        name: 'general',
+        description: 'general',
+        tags: 'general',
+        currency: 'general',
+        order_config_uuid: 'general',
+        phone: 'general',
+        email: 'general',
+        website: 'general',
+        facebook: 'general',
+        instagram: 'general',
+        twitter: 'general',
+        logo_uuid: 'branding',
+        backdrop_uuid: 'branding',
+        online: 'checkout-rules',
+        pod_method: 'checkout-rules',
+    };
+
+    get memberNetworks() {
+        return this.model?.networks ?? [];
+    }
+
+    get optionsChanged() {
+        // read so the getter recomputes after setOption / touch
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.options ?? {}) !== this.optionsSnapshot;
+    }
+
+    get alertableChanged() {
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.alertable ?? {}) !== this.alertableSnapshot;
+    }
+
+    get changedAttributeNames() {
+        const changed = this.model?.changedAttributes?.() ?? {};
+
+        return Object.keys(changed).filter((key) => !['options', 'alertable'].includes(key));
+    }
+
+    get isDirty() {
+        return Boolean(this.model?.isNew) || this.changedAttributeNames.length > 0 || this.optionsChanged || this.alertableChanged;
+    }
+
+    get dirtyCount() {
+        return this.changedAttributeNames.length + (this.optionsChanged ? 1 : 0) + (this.alertableChanged ? 1 : 0);
+    }
+
+    get dirtySections() {
+        const sections = new Set(this.changedAttributeNames.map((key) => this.sectionLabels[key] ?? 'general'));
+
+        if (this.optionsChanged) {
+            sections.add('checkout-rules');
+        }
+
+        if (this.alertableChanged) {
+            sections.add('alerts');
+        }
+
+        return [...sections].map((section) => this.intl.t(`storefront.settings.sections.${section}`));
+    }
+
+    snapshotOptions() {
+        this.optionsSnapshot = JSON.stringify(this.model?.options ?? {});
+        this.alertableSnapshot = JSON.stringify(this.model?.alertable ?? {});
+        this.optionsRevision++;
+    }
+
+    @action touch() {
+        this.optionsRevision++;
+    }
+
+    @action setOption(key, value) {
+        if (!this.model.options || typeof this.model.options !== 'object') {
+            this.model.set('options', {});
+        }
+
+        this.model.set(`options.${key}`, value);
+        this.optionsRevision++;
+    }
+
+    @action discardChanges() {
+        this.model.rollbackAttributes();
+
+        try {
+            this.model.set('options', JSON.parse(this.optionsSnapshot));
+            this.model.set('alertable', JSON.parse(this.alertableSnapshot));
+        } catch {
+            // snapshots are JSON we wrote ourselves
+        }
+
+        this.optionsRevision++;
+    }
 
     @action addTag(tag) {
         if (!isArray(this.model.tags)) {
@@ -34,13 +132,15 @@ export default class SettingsIndexController extends Controller {
         this.model.tags?.removeAt(index);
     }
 
-    @action saveSettings() {
+    @action saveSettings(event) {
+        event?.preventDefault?.();
         this.isLoading = true;
 
         this.model
             .save()
             .then(() => {
-                this.notifications.success('Changes saved');
+                this.snapshotOptions();
+                this.notifications.success(this.intl.t('storefront.settings.save-bar.saved-toast'));
             })
             .catch((error) => {
                 this.notifications.serverError(error);
@@ -114,5 +214,6 @@ export default class SettingsIndexController extends Controller {
         });
 
         this.model.set(`alertable.${reason}`, serializedModels);
+        this.optionsRevision++;
     }
 }

@@ -1,0 +1,19 @@
+<div class="storefront-rule {{if @value 'is-on'}}" ...attributes>
+    <div class="storefront-rule__icon">
+        <FaIcon @icon={{@icon}} />
+    </div>
+    <div class="storefront-rule__body">
+        <div class="storefront-rule__label">{{@label}}</div>
+        {{#if @description}}
+            <div class="storefront-rule__description">{{@description}}</div>
+        {{/if}}
+        {{#if (and @value (has-block))}}
+            <div class="storefront-rule__detail">
+                {{yield}}
+            </div>
+        {{/if}}
+    </div>
+    <div class="storefront-rule__control">
+        <Toggle @isToggled={{@value}} @onToggle={{@onToggle}} @disabled={{@disabled}} />
+    </div>
+</div>
