@@ -712,19 +712,27 @@ class QPay
     /**
      * Calculate VAT (Value Added Tax) from a total amount.
      *
-     * Assumes 10% VAT rate is included in the amount. Calculates the VAT portion
-     * by dividing by 1.1 and multiplying by 0.10, then truncates to 4 decimal places.
+     * Assumes 10% VAT rate is included in the amount: VAT is the amount divided by 11,
+     * truncated to 4 decimal places, as in QPay's e-barimt examples (50.00 → 4.5454,
+     * 100.00 → 9.0909, 1000.00 → 90.909, 2000.00 → 181.8181).
      *
-     * @param float|int $amount The total amount including VAT
+     * Computed in whole units of 0.0001 with integers. Floating point gave e.g.
+     * 3190 / 1.1 * 0.1 = 289.99999…, truncated to 289.9999 instead of 290, which QPay
+     * rejects with VAT_AMOUNT_INVALID.
+     *
+     * @param float|int|string $amount The total amount including VAT (up to 2 decimals)
      *
      * @return float The calculated VAT amount truncated to 4 decimal places
      */
     public static function calculateTax($amount): float
     {
-        $result    = ((float) $amount / 1.1) * 0.10;
-        $truncated = floor($result * 10000) / 10000;
+        // Amounts carry at most 2 decimals, so cents are exact once rounded.
+        $cents    = (int) round((float) $amount * 100);
+        $negative = $cents < 0;
+        // VAT in ten-thousandths: cents × 100 / 11, truncated toward zero.
+        $vat = intdiv(abs($cents) * 100, 11);
 
-        return $truncated;
+        return ($negative ? -$vat : $vat) / 10000;
     }
 
     /**
