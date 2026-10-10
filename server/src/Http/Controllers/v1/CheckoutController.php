@@ -999,8 +999,9 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            // Tell the app at once that the payment is confirmed; creating the order takes a
-            // moment, and a second update follows with the order.
+            // Record the payment on the checkout and tell the app at once; creating the order
+            // takes a moment, and a second update follows with the order.
+            static::recordQPayPayment($checkout, $payment);
             static::publishCheckoutUpdate($checkout, true);
 
             // Create order from payment using reusable gateway-agnostic method
@@ -1046,6 +1047,31 @@ class CheckoutController extends Controller
         if ($owner && $owner->key) {
             app(SetStorefrontSession::class)->setKey($owner->key);
         }
+    }
+
+    /**
+     * Save a verified QPay payment on the checkout (once) and return its summary, so the
+     * app can be told it was paid without asking QPay again.
+     */
+    protected static function recordQPayPayment(Checkout $checkout, object $payment): array
+    {
+        $existing = $checkout->getOption('qpay_payment');
+        if ($existing) {
+            return (array) $existing;
+        }
+
+        $summary = [
+            'payment_id'       => $payment->payment_id ?? null,
+            'payment_status'   => $payment->payment_status ?? 'PAID',
+            'payment_amount'   => $payment->payment_amount ?? null,
+            'payment_currency' => $payment->payment_currency ?? $checkout->currency,
+            'payment_date'     => $payment->payment_date ?? null,
+            'payment_wallet'   => $payment->payment_wallet ?? 'QPay',
+            'recorded_at'      => now()->toIso8601String(),
+        ];
+        $checkout->updateOption('qpay_payment', $summary);
+
+        return $summary;
     }
 
     /**
@@ -2174,67 +2200,57 @@ class CheckoutController extends Controller
                 'order'    => $checkout->order ? new OrderResource($checkout->order) : null,
             ];
 
-            // Check if this is a QPay checkout. Once the order exists it is the answer:
-            // QPay asks merchants not to check payments over and over (payment_check), so
-            // it is only asked while the order is still missing.
+            // QPay: answered from the checkout, so the app can ask often and cheaply. The
+            // payment is recorded on the checkout as soon as QPay's callback (or a verify
+            // below) confirms it. QPay itself is asked only when the app says the customer
+            // is back from paying (verify=1), at most once every few seconds per checkout:
+            // QPay asks merchants to rely on the callback, not repeated payment checks.
             if ($checkout->gateway_uuid && !$response['order']) {
                 $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
 
                 if ($gateway && $gateway->code === 'qpay') {
-                    // Get QPay invoice ID from checkout options
-                    $qpayInvoiceId = $checkout->getOption('qpay_invoice_id');
-                    $payment       = null;
+                    $recorded = $checkout->getOption('qpay_payment');
 
-                    if ($qpayInvoiceId) {
-                        // Create QPay instance with correct credentials
+                    if (!$recorded && $request->boolean('verify') && $checkout->getOption('qpay_invoice_id') && Cache::add('storefront:qpay-verify:' . $checkout->uuid, 1, 5)) {
                         $qpay = static::qpayForGateway($gateway);
-
                         if ($gateway->sandbox) {
                             $qpay->useSandbox();
                         }
-
                         $qpay->setAuthToken();
 
-                        // Verify payment status with QPay
-                        $paymentCheck = $qpay->paymentCheck($qpayInvoiceId);
-                        // Only a PAID payment covering the invoice amount (see paidQPayPayment)
-                        $payment      = static::paidQPayPayment($paymentCheck, $checkout);
+                        $payment = static::paidQPayPayment($qpay->paymentCheck($checkout->getOption('qpay_invoice_id')), $checkout);
+                        if ($payment) {
+                            $recorded = static::recordQPayPayment($checkout, $payment);
+                            static::publishCheckoutUpdate($checkout, true);
+                        }
                     }
 
-                    if ($payment) {
+                    if ($recorded) {
                         $response['status']  = 'paid';
-                        $response['payment'] = [
-                            'payment_id'     => $payment->payment_id,
-                            'payment_status' => $payment->payment_status,
-                            'payment_amount' => $payment->payment_amount,
-                            'payment_date'   => $payment->payment_date ?? null,
-                            'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                        ];
+                        $response['payment'] = $recorded;
 
-                        // FALLBACK: If payment confirmed but order doesn't exist, create it
-                        if (!$checkout->order_uuid) {
+                        // Safety net: the callback creates the order right after recording the
+                        // payment. If it still hasn't appeared a while later (e.g. the callback
+                        // failed), create it here; createOrderFromCheckout is idempotent.
+                        $recordedAt = data_get($recorded, 'recorded_at');
+                        if ($recordedAt && Carbon::parse($recordedAt)->lt(now()->subSeconds(15))) {
                             Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
                                 'checkout_id' => $checkout->public_id,
-                                'payment_id'  => $payment->payment_id,
+                                'payment_id'  => data_get($recorded, 'payment_id'),
                             ]);
 
-                            $transactionDetails = [
-                                'transaction_id' => $payment->payment_id,
-                                'payment_status' => 'PAID',
-                                'payment_wallet' => $payment->payment_wallet ?? 'QPay',
-                            ];
-
                             try {
-                                // Use the reusable gateway-agnostic method to create order
-                                // createOrderFromCheckout has built-in idempotency checks
-                                $order = $this->createOrderFromCheckout($checkout, $transactionDetails);
+                                $order = $this->createOrderFromCheckout($checkout, [
+                                    'transaction_id' => data_get($recorded, 'payment_id'),
+                                    'payment_status' => 'PAID',
+                                    'payment_wallet' => data_get($recorded, 'payment_wallet') ?? 'QPay',
+                                ]);
 
                                 if ($order) {
                                     $response['status'] = 'completed';
                                     $response['order']  = new OrderResource($order);
                                 }
                             } catch (\Exception $e) {
-                                // If order creation fails (e.g., race condition), refresh and check again
                                 Log::warning('[CHECKOUT STATUS FALLBACK]: Order creation failed, checking if order was created by another request', [
                                     'checkout_id' => $checkout->public_id,
                                     'error'       => $e->getMessage(),
@@ -2242,15 +2258,10 @@ class CheckoutController extends Controller
 
                                 $checkout->refresh();
                                 if ($checkout->order_uuid) {
-                                    // Order was created by another request
                                     $response['status'] = 'completed';
                                     $response['order']  = new OrderResource($checkout->order);
                                 }
                             }
-                        } else {
-                            // Order already exists
-                            $response['status'] = 'completed';
-                            $response['order']  = new OrderResource($checkout->order);
                         }
                     }
                 }
@@ -2424,6 +2435,7 @@ class CheckoutController extends Controller
                 'checkout' => $checkout->public_id,
                 'status'   => $status,
                 'order'    => $order ? static::checkoutChannelOrder($order) : null,
+                'payment'  => !$error ? $checkout->getOption('qpay_payment') : null,
                 'error'    => $error,
             ];
 
