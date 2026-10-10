@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Spatie\ResponseCache\Facades\ResponseCache;
 
 class NetworkController extends StorefrontController
 {
@@ -470,6 +471,8 @@ class NetworkController extends StorefrontController
             NetworkStore::where('store_uuid', $storeId)->delete();
         }
 
+        $this->forgetCachedResponses();
+
         return response()->json(['status' => 'ok']);
     }
 
@@ -499,7 +502,20 @@ class NetworkController extends StorefrontController
             ->whereIn('store_uuid', $stores)
             ->update(['status' => $status]);
 
+        $this->forgetCachedResponses();
+
         return response()->json(['status' => 'ok', 'updated' => $updated]);
+    }
+
+    /**
+     * Membership changes happen outside the resource controllers, so the cached GET
+     * responses (store listings with their membership status) are cleared here.
+     */
+    protected function forgetCachedResponses(): void
+    {
+        if (class_exists(ResponseCache::class)) {
+            ResponseCache::clear();
+        }
     }
 
     /**
@@ -515,6 +531,8 @@ class NetworkController extends StorefrontController
         foreach ($stores as $storeId) {
             NetworkStore::where(['store_uuid' => $storeId, 'network_uuid' => $id])->delete();
         }
+
+        $this->forgetCachedResponses();
 
         return response()->json(['status' => 'ok']);
     }
