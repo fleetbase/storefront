@@ -8,6 +8,7 @@
 </Layout::Section::Header>
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <Storefront::Promotions::HubTabs />
     <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-promotion-status-tabs>
         {{#each this.tabs as |tab|}}
             <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>{{tab.label}}</button>

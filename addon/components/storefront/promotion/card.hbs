@@ -35,7 +35,7 @@
                     <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.promotion}} @permission="storefront update promotion" data-test-promotion-edit />
                 {{/if}}
                 {{#if this.menuItems.length}}
-                    <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @text={{false}} @renderInPlace={{true}} as |dd|>
+                    <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{true}} as |dd|>
                         <div class="next-dd-menu mt-1 mx-0">
                             <div class="px-1">
                                 {{#each this.menuItems as |item|}}

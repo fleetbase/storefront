@@ -43,8 +43,6 @@
             @iconPrefix="fas"
             @text={{t "storefront.common.new"}}
             @onClick={{this.createNewProduct}}
-            @disabled={{not this.category}}
-            @helpText={{unless this.category "Select a category to create a product within"}}
             @permission="storefront create product"
         />
         <Button

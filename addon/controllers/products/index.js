@@ -269,7 +269,12 @@ export default class ProductsIndexController extends BaseController {
     }
 
     @action createNewProduct() {
-        return this.transitionToRoute('products.index.category.new');
+        // Inside a category the product starts in it; from "All products" the form's category select decides.
+        if (this.category?.slug) {
+            return this.transitionToRoute('products.index.category.new', this.category.slug);
+        }
+
+        return this.transitionToRoute('products.index.index.new');
     }
 
     /**

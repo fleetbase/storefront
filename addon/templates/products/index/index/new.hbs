@@ -1,0 +1,53 @@
+<Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="640px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+    <Overlay::Header
+        @title={{this.overlayTitle}}
+        @titleClass="truncate"
+        @titleWrapperClass="w-3/4"
+        @headerLeftClass="w-70pc"
+        @headerLeftInnerClass="w-full flex-1"
+        @onPressCancel={{this.transitionBack}}
+    >
+        <:actions>
+            <Select class="form-select form-input-sm storefront-product-form__status" @value={{this.product.status}} @placeholder={{t "storefront.common.status"}} @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} data-test-product-status />
+            <Button
+                @icon={{this.overlayActionButtonIcon}}
+                @type="primary"
+                @text={{this.overlayActionButtonTitle}}
+                @onClick={{perform this.saveProduct}}
+                @isLoading={{not this.saveProduct.isIdle}}
+                @permission={{this.abilityPermission}}
+            />
+        </:actions>
+    </Overlay::Header>
+
+    <Overlay::Body>
+        <Storefront::Product::Form
+            @product={{this.product}}
+            @activeStore={{this.activeStore}}
+            @permission={{this.abilityPermission}}
+            @statusOptions={{this.statusOptions}}
+            @variantTabs={{this.variantTabs}}
+            @acceptedFileTypes={{this.acceptedFileTypes}}
+            @uploadQueue={{this.uploadQueue}}
+            @addTag={{this.addTag}}
+            @removeTag={{this.removeTag}}
+            @queueFile={{this.queueFile}}
+            @removeFile={{this.removeFile}}
+            @makePrimaryFile={{this.makePrimaryFile}}
+            @promptSelectAddonCategories={{this.promptSelectAddonCategories}}
+            @createProductVariant={{this.createProductVariant}}
+            @editProductVariant={{this.editProductVariant}}
+            @removeProductVariant={{this.removeProductVariant}}
+            @addVariantOption={{this.addVariantOption}}
+            @removeVariantOption={{this.removeVariantOption}}
+            @removeAddonCategory={{this.removeAddonCategory}}
+            @excludeAddon={{this.excludeAddon}}
+            @onSave={{perform this.saveProduct}}
+            @onDiscard={{this.discardChanges}}
+            @isSaving={{not this.saveProduct.isIdle}}
+            @saveText={{this.overlayActionButtonTitle}}
+            @saveIcon={{this.overlayActionButtonIcon}}
+        />
+        <Spacer @height="120px" />
+    </Overlay::Body>
+</Overlay>

@@ -5,7 +5,7 @@
         {{#if this.primary}}
             <Button @size="xs" @type={{or this.primary.type "primary"}} @icon={{this.primary.icon}} @text={{this.primary.text}} @onClick={{fn this.run this.primary}} @permission="storefront update order" />
         {{/if}}
-        <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @text={{false}} @renderInPlace={{false}} as |dd|>
+        <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} as |dd|>
             <div class="next-dd-menu mt-1 mx-0" aria-labelledby="order-actions">
                 <div class="px-1">
                     {{#each this.secondary as |item|}}

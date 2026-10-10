@@ -1270,6 +1270,7 @@ storefront:
       no-results-help: Try another search or return to the full list.
       reset-filters: Show all
     statuses:
+      all: All
       draft: Draft
       active: Active
       paused: Paused

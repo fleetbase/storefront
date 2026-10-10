@@ -8,7 +8,8 @@
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
-<Layout::Section::Body>
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <Storefront::Promotions::HubTabs />
     {{#if @model.length}}
         <Table
             @wrapperClass="overscroll-y-none"

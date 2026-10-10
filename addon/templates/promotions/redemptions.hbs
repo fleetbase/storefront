@@ -4,7 +4,8 @@
     {{/if}}
 </Layout::Section::Header>
 
-<Layout::Section::Body>
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <Storefront::Promotions::HubTabs />
     {{#if @model.length}}
         <Table @wrapperClass="overscroll-y-none" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @pagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} />
     {{else}}
