@@ -1,7 +1,9 @@
-{{#if @items.length}}
-    <div class="storefront-sidebar-group {{@wrapperClass}}" data-test-sidebar-group={{@id}} ...attributes>
+{{! The wrapper is always rendered: this sits inside the sidebar wormhole, and a conditional
+    root block there leaves Glimmer trying to remove nodes the wormhole already moved. }}
+<div class="storefront-sidebar-group {{unless @items.length 'is-empty'}} {{@wrapperClass}}" data-test-sidebar-group={{@id}} ...attributes>
+    {{#if @items.length}}
         <div class="storefront-sidebar-group__head">{{@heading}}</div>
-        {{#each @items as |item|}}
+        {{#each @items key="id" as |item|}}
             <button type="button" class="storefront-sidebar-group__item" title={{item.name}} {{on "click" (fn @onSelect item)}} data-test-sidebar-group-item={{item.id}}>
                 <span class="storefront-sidebar-group__icon"><FaIcon @icon={{or item.icon "store"}} @size="xs" /></span>
                 <span class="storefront-sidebar-group__name">{{item.name}}</span>
@@ -9,5 +11,5 @@
                 <FaIcon @icon="arrow-right" @size="xs" class="storefront-sidebar-group__arrow" />
             </button>
         {{/each}}
-    </div>
-{{/if}}
+    {{/if}}
+</div>
