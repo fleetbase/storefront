@@ -108,19 +108,31 @@ class NearbyCommandOrderStub extends Fleetbase\FleetOps\Models\Order
     }
 }
 
-test('purge carts deletes only expired records and reports the affected count', function () {
+test('purge carts deletes only expired open empty carts and keeps every cart that held something', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
     $schema->dropIfExists('carts');
     $schema->create('carts', function ($table) {
         $table->increments('id');
+        $table->string('name');
+        $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
+        $table->text('items')->nullable();
         $table->timestamp('expires_at');
     });
 
+    $expired = now()->subDay();
     $connection->table('carts')->insert([
-        ['expires_at' => now()->subMinute()],
-        ['expires_at' => now()->subDay()],
-        ['expires_at' => now()->addHour()],
+        // deleted: expired, open and empty (every way an empty cart is stored)
+        ['name' => 'empty-array', 'checkout_uuid' => null, 'status' => 'open', 'items' => '[]', 'expires_at' => $expired],
+        ['name' => 'empty-null', 'checkout_uuid' => null, 'status' => null, 'items' => null, 'expires_at' => now()->subMinute()],
+        ['name' => 'empty-object', 'checkout_uuid' => null, 'status' => 'open', 'items' => '{}', 'expires_at' => $expired],
+        // kept: abandoned with items, checked out, cleared, linked to a checkout, not expired
+        ['name' => 'abandoned', 'checkout_uuid' => null, 'status' => 'open', 'items' => '[{"id":"cart_item_1"}]', 'expires_at' => $expired],
+        ['name' => 'checked-out', 'checkout_uuid' => 'checkout_uuid', 'status' => 'checked_out', 'items' => '[{"id":"cart_item_2"}]', 'expires_at' => $expired],
+        ['name' => 'checkout-linked-empty', 'checkout_uuid' => 'checkout_uuid', 'status' => null, 'items' => '[]', 'expires_at' => $expired],
+        ['name' => 'cleared', 'checkout_uuid' => null, 'status' => 'cleared', 'items' => '[{"id":"cart_item_3"}]', 'expires_at' => $expired],
+        ['name' => 'current', 'checkout_uuid' => null, 'status' => 'open', 'items' => '[]', 'expires_at' => now()->addHour()],
     ]);
 
     $buffer  = new BufferedOutput();
@@ -129,8 +141,8 @@ test('purge carts deletes only expired records and reports the affected count', 
     $command->setOutput($output);
 
     expect($command->handle())->toBe(Command::SUCCESS)
-        ->and($connection->table('carts')->count())->toBe(1)
-        ->and($buffer->fetch())->toContain('Successfully deleted 2 expired carts.');
+        ->and($connection->table('carts')->orderBy('id')->pluck('name')->all())->toBe(['abandoned', 'checked-out', 'checkout-linked-empty', 'cleared', 'current'])
+        ->and($buffer->fetch())->toContain('Successfully deleted 3 expired carts.');
 });
 
 test('purge carts restores foreign key enforcement when deletion fails', function () {

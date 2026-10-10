@@ -1338,7 +1338,9 @@ class CheckoutController extends Controller
         $gateway      = $checkout->is_cod ? Gateway::cash() : $checkout->gateway;
         $origin       = $serviceQuote ? $serviceQuote->getMeta('origin', []) : null;
         $destination  = $serviceQuote ? $serviceQuote->getMeta('destination') : null;
-        $cart         = $checkout->cart;
+        // The cart as it was priced and charged (see Checkout::cartAtCheckout()); the live
+        // cart only for checkouts saved before the copy existed.
+        $cart         = $checkout->cartAtCheckout() ?? $checkout->cart;
 
         // If the checkout already has an order created
         if ($checkout->order_uuid) {
@@ -1750,7 +1752,8 @@ class CheckoutController extends Controller
         $origin      = Arr::first($origins);
         $waypoints   = array_slice($origins, 1);
         $destination = $serviceQuote->getMeta('destination');
-        $cart        = $checkout->cart;
+        // The cart as it was priced and charged (see Checkout::cartAtCheckout()).
+        $cart        = $checkout->cartAtCheckout() ?? $checkout->cart;
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
         $amount   = static::calculateCheckoutAmount($cart, $serviceQuote, $checkout->options);
         $currency = $checkout->currency ?? $cart->getCurrency();

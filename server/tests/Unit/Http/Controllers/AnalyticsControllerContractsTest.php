@@ -50,6 +50,7 @@ function createAnalyticsControllerSchema(): void
     });
     $schema->create('carts', function ($table) {
         $table->increments('id');
+        $table->string('status')->nullable();
         $table->string('uuid')->nullable();
         $table->string('company_uuid')->nullable();
         $table->text('items')->nullable();
