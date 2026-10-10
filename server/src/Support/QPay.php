@@ -8,6 +8,7 @@ use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Support\Utils;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
@@ -41,6 +42,23 @@ class QPay
      * HTTP request options for the Guzzle client.
      */
     private array $requestOptions = [];
+
+    /**
+     * Merchant credentials (client id and secret), for requesting access tokens.
+     */
+    private ?string $username = null;
+
+    private ?string $password = null;
+
+    /**
+     * The cache key of the access token in use, when it came from the cache.
+     */
+    private ?string $cachedTokenKey = null;
+
+    /**
+     * Seconds before QPay's expiry at which a cached token is no longer used.
+     */
+    private const TOKEN_EXPIRY_MARGIN = 300;
 
     /**
      * The Guzzle HTTP client instance.
@@ -124,6 +142,8 @@ class QPay
         // checkout id, so callers must provide a full callback URL via setCallback()
         // or the constructor for payments to be captured
         $this->callbackUrl    = $callbackUrl ?? static::callbackUrl();
+        $this->username       = $username;
+        $this->password       = $password;
         $this->requestOptions = [
             'base_uri' => $this->buildRequestUrl(),
             'auth'     => [$username, $password],
@@ -251,6 +271,16 @@ class QPay
         $options['http_errors'] = false;
 
         $response = $this->client->request($method, $path, $options);
+
+        // A cached token QPay no longer accepts (e.g. revoked early): forget it, request a
+        // new one and try once more.
+        if ($response->getStatusCode() === 401 && $this->cachedTokenKey && $path !== 'auth/token') {
+            Cache::forget($this->cachedTokenKey);
+            $this->cachedTokenKey = null;
+            $this->mintAuthToken();
+            $response = $this->client->request($method, $path, $options);
+        }
+
         $body     = $response->getBody();
         $contents = $body->getContents();
         $json     = json_decode($contents);
@@ -352,19 +382,66 @@ class QPay
             return $this;
         }
 
-        // Always mint a fresh token. QPay returns `expires_in` as an absolute UNIX
-        // timestamp, not a lifetime in seconds, so caching keyed off it cached the token
-        // for decades and every call kept sending a token QPay had already expired —
-        // answering NO_CREDENTIALS with perfectly valid credentials. Reuse is worth one
-        // round trip only if the real expiry is honoured; until then, correctness wins.
-        $response = $this->getAuthToken();
-        $token    = data_get($response, 'access_token');
+        // QPay asks merchants not to request tokens again and again before they expire.
+        // A token is reused, per merchant and environment, until shortly before its expiry.
+        // `expires_in` is the expiry as an absolute UNIX timestamp (QPay API v2, token), not a
+        // lifetime in seconds; treating it as seconds once cached tokens for decades.
+        $key    = $this->tokenCacheKey();
+        $cached = Cache::get($key);
+        if (is_array($cached) && !empty($cached['token']) && (int) ($cached['expires_at'] ?? 0) - self::TOKEN_EXPIRY_MARGIN > time()) {
+            $this->cachedTokenKey = $key;
+            $this->useBearerToken($cached['token']);
 
-        if ($token) {
-            $this->useBearerToken($token);
+            return $this;
+        }
+
+        return $this->mintAuthToken();
+    }
+
+    /**
+     * Request a new access token with the merchant credentials and keep it until shortly
+     * before it expires.
+     */
+    private function mintAuthToken(): QPay
+    {
+        // The token request authenticates with the credentials (Basic), not a bearer token.
+        $headers = $this->requestOptions['headers'] ?? [];
+        unset($headers['Authorization']);
+        $this->requestOptions['headers'] = $headers;
+        $this->updateRequestOption('auth', [$this->username, $this->password]);
+
+        $response  = $this->getAuthToken();
+        $token     = data_get($response, 'access_token');
+        $expiresAt = (int) data_get($response, 'expires_in', 0);
+
+        if (!$token) {
+            return $this;
+        }
+
+        $this->useBearerToken($token);
+
+        $ttl = $expiresAt - time() - self::TOKEN_EXPIRY_MARGIN;
+        if ($ttl > 0) {
+            $key = $this->tokenCacheKey();
+            Cache::put($key, ['token' => $token, 'expires_at' => $expiresAt], $ttl);
+            $this->cachedTokenKey = $key;
         }
 
         return $this;
+    }
+
+    private function tokenCacheKey(): string
+    {
+        return 'storefront:qpay:token:' . sha1($this->host . '|' . $this->username . '|' . $this->password);
+    }
+
+    /**
+     * The total a set of invoice lines asks for: quantity times unit price, summed
+     * (unit prices include VAT; a discount is a negative line).
+     */
+    public static function linesTotal(array $lines): float
+    {
+        return round(array_reduce($lines, fn ($total, $line) => $total + (float) data_get($line, 'line_quantity', 0) * (float) data_get($line, 'line_unit_price', 0), 0.0), 2);
     }
 
     /**
