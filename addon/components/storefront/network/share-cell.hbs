@@ -1,0 +1,9 @@
+{{! A 7-day share-of-orders bar for the network stores table; invitation rows have no share. }}
+{{#if @row.isInvitation}}
+    <span class="storefront-share-cell__none">—</span>
+{{else}}
+    <div class="storefront-share-cell" data-test-share-cell>
+        <div class="storefront-share-bar"><div class="storefront-share-bar__fill" style={{width-style @row.share}}></div></div>
+        <span class="storefront-share-cell__value">{{@row.share}}%</span>
+    </div>
+{{/if}}

@@ -24,39 +24,13 @@
         </div>
     {{/if}}
 
-    {{#if (eq this.statusTab "invited")}}
-        {{#unless this.openInvitations.length}}
-            <div class="storefront-empty-row mx-4">
-                <span>{{t "storefront.networks.invitations.none"}}</span>
-                <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} />
-            </div>
-        {{/unless}}
-    {{else}}
+    {{#if this.visibleStores.length}}
         <Table @rows={{this.visibleStores}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
-    {{/if}}
-
-    {{#if this.showInvitations}}
-        <div class="storefront-invitation-list mx-4 my-4" data-test-network-invitations>
-            <div class="storefront-invitation-list__title">{{t "storefront.networks.invitations.title"}}</div>
-            {{#each this.openInvitations as |invitation|}}
-                <div class="storefront-member-row" data-test-invitation-row={{invitation.id}}>
-                    <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="at" /></div>
-                    <div class="storefront-member-row__identity">
-                        <div class="storefront-member-row__name">{{invitation.email}}</div>
-                        <div class="storefront-member-row__meta">{{t "storefront.networks.invitations.sent-ago" ago=invitation.sentAgo}}</div>
-                    </div>
-                    <Badge @status={{invitation.status}} @text={{t (concat "storefront.networks.invitations.status." invitation.status)}} @size="xs" />
-                    <div class="storefront-card__buttons">
-                        {{#if (eq invitation.status "pending")}}
-                            <Button @size="xs" @icon="paper-plane" @text={{t "storefront.networks.invitations.resend"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
-                            <Button @size="xs" @icon="ban" @text={{t "storefront.networks.invitations.revoke"}} @onClick={{fn this.revokeInvitation invitation}} @permission="storefront update network" />
-                        {{else}}
-                            <Button @size="xs" @icon="redo" @text={{t "storefront.networks.invitations.invite-again"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
-                        {{/if}}
-                    </div>
-                </div>
-            {{/each}}
-            <p class="storefront-invitation-list__note">{{t "storefront.networks.invitations.rows-note"}}</p>
+        <p class="storefront-invitation-list__note px-4 pb-4">{{t "storefront.networks.invitations.rows-note"}}</p>
+    {{else}}
+        <div class="storefront-empty-row mx-4">
+            <span>{{if (eq this.statusTab "invited") (t "storefront.networks.invitations.none") (t "storefront.networks.index.network.stores.empty")}}</span>
+            <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} @permission="storefront update network" />
         </div>
     {{/if}}
 </Layout::Section::Body>

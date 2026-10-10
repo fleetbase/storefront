@@ -5,6 +5,7 @@ import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
 import isModel from '@fleetbase/ember-core/utils/is-model';
+import { buildIdentityStub } from '@fleetbase/fleetops-data/utils/identity-stub';
 import { formatDistanceToNow } from 'date-fns';
 
 export default class NetworksIndexNetworkStoresController extends BaseController {
@@ -130,7 +131,10 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     }
 
     get members() {
-        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+        const members = this.model?.toArray?.() ?? Array.from(this.model ?? []);
+        members.forEach((store) => set(store, 'status_label', store.online ? 'active' : 'offline'));
+
+        return members;
     }
 
     get statusTabs() {
@@ -138,7 +142,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
 
         return [
             { id: 'all', label: this.intl.t('storefront.common.all'), count: members.length + this.openInvitations.length },
-            { id: 'online', label: this.intl.t('storefront.common.online'), count: members.filter((store) => store.online).length },
+            { id: 'online', label: this.intl.t('storefront.common.active'), count: members.filter((store) => store.online).length },
             { id: 'offline', label: this.intl.t('storefront.common.offline'), count: members.filter((store) => !store.online).length },
             { id: 'invited', label: this.intl.t('storefront.networks.invitations.invited'), count: this.openInvitations.length },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
@@ -151,18 +155,30 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             case 'offline':
                 return this.members.filter((store) => !store.online);
             case 'invited':
-                return [];
+                return this.invitationRows;
             default:
-                return this.members;
+                return [...this.members, ...this.invitationRows];
         }
     }
 
-    get showInvitations() {
-        return ['all', 'invited'].includes(this.statusTab) && this.openInvitations.length > 0;
+    /**
+     * Open invitations shown as rows of the same table: an invited store is a member in waiting.
+     */
+    get invitationRows() {
+        return this.openInvitations.map((invitation) => ({
+            ...invitation,
+            isInvitation: true,
+            name: invitation.email,
+            status_label: invitation.status === 'pending' ? 'invited' : invitation.status,
+            orders_7d: null,
+            share: null,
+            currency: null,
+            createdAtShort: null,
+        }));
     }
 
     get selectedStores() {
-        return this.table?.selectedRows ?? [];
+        return (this.table?.selectedRows ?? []).filter((row) => !row.isInvitation);
     }
 
     get hasSelection() {
@@ -187,25 +203,15 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             valuePath: 'name',
             cellComponent: 'table/cell/identity',
             resourceType: 'store',
+            resourcePath: (row) => (row.isInvitation ? buildIdentityStub(row, { type: 'store', nameKey: 'email', icon: 'at' }) : row),
             popover: true,
-            width: '130px',
+            width: '160px',
             resizable: true,
             sortable: true,
             filterable: true,
             filterComponent: 'filter/string',
             showOnlineIndicator: true,
             cellClassNames: 'network-store-name-column',
-        },
-        {
-            id: 'public-id',
-            label: this.intl.t('storefront.common.id'),
-            valuePath: 'public_id',
-            cellComponent: 'click-to-copy',
-            width: '120px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
         },
         {
             id: 'category-name',
@@ -217,6 +223,36 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             sortable: true,
             filterable: true,
             filterComponent: 'filter/string',
+        },
+        {
+            id: 'status',
+            label: this.intl.t('storefront.common.status'),
+            valuePath: 'status_label',
+            cellComponent: 'table/cell/status',
+            width: '110px',
+            sortable: false,
+            filterable: false,
+            resizable: true,
+        },
+        {
+            id: 'orders-7d',
+            label: this.intl.t('storefront.networks.index.network.stores.orders-7d'),
+            valuePath: 'orders_7d',
+            cellComponent: 'table/cell/base',
+            width: '100px',
+            sortable: true,
+            filterable: false,
+            resizable: true,
+        },
+        {
+            id: 'share',
+            label: this.intl.t('storefront.networks.index.network.stores.share'),
+            valuePath: 'share',
+            cellComponent: 'storefront/network/share-cell',
+            width: '150px',
+            sortable: true,
+            filterable: false,
+            resizable: true,
         },
         {
             id: 'currency',
@@ -231,7 +267,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
         },
         {
             id: 'created-at-short',
-            label: this.intl.t('storefront.networks.index.network.stores.created-at'),
+            label: this.intl.t('storefront.networks.index.network.stores.joined'),
             valuePath: 'createdAtShort',
             sortParam: 'created_at',
             width: '100px',
@@ -253,33 +289,56 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             width: '50px',
             actions: [
                 {
+                    id: 'resend-invitation',
+                    label: this.intl.t('storefront.networks.invitations.resend'),
+                    fn: this.resendInvitation,
+                    isVisible: (row) => row.isInvitation && row.status === 'pending',
+                },
+                {
+                    id: 'invite-again',
+                    label: this.intl.t('storefront.networks.invitations.invite-again'),
+                    fn: this.resendInvitation,
+                    isVisible: (row) => row.isInvitation && row.status !== 'pending',
+                },
+                {
+                    id: 'revoke-invitation',
+                    label: this.intl.t('storefront.networks.invitations.revoke'),
+                    fn: this.revokeInvitation,
+                    isVisible: (row) => row.isInvitation && row.status === 'pending',
+                },
+                {
                     id: 'view-store-details',
                     label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
                     fn: this.viewStoreDetails,
+                    isVisible: (row) => !row.isInvitation,
                 },
                 {
                     id: 'edit-store',
                     label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
                     fn: this.editStore,
+                    isVisible: (row) => !row.isInvitation,
                 },
                 {
                     id: 'assign-store-to-category',
                     label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
                     fn: this.assignStoreToCategory,
+                    isVisible: (row) => !row.isInvitation,
                 },
                 {
                     id: 'remove-store-category',
                     label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
                     fn: this.removeStoreCategory,
-                    isVisible: (store) => store.category,
+                    isVisible: (row) => !row.isInvitation && row.category,
                 },
                 {
                     separator: true,
+                    isVisible: (row) => !row.isInvitation,
                 },
                 {
                     id: 'remove-store',
                     label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
                     fn: this.removeStore,
+                    isVisible: (row) => !row.isInvitation,
                 },
             ],
             sortable: false,

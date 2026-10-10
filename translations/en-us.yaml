@@ -4,6 +4,7 @@ storefront:
     off: Off
     on: On
     all: All
+    active: Active
     actions: Actions
     address: Address
     alerts: Alerts
@@ -767,6 +768,10 @@ storefront:
             new-channel-button-text: Create new channel
         stores:
           store: Stores
+          orders-7d: Orders · 7d
+          share: Share of orders
+          joined: Joined
+          empty: No stores in this network yet. Add an existing store or invite one.
           add-stores-button-text: Add Stores
           invite-stores-button-text: Invite Stores
           created-at: Created At

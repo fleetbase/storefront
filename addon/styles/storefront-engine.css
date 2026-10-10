@@ -6479,3 +6479,26 @@ body[data-theme='dark'] .storefront-settings-list__name {
     color: #22c55e;
     margin-right: 0.5rem;
 }
+
+/* Network stores table: 7-day share bar */
+.storefront-share-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.storefront-share-cell .storefront-share-bar {
+    flex: 1 1 auto;
+    min-width: 3rem;
+}
+
+.storefront-share-cell__value {
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.storefront-share-cell__none {
+    color: #9ca3af;
+}
