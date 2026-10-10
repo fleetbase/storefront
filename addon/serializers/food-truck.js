@@ -9,6 +9,7 @@ export default class FoodTruckSerializer extends ApplicationSerializer.extend(Em
      */
     get attrs() {
         return {
+            store_summary: { key: 'store' },
             catalogs: { embedded: 'always' },
             vehicle: { embedded: 'always' },
             serviceArea: { embedded: 'always' },

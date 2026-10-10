@@ -58,7 +58,7 @@ export default class StorefrontTruckCardComponent extends Component {
     }
 
     get storeName() {
-        return get(this.truck, 'store.name');
+        return get(this.truck, 'store_summary.name');
     }
 
     /** What the store needs to know at a glance: serving, online with nothing to sell, or offline. */
