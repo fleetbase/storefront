@@ -16,6 +16,8 @@
                             @editRoute={{@editRoute}}
                             @viewMode={{@viewMode}}
                             @onDelete={{@onDeleteProduct}}
+                            @isSelected={{in-array product.id (or @selectedIds (array))}}
+                            @onToggleSelect={{@onToggleSelect}}
                         />
                     {{/each}}
                 </div>
@@ -26,6 +28,8 @@
                         @editRoute={{@editRoute}}
                         @viewMode={{@viewMode}}
                         @onDelete={{@onDeleteProduct}}
+                        @isSelected={{in-array product.id (or @selectedIds (array))}}
+                        @onToggleSelect={{@onToggleSelect}}
                     />
                 {{/each}}
             {{/if}}

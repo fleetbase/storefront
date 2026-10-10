@@ -22,6 +22,11 @@ export default class ProductsIndexCategoryRoute extends Route {
         sku: { refreshModel: true },
         created_at: { refreshModel: true },
         updated_at: { refreshModel: true },
+        status: { refreshModel: true },
+        available: { refreshModel: true },
+        on_sale: { refreshModel: true },
+        recommended: { refreshModel: true },
+        uncategorized: { refreshModel: true },
     };
 
     @action willTransition({ targetName }) {

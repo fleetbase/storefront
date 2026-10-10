@@ -9,6 +9,17 @@ export default class ProductsIndexRoute extends Route {
     @service abilities;
     @service hostRouter;
     @service notifications;
+    @service fetch;
+
+    async setupController(controller, model) {
+        super.setupController(controller, model);
+
+        try {
+            controller.summary = await this.fetch.get('products/summary', { store_uuid: this.currentUser.getOption('activeStorefront') }, { namespace: 'storefront/int/v1' });
+        } catch {
+            controller.summary = null;
+        }
+    }
 
     @action willTransition() {
         this.controller.category = null;

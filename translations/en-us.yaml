@@ -825,6 +825,36 @@ storefront:
         save-order-note: Save Order Note
         order-notes-updated: Order notes updated.
   products:
+    sidebar:
+      categories: Categories
+      categories-help: Organise products for browsing. Click a caret to fold a category.
+      new-category: New category
+      all-products: All products
+      no-categories: No categories yet
+      smart-groups: Smart groups
+    groups:
+      out-of-stock: Out of stock
+      drafts: Drafts
+      recommended: Recommended
+      on-sale: On sale
+      uncategorized: Uncategorised
+    statuses:
+      published: Published
+      draft: Draft
+    card:
+      missing: "Missing: {items}"
+      restock-hint: Out of stock and still published. Restock or unpublish.
+    bulk:
+      publish: Publish
+      unpublish: Unpublish
+      move: Move to category
+      mark-on-sale: Mark on sale
+      published: "{count, plural, one {# product published.} other {# products published.}}"
+      unpublished: "{count, plural, one {# product unpublished.} other {# products unpublished.}}"
+      on-sale: "{count, plural, one {# product marked on sale.} other {# products marked on sale.}}"
+      move-title: "Move {count, plural, one {# product} other {# products}} to a category"
+      moved: "{count, plural, one {# product moved} other {# products moved}} to {category}."
+      delete-title: "Delete {count, plural, one {# product} other {# products}}?"
     form:
       tabs:
         details: Details

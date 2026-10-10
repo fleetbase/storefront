@@ -1,5 +1,10 @@
 {{#if (eq @viewMode "list")}}
-    <div class="storefront-product-row" data-test-storefront-product-card>
+    <div class="storefront-product-row {{if this.isSelected 'is-selected'}}" data-test-storefront-product-card>
+        {{#if @onToggleSelect}}
+            <button type="button" class="storefront-product-card__select" aria-pressed={{if this.isSelected "true" "false"}} {{on "click" this.toggleSelect}} data-test-product-select>
+                <FaIcon @icon={{if this.isSelected "check-square" "square"}} @prefix="far" />
+            </button>
+        {{/if}}
         <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-row__product">
             <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-row__image" />
             <span class="storefront-product-row__copy">
@@ -37,13 +42,19 @@
         </span>
     </div>
 {{else}}
-    <div class="storefront-product-card" data-test-storefront-product-card>
+    <div class="storefront-product-card {{if this.isSelected 'is-selected'}}" data-test-storefront-product-card>
         <div class="storefront-product-card__media">
+            {{#if @onToggleSelect}}
+                <button type="button" class="storefront-product-card__select storefront-product-card__select--grid" aria-pressed={{if this.isSelected "true" "false"}} {{on "click" this.toggleSelect}} data-test-product-select>
+                    <FaIcon @icon={{if this.isSelected "check-square" "square"}} @prefix="far" />
+                </button>
+            {{/if}}
             <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__image-link" aria-label={{concat "Edit " @product.name}}>
                 <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-card__image" />
             </LinkTo>
             <div class="storefront-product-card__status">
                 <Badge @status={{this.displayStatus}} />
+                {{#if this.isOutOfStock}}<Badge @status="warning" @hideStatusDot={{true}} @text={{t "storefront.catalogs.editor.out-of-stock"}} />{{/if}}
             </div>
             <button type="button" class="storefront-product-card__image-action" aria-label={{concat "Preview image for " @product.name}} {{on "click" this.previewImage}}>
                 <FaIcon @icon="expand" />
@@ -91,6 +102,16 @@
                 {{/if}}
             </div>
         </div>
+
+        {{#if (and this.isDraft this.missing.length)}}
+            <div class="storefront-product-card__missing" data-test-product-missing>
+                <FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{t "storefront.products.card.missing" items=(join ", " this.missing)}}
+            </div>
+        {{else if this.isOutOfStock}}
+            <div class="storefront-product-card__missing" data-test-product-missing>
+                <FaIcon @icon="box-open" @size="xs" class="mr-1" />{{t "storefront.products.card.restock-hint"}}
+            </div>
+        {{/if}}
 
         <div class="storefront-product-card__footer">
             <span>{{n-a @product.updatedAgo "Not updated"}}</span>

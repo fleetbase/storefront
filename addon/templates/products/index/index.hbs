@@ -5,6 +5,8 @@
     @editRoute="products.index.index.edit"
     @onPageChange={{fn (mut this.page)}}
     @onDeleteProduct={{this.deleteProduct}}
+    @selectedIds={{this.productsIndexController.selectedIds}}
+    @onToggleSelect={{this.productsIndexController.toggleSelect}}
 />
 
 {{outlet}}

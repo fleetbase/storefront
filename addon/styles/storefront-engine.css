@@ -5636,3 +5636,112 @@ body[data-theme='dark'] .storefront-truck-panel__catalog.is-assigned {
 .storefront-truck-panel__save-bar {
     margin: 1rem;
 }
+
+/* Products page: toolbar, nested categories, smart groups, selection */
+.storefront-products-toolbar {
+    padding: 0.25rem 1rem 0;
+}
+
+.storefront-product-category--depth-1 {
+    padding-left: 1.75rem;
+}
+
+.storefront-product-category--depth-2 {
+    padding-left: 3rem;
+}
+
+.storefront-product-category__caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.125rem;
+    border-radius: 0.25rem;
+    color: #9ca3af;
+}
+
+.storefront-product-category__caret:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+body[data-theme='dark'] .storefront-product-category__caret:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+.storefront-product-category__count {
+    margin-left: auto;
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+body[data-theme='dark'] .storefront-product-category__count {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+.storefront-product-sidebar__groups {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+body[data-theme='dark'] .storefront-product-sidebar__groups {
+    border-color: #374151;
+}
+
+.storefront-product-sidebar__groups-title {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+.storefront-product-category--group .storefront-product-category__icon {
+    color: #6b7280;
+}
+
+.storefront-product-card__select {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    color: #0284c7;
+    background-color: rgb(255 255 255 / 90%);
+}
+
+.storefront-product-card__select--grid {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 2;
+}
+
+.storefront-product-card.is-selected,
+.storefront-product-row.is-selected {
+    outline: 2px solid #0284c7;
+    outline-offset: -2px;
+}
+
+.storefront-product-card__missing {
+    margin: 0 1rem 0.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    color: #92400e;
+    background-color: #fffbeb;
+}
+
+body[data-theme='dark'] .storefront-product-card__missing {
+    color: #fcd34d;
+    background-color: rgb(120 53 15 / 30%);
+}

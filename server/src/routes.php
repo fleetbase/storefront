@@ -257,6 +257,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('process-imports', $controller('processImports'));
                                 $router->post('create-entities', $controller('createEntities'));
+                                $router->get('summary', $controller('summary'));
                             }
                         );
                         $router->fleetbaseRoutes('product-hours');

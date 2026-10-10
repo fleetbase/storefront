@@ -1,52 +1,57 @@
 <aside class="storefront-product-sidebar" data-test-storefront-product-category-sidebar>
     <div class="storefront-product-sidebar__header">
         <div>
-            <h3>Categories</h3>
-            <p>Organize products for storefront browsing.</p>
+            <h3>{{t "storefront.products.sidebar.categories"}}</h3>
+            <p>{{t "storefront.products.sidebar.categories-help"}}</p>
         </div>
-        <Button
-            @type="default"
-            @size="xs"
-            @icon="plus"
-            @iconPrefix="fas"
-            @onClick={{@onCreate}}
-            @permission="storefront create product-category"
-        />
+        <Button @type="default" @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{@onCreate}} @permission="storefront create product-category" @helpText={{t "storefront.products.sidebar.new-category"}} />
     </div>
 
-    <button type="button" class="storefront-product-category {{unless @activeCategory "is-active"}}" data-test-storefront-product-category="all" {{on "click" @onViewAll}}>
+    <button type="button" class="storefront-product-category {{unless (or @activeCategory @activeGroup) 'is-active'}}" data-test-storefront-product-category="all" {{on "click" @onViewAll}}>
         <span class="storefront-product-category__icon"><FaIcon @icon="th-large" /></span>
         <span class="storefront-product-category__content">
-            <strong>All Products</strong>
-            <small>Full catalog</small>
+            <strong>{{t "storefront.products.sidebar.all-products"}}</strong>
         </span>
+        {{#if this.total}}<span class="storefront-product-category__count">{{this.total}}</span>{{/if}}
     </button>
 
     <div class="storefront-product-sidebar__list">
-        {{#each this.categories as |category|}}
+        {{#each this.rows as |row|}}
             <button
                 type="button"
-                class="storefront-product-category {{if (eq @activeCategory.id category.id) "is-active"}}"
-                data-test-storefront-product-category={{category.id}}
+                class="storefront-product-category {{if row.isActive 'is-active'}} storefront-product-category--depth-{{row.depth}}"
+                data-test-storefront-product-category={{row.category.id}}
                 disabled={{cannot "storefront list product"}}
-                {{on "click" (fn @onSelect category)}}
+                {{on "click" (fn @onSelect row.category)}}
             >
-                <Image
-                    src={{category.icon_url}}
-                    @fallbackSrc={{config "defaultValues.categoryImage"}}
-                    alt={{category.name}}
-                    class="storefront-product-category__image"
-                />
+                {{#if row.hasChildren}}
+                    <span class="storefront-product-category__caret" role="button" {{on "click" (fn this.toggleCollapse row.category)}}>
+                        <FaIcon @icon={{if row.isCollapsed "chevron-right" "chevron-down"}} @size="xs" />
+                    </span>
+                {{/if}}
+                <Image src={{row.category.icon_url}} @fallbackSrc={{config "defaultValues.categoryImage"}} alt={{row.category.name}} class="storefront-product-category__image" />
                 <span class="storefront-product-category__content">
-                    <strong>{{category.name}}</strong>
-                    <small>{{n-a category.description "No description"}}</small>
+                    <strong>{{row.category.name}}</strong>
+                    {{#if (eq row.depth 0)}}<small>{{n-a row.category.description ""}}</small>{{/if}}
                 </span>
+                <span class="storefront-product-category__count">{{row.count}}</span>
             </button>
         {{else}}
             <div class="storefront-product-sidebar__empty">
                 <FaIcon @icon="folder-open" />
-                <span>No categories yet</span>
+                <span>{{t "storefront.products.sidebar.no-categories"}}</span>
             </div>
+        {{/each}}
+    </div>
+
+    <div class="storefront-product-sidebar__groups" data-test-storefront-product-groups>
+        <div class="storefront-product-sidebar__groups-title">{{t "storefront.products.sidebar.smart-groups"}}</div>
+        {{#each this.groups as |group|}}
+            <button type="button" class="storefront-product-category storefront-product-category--group {{if group.isActive 'is-active'}}" {{on "click" (fn @onSelectGroup group)}} data-test-storefront-product-group={{group.id}}>
+                <span class="storefront-product-category__icon"><FaIcon @icon={{group.icon}} @size="xs" /></span>
+                <span class="storefront-product-category__content"><strong>{{group.label}}</strong></span>
+                <span class="storefront-product-category__count">{{group.count}}</span>
+            </button>
         {{/each}}
     </div>
 </aside>

@@ -45,6 +45,49 @@ export default class StorefrontProductCardComponent extends Component {
         return product?.is_available === false ? 'draft' : 'published';
     }
 
+    get isDraft() {
+        return this.displayStatus === 'draft';
+    }
+
+    /**
+     * What a draft still needs before it can publish cleanly.
+     */
+    get missing() {
+        const { product } = this.args;
+        const missing = [];
+
+        if (!product) {
+            return missing;
+        }
+
+        if (!product.category_uuid && !product.category?.id) {
+            missing.push('category');
+        }
+
+        if (!product.primary_image_url) {
+            missing.push('image');
+        }
+
+        if (product.price === null || product.price === undefined || product.price === '' || !(parseFloat(product.price) >= 0)) {
+            missing.push('price');
+        }
+
+        return missing;
+    }
+
+    get isSelected() {
+        return Boolean(this.args.isSelected);
+    }
+
+    get isOutOfStock() {
+        return this.args.product?.is_available === false && !this.isDraft;
+    }
+
+    @action toggleSelect(event) {
+        event?.stopPropagation?.();
+        this.args.onToggleSelect?.(this.args.product);
+    }
+
     @action previewImage() {
         this.modalsManager.show('modals/product-image-preview', {
             title: this.args.product?.name ?? 'Product image',
