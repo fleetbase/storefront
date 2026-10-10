@@ -209,6 +209,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             ['prefix' => 'analytics'],
                             function ($router) {
                                 $router->get('overview', 'AnalyticsController@overview');
+                                $router->get('attention', 'AnalyticsController@attention');
                                 $router->get('revenue-trend', 'AnalyticsController@revenueTrend');
                                 $router->get('orders-by-status', 'AnalyticsController@ordersByStatus');
                                 $router->get('top-products', 'AnalyticsController@topProducts');

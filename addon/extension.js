@@ -19,6 +19,17 @@ export function registerWidgets(widgetService) {
 
     widgetService.registerWidgets('storefront', [
         new Widget({
+            id: 'storefront-attention-strip-widget',
+            name: 'Needs attention',
+            description: 'What the store acts on today: orders to confirm, pickups, stock, trucks, invitations.',
+            icon: 'bell',
+            component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/attention-strip'),
+            grid_options: { w: 12, h: 4, minW: 6, minH: 4 },
+            options: { wrapperClass: 'bordered-classic' },
+            category: 'Operations',
+            default: true,
+        }),
+        new Widget({
             id: 'storefront-kpi-revenue-widget',
             name: 'Revenue',
             description: 'Storefront revenue for the current period with trend.',

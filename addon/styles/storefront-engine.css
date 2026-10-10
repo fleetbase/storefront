@@ -5745,3 +5745,106 @@ body[data-theme='dark'] .storefront-product-card__missing {
     color: #fcd34d;
     background-color: rgb(120 53 15 / 30%);
 }
+
+/* Dashboard: needs-attention strip */
+.storefront-attention-strip__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.5rem;
+    padding: 0 0.75rem 0.75rem;
+}
+
+.storefront-attention-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    text-align: left;
+    background-color: #ffffff;
+}
+
+.storefront-attention-item:hover {
+    background-color: #f9fafb;
+}
+
+body[data-theme='dark'] .storefront-attention-item {
+    border-color: #374151;
+    background-color: #1f2937;
+}
+
+body[data-theme='dark'] .storefront-attention-item:hover {
+    background-color: #374151;
+}
+
+.storefront-attention-item__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+body[data-theme='dark'] .storefront-attention-item__icon {
+    background-color: #374151;
+    color: #9ca3af;
+}
+
+.storefront-attention-item--warn.has-count .storefront-attention-item__icon {
+    color: #b45309;
+    background-color: #fef3c7;
+}
+
+.storefront-attention-item--danger.has-count .storefront-attention-item__icon {
+    color: #b91c1c;
+    background-color: #fee2e2;
+}
+
+.storefront-attention-item--info.has-count .storefront-attention-item__icon {
+    color: #0369a1;
+    background-color: #e0f2fe;
+}
+
+.storefront-attention-item__count {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    min-width: 1.5rem;
+}
+
+body[data-theme='dark'] .storefront-attention-item__count {
+    color: #f3f4f6;
+}
+
+.storefront-attention-item__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.storefront-attention-item__label {
+    font-size: 0.8125rem;
+    color: #111827;
+}
+
+body[data-theme='dark'] .storefront-attention-item__label {
+    color: #e5e7eb;
+}
+
+.storefront-attention-item__hint {
+    font-size: 0.6875rem;
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-attention-item__chevron {
+    color: #9ca3af;
+}

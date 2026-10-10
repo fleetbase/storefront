@@ -1,0 +1,30 @@
+<div class="storefront-dashboard-widget storefront-attention-strip flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800 {{@options.wrapperClass}}" data-test-attention-strip ...attributes>
+    <div class="storefront-orders-header">
+        <div class="min-w-0">
+            <div class="storefront-widget-title">{{or @options.title (t "storefront.dashboard.attention.title")}}</div>
+            <div class="storefront-widget-subtitle">
+                {{#if this.load.isRunning}}
+                    {{t "common.loading"}}
+                {{else if this.allClear}}
+                    {{t "storefront.dashboard.attention.all-clear"}}
+                {{else}}
+                    {{t "storefront.dashboard.attention.subtitle"}}
+                {{/if}}
+            </div>
+        </div>
+        <Button @icon="refresh" @size="xs" @helpText={{t "storefront.dashboard.attention.refresh"}} @onClick={{perform this.load}} />
+    </div>
+    <div class="storefront-attention-strip__items">
+        {{#each this.items as |item|}}
+            <button type="button" class="storefront-attention-item storefront-attention-item--{{item.tone}} {{if item.count 'has-count'}}" {{on "click" (fn this.open item)}} data-test-attention-item={{item.id}}>
+                <span class="storefront-attention-item__icon"><FaIcon @icon={{item.icon}} /></span>
+                <span class="storefront-attention-item__count">{{item.count}}</span>
+                <span class="storefront-attention-item__body">
+                    <span class="storefront-attention-item__label">{{item.label}}</span>
+                    {{#if item.hint}}<span class="storefront-attention-item__hint">{{item.hint}}</span>{{/if}}
+                </span>
+                <FaIcon @icon="chevron-right" @size="xs" class="storefront-attention-item__chevron" />
+            </button>
+        {{/each}}
+    </div>
+</div>

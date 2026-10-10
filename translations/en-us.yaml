@@ -473,6 +473,21 @@ storefront:
       assign-catalogs: Assign catalogs
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
+  dashboard:
+    attention:
+      title: Needs attention
+      subtitle: What the store acts on today.
+      all-clear: Nothing waiting on you right now.
+      refresh: Refresh
+      orders-to-confirm: orders to confirm
+      oldest: "oldest {age}"
+      ready-for-pickup: ready for pickup
+      customers-notified: customers notified
+      awaiting-driver: deliveries without a driver
+      out-of-stock: products out of stock
+      still-published: still published
+      trucks-offline: trucks offline
+      network-invitations: network invitations
   order:
     asap: ASAP
     incl-tip: "incl. tip {tip}"
