@@ -6456,3 +6456,52 @@ body[data-theme='dark'] .storefront-sidebar-group__item:focus-visible {
 .storefront-sidebar-group__arrow {
     color: #9ca3af;
 }
+
+/* Key / value rows inside panels (truck location, order data) */
+.storefront-kv {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background: #fff;
+}
+
+body[data-theme='dark'] .storefront-kv {
+    border-color: #374151;
+    background: #1f2937;
+}
+
+.storefront-kv__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.8125rem;
+}
+
+body[data-theme='dark'] .storefront-kv__row {
+    border-color: #374151;
+}
+
+.storefront-kv__row:last-child {
+    border-bottom: 0;
+}
+
+.storefront-kv__key {
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-kv__key {
+    color: #9ca3af;
+}
+
+.storefront-kv__value {
+    color: #111827;
+    text-align: right;
+}
+
+body[data-theme='dark'] .storefront-kv__value {
+    color: #f3f4f6;
+}

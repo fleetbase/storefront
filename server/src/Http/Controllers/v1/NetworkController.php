@@ -8,6 +8,7 @@ use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StorefrontStoreLocation;
+use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Illuminate\Http\Request;
@@ -77,7 +78,8 @@ class NetworkController extends Controller
             ->withAvg('reviews', 'rating')
             ->whereHas('locations')
             ->whereHas('networks', function ($q) use ($request) {
-                $q->where('network_uuid', session('storefront_network'));
+                $q->where('network_uuid', session('storefront_network'))
+                    ->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED);
 
                 // Query stores without a category
                 if ($request->filled('without_category')) {

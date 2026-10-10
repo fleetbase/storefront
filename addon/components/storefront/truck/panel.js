@@ -48,6 +48,7 @@ export function catalogServingNow(catalog, now = new Date()) {
 export default class StorefrontTruckPanelComponent extends Component {
     @service intl;
     @service notifications;
+    @service hostRouter;
     @tracked tab = this.args.tab ?? 'details';
     @tracked revision = 0;
 
@@ -99,6 +100,7 @@ export default class StorefrontTruckPanelComponent extends Component {
         return [
             { id: 'details', label: this.intl.t('storefront.trucks.panel.tabs.details') },
             { id: 'catalogs', label: this.intl.t('storefront.trucks.panel.tabs.catalogs'), count: this.assignedCount },
+            { id: 'location', label: this.intl.t('storefront.trucks.panel.tabs.location') },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.tab }));
     }
 
@@ -128,6 +130,31 @@ export default class StorefrontTruckPanelComponent extends Component {
 
         // `vehicle` is a belongsTo proxy until it resolves; read through `get`.
         return get(this.truck, 'vehicle.display_name') ?? get(this.truck, 'vehicle.plate_number') ?? this.truck?.public_id ?? this.intl.t('storefront.common.food-trucks');
+    }
+
+    /**
+     * The vehicle's last known position from Fleet-Ops; a belongsTo proxy until it resolves.
+     */
+    get position() {
+        const vehicle = get(this.truck, 'vehicle');
+        const latitude = get(vehicle, 'latitude');
+        const longitude = get(vehicle, 'longitude');
+        const hasPosition = Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude)) && !(Number(latitude) === 0 && Number(longitude) === 0);
+
+        return {
+            hasVehicle: Boolean(get(vehicle, 'id')),
+            hasPosition,
+            latitude,
+            longitude,
+            online: Boolean(get(vehicle, 'online')),
+            updatedAgo: get(vehicle, 'updatedAgo'),
+            serviceArea: get(this.truck, 'service_area.name'),
+            zone: get(this.truck, 'zone.name'),
+        };
+    }
+
+    @action openMap() {
+        return this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index');
     }
 
     @action selectTab(tab) {

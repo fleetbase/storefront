@@ -133,28 +133,44 @@ export default class NetworksIndexNetworkStoresController extends BaseController
 
     get members() {
         const members = this.model?.toArray?.() ?? Array.from(this.model ?? []);
-        members.forEach((store) => set(store, 'status_label', store.online ? 'active' : 'offline'));
+        members.forEach((store) => {
+            set(store, 'isSuspended', store.network_status === 'suspended');
+            set(store, 'status_label', store.isSuspended ? 'suspended' : store.online ? 'active' : 'offline');
+        });
 
         return members;
     }
 
-    get statusTabs() {
-        const members = this.members;
+    get activeMembers() {
+        return this.members.filter((store) => !store.isSuspended && store.online);
+    }
 
+    get offlineMembers() {
+        return this.members.filter((store) => !store.isSuspended && !store.online);
+    }
+
+    get suspendedMembers() {
+        return this.members.filter((store) => store.isSuspended);
+    }
+
+    get statusTabs() {
         return [
-            { id: 'all', label: this.intl.t('storefront.common.all'), count: members.length + this.openInvitations.length },
-            { id: 'online', label: this.intl.t('storefront.common.active'), count: members.filter((store) => store.online).length },
-            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: members.filter((store) => !store.online).length },
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: this.members.length + this.openInvitations.length },
+            { id: 'online', label: this.intl.t('storefront.common.active'), count: this.activeMembers.length },
+            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: this.offlineMembers.length },
             { id: 'invited', label: this.intl.t('storefront.networks.invitations.invited'), count: this.openInvitations.length },
+            { id: 'suspended', label: this.intl.t('storefront.networks.index.network.stores.suspended'), count: this.suspendedMembers.length },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
     }
 
     get visibleStores() {
         switch (this.statusTab) {
             case 'online':
-                return this.members.filter((store) => store.online);
+                return this.activeMembers;
             case 'offline':
-                return this.members.filter((store) => !store.online);
+                return this.offlineMembers;
+            case 'suspended':
+                return this.suspendedMembers;
             case 'invited':
                 return this.invitationRows;
             default:
@@ -336,6 +352,18 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                     isVisible: (row) => !row.isInvitation,
                 },
                 {
+                    id: 'suspend-store',
+                    label: this.intl.t('storefront.networks.index.network.stores.suspend'),
+                    fn: this.suspendStore,
+                    isVisible: (row) => !row.isInvitation && !row.isSuspended,
+                },
+                {
+                    id: 'reinstate-store',
+                    label: this.intl.t('storefront.networks.index.network.stores.reinstate'),
+                    fn: this.reinstateStore,
+                    isVisible: (row) => !row.isInvitation && row.isSuspended,
+                },
+                {
                     id: 'remove-store',
                     label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
                     fn: this.removeStore,
@@ -371,6 +399,57 @@ export default class NetworksIndexNetworkStoresController extends BaseController
 
         // update the query param
         this.storeQuery = value;
+    }
+
+    /**
+     * Suspending hides the store from the network's app and carts without removing it;
+     * reinstating brings it back with its category and history intact.
+     */
+    @action suspendStore(store) {
+        return this.suspendStores([store]);
+    }
+
+    @action reinstateStore(store) {
+        return this.setMembershipStatus([store], 'reinstate');
+    }
+
+    @action suspendSelected() {
+        return this.suspendStores(this.selectedStores);
+    }
+
+    suspendStores(stores) {
+        if (!stores.length) {
+            return;
+        }
+
+        const names = stores.map((store) => store.name).join(', ');
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.index.network.stores.suspend-title', { count: stores.length, names }),
+            body: this.intl.t('storefront.networks.index.network.stores.suspend-body', { networkName: this.network.name }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.suspend'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'ban',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.setMembershipStatus(stores, 'suspend');
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    async setMembershipStatus(stores, action) {
+        await this.fetch.post(`networks/${this.network.id}/${action}-stores`, { stores: stores.map((store) => store.id) }, { namespace: 'storefront/int/v1' });
+        this.notifications.success(this.intl.t(`storefront.networks.index.network.stores.${action}-done`, { count: stores.length }));
+        this.clearSelection?.();
+
+        return this.hostRouter.refresh();
     }
 
     @action setCategoryPickerContext(context) {

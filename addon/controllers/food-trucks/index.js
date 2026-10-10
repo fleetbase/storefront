@@ -75,6 +75,18 @@ export default class FoodTrucksIndexController extends Controller {
         return { store_uuid: this.storefront.activeStore?.id, status: 'active' };
     }
 
+    /**
+     * Trucks live on the Fleet-Ops map: the console's live map draws every online vehicle
+     * with its service areas and zones, so the Map button opens it rather than a second map.
+     */
+    @action openMap() {
+        try {
+            return this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index');
+        } catch {
+            this.notifications.warning(this.intl.t('storefront.trucks.index.map-unavailable'));
+        }
+    }
+
     @action selectStatusTab(tab) {
         this.statusTab = tab.id ?? tab;
     }

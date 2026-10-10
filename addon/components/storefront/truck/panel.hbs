@@ -48,6 +48,35 @@
                     <Select class="w-full" @value={{this.truck.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} />
                 </InputGroup>
             </div>
+        {{else if (eq this.tab "location")}}
+            <div class="storefront-invite-panel__section space-y-3" data-test-truck-location>
+                <p class="storefront-settings-section__lede mb-0">{{t "storefront.trucks.panel.location-lede"}}</p>
+                {{#if this.position.hasVehicle}}
+                    <div class="storefront-kv">
+                        <div class="storefront-kv__row">
+                            <span class="storefront-kv__key">{{t "storefront.common.status"}}</span>
+                            <span class="storefront-kv__value"><Badge @status={{if this.position.online "online" "offline"}} @size="xs" @text={{if this.position.online (t "storefront.common.online") (t "storefront.common.offline")}} /></span>
+                        </div>
+                        <div class="storefront-kv__row">
+                            <span class="storefront-kv__key">{{t "storefront.trucks.panel.last-position"}}</span>
+                            <span class="storefront-kv__value">{{#if this.position.hasPosition}}{{this.position.latitude}}, {{this.position.longitude}}{{else}}{{t "storefront.trucks.panel.no-position"}}{{/if}}</span>
+                        </div>
+                        {{#if this.position.updatedAgo}}
+                            <div class="storefront-kv__row">
+                                <span class="storefront-kv__key">{{t "storefront.trucks.panel.last-seen"}}</span>
+                                <span class="storefront-kv__value">{{t "storefront.trucks.panel.ago" value=this.position.updatedAgo}}</span>
+                            </div>
+                        {{/if}}
+                        <div class="storefront-kv__row">
+                            <span class="storefront-kv__key">{{t "storefront.trucks.panel.service-area"}}</span>
+                            <span class="storefront-kv__value">{{n-a this.position.serviceArea}}{{#if this.position.zone}} · {{this.position.zone}}{{/if}}</span>
+                        </div>
+                    </div>
+                    <Button @icon="map" @text={{t "storefront.trucks.panel.open-map"}} @onClick={{this.openMap}} @permission="fleet-ops view order" data-test-truck-open-map />
+                {{else}}
+                    <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-vehicle-yet"}}</span></div>
+                {{/if}}
+            </div>
         {{else}}
             <div class="storefront-invite-panel__section space-y-3">
                 <p class="storefront-settings-section__lede mb-0">{{t "storefront.trucks.panel.catalogs-lede"}}</p>

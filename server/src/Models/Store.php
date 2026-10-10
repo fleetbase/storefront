@@ -313,7 +313,7 @@ class Store extends StorefrontModel
     {
         return $this->belongsToMany(Network::class, 'network_stores', 'store_uuid', 'network_uuid')
             ->using(NetworkStore::class)
-            ->withPivot(['category_uuid', 'deleted_at'])
+            ->withPivot(['category_uuid', 'status', 'deleted_at'])
             ->wherePivotNull('deleted_at');
     }
 
@@ -382,6 +382,46 @@ class Store extends StorefrontModel
      */
     public function getNetworkCategoryUsingId(?string $id)
     {
+        $networkUuid = $this->resolveNetworkUuid($id);
+
+        if (!$networkUuid) {
+            return null;
+        }
+
+        return $this->getNetworkCategory((new Network())->forceFill(['uuid' => $networkUuid]));
+    }
+
+    /**
+     * The store's membership status in a network (`active` or `suspended`), or null when it is not a member.
+     */
+    public function getNetworkMembershipStatus(Network $network): ?string
+    {
+        $networkRelation = $this->relationLoaded('networks')
+            ? $this->networks->firstWhere('uuid', $network->uuid)
+            : $this->networks()->where('networks.uuid', $network->uuid)->first();
+
+        if (!$networkRelation) {
+            return null;
+        }
+
+        return $networkRelation->pivot->status ?? NetworkStore::STATUS_ACTIVE;
+    }
+
+    /**
+     * Membership status for a network given by uuid or public id.
+     */
+    public function getNetworkMembershipStatusUsingId(?string $id): ?string
+    {
+        $networkUuid = $this->resolveNetworkUuid($id);
+
+        return $networkUuid ? $this->getNetworkMembershipStatus((new Network())->forceFill(['uuid' => $networkUuid])) : null;
+    }
+
+    /**
+     * A network's uuid from its uuid or public id, resolved once per request.
+     */
+    protected function resolveNetworkUuid(?string $id): ?string
+    {
         if (is_null($id)) {
             return null;
         }
@@ -391,13 +431,7 @@ class Store extends StorefrontModel
             static::$networkUuidsById[$id] = Network::where('uuid', $id)->orWhere('public_id', $id)->value('uuid');
         }
 
-        $networkUuid = static::$networkUuidsById[$id];
-
-        if (!$networkUuid) {
-            return null;
-        }
-
-        return $this->getNetworkCategory((new Network())->forceFill(['uuid' => $networkUuid]));
+        return static::$networkUuidsById[$id];
     }
 
     /**

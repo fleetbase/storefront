@@ -169,8 +169,17 @@ class Network extends StorefrontModel
     {
         return $this->belongsToMany(Store::class, 'network_stores', 'network_uuid', 'store_uuid')
             ->using(NetworkStore::class)
-            ->withPivot(['category_uuid', 'deleted_at'])
+            ->withPivot(['category_uuid', 'status', 'deleted_at'])
             ->wherePivotNull('deleted_at');
+    }
+
+    /**
+     * Members that sell through the network: everything the app and carts see.
+     * Suspended memberships stay in `stores()` for the console.
+     */
+    public function activeStores()
+    {
+        return $this->stores()->wherePivot('status', '!=', NetworkStore::STATUS_SUSPENDED);
     }
 
     /**

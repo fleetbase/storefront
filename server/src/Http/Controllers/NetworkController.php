@@ -135,10 +135,10 @@ class NetworkController extends StorefrontController
             return response()->error('Invitation not found.', 404);
         }
 
-        $meta           = $invitation->meta ?? [];
-        $meta['status'] = 'pending';
+        $meta              = $invitation->meta ?? [];
+        $meta['status']    = 'pending';
         $meta['resent_at'] = Carbon::now()->toIso8601String();
-        $invitation->meta = $meta;
+        $invitation->meta  = $meta;
 
         $expiresInDays = $request->input('expires_in_days');
         if (is_numeric($expiresInDays) && (int) $expiresInDays > 0) {
@@ -254,9 +254,9 @@ class NetworkController extends StorefrontController
         $invitation->save();
 
         return response()->json([
-            'status'  => 'ok',
-            'network' => ['id' => $network->uuid, 'public_id' => $network->public_id, 'name' => $network->name],
-            'store'   => ['id' => $store->uuid, 'public_id' => $store->public_id, 'name' => $store->name],
+            'status'            => 'ok',
+            'network'           => ['id' => $network->uuid, 'public_id' => $network->public_id, 'name' => $network->name],
+            'store'             => ['id' => $store->uuid, 'public_id' => $store->public_id, 'name' => $store->name],
             'awaiting_approval' => $requireApproval,
         ]);
     }
@@ -471,6 +471,35 @@ class NetworkController extends StorefrontController
         }
 
         return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Suspend memberships: the stores stay in the network but disappear from its app and carts.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function suspendStores(string $id, NetworkActionRequest $request)
+    {
+        return $this->setMembershipStatus($id, $request->array('stores'), NetworkStore::STATUS_SUSPENDED);
+    }
+
+    /**
+     * Reinstate suspended memberships.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function reinstateStores(string $id, NetworkActionRequest $request)
+    {
+        return $this->setMembershipStatus($id, $request->array('stores'), NetworkStore::STATUS_ACTIVE);
+    }
+
+    protected function setMembershipStatus(string $networkId, array $stores, string $status)
+    {
+        $updated = NetworkStore::where('network_uuid', $networkId)
+            ->whereIn('store_uuid', $stores)
+            ->update(['status' => $status]);
+
+        return response()->json(['status' => 'ok', 'updated' => $updated]);
     }
 
     /**

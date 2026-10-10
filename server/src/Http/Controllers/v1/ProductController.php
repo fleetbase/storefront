@@ -9,6 +9,7 @@ use Fleetbase\Storefront\Http\Requests\CreateProductRequest;
 use Fleetbase\Storefront\Http\Requests\UpdateProductRequest;
 use Fleetbase\Storefront\Http\Resources\Product as StorefrontProduct;
 use Fleetbase\Storefront\Models\AddonCategory;
+use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\ProductAddon;
 use Fleetbase\Storefront\Models\ProductAddonCategory;
@@ -347,7 +348,8 @@ class ProductController extends Controller
             if (session('storefront_network')) {
                 $query->whereHas('store', function ($sq) {
                     $sq->whereHas('networks', function ($nq) {
-                        $nq->where('network_uuid', session('storefront_network'));
+                        $nq->where('network_uuid', session('storefront_network'))
+                            ->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED);
                     });
                 });
 
@@ -389,7 +391,7 @@ class ProductController extends Controller
         })
             ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network'))->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED));
                 $query->where('is_available', 1);
                 $query->where('status', 'published');
             })

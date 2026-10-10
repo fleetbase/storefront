@@ -449,6 +449,14 @@ storefront:
       tabs:
         details: Details
         catalogs: Catalogs
+        location: Location
+      location-lede: Where the vehicle last reported from, as Fleet-Ops tracks it.
+      last-position: Last position
+      no-position: No position reported yet
+      last-seen: Last update
+      ago: "{value} ago"
+      open-map: Open on the Fleet-Ops map
+      no-vehicle-yet: Pick a vehicle on the Details tab to see where it is.
       new-truck: New truck
       vehicle: Vehicle
       vehicle-help: The Fleet-Ops vehicle; its driver and online state come from Fleet-Ops.
@@ -471,6 +479,8 @@ storefront:
     index:
       subtitle: A Fleet-Ops vehicle that sells from a catalog inside a service area.
       new-truck: New truck
+      map: Map
+      map-unavailable: The Fleet-Ops map is not available in this console.
       inactive: Inactive
       empty-state: Add a truck to sell from a vehicle inside a service area.
       create-truck: Add truck
@@ -800,6 +810,13 @@ storefront:
             new-channel-button-text: Create new channel
         stores:
           store: Stores
+          suspended: Suspended
+          suspend: Suspend from network
+          reinstate: Reinstate in network
+          suspend-title: "{count, plural, one {Suspend {names}?} other {Suspend # stores?}}"
+          suspend-body: "Suspended stores stay members of {networkName} but disappear from its app and carts until reinstated. Their category and order history are kept."
+          suspend-done: "{count, plural, one {Store suspended.} other {# stores suspended.}}"
+          reinstate-done: "{count, plural, one {Store reinstated.} other {# stores reinstated.}}"
           orders-7d: Orders · 7d
           share: Share of orders
           joined: Joined
