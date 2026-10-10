@@ -19,6 +19,34 @@ export default class StoreSelectorComponent extends Component {
         return this.stores.length > 0;
     }
 
+    get networks() {
+        return Array.from(this.args.networks ?? []);
+    }
+
+    get hasNetworks() {
+        return this.networks.length > 0;
+    }
+
+    /**
+     * The networks group only appears once there is something to show in it: a user with
+     * one store and no networks sees the plain store menu.
+     */
+    get showNetworks() {
+        return this.hasNetworks || typeof this.args.onCreateNetwork === 'function';
+    }
+
+    get isNetworkContext() {
+        return Boolean(this.args.activeNetwork);
+    }
+
+    get activeContext() {
+        return this.args.activeNetwork ?? this.args.activeStore;
+    }
+
+    get contextLabel() {
+        return this.intl.t(`storefront.component.store-selector.${this.isNetworkContext ? 'network' : 'store'}`);
+    }
+
     willDestroy() {
         super.willDestroy(...arguments);
         this.close();
@@ -78,44 +106,101 @@ export default class StoreSelectorComponent extends Component {
 
         const storeList = document.createElement('div');
         storeList.setAttribute('role', 'group');
+        storeList.setAttribute('data-test-store-selector-stores', '');
         storeList.className = 'px-1';
         storeList.style.maxHeight = '18rem';
         storeList.style.overflowY = 'auto';
 
+        if (this.showNetworks) {
+            storeList.appendChild(this.createGroupLabel(this.intl.t('storefront.component.store-selector.stores')));
+        }
+
         if (this.hasStores) {
             this.stores.forEach((store) => {
-                storeList.appendChild(this.createMenuItem(store?.name || '-', () => this.onSwitchStore(store)));
+                const isActive = !this.isNetworkContext && store?.id === this.args.activeStore?.id;
+                storeList.appendChild(this.createMenuItem(store?.name || '-', () => this.onSwitchStore(store), { isActive }));
             });
         } else {
-            const emptyItem = document.createElement('div');
-            emptyItem.className = 'next-dd-item';
-            emptyItem.setAttribute('role', 'menuitem');
-            emptyItem.textContent = this.intl.t('storefront.component.store-selector.no-stores');
-            storeList.appendChild(emptyItem);
+            storeList.appendChild(this.createEmptyItem(this.intl.t('storefront.component.store-selector.no-stores')));
+        }
+
+        menu.append(storeList);
+
+        if (this.showNetworks) {
+            const networkList = document.createElement('div');
+            networkList.setAttribute('role', 'group');
+            networkList.setAttribute('data-test-store-selector-networks', '');
+            networkList.className = 'px-1';
+            networkList.style.maxHeight = '12rem';
+            networkList.style.overflowY = 'auto';
+            networkList.appendChild(this.createSeparator());
+            networkList.appendChild(this.createGroupLabel(this.intl.t('storefront.component.store-selector.networks')));
+
+            if (this.hasNetworks) {
+                this.networks.forEach((network) => {
+                    const isActive = network?.id === this.args.activeNetwork?.id;
+                    networkList.appendChild(this.createMenuItem(network?.name || '-', () => this.onSwitchNetwork(network), { isActive }));
+                });
+            } else {
+                networkList.appendChild(this.createEmptyItem(this.intl.t('storefront.component.store-selector.no-networks')));
+            }
+
+            menu.append(networkList);
         }
 
         const footer = document.createElement('div');
         footer.className = 'px-1';
 
-        const separator = document.createElement('div');
-        separator.className = 'next-dd-menu-seperator';
-
         const footerGroup = document.createElement('div');
         footerGroup.setAttribute('role', 'group');
+        footerGroup.setAttribute('data-test-store-selector-actions', '');
         footerGroup.className = 'px-1';
         footerGroup.appendChild(this.createMenuItem(this.intl.t('storefront.component.store-selector.create-storefront'), () => this.onCreateStore()));
 
-        footer.append(separator, footerGroup);
-        menu.append(storeList, footer);
+        if (typeof this.args.onCreateNetwork === 'function') {
+            footerGroup.appendChild(this.createMenuItem(this.intl.t('storefront.component.store-selector.create-network'), () => this.onCreateNetwork()));
+        }
+
+        footer.append(this.createSeparator(), footerGroup);
+        menu.append(footer);
 
         return menu;
     }
 
-    createMenuItem(label, callback) {
+    createSeparator() {
+        const separator = document.createElement('div');
+        separator.className = 'next-dd-menu-seperator';
+
+        return separator;
+    }
+
+    createGroupLabel(text) {
+        const label = document.createElement('div');
+        label.className = 'storefront-context-switcher__label';
+        label.setAttribute('role', 'presentation');
+        label.textContent = text;
+
+        return label;
+    }
+
+    createEmptyItem(text) {
+        const emptyItem = document.createElement('div');
+        emptyItem.className = 'next-dd-item storefront-context-switcher__empty';
+        emptyItem.setAttribute('role', 'menuitem');
+        emptyItem.setAttribute('aria-disabled', 'true');
+        emptyItem.textContent = text;
+
+        return emptyItem;
+    }
+
+    createMenuItem(label, callback, { isActive = false } = {}) {
         const item = document.createElement('a');
         item.href = 'javascript:;';
-        item.className = 'next-dd-item';
+        item.className = `next-dd-item${isActive ? ' storefront-context-switcher__item--active' : ''}`;
         item.setAttribute('role', 'menuitem');
+        if (isActive) {
+            item.setAttribute('aria-current', 'true');
+        }
         item.textContent = label;
         item.addEventListener('click', (event) => {
             event.preventDefault();
@@ -206,6 +291,26 @@ export default class StoreSelectorComponent extends Component {
 
         if (typeof onCreateStore === 'function') {
             onCreateStore();
+        }
+
+        this.close();
+    }
+
+    @action onSwitchNetwork(network) {
+        const { onSwitchNetwork } = this.args;
+
+        if (typeof onSwitchNetwork === 'function') {
+            onSwitchNetwork(network);
+        }
+
+        this.close();
+    }
+
+    @action onCreateNetwork() {
+        const { onCreateNetwork } = this.args;
+
+        if (typeof onCreateNetwork === 'function') {
+            onCreateNetwork();
         }
 
         this.close();

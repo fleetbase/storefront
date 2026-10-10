@@ -78,6 +78,13 @@ export default class NetworksIndexController extends BaseController {
     @service hostRouter;
 
     /**
+     * Inject the `storefront` service
+     *
+     * @var {Service}
+     */
+    @service storefront;
+
+    /**
      * Queryable parameters for this controller's model
      *
      * @var {Array}
@@ -165,27 +172,8 @@ export default class NetworksIndexController extends BaseController {
      * @public
      */
     @action createNetwork() {
-        const network = this.store.createRecord('network');
-        const currency = this.currentUser.getWhoisProperty('currency.code');
-
-        if (currency) {
-            network.setProperties({ currency });
-        }
-
-        this.modalsManager.show('modals/create-network', {
-            title: this.intl.t('storefront.networks.index.create-new-network'),
-            network,
-            confirm: (modal) => {
-                modal.startLoading();
-
-                return network.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
-                    return this.hostRouter.refresh();
-                });
-            },
-            decline: () => {
-                return network.destroyRecord();
-            },
+        return this.storefront.createNewNetwork({
+            onSuccess: () => this.hostRouter.refresh(),
         });
     }
 

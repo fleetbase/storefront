@@ -171,6 +171,19 @@ test('food truck filters enforce tenant vehicle storefront and deleted-record co
         ->and($public->toSql())->not->toContain('"food_trucks"."deleted_at" is null');
 });
 
+test('food truck network filter constrains trucks to the stores that are members of the network', function () {
+    $builder = applyStorefrontFilter(
+        FoodTruckFilter::class,
+        (new FoodTruck())->newQuery(),
+        'int/v1/storefront/food-trucks',
+        ['network' => 'network_uuid']
+    );
+
+    expect($builder->toSql())->toContain('exists')
+        ->and($builder->toSql())->toContain('"network_uuid" = ?')
+        ->and($builder->getBindings())->toContain('network_uuid');
+});
+
 test('food truck service-area filter resolves public ids and UUIDs before constraining trucks', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();

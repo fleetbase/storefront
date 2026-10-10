@@ -298,6 +298,12 @@ storefront:
     store-selector:
       no-stores: No stores to select
       create-storefront: Create a new
+      store: Store
+      network: Network
+      stores: Stores
+      networks: Networks
+      no-networks: No networks
+      create-network: Create network
   home:
     title: Storefront Dashboard
   customers:
@@ -353,9 +359,12 @@ storefront:
       delete-this-network-all-assigned-stores-customer-order: Are you sure you wish to delete this network ({networkName})? All assigned stores, customers, orders will no longer be reachable.
       network:
         manage-network: Manage Network
+        all-networks: All networks
         settings: Settings
         customers: Customers
         orders: Orders
+        trucks:
+          empty-state: No trucks yet. Trucks are created from a store and appear here for every store in the network.
         Network-changes-not-save: Network changes not saved!
         going-back-will-rollback-all-unsaved-changes: Going back will rollback all unsaved changes, are you sure you wish to continue?
         index:

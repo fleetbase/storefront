@@ -29,9 +29,19 @@ class StorefrontStub {
         public_id: 'store_123',
         currency: 'USD',
     };
+    activeNetwork = null;
+    createNetworkCalls = [];
+
+    get isNetworkContext() {
+        return Boolean(this.activeNetwork);
+    }
 
     setActiveStorefront(store) {
         this.activeStore = store;
+    }
+
+    createNewNetwork(options) {
+        this.createNetworkCalls.push(options);
     }
 }
 
@@ -101,10 +111,20 @@ class LoaderStub {
 
 class HostRouterStub {
     refreshCount = 0;
+    transitions = [];
 
     refresh() {
         this.refreshCount++;
         return Promise.resolve();
+    }
+
+    transitionTo(...args) {
+        this.transitions.push(args);
+        return Promise.resolve();
+    }
+
+    isActive() {
+        return false;
     }
 }
 
@@ -337,5 +357,73 @@ module('Unit | Controller | application', function (hooks) {
         const results = await controller.searchNavigation({ query: 'pizza', limit: 12 });
 
         assert.deepEqual(results, []);
+    });
+
+    test('it rewrites the sidebar for the network context', function (assert) {
+        const storefront = this.owner.lookup('service:storefront');
+        const hostRouter = this.owner.lookup('service:host-router');
+        storefront.activeNetwork = { id: 'network_uuid', public_id: 'network_123', name: 'Downtown Market' };
+
+        const controller = this.owner.lookup('controller:application');
+        const items = controller.navigationItems;
+
+        assert.true(controller.isNetworkContext);
+        assert.deepEqual(
+            items.map((item) => item.label),
+            ['Stores', 'Trucks', 'Orders', 'Customers', 'Settings'],
+            'network sections replace the store sections'
+        );
+        assert.deepEqual(
+            items.map((item) => item.id),
+            ['network:network_123:stores', 'network:network_123:trucks', 'network:network_123:orders', 'network:network_123:customers', 'network:network_123:index'],
+            'items are keyed by network so two networks never share an entry'
+        );
+        assert.ok(
+            items.every((item) => item.route === undefined),
+            'network items do not use shared route-name matching'
+        );
+
+        hostRouter.isActive = (route, publicId) => route === 'console.storefront.networks.index.network.trucks' && publicId === 'network_123';
+        assert.true(items[1].activeWhen(), 'the trucks section is active on the network trucks route');
+        assert.false(items[0].activeWhen(), 'the stores section is not');
+
+        items[2].onClick();
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.orders', 'network_123']], 'sections transition with the network id');
+    });
+
+    test('switching to a network enters its stores page', function (assert) {
+        const controller = this.owner.lookup('controller:application');
+        const hostRouter = this.owner.lookup('service:host-router');
+
+        controller.switchActiveNetwork({ id: 'network_uuid', public_id: 'network_123' });
+
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.stores', 'network_123']]);
+    });
+
+    test('switching to a store from a network lands on the store dashboard', async function (assert) {
+        const storefront = this.owner.lookup('service:storefront');
+        const hostRouter = this.owner.lookup('service:host-router');
+        const store = this.owner.lookup('service:store');
+        storefront.activeNetwork = { id: 'network_uuid', public_id: 'network_123', name: 'Downtown Market' };
+
+        const controller = this.owner.lookup('controller:application');
+        await controller.switchActiveStore({ id: 'next_store_uuid', public_id: 'store_456', name: 'Next Store' });
+
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.home']], 'leaves the network page instead of refreshing it');
+        assert.strictEqual(hostRouter.refreshCount, 0);
+        assert.strictEqual(storefront.activeStore.id, 'next_store_uuid', 'the selected store becomes active');
+        assert.strictEqual(store.requests[store.requests.length - 1].params.owner_uuid, 'next_store_uuid', 'categories load for the selected store');
+    });
+
+    test('creating a network switches into it once it is saved', function (assert) {
+        const controller = this.owner.lookup('controller:application');
+        const storefront = this.owner.lookup('service:storefront');
+        const hostRouter = this.owner.lookup('service:host-router');
+
+        controller.createNewNetwork();
+        assert.strictEqual(storefront.createNetworkCalls.length, 1, 'delegates to the storefront service');
+
+        storefront.createNetworkCalls[0].onSuccess({ id: 'network_uuid', public_id: 'network_123' });
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.stores', 'network_123']]);
     });
 });

@@ -1,0 +1,15 @@
+<Layout::Section::Header @title={{t "storefront.common.food-trucks"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} />
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <Layout::Resource::CardsGrid
+        @resource="truck"
+        @data={{@model}}
+        @columns="4"
+        @containerClass="p-4"
+        @emptyStateText={{t "storefront.networks.index.network.trucks.empty-state"}}
+        class="h-full"
+        as |Item|
+    >
+        <Storefront::Truck::Card @truck={{Item.model}} @onEdit={{this.editFoodTruck}} @onAssignCatalogs={{this.assignCatalogs}} @onDelete={{this.deleteFoodTruck}} />
+    </Layout::Resource::CardsGrid>
+</Layout::Section::Body>

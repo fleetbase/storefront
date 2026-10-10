@@ -31,9 +31,15 @@ class StoreStub {
         };
     }
 
+    networks = [{ id: 'network_uuid', name: 'Downtown Market', public_id: 'network_123' }];
+
     peekRecord(modelName, id) {
         if (modelName === 'store') {
             return this.stores.find((store) => store.id === id);
+        }
+
+        if (modelName === 'network') {
+            return this.networks.find((network) => network.id === id);
         }
     }
 }
@@ -95,5 +101,52 @@ module('Unit | Service | storefront', function (hooks) {
         assert.strictEqual(currentUser.getOption('activeStorefront'), undefined, 'clears the stale persisted selection');
         assert.strictEqual(service.activeStoreId, undefined, 'clears tracked selection outside render');
         assert.strictEqual(service.activeStore, null, 'empty state remains safe to consume from widgets');
+    });
+
+    test('it is in the store context until a network is entered', function (assert) {
+        const service = this.owner.lookup('service:storefront');
+        service.synchronizeActiveStore();
+
+        assert.strictEqual(service.activeNetwork, null, 'no network is active by default');
+        assert.false(service.isNetworkContext, 'defaults to the store context');
+        assert.strictEqual(service.activeContextType, 'store');
+        assert.strictEqual(service.activeContext.id, 'store_uuid', 'the active context is the active store');
+        assert.strictEqual(service.getActiveNetwork('name'), null, 'network lookups are empty outside a network');
+    });
+
+    test('entering a network scopes the console to it without touching the active store', function (assert) {
+        const service = this.owner.lookup('service:storefront');
+        const currentUser = this.owner.lookup('service:current-user');
+        const events = [];
+        service.synchronizeActiveStore();
+        service.on('storefront.context.changed', (type, context) => events.push([type, context?.id]));
+
+        service.setActiveNetwork({ id: 'network_uuid' });
+
+        assert.true(service.isNetworkContext, 'the network context is active');
+        assert.strictEqual(service.activeContextType, 'network');
+        assert.strictEqual(service.activeNetwork.name, 'Downtown Market', 'resolves the network from the store');
+        assert.strictEqual(service.activeContext.id, 'network_uuid', 'the active context is the network');
+        assert.strictEqual(service.getActiveNetwork('public_id'), 'network_123', 'reads properties of the active network');
+        assert.strictEqual(service.activeStore.id, 'store_uuid', 'the active store is kept for when the user leaves the network');
+        assert.strictEqual(currentUser.getOption('activeStorefront'), 'store_uuid', 'the network context is not persisted as the storefront');
+
+        service.setActiveNetwork({ id: 'network_uuid' });
+        assert.deepEqual(events, [['network', 'network_uuid']], 'setting the same network again does not re-announce the context');
+
+        service.clearActiveNetwork();
+        assert.false(service.isNetworkContext, 'leaving the network returns to the store context');
+        assert.deepEqual(events, [
+            ['network', 'network_uuid'],
+            ['store', 'store_uuid'],
+        ]);
+    });
+
+    test('a network that is not loaded leaves the console in the store context', function (assert) {
+        const service = this.owner.lookup('service:storefront');
+        service.setActiveNetwork({ id: 'missing_network_uuid' });
+
+        assert.strictEqual(service.activeNetwork, null, 'an unknown network does not resolve');
+        assert.false(service.isNetworkContext, 'the store context stays in charge');
     });
 });

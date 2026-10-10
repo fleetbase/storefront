@@ -28,6 +28,19 @@ class FoodTruckFilter extends FleetOpsOrderFilter
         );
     }
 
+    /**
+     * Trucks run by any store that is a member of the network.
+     */
+    public function network(?string $network)
+    {
+        $this->builder->whereHas(
+            'store.networks',
+            function ($query) use ($network) {
+                $query->where('network_uuid', $network);
+            }
+        );
+    }
+
     public function serviceArea(string $serviceAreaId)
     {
         $matchingServiceAreaIds = ServiceArea::on(config('fleetbase.connection.db'))

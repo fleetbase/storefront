@@ -2,7 +2,6 @@ import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 
 export default class NetworksIndexNetworkOrdersRoute extends Route {
-    @service storefront;
     @service fetch;
 
     async model(params) {
@@ -15,7 +14,7 @@ export default class NetworksIndexNetworkOrdersRoute extends Route {
     }
 
     buildQueryParams(params = {}) {
-        return Object.entries({ ...params, storefront: this.storefront.getActiveStore('public_id') }).reduce((queryParams, [key, value]) => {
+        return Object.entries({ ...params, storefront: this.modelFor('networks.index.network').public_id }).reduce((queryParams, [key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
                 queryParams[key] = value;
             }

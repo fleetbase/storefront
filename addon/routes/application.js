@@ -1,6 +1,7 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { hash } from 'rsvp';
 
 export default class ApplicationRoute extends Route {
     @service fetch;
@@ -42,7 +43,10 @@ export default class ApplicationRoute extends Route {
     }
 
     model() {
-        return this.store.query('store', { limit: 300, sort: '-updated_at' });
+        return hash({
+            stores: this.store.query('store', { limit: 300, sort: '-updated_at' }),
+            networks: this.abilities.cannot('storefront list network') ? [] : this.store.query('network', { limit: 300, sort: '-updated_at' }),
+        });
     }
 
     setupController(controller) {
@@ -50,7 +54,7 @@ export default class ApplicationRoute extends Route {
         controller.loadProductCategories();
     }
 
-    afterModel(stores) {
+    afterModel({ stores }) {
         this.storefront.synchronizeActiveStore(stores);
         this.storefront.listenForIncomingOrders();
     }

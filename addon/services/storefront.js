@@ -18,6 +18,7 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service abilities;
     @service socket;
     @tracked activeStoreId;
+    @tracked activeNetworkId;
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -36,6 +37,39 @@ export default class StorefrontService extends Service.extend(Evented) {
     }
 
     /**
+     * Gets the active network. A network is active only while the user is inside a
+     * network page: the context is derived from the route, not persisted.
+     * @returns {Object|null} The active network record.
+     */
+    get activeNetwork() {
+        return this.activeNetworkId ? (this.store.peekRecord('network', this.activeNetworkId) ?? null) : null;
+    }
+
+    /**
+     * Whether the console is scoped to a network instead of a store.
+     * @returns {boolean}
+     */
+    get isNetworkContext() {
+        return Boolean(this.activeNetwork);
+    }
+
+    /**
+     * The active context type: a store or a network, never both at once.
+     * @returns {'store'|'network'}
+     */
+    get activeContextType() {
+        return this.isNetworkContext ? 'network' : 'store';
+    }
+
+    /**
+     * The record the console is currently scoped to.
+     * @returns {Object|null} the active network, otherwise the active store
+     */
+    get activeContext() {
+        return this.activeNetwork ?? this.activeStore;
+    }
+
+    /**
      * Sets the active storefront.
      * @param {Object} store - The store to set as active.
      */
@@ -43,6 +77,45 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.currentUser.setOption('activeStorefront', store.id);
         this.activeStoreId = store.id;
         this.trigger('storefront.changed', store);
+    }
+
+    /**
+     * Enters the network context for a network, or leaves it when given nothing.
+     * @param {Object|null} network - The network to scope the console to.
+     */
+    setActiveNetwork(network = null) {
+        const nextNetworkId = network?.id ?? null;
+
+        if ((this.activeNetworkId ?? null) === nextNetworkId) {
+            return;
+        }
+
+        this.activeNetworkId = nextNetworkId;
+        this.trigger('storefront.context.changed', this.activeContextType, this.activeContext);
+    }
+
+    /**
+     * Leaves the network context and returns to the active store.
+     */
+    clearActiveNetwork() {
+        this.setActiveNetwork(null);
+    }
+
+    /**
+     * Gets the active network or a specific property of it.
+     * @param {string|null} property - The property to retrieve from the active network.
+     * @returns {Object|null} The active network or its specific property.
+     */
+    getActiveNetwork(property = null) {
+        if (this.activeNetwork) {
+            if (typeof property === 'string') {
+                return get(this.activeNetwork, property);
+            }
+
+            return this.activeNetwork;
+        }
+
+        return null;
     }
 
     /**
@@ -249,6 +322,48 @@ export default class StorefrontService extends Service.extend(Evented) {
                     modal.stopLoading();
                     this.notifications.serverError(error);
                 }
+            },
+            ...options,
+        });
+    }
+
+    /**
+     * Creates a new network with given options.
+     * @param {Object} [options={}] - Options for creating the network; `onSuccess(network)` runs after it saves.
+     */
+    createNewNetwork(options = {}) {
+        const network = this.store.createRecord('network');
+        const currency = this.currentUser.getWhoisProperty('currency.code');
+
+        if (currency) {
+            network.setProperties({ currency });
+        }
+
+        this.modalsManager.show('modals/create-network', {
+            title: this.intl.t('storefront.networks.index.create-new-network'),
+            acceptButtonIcon: 'check',
+            acceptButtonIconPrefix: 'fas',
+            declineButtonIcon: 'times',
+            declineButtonIconPrefix: 'fas',
+            network,
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await network.save();
+                    this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
+                    if (typeof options?.onSuccess === 'function') {
+                        options.onSuccess(network);
+                    }
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+            decline: (modal) => {
+                network.destroyRecord();
+                modal.done();
             },
             ...options,
         });

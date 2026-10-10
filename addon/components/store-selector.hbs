@@ -1,16 +1,18 @@
-{{#if @activeStore}}
+{{#if this.activeContext}}
     <div class={{@wrapperClass}} {{did-insert this.setupTrigger}} {{will-destroy this.close}} ...attributes>
         <Button
-            title={{@activeStore.name}}
+            title={{concat this.contextLabel ": " this.activeContext.name}}
             class="{{concat "w-full " @buttonClass}} {{if this.isOpen "dd-is-open"}}"
             @wrapperClass={{concat "w-full " @buttonWrapperClass}}
             @size="xs"
             @type="primary"
-            @icon="store"
+            @icon={{if this.isNetworkContext "network-wired" "store"}}
             @iconSize="sm"
-            @text={{@activeStore.name}}
+            @text={{this.activeContext.name}}
             @textClass="truncate"
             @onClick={{this.toggle}}
+            data-test-store-selector-trigger
+            data-context={{if this.isNetworkContext "network" "store"}}
         />
     </div>
 {{else if (has-block)}}

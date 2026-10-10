@@ -1,17 +1,19 @@
-<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="900px" @minResizeWidth={{570}} @fullHeight={{true}}>
-    <Overlay::Header @title={{t "storefront.networks.index.network.manage-network"}} @onPressCancel={{this.transitionBack}} />
-    <Overlay::Body class="p-0i" @increaseInnerBodyHeightBy="0" @wrapperClass="space-y-4 pt-4">
-        <div class="flex flex-col">
-            <div class="px-4 flex items-center section-header-title">
-                <FaIcon @icon="network-wired" @size="lg" class="text-sky-500 mr-3" />
-                <h3 class="text-lg font-semibold dark:text-white">
-                    {{@model.name}}
-                </h3>
+<div class="storefront-network-page" data-test-storefront-network-page>
+    <div class="storefront-network-page__header">
+        <Image src={{@model.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{n-a @model.name ""}} class="storefront-network-page__logo" />
+        <div class="storefront-network-page__identity">
+            <h2 class="storefront-network-page__name" data-test-network-page-name>{{n-a @model.name}}</h2>
+            <div class="storefront-network-page__meta">
+                <Badge @status={{if @model.online "online" "offline"}} @text={{if @model.online (t "storefront.common.online") (t "storefront.common.offline")}} @size="xs" />
+                <span>{{t "storefront.networks.card.stores-count" count=this.storesCount}}</span>
+                {{#if @model.currency}}
+                    <span>{{@model.currency}}</span>
+                {{/if}}
             </div>
         </div>
-        <TabNavigation @tabs={{this.tabs}}>
-            {{outlet}}
-            <Spacer @height="400px" />
-        </TabNavigation>
-    </Overlay::Body>
-</Overlay>
+        <Button @icon="arrow-left" @size="xs" @text={{t "storefront.networks.index.network.all-networks"}} @onClick={{this.transitionBack}} data-test-network-page-back />
+    </div>
+    <div class="storefront-network-page__body">
+        {{outlet}}
+    </div>
+</div>

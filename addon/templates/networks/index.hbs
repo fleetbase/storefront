@@ -1,25 +1,29 @@
-<Layout::Section::Header @title={{t "storefront.common.network"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-    <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} @permission="storefront create network" />
-</Layout::Section::Header>
+{{#if this.storefront.isNetworkContext}}
+    {{outlet}}
+{{else}}
+    <Layout::Section::Header @title={{t "storefront.common.network"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+        <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} @permission="storefront create network" />
+    </Layout::Section::Header>
 
-<Layout::Section::Body class="overflow-y-scroll-i h-full">
-    <Layout::Resource::CardsGrid
-        @resource="network"
-        @data={{@model}}
-        @columns="4"
-        @showPagination={{true}}
-        @page={{this.page}}
-        @onPageChange={{fn (mut this.page)}}
-        @paginationMeta={{@model.meta}}
-        @containerClass="p-4"
-        @emptyStateText={{t "storefront.networks.index.empty-state"}}
-        @createButtonText={{t "storefront.networks.index.create-network"}}
-        @onCreateNew={{this.createNetwork}}
-        class="h-full"
-        as |Item|
-    >
-        <Storefront::Network::Card @network={{Item.model}} @onOpen={{this.manageNetwork}} @onInvite={{this.sendInvites}} @onDelete={{this.deleteNetwork}} />
-    </Layout::Resource::CardsGrid>
-</Layout::Section::Body>
+    <Layout::Section::Body class="overflow-y-scroll-i h-full">
+        <Layout::Resource::CardsGrid
+            @resource="network"
+            @data={{@model}}
+            @columns="4"
+            @showPagination={{true}}
+            @page={{this.page}}
+            @onPageChange={{fn (mut this.page)}}
+            @paginationMeta={{@model.meta}}
+            @containerClass="p-4"
+            @emptyStateText={{t "storefront.networks.index.empty-state"}}
+            @createButtonText={{t "storefront.networks.index.create-network"}}
+            @onCreateNew={{this.createNetwork}}
+            class="h-full"
+            as |Item|
+        >
+            <Storefront::Network::Card @network={{Item.model}} @onOpen={{this.manageNetwork}} @onInvite={{this.sendInvites}} @onDelete={{this.deleteNetwork}} />
+        </Layout::Resource::CardsGrid>
+    </Layout::Section::Body>
 
-{{outlet}}
+    {{outlet}}
+{{/if}}

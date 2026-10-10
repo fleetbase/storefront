@@ -2,14 +2,6 @@ import Service, { inject as service } from '@ember/service';
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
 
-class StorefrontStubService extends Service {
-    getActiveStore(key) {
-        if (key === 'public_id') {
-            return 'store_123';
-        }
-    }
-}
-
 class FetchStubService extends Service {
     @service store;
 
@@ -47,21 +39,24 @@ module('Unit | Route | networks/index/network/orders', function (hooks) {
     setupTest(hooks);
 
     hooks.beforeEach(function () {
-        this.owner.register('service:storefront', StorefrontStubService);
         this.owner.register('service:fetch', FetchStubService);
     });
 
-    test('it loads orders from the Storefront internal namespace as Ember Data models', async function (assert) {
+    test('it loads the network orders from the Storefront internal namespace as Ember Data models', async function (assert) {
         let route = this.owner.lookup('route:networks/index/network/orders');
         let fetch = this.owner.lookup('service:fetch');
 
         assert.ok(route);
+        route.modelFor = (name) => {
+            assert.strictEqual(name, 'networks.index.network', 'orders are scoped to the network being viewed');
+            return { id: 'network_uuid', public_id: 'network_123' };
+        };
 
         let orders = await route.model({ page: 2, limit: undefined, sort: '-created_at', query: undefined, status: '', customer: null });
         let request = fetch.calls[0];
 
         assert.strictEqual(request.path, 'orders');
-        assert.deepEqual(request.params, { page: 2, sort: '-created_at', storefront: 'store_123' });
+        assert.deepEqual(request.params, { page: 2, sort: '-created_at', storefront: 'network_123' });
         assert.deepEqual(request.options, { namespace: 'storefront/int/v1' });
         assert.strictEqual(fetch.normalized.modelType, 'orders');
         assert.strictEqual(orders[0].constructor.modelName, 'order');

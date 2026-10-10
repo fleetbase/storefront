@@ -1,5 +1,15 @@
 <EmberWormhole @to="sidebar-menu-items">
-    <StoreSelector @stores={{@model}} @activeStore={{this.activeStore}} @buttonClass="mb-2" @onCreateStore={{this.createNewStorefront}} @onSwitchStore={{this.switchActiveStore}} />
+    <StoreSelector
+        @stores={{@model.stores}}
+        @networks={{@model.networks}}
+        @activeStore={{this.activeStore}}
+        @activeNetwork={{this.activeNetwork}}
+        @buttonClass="mb-2"
+        @onCreateStore={{this.createNewStorefront}}
+        @onSwitchStore={{this.switchActiveStore}}
+        @onCreateNetwork={{this.createNewNetwork}}
+        @onSwitchNetwork={{this.switchActiveNetwork}}
+    />
     <Layout::Sidebar::Navigator @items={{this.navigationItems}} @searchPlaceholder="Search Storefront..." @searchProvider={{this.searchNavigation}} />
 </EmberWormhole>
 

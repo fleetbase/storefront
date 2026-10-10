@@ -36,6 +36,7 @@ export default buildRoutes(function () {
         this.route('index', { path: '/' }, function () {
             this.route('network', { path: '/:public_id' }, function () {
                 this.route('stores');
+                this.route('trucks');
                 this.route('customers');
                 this.route('orders');
             });

@@ -13,10 +13,79 @@ export default class ApplicationController extends Controller {
     @service abilities;
     @service store;
     @alias('storefront.activeStore') activeStore;
+    @alias('storefront.activeNetwork') activeNetwork;
     @tracked productCategories = [];
     categoryLoadStoreUuid;
 
+    get isNetworkContext() {
+        return Boolean(this.activeNetwork?.id);
+    }
+
+    /**
+     * The sidebar is rewritten for the active context: a network gets its own
+     * navigation, everything else is scoped to the active store.
+     */
     get navigationItems() {
+        return this.isNetworkContext ? this.networkNavigationItems : this.storeNavigationItems;
+    }
+
+    get networkNavigationItems() {
+        const publicId = this.activeNetwork.public_id;
+        const networkItem = (key, item) => {
+            const route = `console.storefront.networks.index.network.${key}`;
+
+            return {
+                id: `network:${publicId}:${key}`,
+                ...item,
+                // These routes share one dynamic segment, so route-name matching alone cannot tell networks apart.
+                activeWhen: () => this.hostRouter.isActive(route, publicId),
+                onClick: () => this.hostRouter.transitionTo(route, publicId),
+            };
+        };
+
+        return [
+            networkItem('stores', {
+                label: this.intl.t('storefront.networks.index.network.stores.store'),
+                description: 'Stores selling through this network, their categories and invitations.',
+                icon: 'store',
+                permission: 'storefront view network',
+                keywords: ['stores', 'members', 'invite', 'categories'],
+            }),
+            networkItem('trucks', {
+                label: this.intl.t('storefront.common.food-trucks'),
+                description: 'Trucks run by the stores in this network.',
+                icon: 'truck',
+                permission: 'storefront list food-truck',
+                visible: this.can('storefront see food-truck'),
+                keywords: ['vehicles', 'mobile store', 'truck'],
+            }),
+            networkItem('orders', {
+                label: this.intl.t('storefront.networks.index.network.orders'),
+                description: 'Orders placed through this network.',
+                icon: 'file-invoice-dollar',
+                permission: 'storefront list order',
+                visible: this.can('storefront see order'),
+                keywords: ['fulfillment', 'deliveries', 'checkout orders'],
+            }),
+            networkItem('customers', {
+                label: this.intl.t('storefront.networks.index.network.customers'),
+                description: 'Customers who ordered through this network.',
+                icon: 'users',
+                permission: 'storefront list user',
+                visible: this.can('storefront see user'),
+                keywords: ['contacts', 'buyers', 'users'],
+            }),
+            networkItem('index', {
+                label: this.intl.t('storefront.networks.index.network.settings'),
+                description: 'Network details, gateways and notification channels.',
+                icon: 'cog',
+                permission: 'storefront update network',
+                keywords: ['settings', 'general', 'gateways', 'notifications'],
+            }),
+        ];
+    }
+
+    get storeNavigationItems() {
         const hasActiveStore = Boolean(this.activeStore?.id);
 
         return [
@@ -267,12 +336,22 @@ export default class ApplicationController extends Controller {
         });
     }
 
+    @action createNewNetwork() {
+        return this.storefront.createNewNetwork({
+            onSuccess: (network) => this.switchActiveNetwork(network),
+        });
+    }
+
     @action switchActiveStore(store) {
         const loader = this.loader.show({ loadingMessage: `Switching Storefront to ${store.name}...` });
+        const leavingNetwork = this.isNetworkContext;
         this.storefront.setActiveStorefront(store);
         this.productCategories = [];
-        return this.hostRouter
-            .refresh()
+        // A page inside a network has no meaning for a store, so the switch lands on the store dashboard;
+        // leaving the network route is what clears the network context.
+        const transition = leavingNetwork ? this.hostRouter.transitionTo('console.storefront.home') : this.hostRouter.refresh();
+
+        return Promise.resolve(transition)
             .then(() => {
                 this.notifyPropertyChange('activeStore');
                 return this.loadProductCategories(store.id);
@@ -280,6 +359,11 @@ export default class ApplicationController extends Controller {
             .finally(() => {
                 this.loader.removeLoader(loader);
             });
+    }
+
+    @action switchActiveNetwork(network) {
+        // Entering the network route is what sets the network context.
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.stores', network.public_id);
     }
 
     @action

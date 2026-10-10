@@ -3,7 +3,6 @@ import { inject as service } from '@ember/service';
 
 export default class NetworksIndexNetworkCustomersRoute extends Route {
     @service store;
-    @service storefront;
 
     queryParams = {
         page: { refreshModel: true, as: 'n_page' },
@@ -21,6 +20,6 @@ export default class NetworksIndexNetworkCustomersRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('customer', { ...params, storefront: this.storefront.getActiveStore('public_id') });
+        return this.store.query('customer', { ...params, storefront: this.modelFor('networks.index.network').public_id });
     }
 }

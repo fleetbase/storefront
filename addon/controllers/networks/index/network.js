@@ -31,7 +31,11 @@ export default class NetworksIndexNetworkController extends BaseController {
         ];
     }
 
-    @action transitionBack({ closeOverlay }) {
+    get storesCount() {
+        return this.model?.stores_count ?? this.model?.stores?.length ?? 0;
+    }
+
+    @action transitionBack({ closeOverlay } = {}) {
         if (this.model.hasDirtyAttributes) {
             // warn user about unsaved changes
             return this.modalsManager.confirm({
@@ -48,8 +52,12 @@ export default class NetworksIndexNetworkController extends BaseController {
     }
 
     @action exit(closeOverlay) {
-        return closeOverlay(() => {
-            return this.transitionToRoute('networks.index');
-        });
+        const leave = () => this.transitionToRoute('networks.index');
+
+        if (typeof closeOverlay === 'function') {
+            return closeOverlay(leave);
+        }
+
+        return leave();
     }
 }
