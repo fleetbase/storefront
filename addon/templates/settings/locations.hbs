@@ -1,47 +1,33 @@
-<SettingsContainer>
-    <form>
-        <div class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between">
-                <div>
-                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.settings.locations.location-setting"}}
-                    </h1>
-                    <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.settings.locations.manage-store"}}
-                    </p>
-                </div>
-                <div>
-                    <Button
-                        @wrapperClass="flex-shrink-0"
-                        @icon="plus"
-                        @iconPrefix="fas"
-                        @type="primary"
-                        @text={{t "storefront.settings.locations.text-location"}}
-                        @onClick={{this.createNewLocation}}
-                    />
-                </div>
+<div class="storefront-settings-page" data-test-settings-locations>
+    <section class="storefront-settings-section">
+        <ContentPanel @title={{t "storefront.settings.sections.locations"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <div class="storefront-settings-section__toolbar">
+                <p class="storefront-settings-section__lede">{{t "storefront.settings.locations.manage-store"}}</p>
+                <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.settings.locations.text-location"}} @onClick={{this.createNewLocation}} @permission="storefront create store-location" data-test-create-location />
             </div>
-
-            {{#each @model as |storeLocation|}}
-                <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h4 class="text-sm tracking-wide uppercase text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.settings.locations.store-hour"}}</h4>
-                        </div>
-                        <div class="flex items-center">
-                            <Button @icon="edit" @text={{t "storefront.common.edit"}} @onClick={{fn this.editStoreLocation storeLocation}} @wrapperClass="mr-2" />
-                            <Button @icon="trash" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.removeStoreLocation storeLocation}} />
-                        </div>
-                    </div>
-                    <div class="mb-6 uppercase dark:text-gray-100">
-                        {{storeLocation.address}}
-                    </div>
-                    <div>
-                        <ScheduleManager @subject={{storeLocation}} @subjectKey="store_location_uuid" @hourModelType="store-hour" class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2" />
-                    </div>
-                </ContentPanel>
-            {{/each}}
-        </div>
-    </form>
-    <Spacer @height="300px" />
-</SettingsContainer>
+            {{#if @model.length}}
+                <div class="space-y-4" data-test-locations-list>
+                    {{#each @model as |storeLocation|}}
+                        <ContentPanel @title={{storeLocation.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" data-test-location={{storeLocation.id}}>
+                            <div class="storefront-settings-section__toolbar">
+                                <div>
+                                    <div class="storefront-settings-location__address">{{n-a (or storeLocation.address storeLocation.place.address)}}</div>
+                                    <Storefront::HoursStrip @hours={{storeLocation.hours}} @showCount={{true}} class="storefront-settings-location__strip" />
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <Button @size="xs" @icon="pencil" @text={{t "storefront.common.edit"}} @onClick={{fn this.editStoreLocation storeLocation}} @permission="storefront update store-location" />
+                                    <Button @size="xs" @icon="trash" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.removeStoreLocation storeLocation}} @permission="storefront delete store-location" />
+                                </div>
+                            </div>
+                            <h4 class="storefront-settings-location__hours-title">{{t "storefront.settings.locations.store-hour"}}</h4>
+                            <ScheduleManager @subject={{storeLocation}} @subjectKey="store_location_uuid" @hourModelType="store-hour" class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2" />
+                        </ContentPanel>
+                    {{/each}}
+                </div>
+            {{else}}
+                <p class="storefront-settings-section__note mt-0">{{t "storefront.settings.locations.empty"}}</p>
+            {{/if}}
+        </ContentPanel>
+    </section>
+    <Spacer @height="120px" />
+</div>

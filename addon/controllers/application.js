@@ -243,6 +243,45 @@ export default class ApplicationController extends Controller {
         ];
     }
 
+    /**
+     * Store context: the networks the active store belongs to, as cross-links.
+     * Clicking one enters that network's context.
+     */
+    get memberOfItems() {
+        if (this.isNetworkContext) {
+            return [];
+        }
+
+        const memberships = this.activeStore?.networks ?? [];
+
+        return memberships.filter((network) => network?.public_id).map((network) => ({ id: network.public_id, name: network.name, icon: 'network-wired', network }));
+    }
+
+    /**
+     * Network context: the organisation's own stores that are members of the active
+     * network. Clicking one returns to that store's context.
+     */
+    get networkStoreItems() {
+        if (!this.isNetworkContext) {
+            return [];
+        }
+
+        const networkId = this.activeNetwork.id;
+        const stores = this.model?.stores?.toArray?.() ?? Array.from(this.model?.stores ?? []);
+
+        return stores
+            .filter((store) => (store.networks ?? []).some((network) => network?.uuid === networkId || network?.id === networkId))
+            .map((store) => ({ id: store.public_id, name: store.name, icon: 'store', meta: store.currency, store }));
+    }
+
+    @action selectMemberNetwork(item) {
+        return this.switchActiveNetwork(item.network);
+    }
+
+    @action selectNetworkStore(item) {
+        return this.switchActiveStore(item.store);
+    }
+
     get activeStoreUuid() {
         return this.activeStore?.id;
     }

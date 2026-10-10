@@ -206,6 +206,32 @@
         </ContentPanel>
     </section>
 
+    <section id="settings-hours" class="storefront-settings-section" data-test-settings-section="hours">
+        <ContentPanel @title={{t "storefront.settings.sections.hours"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <div class="storefront-settings-section__toolbar">
+                <p class="storefront-settings-section__lede">{{t "storefront.settings.hours.lede"}}</p>
+                <Button @size="sm" @icon="pencil" @text={{t "storefront.settings.hours.edit"}} @onClick={{this.editHours}} @permission="storefront update store-location" data-test-edit-hours />
+            </div>
+            {{#if this.locations.length}}
+                <div class="storefront-member-list" data-test-hours-locations>
+                    {{#each this.locations as |location|}}
+                        <div class="storefront-member-row storefront-hours-row" data-test-hours-location={{location.id}}>
+                            <div class="storefront-member-row__identity">
+                                <div class="storefront-member-row__name">{{location.name}}</div>
+                                <div class="storefront-member-row__meta">{{n-a (or location.address location.place.address)}}</div>
+                            </div>
+                            <div class="storefront-hours-row__strip">
+                                <Storefront::HoursStrip @hours={{location.hours}} @showCount={{true}} />
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            {{else}}
+                <p class="storefront-settings-section__note mt-0">{{t "storefront.settings.hours.empty"}}</p>
+            {{/if}}
+        </ContentPanel>
+    </section>
+
     <section id="settings-checkout" class="storefront-settings-section" data-test-settings-section="checkout">
         <ContentPanel @title={{t "storefront.settings.sections.checkout-rules"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
             <p class="storefront-settings-section__lede">{{t "storefront.settings.sections.checkout-rules-lede"}}</p>
@@ -254,6 +280,19 @@
                         <SelectOption::User @option={{model}} />
                     </ModelSelectMultiple>
                 </InputGroup>
+            </div>
+        </ContentPanel>
+    </section>
+
+    <section id="settings-danger" class="storefront-settings-section" data-test-settings-section="danger">
+        <ContentPanel @title={{t "storefront.settings.sections.danger"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic storefront-settings-danger">
+            <p class="storefront-settings-section__lede">{{t "storefront.settings.danger.lede"}}</p>
+            <div class="storefront-settings-danger__row">
+                <div>
+                    <div class="storefront-settings-danger__title">{{t "storefront.settings.danger.delete-title" name=@model.name}}</div>
+                    <div class="storefront-settings-danger__description">{{t "storefront.settings.danger.delete-description"}}</div>
+                </div>
+                <Button @type="danger" @size="sm" @icon="trash" @text={{t "storefront.settings.danger.delete-button"}} @onClick={{this.deleteStore}} @permission="storefront delete store" data-test-delete-store />
             </div>
         </ContentPanel>
     </section>

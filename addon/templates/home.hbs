@@ -10,6 +10,12 @@
         @stickyHeader={{true}}
         class="storefront-dashboard-page"
     >
+        {{#if this.activeStore}}
+            <span class="storefront-open-state {{if this.openState.isOpen 'is-open' 'is-closed'}} {{unless this.openState.hasHours 'is-unknown'}}" title={{this.activeStore.name}} data-test-open-state data-open={{if this.openState.isOpen "true" "false"}}>
+                <span class="storefront-open-state__dot"></span>
+                {{this.openStateLabel}}
+            </span>
+        {{/if}}
         <div class="storefront-dashboard-date-control storefront-datepicker">
             <DatePicker
                 @value={{this.storefrontDashboard.datePickerValue}}
@@ -20,6 +26,7 @@
                 class="form-input form-input-sm"
             />
         </div>
+        <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.newOrder}} @permission="storefront create order" data-test-dashboard-new-order />
     </Dashboard>
     <Spacer @height="300px" />
     {{outlet}}

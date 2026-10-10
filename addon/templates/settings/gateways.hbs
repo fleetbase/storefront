@@ -1,68 +1,50 @@
-<SettingsContainer>
-    <form>
-        <div class="space-y-6">
-            <div class="flex justify-between">
-                <div>
-                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.settings.gateways.geteway-settings"}}
-                    </h1>
-                    <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.settings.gateways.add-or-manage-your-paymeny-gateway-settings-here"}}
-                    </p>
-                </div>
-                <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.settings.gateways.create-new-gateway"}} @onClick={{this.createGateway}} />
-                </div>
+<div class="storefront-settings-page" data-test-settings-gateways>
+    <section class="storefront-settings-section">
+        <ContentPanel @title={{t "storefront.settings.sections.payment-gateways"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <div class="storefront-settings-section__toolbar">
+                <p class="storefront-settings-section__lede">{{t "storefront.settings.gateways.add-or-manage-your-paymeny-gateway-settings-here"}}</p>
+                <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.settings.gateways.create-new-gateway"}} @onClick={{this.createGateway}} @permission="storefront create gateway" data-test-create-gateway />
             </div>
-
-            {{#each @model as |gateway|}}
-                <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
-                    <InputGroup @name={{t "storefront.settings.gateways.gateway-name"}} @value={{gateway.name}} @helpText={{t "storefront.settings.gateways.helpText"}} />
-                    <InputGroup
-                        @name={{t "storefront.settings.gateways.gateway-code"}}
-                        @value={{gateway.code}}
-                        @disabled={{true}}
-                        @helpText={{t "storefront.settings.gateways.gateway-code-help-text"}}
-                    />
-                    <InputGroup
-                        @name={{t "storefront.settings.gateways.callback-url"}}
-                        @value={{gateway.callback_url}}
-                        @helpText={{t "storefront.settings.gateways.callback-url-help-text"}}
-                    />
-                    <InputGroup @name={{t "storefront.settings.gateways.return-url"}} @value={{gateway.return_url}} @helpText={{t "storefront.settings.gateways.return-url-help-text"}} />
-                    <div class="input-group">
-                        <Checkbox @value={{gateway.sandbox}} @label={{t "storefront.settings.gateways.this-is-a-sandbox-gateway"}} @onToggle={{fn (mut gateway.sandbox)}} />
-                    </div>
-                    <div>
-                        <h4 class="mb-2 font-semibold text-sm dark:text-white">{{t "storefront.common.config"}}</h4>
-                        {{#each-in gateway.config as |key value|}}
-                            {{#if (is-bool-value value)}}
-                                <div class="input-group">
-                                    <Checkbox @value={{value}} @label={{smart-humanize key}} @disabled={{true}} />
+            {{#if @model.length}}
+                <div class="space-y-4" data-test-gateways-list>
+                    {{#each @model as |gateway|}}
+                        <ContentPanel @title={{gateway.name}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" data-test-gateway={{gateway.id}}>
+                            <div class="storefront-settings-grid">
+                                <InputGroup @name={{t "storefront.settings.gateways.gateway-name"}} @value={{gateway.name}} @helpText={{t "storefront.settings.gateways.helpText"}} />
+                                <InputGroup @name={{t "storefront.settings.gateways.gateway-code"}} @value={{gateway.code}} @disabled={{true}} @helpText={{t "storefront.settings.gateways.gateway-code-help-text"}} />
+                                <InputGroup @name={{t "storefront.settings.gateways.callback-url"}} @value={{gateway.callback_url}} @helpText={{t "storefront.settings.gateways.callback-url-help-text"}} />
+                                <InputGroup @name={{t "storefront.settings.gateways.return-url"}} @value={{gateway.return_url}} @helpText={{t "storefront.settings.gateways.return-url-help-text"}} />
+                            </div>
+                            <div class="input-group">
+                                <Checkbox @value={{gateway.sandbox}} @label={{t "storefront.settings.gateways.this-is-a-sandbox-gateway"}} @onToggle={{fn (mut gateway.sandbox)}} />
+                            </div>
+                            <div>
+                                <h4 class="storefront-settings-location__hours-title">{{t "storefront.common.config"}}</h4>
+                                <div class="storefront-settings-grid">
+                                    {{#each-in gateway.config as |key value|}}
+                                        {{#if (is-bool-value value)}}
+                                            <div class="input-group">
+                                                <Checkbox @value={{value}} @label={{smart-humanize key}} @disabled={{true}} />
+                                            </div>
+                                        {{else}}
+                                            <InputGroup @name={{smart-humanize key}}>
+                                                <Input @type={{if (can "storefront update gateway") "text" "password"}} class="form-input w-full" placeholder={{humanize key}} @value={{value}} disabled />
+                                            </InputGroup>
+                                        {{/if}}
+                                    {{/each-in}}
                                 </div>
-                            {{else}}
-                                <InputGroup @name={{smart-humanize key}}>
-                                    <Input
-                                        @type={{if (can "storefront update gateway") "text" "password"}}
-                                        class="form-input w-full"
-                                        placeholder={{humanize key}}
-                                        @value={{value}}
-                                        disabled
-                                    />
-                                </InputGroup>
-                            {{/if}}
-                        {{/each-in}}
-                    </div>
-                    <div class="flex flex-row items-center space-x-2">
-                        {{#if (can "storefront update gateway")}}
-                            <Button @size="sm" @type="primary" @icon="pencil" @text="Edit Gateway" @onClick={{fn this.editGateway gateway}} />
-                        {{/if}}
-                        {{#if (can "storefront delete gateway")}}
-                            <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.settings.gateways.delete-payment-gateway"}} @onClick={{fn this.deleteGateway gateway}} />
-                        {{/if}}
-                    </div>
-                </ContentPanel>
-            {{/each}}
-        </div>
-    </form>
-</SettingsContainer>
+                            </div>
+                            <div class="flex flex-row items-center space-x-2">
+                                <Button @size="xs" @type="primary" @icon="pencil" @text={{t "storefront.settings.gateways.edit-payment-gateway"}} @onClick={{fn this.editGateway gateway}} @permission="storefront update gateway" />
+                                <Button @size="xs" @type="danger" @icon="trash" @text={{t "storefront.settings.gateways.delete-payment-gateway"}} @onClick={{fn this.deleteGateway gateway}} @permission="storefront delete gateway" />
+                            </div>
+                        </ContentPanel>
+                    {{/each}}
+                </div>
+            {{else}}
+                <p class="storefront-settings-section__note mt-0">{{t "storefront.settings.gateways.empty"}}</p>
+            {{/if}}
+        </ContentPanel>
+    </section>
+    <Spacer @height="120px" />
+</div>

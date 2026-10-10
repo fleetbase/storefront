@@ -14,16 +14,20 @@ export default class ScheduleManagerComponent extends Component {
         const { subject } = this.args;
         const { hours } = subject;
 
-        for (let i = 0; i < week.length; i++) {
-            const day = week.objectAt(i);
-
+        for (const day of week) {
             schedule[day] = [];
         }
 
-        for (let i = 0; i < hours.length; i++) {
-            const hour = hours.objectAt(i);
+        const list = hours?.toArray?.() ?? Array.from(hours ?? []);
 
-            schedule[hour.day_of_week].pushObject(hour);
+        // Hour rows arrive capitalised ("Monday") from the console and lowercase ("monday")
+        // from the API and seeds; bucket them by name regardless of case.
+        for (const hour of list) {
+            const day = week.find((name) => name.toLowerCase() === String(hour.day_of_week ?? '').toLowerCase());
+
+            if (day) {
+                schedule[day].push(hour);
+            }
         }
 
         return schedule;

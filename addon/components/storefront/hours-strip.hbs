@@ -5,4 +5,7 @@
             <span class="storefront-hours-strip__bar"></span>
         </span>
     {{/each}}
+    {{#if @showCount}}
+        <span class="storefront-hours-strip__count" data-test-hours-count>{{t "storefront.settings.hours.open-days" count=this.openDays}}</span>
+    {{/if}}
 </div>

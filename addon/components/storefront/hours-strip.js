@@ -9,7 +9,8 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
  */
 export default class StorefrontHoursStripComponent extends Component {
     get days() {
-        const hours = (this.args.hours ?? []).filter(Boolean);
+        const source = this.args.hours;
+        const hours = (source?.toArray?.() ?? Array.from(source ?? [])).filter(Boolean);
 
         return DAYS.map((day) => {
             const matches = hours.filter((hour) =>

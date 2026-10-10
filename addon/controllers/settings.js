@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { alias } from '@ember/object/computed';
+import { tracked } from '@glimmer/tracking';
 
 /**
  * Settings are one page with a section rail: the General page carries its sections as
@@ -38,20 +39,24 @@ export default class SettingsController extends Controller {
             section: `settings-${id}`,
             isActive: this.isGeneralRoute && this.activeSection === id,
         });
+        const locationsCount = this.model?.locations?.length ?? 0;
+        const gatewaysCount = this.model?.gateways?.length ?? 0;
 
         return [
             sectionItem('general', this.intl.t('storefront.common.general'), 'cog'),
             sectionItem('branding', this.intl.t('storefront.settings.sections.branding'), 'image'),
-            routeItem('locations', this.intl.t('storefront.common.location'), 'map-marker-alt', 'settings.locations'),
+            sectionItem('hours', this.intl.t('storefront.settings.sections.hours'), 'clock'),
+            routeItem('locations', this.intl.t('storefront.settings.sections.locations'), 'map-marker-alt', 'settings.locations', { badge: locationsCount || null }),
             sectionItem('checkout', this.intl.t('storefront.settings.sections.checkout-rules'), 'cart-shopping'),
-            routeItem('gateways', this.intl.t('storefront.common.gateways'), 'cash-register', 'settings.gateways'),
-            routeItem('notifications', this.intl.t('storefront.common.notification'), 'bell-concierge', 'settings.notifications'),
+            routeItem('gateways', this.intl.t('storefront.settings.sections.payment-gateways'), 'cash-register', 'settings.gateways', { badge: gatewaysCount || null }),
+            routeItem('notifications', this.intl.t('storefront.settings.sections.notification-channels'), 'bell-concierge', 'settings.notifications'),
             sectionItem('alerts', this.intl.t('storefront.common.alerts'), 'bell'),
             routeItem('api', this.intl.t('storefront.settings.sections.api-keys'), 'code', 'settings.api'),
+            sectionItem('danger', this.intl.t('storefront.settings.sections.danger'), 'triangle-exclamation'),
         ];
     }
 
-    activeSection = 'general';
+    @tracked activeSection = 'general';
 
     @action openItem(item) {
         if (item.route) {

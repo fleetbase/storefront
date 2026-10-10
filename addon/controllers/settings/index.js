@@ -11,8 +11,13 @@ export default class SettingsIndexController extends Controller {
     @service fetch;
     @service storefront;
     @service intl;
+    @service hostRouter;
+    @service modalsManager;
+    @service store;
 
     @alias('storefront.activeStore') activeStore;
+    /** The store's locations with their hours, handed over by the settings shell route. */
+    @tracked locations = [];
     queryParams = ['query'];
 
     @tracked query;
@@ -130,6 +135,50 @@ export default class SettingsIndexController extends Controller {
 
     @action removeTag(index) {
         this.model.tags?.removeAt(index);
+    }
+
+    @action editHours() {
+        return this.hostRouter.transitionTo('console.storefront.settings.locations');
+    }
+
+    /**
+     * Deletes the store after confirmation, then lands on the next store the
+     * organisation has or on the first-store flow when none is left.
+     */
+    @action deleteStore() {
+        const store = this.model;
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.settings.danger.confirm-title', { name: store.name }),
+            body: this.intl.t('storefront.settings.danger.confirm-body'),
+            acceptButtonText: this.intl.t('storefront.settings.danger.delete-button'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'trash',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await store.destroyRecord();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                    return;
+                }
+
+                this.notifications.success(this.intl.t('storefront.settings.danger.deleted', { name: store.name }));
+
+                const remaining = this.store.peekAll('store').filter((record) => !record.isDeleted && record.id !== store.id);
+
+                if (remaining.length) {
+                    this.storefront.setActiveStorefront(remaining[0]);
+                    await this.hostRouter.transitionTo('console.storefront.home');
+                    return this.hostRouter.refresh();
+                }
+
+                await this.hostRouter.transitionTo('console.storefront.home');
+                return this.storefront.createFirstStore();
+            },
+        });
     }
 
     @action saveSettings(event) {

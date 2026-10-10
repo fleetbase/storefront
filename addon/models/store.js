@@ -40,6 +40,8 @@ export default class StoreModel extends Model {
     @attr('raw') translations;
     @attr('raw') tags;
     @attr('raw') alertable;
+    /** The networks this store is a member of; present when the query asks `with: ['networks']`. */
+    @attr('raw') networks;
     @attr('string') logo_url;
     @attr('string') backdrop_url;
     @attr('string') slug;

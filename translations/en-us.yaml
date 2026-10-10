@@ -94,6 +94,8 @@ storefront:
     promotions: Promotions
     settings: Settings
     launch-app: Launch App
+    member-of: Member of
+    your-stores: Your stores in this network
   component:
     storefront-order-summary:
       order-summary-title: Storefront Order Summary
@@ -483,6 +485,20 @@ storefront:
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
   dashboard:
+    open-state:
+      open: "Open · closes {time}"
+      closed-until: "Closed · opens {time}"
+      closed-until-day: "Closed · opens {day} {time}"
+      closed: Closed
+      no-hours: No hours set
+      days:
+        monday: Monday
+        tuesday: Tuesday
+        wednesday: Wednesday
+        thursday: Thursday
+        friday: Friday
+        saturday: Saturday
+        sunday: Sunday
     attention:
       title: Needs attention
       subtitle: What the store acts on today.
@@ -1037,10 +1053,28 @@ storefront:
         delete-product: Are you sure you wish to delete this product?
         body-warning: Warning! Once this product is deleted it will no longer be accessible.
   settings:
+    hours:
+      lede: When each location is open. The app only offers what is inside these hours; edit them on the location.
+      edit: Edit hours
+      open-days: "{count, plural, =0 {closed every day} one {open # day a week} other {open # days a week}}"
+      empty: No locations yet. Hours belong to a location, so add one first.
+    danger:
+      lede: Actions here cannot be undone.
+      delete-title: Delete {name}
+      delete-description: Removes the store, its products, catalogs, locations and settings. Orders already placed stay on record.
+      delete-button: Delete store
+      confirm-title: Delete {name}?
+      confirm-body: This permanently deletes the store and everything it owns. Orders already placed stay on record. This cannot be undone.
+      deleted: "{name} was deleted."
     shell:
       copy-store-key: Copy store key
       store-key-copied: Store key copied.
     sections:
+      hours: Hours
+      locations: Locations
+      payment-gateways: Payment gateways
+      notification-channels: Notification channels
+      danger: Danger zone
       general: General
       branding: Branding and media
       checkout-rules: Checkout rules
@@ -1167,6 +1201,7 @@ storefront:
       enable-integrated-vendors: Enable integrated vendors
       save-changes: Save Changes
     locations:
+      empty: No locations yet. Add one so customers can pick up and so hours can be set.
       new-store-location: New store location
       add-new-location: Add new Location
       edit-store-location: Edit store location

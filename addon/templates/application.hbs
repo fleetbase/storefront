@@ -12,6 +12,8 @@
         @badge={{this.storefront.pendingInvitations.length}}
     />
     <Layout::Sidebar::Navigator @items={{this.navigationItems}} @searchPlaceholder="Search Storefront..." @searchProvider={{this.searchNavigation}} />
+    <Storefront::Network::SidebarGroup @id="member-of" @heading={{t "storefront.sidebar.member-of"}} @items={{this.memberOfItems}} @onSelect={{this.selectMemberNetwork}} />
+    <Storefront::Network::SidebarGroup @id="network-stores" @heading={{t "storefront.sidebar.your-stores"}} @items={{this.networkStoreItems}} @onSelect={{this.selectNetworkStore}} />
 </EmberWormhole>
 
 <Layout::Section::Container>

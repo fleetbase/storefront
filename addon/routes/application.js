@@ -44,7 +44,7 @@ export default class ApplicationRoute extends Route {
 
     model() {
         return hash({
-            stores: this.store.query('store', { limit: 300, sort: '-updated_at' }),
+            stores: this.store.query('store', { limit: 300, sort: '-updated_at', with: ['networks'] }),
             networks: this.abilities.cannot('storefront list network') ? [] : this.store.query('network', { limit: 300, sort: '-updated_at' }),
         });
     }
