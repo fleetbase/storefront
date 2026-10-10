@@ -1,4 +1,4 @@
-<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="1040px" @minResizeWidth={{760}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="min(1040px, calc(100vw - 8rem))" @minResizeWidth={{760}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
     <Overlay::Header @title={{t "storefront.orders.create.title"}} @onPressCancel={{this.cancel}}>
         <:actions>
             <span class="storefront-create-order__store">{{this.activeStore.name}} · {{t "storefront.orders.create.subtitle"}}</span>

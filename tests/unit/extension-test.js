@@ -42,8 +42,9 @@ module('Unit | Extension', function () {
             ]
         );
         assert.deepEqual(
-            storefrontRegistration.widgets.filter((widget) => widget.default).map((widget) => widget.id),
+            storefrontRegistration.widgets.filter((widget) => widget.options?.default || widget._options?.default).map((widget) => widget.id),
             [
+                'storefront-attention-strip-widget',
                 'storefront-kpi-revenue-widget',
                 'storefront-kpi-orders-widget',
                 'storefront-kpi-aov-widget',
@@ -53,15 +54,16 @@ module('Unit | Extension', function () {
                 'storefront-kpi-cart-conversion-widget',
                 'storefront-kpi-cancellation-rate-widget',
                 'storefront-revenue-trend-widget',
-                'storefront-orders-by-status-widget',
                 'storefront-top-products-widget',
-                'storefront-customer-insights-widget',
                 'storefront-orders-widget',
+                'storefront-customer-insights-widget',
+                'storefront-orders-by-status-widget',
+                'storefront-customers-widget',
             ]
         );
         assert.deepEqual(storefrontRegistration.widgets.find((widget) => widget.id === 'storefront-revenue-trend-widget').grid_options, { w: 6, h: 10, minW: 5, minH: 9 });
         assert.deepEqual(storefrontRegistration.widgets.find((widget) => widget.id === 'storefront-orders-by-status-widget').grid_options, { w: 6, h: 9, minW: 5, minH: 8 });
-        assert.deepEqual(storefrontRegistration.widgets.find((widget) => widget.id === 'storefront-top-products-widget').grid_options, { w: 6, h: 9, minW: 5, minH: 8 });
+        assert.deepEqual(storefrontRegistration.widgets.find((widget) => widget.id === 'storefront-top-products-widget').grid_options, { w: 6, h: 10, minW: 5, minH: 9 });
         assert.deepEqual(storefrontRegistration.widgets.find((widget) => widget.id === 'storefront-customer-insights-widget').grid_options, { w: 6, h: 9, minW: 5, minH: 8 });
         assert.deepEqual(
             dashboardRegistration.widgets.map((widget) => widget.id),

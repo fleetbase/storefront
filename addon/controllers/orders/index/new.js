@@ -1,7 +1,7 @@
 import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
 
 function cents(value) {
@@ -187,7 +187,8 @@ export default class OrdersIndexNewController extends Controller {
             );
         }
 
-        if (this.quoteError && !this.isPickup) {
+        // The API repeats the missing-dropoff / missing-location checks above; only surface its error once those are satisfied.
+        if (this.quoteError && !this.isPickup && this.dropoff && this.pickupLocation) {
             issues.push(this.quoteError);
         }
 
@@ -348,8 +349,9 @@ export default class OrdersIndexNewController extends Controller {
         const categories = this.configuring?.addon_categories?.toArray?.() ?? Array.from(this.configuring?.addon_categories ?? []);
 
         return categories.map((category) => {
-            const excluded = new Set((category.excluded_addons ?? []).map((id) => String(id)));
-            const addons = (category.category?.addons?.toArray?.() ?? Array.from(category.category?.addons ?? [])).filter((addon) => !excluded.has(String(addon.id)));
+            const excluded = new Set((get(category, 'excluded_addons') ?? []).map((id) => String(id)));
+            const available = get(category, 'category.addons');
+            const addons = (available?.toArray?.() ?? Array.from(available ?? [])).filter((addon) => !excluded.has(String(addon.id)));
 
             return { category, addons: addons.map((addon) => ({ addon, isSelected: this.configAddons.some((selected) => selected.id === addon.id) })) };
         });
