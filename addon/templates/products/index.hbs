@@ -69,9 +69,34 @@
         @onCreate={{this.createNewProductCategory}}
         @onViewAll={{this.viewAllProducts}}
         @onSelect={{this.switchCategory}}
+        @counts={{this.categoryCounts}}
+        @summary={{this.summary}}
+        @activeGroup={{this.activeGroup}}
+        @onSelectGroup={{this.selectGroup}}
     />
 
     <div id="productsViewPort" class="storefront-products-viewport">
+        <div class="storefront-products-toolbar">
+            <div class="storefront-status-tabs" role="tablist" data-test-product-status-tabs>
+                {{#each this.statusTabs as |tab|}}
+                    <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                        <span>{{tab.label}}</span>
+                        {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+                    </button>
+                {{/each}}
+            </div>
+        </div>
+        {{#if this.hasSelection}}
+            <div class="storefront-bulk-bar mx-4 mb-2" data-test-product-bulk-bar>
+                <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selected.length}}</span>
+                <Button @size="xs" @icon="eye" @text={{t "storefront.products.bulk.publish"}} @onClick={{this.bulkPublish}} @permission="storefront update product" />
+                <Button @size="xs" @icon="eye-slash" @text={{t "storefront.products.bulk.unpublish"}} @onClick={{this.bulkUnpublish}} @permission="storefront update product" />
+                <Button @size="xs" @icon="folder-tree" @text={{t "storefront.products.bulk.move"}} @onClick={{this.bulkMoveToCategory}} @permission="storefront update product" />
+                <Button @size="xs" @icon="badge-percent" @text={{t "storefront.products.bulk.mark-on-sale"}} @onClick={{this.bulkMarkOnSale}} @permission="storefront update product" />
+                <Button @size="xs" @type="danger" @icon="trash" @text={{t "common.delete"}} @onClick={{this.bulkDelete}} @permission="storefront delete product" />
+                <Button @size="xs" @text={{t "storefront.networks.invitations.clear"}} @onClick={{this.clearSelection}} />
+            </div>
+        {{/if}}
         {{outlet}}
     </div>
 </Layout::Section::Body>
