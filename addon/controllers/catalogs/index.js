@@ -2,6 +2,8 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { isBlank } from '@ember/utils';
+import { task, timeout } from 'ember-concurrency';
 
 export default class CatalogsIndexController extends Controller {
     @service store;
@@ -14,6 +16,19 @@ export default class CatalogsIndexController extends Controller {
     queryParams = ['query'];
 
     @tracked query;
+
+    /**
+     * Debounced search; updates the `query` param the route refreshes on.
+     */
+    @task({ restartable: true }) *search({ target: { value } }) {
+        if (isBlank(value)) {
+            this.query = null;
+            return;
+        }
+
+        yield timeout(250);
+        this.query = value;
+    }
     @tracked statusOptions = ['draft', 'published'];
 
     @action createCatalog() {
@@ -46,7 +61,7 @@ export default class CatalogsIndexController extends Controller {
         const allProducts = this.store.query('product', { limit: -1 });
 
         this.modalsManager.show('modals/create-catalog', {
-            title: 'Edit Food Truck',
+            title: 'Edit Catalog',
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             statusOptions: this.statusOptions,

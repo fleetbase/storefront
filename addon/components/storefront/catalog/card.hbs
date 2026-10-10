@@ -1,0 +1,53 @@
+<Layout::Resource::Card class="storefront-card storefront-catalog-card {{if this.isDraft 'is-draft'}}" data-test-storefront-catalog-card ...attributes as |Card|>
+    <Card.header class={{@headerClass}}>
+        <RegistryYield @registry="storefront:component:catalog:card:header:start" as |RegistryComponent|>
+            <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
+        </RegistryYield>
+        <div class="storefront-card__title">
+            {{#if @onEdit}}
+                <a href="javascript:;" class="storefront-card__title-text" {{on "click" (fn @onEdit this.catalog)}} data-test-catalog-name>{{n-a this.catalog.name}}</a>
+            {{else}}
+                <span class="storefront-card__title-text" data-test-catalog-name>{{n-a this.catalog.name}}</span>
+            {{/if}}
+            <Badge @status={{this.status}} @size="xs" @hideStatusDot={{true}} data-test-catalog-status />
+        </div>
+        <div class="storefront-card__subtitle">{{n-a this.catalog.description (t "storefront.catalogs.card.no-description")}}</div>
+        <RegistryYield @registry="storefront:component:catalog:card:header:end" as |RegistryComponent|>
+            <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
+        </RegistryYield>
+    </Card.header>
+    <Card.body class="storefront-card__body {{@bodyClass}}">
+        {{#if this.isEmpty}}
+            <div class="storefront-card__empty" data-test-catalog-empty>{{t "storefront.catalogs.card.no-categories"}}</div>
+        {{else}}
+            <div class="storefront-card__chips" data-test-catalog-categories>
+                {{#each this.categorySummaries as |category|}}
+                    <span class="storefront-card__chip" data-test-catalog-category>{{category.name}} <span class="storefront-card__chip-count">{{category.count}}</span></span>
+                {{/each}}
+            </div>
+        {{/if}}
+        <Storefront::HoursStrip @hours={{this.hours}} class="storefront-card__hours" />
+    </Card.body>
+    <Card.footer class={{@footerClass}}>
+        <RegistryYield @registry="storefront:component:catalog:card:footer:start" as |RegistryComponent|>
+            <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
+        </RegistryYield>
+        <div class="storefront-card__actions">
+            <span class="storefront-card__count" data-test-catalog-products-count>{{t "storefront.catalogs.card.products-count" count=this.productsCount}}</span>
+            <div class="storefront-card__buttons">
+                {{#if @onEdit}}
+                    <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.catalog}} @permission="storefront update catalog" data-test-catalog-edit />
+                {{/if}}
+                {{#if @onDelete}}
+                    <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "storefront.common.delete"}} @onClick={{fn @onDelete this.catalog}} @permission="storefront delete catalog" data-test-catalog-delete />
+                {{/if}}
+            </div>
+        </div>
+        <div class="storefront-card__meta">
+            <span>{{t "storefront.common.last-modified"}}: {{this.catalog.updatedAgo}}</span>
+        </div>
+        <RegistryYield @registry="storefront:component:catalog:card:footer:end" as |RegistryComponent|>
+            <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
+        </RegistryYield>
+    </Card.footer>
+</Layout::Resource::Card>

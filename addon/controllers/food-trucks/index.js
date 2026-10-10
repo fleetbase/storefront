@@ -2,6 +2,8 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { isBlank } from '@ember/utils';
+import { task, timeout } from 'ember-concurrency';
 
 export default class FoodTrucksIndexController extends Controller {
     @service store;
@@ -14,6 +16,19 @@ export default class FoodTrucksIndexController extends Controller {
     queryParams = ['query'];
 
     @tracked query;
+
+    /**
+     * Debounced search; updates the `query` param the route refreshes on.
+     */
+    @task({ restartable: true }) *search({ target: { value } }) {
+        if (isBlank(value)) {
+            this.query = null;
+            return;
+        }
+
+        yield timeout(250);
+        this.query = value;
+    }
     @tracked statusOptions = ['active', 'inactive'];
 
     @action createFoodTruck() {
@@ -23,7 +38,7 @@ export default class FoodTrucksIndexController extends Controller {
         });
 
         this.modalsManager.show('modals/create-food-truck', {
-            title: 'New Food Truck',
+            title: 'New Truck',
             statusOptions: this.statusOptions,
             foodTruck,
             confirm: async (modal) => {
@@ -32,7 +47,7 @@ export default class FoodTrucksIndexController extends Controller {
                 try {
                     await foodTruck.save();
                     this.hostRouter.refresh();
-                    this.notifications.success('New food truck created.');
+                    this.notifications.success('New truck created.');
                 } catch (error) {
                     this.notifications.serverError(error);
                 } finally {
@@ -44,7 +59,7 @@ export default class FoodTrucksIndexController extends Controller {
 
     @action editFoodTruck(foodTruck) {
         this.modalsManager.show('modals/create-food-truck', {
-            title: 'Edit Food Truck',
+            title: 'Edit Truck',
             acceptButtonText: 'Save Changes',
             acceptButtonIcon: 'save',
             statusOptions: this.statusOptions,
@@ -55,7 +70,7 @@ export default class FoodTrucksIndexController extends Controller {
                 try {
                     await foodTruck.save();
                     this.hostRouter.refresh();
-                    this.notifications.success('Changes to food truck saved.');
+                    this.notifications.success('Changes to truck saved.');
                 } catch (error) {
                     this.notifications.serverError(error);
                 } finally {
@@ -69,7 +84,7 @@ export default class FoodTrucksIndexController extends Controller {
         const allCatalogs = await this.store.query('catalog', { limit: -1 });
         console.log('[allCatalogs]', allCatalogs);
         this.modalsManager.show('modals/assign-food-truck-catalogs', {
-            title: "Assign Catalog's to this Food Truck",
+            title: 'Assign catalogs to this truck',
             acceptButtonText: 'Done',
             acceptButtonIcon: 'save',
             foodTruck,
@@ -83,7 +98,7 @@ export default class FoodTrucksIndexController extends Controller {
                 try {
                     await foodTruck.save();
                     this.hostRouter.refresh();
-                    this.notifications.success('Changes to food truck saved.');
+                    this.notifications.success('Changes to truck saved.');
                 } catch (error) {
                     this.notifications.serverError(error);
                 } finally {

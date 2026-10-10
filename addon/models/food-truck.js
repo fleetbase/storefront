@@ -17,7 +17,9 @@ export default class FoodTruckModel extends Model {
     /** @attributes */
     @attr('string', { defaultValue: 'storefront:store' }) subject_type;
     @attr('raw') meta;
+    @attr('raw') store;
     @attr('string') status;
+    @attr('boolean') online;
 
     /** @dates */
     @attr('date') created_at;

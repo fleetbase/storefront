@@ -87,7 +87,7 @@ export default class ApplicationController extends Controller {
             },
             {
                 label: this.intl.t('storefront.sidebar.food-trucks'),
-                description: 'Manage food truck locations and availability.',
+                description: 'Manage trucks, where they serve and what they sell.',
                 icon: 'truck',
                 route: 'console.storefront.food-trucks',
                 permission: 'storefront list food-truck',

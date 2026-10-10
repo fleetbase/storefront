@@ -1,0 +1,8 @@
+<div class="storefront-hours-strip {{@class}}" role="img" aria-label="{{this.openDays}} of 7 days" data-test-hours-strip ...attributes>
+    {{#each this.days as |day|}}
+        <span class="storefront-hours-strip__day {{if day.open 'is-open' 'is-closed'}}" title={{day.title}} data-test-hours-day={{day.key}} data-open={{if day.open "true" "false"}}>
+            <span class="storefront-hours-strip__label">{{day.label}}</span>
+            <span class="storefront-hours-strip__bar"></span>
+        </span>
+    {{/each}}
+</div>

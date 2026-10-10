@@ -1,0 +1,44 @@
+<Layout::Resource::Card class="storefront-card storefront-network-card" data-test-storefront-network-card ...attributes as |Card|>
+    <Card.header class={{@headerClass}}>
+        <RegistryYield @registry="storefront:component:network:card:header:start" as |RegistryComponent|>
+            <RegistryComponent @network={{this.network}} @resource={{this.network}} />
+        </RegistryYield>
+        <div class="storefront-card__title">
+            {{#if @onOpen}}
+                <a href="javascript:;" class="storefront-card__title-text" {{on "click" (fn @onOpen this.network)}} data-test-network-name>{{n-a this.network.name}}</a>
+            {{else}}
+                <span class="storefront-card__title-text" data-test-network-name>{{n-a this.network.name}}</span>
+            {{/if}}
+            <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if this.isOnline 'text-green-500' 'text-gray-400'}}" title={{if this.isOnline (t "storefront.common.online") (t "storefront.common.offline")}} data-test-network-indicator />
+        </div>
+        <div class="storefront-card__subtitle">{{n-a this.network.currency}} · {{t "storefront.networks.card.stores-count" count=this.storesCount}}</div>
+        <RegistryYield @registry="storefront:component:network:card:header:end" as |RegistryComponent|>
+            <RegistryComponent @network={{this.network}} @resource={{this.network}} />
+        </RegistryYield>
+    </Card.header>
+    <Card.body class="storefront-card__media-body storefront-network-card__backdrop {{@bodyClass}}" {{background-url this.network.backdrop_url overlay=true}}>
+        <Image src={{this.network.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{n-a this.network.name ""}} class="storefront-network-card__logo" data-test-network-logo />
+    </Card.body>
+    <Card.footer class={{@footerClass}}>
+        <RegistryYield @registry="storefront:component:network:card:footer:start" as |RegistryComponent|>
+            <RegistryComponent @network={{this.network}} @resource={{this.network}} />
+        </RegistryYield>
+        <div class="storefront-card__actions">
+            <Badge @status={{if this.isOnline "online" "offline"}} @text={{if this.isOnline (t "storefront.common.online") (t "storefront.common.offline")}} @size="xs" data-test-network-status />
+            <div class="storefront-card__buttons">
+                {{#if @onOpen}}
+                    <Button @icon="network-wired" @size="xs" @helpText={{t "storefront.networks.index.manage-network"}} @onClick={{fn @onOpen this.network}} @permission="storefront view network" data-test-network-open />
+                {{/if}}
+                {{#if @onInvite}}
+                    <Button @icon="envelope-open-text" @size="xs" @helpText={{t "storefront.networks.index.send-invite"}} @onClick={{fn @onInvite this.network}} @permission="storefront update network" data-test-network-invite />
+                {{/if}}
+                {{#if @onDelete}}
+                    <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "storefront.networks.index.delete-network"}} @onClick={{fn @onDelete this.network}} @permission="storefront delete network" data-test-network-delete />
+                {{/if}}
+            </div>
+        </div>
+        <RegistryYield @registry="storefront:component:network:card:footer:end" as |RegistryComponent|>
+            <RegistryComponent @network={{this.network}} @resource={{this.network}} />
+        </RegistryYield>
+    </Card.footer>
+</Layout::Resource::Card>

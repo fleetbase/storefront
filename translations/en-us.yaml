@@ -37,6 +37,8 @@ storefront:
     name: Name
     neighborhood: Neighborhood
     online: Online
+    offline: Offline
+    last-modified: Last modified
     orders: Orders
     phone: Phone
     photos: Photos
@@ -70,7 +72,7 @@ storefront:
     facebook: Facebook
     instagram: Instagram
     twitter: Twitter
-    food-trucks: Food Trucks
+    food-trucks: Trucks
     catalog: Catalog
     catalogs: Catalogs
   sidebar:
@@ -78,7 +80,7 @@ storefront:
     dashboard: Dashboard
     products: Products
     catalogs: Catalogs
-    food-trucks: Food Trucks
+    food-trucks: Trucks
     customers: Customers
     orders: Orders
     networks: Networks
@@ -314,8 +316,34 @@ storefront:
       edit-button: Edit customer
       cancel-edit-button: Cancel edit customer
       cancel-new-button: Cancel new customer
-  networks:
+  catalogs:
     index:
+      empty-state: Create a catalog to group products into a menu with its own categories and hours.
+      create-catalog: Create catalog
+    card:
+      no-description: No description
+      no-categories: No categories yet
+      products-count: "{count, plural, =0 {No products} one {# product} other {# products}}"
+  trucks:
+    index:
+      empty-state: Add a truck to sell from a vehicle inside a service area.
+      create-truck: Add truck
+    card:
+      no-vehicle: No vehicle assigned
+      no-service-area: No service area
+      inactive: Inactive
+      offline: Offline
+      no-catalog: Online, no catalog
+      online: Online
+      assign-catalogs: Assign catalogs
+      catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
+      owned-by: "Owned by {name}"
+  networks:
+    card:
+      stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"
+    index:
+      empty-state: Create a network to sell from several stores through one app.
+      create-network: Create network
       network-option: Network Options
       manage-network: Manage Network
       send-invite: Send Invites
