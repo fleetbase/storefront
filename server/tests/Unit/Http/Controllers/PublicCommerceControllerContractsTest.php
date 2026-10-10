@@ -10,7 +10,7 @@ class CartControllerOperationStub extends Fleetbase\Storefront\Models\Cart
 {
     public array $calls = [];
 
-    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
+    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null, ?string $catalogId = null)
     {
         $this->calls['add'] = func_get_args();
 
@@ -404,6 +404,8 @@ test('cart controller delegates successful item and lifecycle operations with re
             [['name' => 'Insurance']],
             'store_location_abcdefgh',
             '2026-07-28 09:00:00',
+            null,
+            null,
         ])
         ->and($cart->calls['update'])->toBe([
             'line_item_abcdefgh',
