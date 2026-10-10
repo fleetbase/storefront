@@ -30,7 +30,7 @@
                             <Badge @status={{order.status}} />
                         </td>
                         <td class="whitespace-nowrap text-right">
-                            <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @showText={{false}} />
+                            <Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @asMenu={{true}} />
                         </td>
                     </tr>
                 {{/each}}

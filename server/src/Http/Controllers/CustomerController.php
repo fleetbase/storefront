@@ -27,7 +27,9 @@ class CustomerController extends StorefrontController
             return response()->error('Customer not found.', 404);
         }
 
-        $orders = Order::where(['company_uuid' => session('company'), 'customer_uuid' => $customer->uuid, 'type' => 'storefront'])
+        // Same scope as the storefront order list: an order belongs to Storefront when it carries a store id.
+        $orders = Order::where(['company_uuid' => session('company'), 'customer_uuid' => $customer->uuid])
+            ->whereNotNull('meta->storefront_id')
             ->whereNull('deleted_at');
 
         if ($request->filled('network')) {

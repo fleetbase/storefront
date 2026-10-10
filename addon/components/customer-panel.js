@@ -57,6 +57,7 @@ export default class CustomerPanelComponent extends Component {
     @service intl;
     @service notifications;
     @service storefront;
+    @tracked insights = null;
 
     /**
      * The current active tab.

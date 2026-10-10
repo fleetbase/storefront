@@ -1,13 +1,30 @@
-<div class={{or @wrapperClass "storefront-order-inline-actions"}} ...attributes>
-    {{#each this.items as |item|}}
-        <Button
-            @size={{this.buttonSize}}
-            @type={{or item.type "default"}}
-            @icon={{item.icon}}
-            @text={{if this.showText item.text}}
-            @helpText={{unless this.showText item.text}}
-            @disabled={{item.disabled}}
-            @onClick={{or item.fn item.onClick}}
-        />
-    {{/each}}
-</div>
+{{#if @asMenu}}
+    {{#if this.items.length}}
+        <DropdownButton @icon="ellipsis-h" @size={{this.buttonSize}} @iconPrefix="fas" @renderInPlace={{true}} @helpText={{t "storefront.common.actions"}} ...attributes as |dd|>
+            <div class="next-dd-menu mt-1 mx-0">
+                <div class="px-1">
+                    {{#each this.items as |item|}}
+                        <a href="javascript:;" class="next-dd-item {{if item.disabled 'disabled'}}" disabled={{item.disabled}} {{on "click" (dropdown-fn dd (or item.fn item.onClick))}}>
+                            {{#if item.icon}}<FaIcon @icon={{item.icon}} class="mr-1" />{{/if}}
+                            {{item.text}}
+                        </a>
+                    {{/each}}
+                </div>
+            </div>
+        </DropdownButton>
+    {{/if}}
+{{else}}
+    <div class={{or @wrapperClass "storefront-order-inline-actions"}} ...attributes>
+        {{#each this.items as |item|}}
+            <Button
+                @size={{this.buttonSize}}
+                @type={{or item.type "default"}}
+                @icon={{item.icon}}
+                @text={{if this.showText item.text}}
+                @helpText={{unless this.showText item.text}}
+                @disabled={{item.disabled}}
+                @onClick={{or item.fn item.onClick}}
+            />
+        {{/each}}
+    </div>
+{{/if}}
