@@ -124,10 +124,20 @@ class MongoliaSeeder extends Seeder
             $bundles[$definition['key']] = $bundle;
         }
 
+        $marketing = $this->seedMarketing($company, $network, static::NETWORK_KEY, $this->marketingDefinition(), $bundles);
+        foreach ($this->storeMarketingDefinitions() as $storeKey => $definition) {
+            if (isset($bundles[$storeKey])) {
+                foreach ($this->seedMarketing($company, $bundles[$storeKey]['store'], $storeKey, $definition, $bundles) as $kind => $records) {
+                    $marketing[$kind] = array_merge($marketing[$kind], array_values($records));
+                }
+            }
+        }
+
         [$serviceArea, $zones] = $this->seedServiceArea($company);
         $trucks                = $this->seedFoodTrucks($company, $bundles[static::TRUCK_STORE], $serviceArea, $zones);
 
         $this->command?->info(sprintf('Seeded the Mongolian testing network for company %s with %d stores, %d food trucks and %d orders.', $company->public_id, count($bundles), count($trucks), $orderCount));
+        $this->command?->info(sprintf('  Marketing: %d promotions, %d segments, %d campaigns.', count($marketing['promotions']), count($marketing['segments']), count($marketing['campaigns'])));
         $this->reportStorefront($network, $gateway, '  ');
         foreach ($bundles as $bundle) {
             $this->reportStorefront($bundle['store'], $bundle['gateway'], '    ');
@@ -412,6 +422,53 @@ class MongoliaSeeder extends Seeder
             'location'     => new Point($lat, $lng),
             'meta'         => $this->meta($seedId),
         ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Marketing (amounts in minor units)
+    |--------------------------------------------------------------------------
+    */
+
+    protected function marketingDefinition(): array
+    {
+        return [
+            'promotions' => [
+                'welcome'       => ['name' => 'Тавтай морил', 'description' => 'Анхны захиалгадаа 15% хөнгөлөлт, дээд тал нь 10,000₮.', 'type' => 'percentage', 'value' => 15, 'max_discount_amount' => 1000000, 'min_subtotal' => 2000000, 'first_order_only' => true, 'code' => 'SAIN15', 'usage_limit_per_customer' => 1, 'starts_in_days' => -30, 'ends_in_days' => 60],
+                'free-delivery' => ['name' => '50,000₮-өөс дээш үнэгүй хүргэлт', 'description' => '50,000₮ ба түүнээс дээш захиалгад хүргэлт үнэгүй.', 'type' => 'free_delivery', 'min_subtotal' => 5000000, 'starts_in_days' => -14, 'ends_in_days' => 30, 'priority' => 5],
+                'weekend'       => ['name' => 'Амралтын өдрийн 5,000₮', 'description' => 'Бямба, ням гарагт 30,000₮-өөс дээш захиалгад 5,000₮ хасна.', 'type' => 'fixed_amount', 'value' => 500000, 'min_subtotal' => 3000000, 'schedule' => [['days' => [6, 7], 'start' => '00:00', 'end' => '23:59']], 'starts_in_days' => -7, 'ends_in_days' => 45],
+                'upcoming'      => ['name' => 'Цагаан сарын урамшуулал', 'description' => 'Удахгүй: бүх бүтээгдэхүүнд 10%.', 'type' => 'percentage', 'value' => 10, 'starts_in_days' => 5, 'ends_in_days' => 20],
+            ],
+            'segments' => [
+                'loyal' => ['name' => 'Байнгын үйлчлүүлэгч', 'description' => 'Гурав ба түүнээс дээш захиалга.', 'rules' => ['min_orders' => 3]],
+                'never' => ['name' => 'Захиалга хийгээгүй', 'description' => 'Бүртгүүлсэн ч захиалаагүй.', 'rules' => ['max_orders' => 0]],
+            ],
+            'campaigns' => [
+                'welcome-sent' => ['name' => 'Тавтай морил', 'title' => 'Анхны захиалгадаа 15%', 'body' => 'SAIN15 кодыг ашиглаарай.', 'status' => 'sent', 'segment' => 'never', 'promotion' => 'welcome', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 2, 'stats' => ['targeted' => 0, 'batches' => 0]],
+            ],
+        ];
+    }
+
+    protected function storeMarketingDefinitions(): array
+    {
+        return [
+            static::TRUCK_STORE => [
+                'promotions' => [
+                    'buuz-bogo' => ['name' => '2 бууз авбал 1 үнэгүй', 'description' => 'Ямар ч буузны багцад.', 'type' => 'bogo', 'bogo_config' => ['buy_quantity' => 2, 'get_quantity' => 1, 'discount_percent' => 100], 'applies_to' => ['products' => [static::TRUCK_STORE . ':buuz', static::TRUCK_STORE . ':buuz-mix']], 'starts_in_days' => -5, 'ends_in_days' => 25],
+                    'lunch'     => ['name' => 'Өдрийн хоолны цаг', 'description' => 'Ажлын өдөр 12-14 цагт 20% хөнгөлөлт.', 'type' => 'percentage', 'value' => 20, 'schedule' => [['days' => [1, 2, 3, 4, 5], 'start' => '12:00', 'end' => '14:00']], 'starts_in_days' => -10, 'ends_in_days' => 50],
+                ],
+            ],
+            'nomin-supermarket' => [
+                'promotions' => [
+                    'dairy' => ['name' => 'Сүүн бүтээгдэхүүн 10%', 'description' => 'Сүү, тараг, ааруулд 10% хөнгөлөлт.', 'type' => 'percentage', 'value' => 10, 'applies_to' => ['categories' => ['nomin-supermarket:dairy']], 'starts_in_days' => -3, 'ends_in_days' => 27],
+                ],
+            ],
+            'modern-salon' => [
+                'promotions' => [
+                    'first-visit' => ['name' => 'Анхны үйлчилгээнд 10,000₮', 'description' => 'Шинэ үйлчлүүлэгчдэд, 30,000₮-өөс дээш.', 'type' => 'fixed_amount', 'value' => 1000000, 'min_subtotal' => 3000000, 'first_order_only' => true, 'code' => 'SALON10', 'starts_in_days' => -20, 'ends_in_days' => 70],
+                ],
+            ],
+        ];
     }
 
     /*
