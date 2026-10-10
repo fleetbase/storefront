@@ -36,6 +36,14 @@ class FoodTruck extends FleetbaseResource
             'location'                       => $this->vehicle ? $this->vehicle->location : null,
             'online'                         => $this->vehicle ? $this->vehicle->online : false,
             'status'                         => $this->status,
+            // The store the truck belongs to, so a network can name it and order from it.
+            'store'                          => $this->whenLoaded('store', fn () => $this->store ? [
+                'id'          => $this->store->public_id,
+                'name'        => $this->store->name,
+                'logo_url'    => $this->store->logo_url,
+                'currency'    => $this->store->currency,
+                'options'     => $this->store->options,
+            ] : null),
             'created_at'                     => $this->created_at,
             'updated_at'                     => $this->updated_at,
         ];
