@@ -175,11 +175,11 @@ class Network extends StorefrontModel
 
     /**
      * Members that sell through the network: everything the app and carts see.
-     * Suspended memberships stay in `stores()` for the console.
+     * Suspended and not-yet-approved memberships stay in `stores()` for the console.
      */
     public function activeStores()
     {
-        return $this->stores()->wherePivot('status', '!=', NetworkStore::STATUS_SUSPENDED);
+        return $this->stores()->wherePivot('status', NetworkStore::STATUS_ACTIVE);
     }
 
     /**

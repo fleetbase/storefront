@@ -79,7 +79,7 @@ class NetworkController extends Controller
             ->whereHas('locations')
             ->whereHas('networks', function ($q) use ($request) {
                 $q->where('network_uuid', session('storefront_network'))
-                    ->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED);
+                    ->where('network_stores.status', NetworkStore::STATUS_ACTIVE);
 
                 // Query stores without a category
                 if ($request->filled('without_category')) {

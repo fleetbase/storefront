@@ -349,7 +349,7 @@ class ProductController extends Controller
                 $query->whereHas('store', function ($sq) {
                     $sq->whereHas('networks', function ($nq) {
                         $nq->where('network_uuid', session('storefront_network'))
-                            ->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED);
+                            ->where('network_stores.status', NetworkStore::STATUS_ACTIVE);
                     });
                 });
 
@@ -391,7 +391,7 @@ class ProductController extends Controller
         })
             ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network'))->where('network_stores.status', '!=', NetworkStore::STATUS_SUSPENDED));
+                $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network'))->where('network_stores.status', NetworkStore::STATUS_ACTIVE));
                 $query->where('is_available', 1);
                 $query->where('status', 'published');
             })

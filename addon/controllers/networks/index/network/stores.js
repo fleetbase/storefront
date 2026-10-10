@@ -135,18 +135,23 @@ export default class NetworksIndexNetworkStoresController extends BaseController
         const members = this.model?.toArray?.() ?? Array.from(this.model ?? []);
         members.forEach((store) => {
             set(store, 'isSuspended', store.network_status === 'suspended');
-            set(store, 'status_label', store.isSuspended ? 'suspended' : store.online ? 'active' : 'offline');
+            set(store, 'isPendingApproval', store.network_status === 'pending');
+            set(store, 'status_label', store.isPendingApproval ? 'awaiting_approval' : store.isSuspended ? 'suspended' : store.online ? 'active' : 'offline');
         });
 
         return members;
     }
 
     get activeMembers() {
-        return this.members.filter((store) => !store.isSuspended && store.online);
+        return this.members.filter((store) => !store.isSuspended && !store.isPendingApproval && store.online);
     }
 
     get offlineMembers() {
-        return this.members.filter((store) => !store.isSuspended && !store.online);
+        return this.members.filter((store) => !store.isSuspended && !store.isPendingApproval && !store.online);
+    }
+
+    get pendingMembers() {
+        return this.members.filter((store) => store.isPendingApproval);
     }
 
     get suspendedMembers() {
@@ -160,6 +165,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
             { id: 'offline', label: this.intl.t('storefront.common.offline'), count: this.offlineMembers.length },
             { id: 'invited', label: this.intl.t('storefront.networks.invitations.invited'), count: this.openInvitations.length },
             { id: 'suspended', label: this.intl.t('storefront.networks.index.network.stores.suspended'), count: this.suspendedMembers.length },
+            { id: 'approval', label: this.intl.t('storefront.networks.index.network.stores.awaiting-approval'), count: this.pendingMembers.length },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
     }
 
@@ -171,6 +177,8 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                 return this.offlineMembers;
             case 'suspended':
                 return this.suspendedMembers;
+            case 'approval':
+                return this.pendingMembers;
             case 'invited':
                 return this.invitationRows;
             default:
@@ -352,10 +360,22 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                     isVisible: (row) => !row.isInvitation,
                 },
                 {
+                    id: 'approve-store',
+                    label: this.intl.t('storefront.networks.index.network.stores.approve'),
+                    fn: this.approveStore,
+                    isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                },
+                {
+                    id: 'reject-store',
+                    label: this.intl.t('storefront.networks.index.network.stores.reject'),
+                    fn: this.rejectStore,
+                    isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                },
+                {
                     id: 'suspend-store',
                     label: this.intl.t('storefront.networks.index.network.stores.suspend'),
                     fn: this.suspendStore,
-                    isVisible: (row) => !row.isInvitation && !row.isSuspended,
+                    isVisible: (row) => !row.isInvitation && !row.isSuspended && !row.isPendingApproval,
                 },
                 {
                     id: 'reinstate-store',
@@ -405,6 +425,45 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      * Suspending hides the store from the network's app and carts without removing it;
      * reinstating brings it back with its category and history intact.
      */
+    /**
+     * Memberships awaiting approval: approving makes the store an active member,
+     * rejecting removes the membership and closes its invitation.
+     */
+    @action approveStore(store) {
+        return this.setMembershipStatus([store], 'approve');
+    }
+
+    @action approveSelected() {
+        const pending = this.selectedStores.filter((store) => store.isPendingApproval);
+
+        return pending.length ? this.setMembershipStatus(pending, 'approve') : null;
+    }
+
+    @action rejectStore(store) {
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.index.network.stores.reject-title', { name: store.name }),
+            body: this.intl.t('storefront.networks.index.network.stores.reject-body', { networkName: this.network.name }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.reject'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'ban',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.setMembershipStatus([store], 'reject');
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    get hasPendingSelection() {
+        return this.selectedStores.some((store) => store.isPendingApproval);
+    }
+
     @action suspendStore(store) {
         return this.suspendStores([store]);
     }

@@ -241,6 +241,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('{id}/remove-stores', $controller('removeStores'));
                                 $router->post('{id}/suspend-stores', $controller('suspendStores'));
                                 $router->post('{id}/reinstate-stores', $controller('reinstateStores'));
+                                $router->post('{id}/approve-stores', $controller('approveStores'));
+                                $router->post('{id}/reject-stores', $controller('rejectStores'));
                                 $router->post('{id}/invite', $controller('sendInvites'));
                                 $router->get('{id}/invitations', $controller('invitations'));
                                 $router->post('{id}/invitations/{invitationId}/resend', $controller('resendInvitation'));

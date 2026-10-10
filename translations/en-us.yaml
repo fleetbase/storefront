@@ -658,6 +658,8 @@ storefront:
         expired: Expired
         accepted: Accepted
         revoked: Revoked
+        awaiting_approval: Awaiting approval
+        rejected: Rejected
       stores-subtitle: "{members, plural, =0 {No members} one {# member} other {# members}} · {pending, plural, =0 {no invitations pending} one {# invitation pending} other {# invitations pending}}"
       add-existing-store: Add existing store
       edit-category: Edit category
@@ -816,6 +818,13 @@ storefront:
         stores:
           store: Stores
           suspended: Suspended
+          awaiting-approval: Awaiting approval
+          approve: Approve membership
+          reject: Reject membership
+          reject-title: "Reject {name}?"
+          reject-body: "The store will not join {networkName}. Its invitation is closed as rejected; you can invite it again later."
+          approve-done: "{count, plural, one {Store approved.} other {# stores approved.}}"
+          reject-done: "{count, plural, one {Membership rejected.} other {# memberships rejected.}}"
           suspend: Suspend from network
           reinstate: Reinstate in network
           suspend-title: "{count, plural, one {Suspend {names}?} other {Suspend # stores?}}"

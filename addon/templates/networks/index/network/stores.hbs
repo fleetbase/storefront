@@ -19,6 +19,9 @@
         <div class="storefront-bulk-bar mx-4 mb-3" data-test-network-store-bulk-bar>
             <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selectedStores.length}}</span>
             <Button @size="xs" @icon="folder-tree" @text={{t "storefront.networks.index.network.stores.assign-category"}} @onClick={{this.assignCategoryToSelected}} @permission="storefront update network" />
+            {{#if this.hasPendingSelection}}
+                <Button @size="xs" @type="primary" @icon="check" @text={{t "storefront.networks.index.network.stores.approve"}} @onClick={{this.approveSelected}} @permission="storefront update network" data-test-approve-selected />
+            {{/if}}
             <Button @size="xs" @icon="ban" @text={{t "storefront.networks.index.network.stores.suspend"}} @onClick={{this.suspendSelected}} @permission="storefront update network" data-test-suspend-selected />
             <Button @size="xs" @type="danger" @icon="trash" @text={{t "storefront.networks.index.network.stores.remove-store-from-network"}} @onClick={{this.removeSelected}} @permission="storefront update network" />
             <Button @size="xs" @text={{t "storefront.networks.invitations.clear"}} @onClick={{this.clearSelection}} />

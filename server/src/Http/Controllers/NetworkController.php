@@ -242,10 +242,18 @@ class NetworkController extends StorefrontController
         $network         = $invitation->subject;
         $requireApproval = (bool) data_get($invitation->meta, 'require_approval', false);
 
+        // A membership that still needs the operator's approval is created as pending: it is
+        // listed on the network's Stores page but hidden from the app until approved.
         NetworkStore::firstOrCreate(
             ['network_uuid' => $network->uuid, 'store_uuid' => $store->uuid],
-            ['network_uuid' => $network->uuid, 'store_uuid' => $store->uuid, 'category_uuid' => data_get($invitation->meta, 'category_uuid')]
+            [
+                'network_uuid'  => $network->uuid,
+                'store_uuid'    => $store->uuid,
+                'category_uuid' => data_get($invitation->meta, 'category_uuid'),
+                'status'        => $requireApproval ? NetworkStore::STATUS_PENDING : NetworkStore::STATUS_ACTIVE,
+            ]
         );
+        $this->forgetCachedResponses();
 
         $meta                   = $invitation->meta ?? [];
         $meta['status']         = $requireApproval ? 'awaiting_approval' : 'accepted';
@@ -494,6 +502,60 @@ class NetworkController extends StorefrontController
     public function reinstateStores(string $id, NetworkActionRequest $request)
     {
         return $this->setMembershipStatus($id, $request->array('stores'), NetworkStore::STATUS_ACTIVE);
+    }
+
+    /**
+     * Approve memberships that are awaiting the operator's review: the stores become active
+     * members and their invitations are closed as accepted.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function approveStores(string $id, NetworkActionRequest $request)
+    {
+        $stores = $request->array('stores');
+        $this->closeAwaitingInvitations($id, $stores, 'accepted', 'approved_at');
+
+        return $this->setMembershipStatus($id, $stores, NetworkStore::STATUS_ACTIVE);
+    }
+
+    /**
+     * Reject memberships that are awaiting review: the membership is removed and the
+     * invitation is closed as rejected, so the store can be invited again later.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function rejectStores(string $id, NetworkActionRequest $request)
+    {
+        $stores = $request->array('stores');
+        $this->closeAwaitingInvitations($id, $stores, 'rejected', 'rejected_at');
+
+        $removed = NetworkStore::where('network_uuid', $id)
+            ->whereIn('store_uuid', $stores)
+            ->where('status', NetworkStore::STATUS_PENDING)
+            ->delete();
+
+        $this->forgetCachedResponses();
+
+        return response()->json(['status' => 'ok', 'removed' => $removed]);
+    }
+
+    /**
+     * Close the `awaiting_approval` invitations accepted by these stores.
+     */
+    protected function closeAwaitingInvitations(string $networkId, array $stores, string $status, string $timestampKey): void
+    {
+        $invitations = Invite::where(['subject_uuid' => $networkId, 'reason' => 'join_storefront_network'])
+            ->whereIn('meta->accepted_store', $stores)
+            ->where('meta->status', 'awaiting_approval')
+            ->get();
+
+        foreach ($invitations as $invitation) {
+            $meta                 = $invitation->meta ?? [];
+            $meta['status']       = $status;
+            $meta[$timestampKey]  = Carbon::now()->toIso8601String();
+            $invitation->meta     = $meta;
+            $invitation->save();
+        }
     }
 
     protected function setMembershipStatus(string $networkId, array $stores, string $status)

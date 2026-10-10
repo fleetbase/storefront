@@ -689,3 +689,34 @@ test('network stores endpoint preloads each store rating in the store query', fu
         ->and($stores['store_rated_uuid']->rating)->toBe(4.5)
         ->and($stores['store_new_uuid']->rating)->toBe(0);
 });
+
+test('network stores endpoint lists only active memberships (suspended and pending are hidden)', function () {
+    createNetworkApiControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'active_uuid', 'public_id' => 'store_active', 'company_uuid' => 'company_uuid', 'name' => 'Active Store'],
+        ['uuid' => 'suspended_uuid', 'public_id' => 'store_suspended', 'company_uuid' => 'company_uuid', 'name' => 'Suspended Store'],
+        ['uuid' => 'pending_uuid', 'public_id' => 'store_pending', 'company_uuid' => 'company_uuid', 'name' => 'Pending Store'],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'active_location', 'store_uuid' => 'active_uuid'],
+        ['uuid' => 'suspended_location', 'store_uuid' => 'suspended_uuid'],
+        ['uuid' => 'pending_location', 'store_uuid' => 'pending_uuid'],
+    ]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'active_uuid', 'status' => 'active'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'suspended_uuid', 'status' => 'suspended'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'pending_uuid', 'status' => 'pending'],
+    ]);
+    session([
+        'company'            => 'company_uuid',
+        'storefront_store'   => null,
+        'storefront_network' => 'network_uuid',
+    ]);
+
+    $resource = (new NetworkController())->stores(Request::create('/network/stores', 'GET'));
+
+    expect($resource->resource)->toHaveCount(1)
+        ->and($resource->resource->first()->uuid)->toBe('active_uuid');
+});
