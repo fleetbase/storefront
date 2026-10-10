@@ -46,6 +46,7 @@ function createCartLifecycleSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('user_uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->string('customer_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->string('currency')->nullable();
@@ -314,3 +315,76 @@ test('cart persists add update remove empty event and currency lifecycle behavio
         ->and($cart->currency)->toBeNull()
         ->and($cart->last_event->event)->toBe('cart.emptied');
 });
+
+function insertLifecycleCart(array $attributes): void
+{
+    Capsule::connection('mysql')->table('carts')->insert(array_merge([
+        'items'      => '[]',
+        'events'     => '[]',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ], $attributes));
+}
+
+test('cart retrieval keeps a device on its open cart and never returns a closed one', function () {
+    createCartLifecycleSchema();
+    insertLifecycleCart(['uuid' => 'checked_uuid', 'public_id' => 'cart_checked', 'unique_identifier' => 'device-1', 'checkout_uuid' => 'checkout_uuid', 'status' => 'checked_out', 'items' => '[{"id":"cart_item_1","subtotal":1000}]', 'created_at' => now()->subHour()]);
+    insertLifecycleCart(['uuid' => 'open_uuid', 'public_id' => 'cart_open', 'unique_identifier' => 'device-1', 'status' => 'open']);
+    insertLifecycleCart(['uuid' => 'legacy_uuid', 'public_id' => 'cart_legacy', 'unique_identifier' => 'device-2', 'status' => null]);
+
+    expect(Cart::retrieve('device-1')->public_id)->toBe('cart_open')
+        // an app still holding the checked-out cart continues with the device's open cart
+        ->and(Cart::retrieve('cart_checked')->public_id)->toBe('cart_open')
+        // carts saved before statuses existed are open
+        ->and(Cart::retrieve('device-2')->public_id)->toBe('cart_legacy')
+        // asking for closed carts too still finds them
+        ->and(Cart::retrieve('cart_checked', false)->public_id)->toBe('cart_checked')
+        ->and(Capsule::connection('mysql')->table('carts')->where('uuid', 'checked_uuid')->value('items'))->toBe('[{"id":"cart_item_1","subtotal":1000}]');
+});
+
+test('cart retrieval starts a new cart for the device when only closed carts remain', function () {
+    createCartLifecycleSchema();
+    insertLifecycleCart(['uuid' => 'cleared_uuid', 'public_id' => 'cart_cleared', 'unique_identifier' => 'device-3', 'status' => 'cleared', 'items' => '[{"id":"cart_item_1"}]']);
+
+    $fromDevice = Cart::retrieve('device-3');
+    $fromStaleId = Cart::retrieve('cart_cleared');
+
+    expect($fromDevice->public_id)->not->toBe('cart_cleared')
+        ->and($fromDevice->unique_identifier)->toBe('device-3')
+        ->and($fromDevice->status)->toBe(Cart::STATUS_OPEN)
+        // the stale id finds the device's new open cart instead of an anonymous one
+        ->and($fromStaleId->uuid)->toBe($fromDevice->uuid)
+        ->and(Cart::retrieve('cart_unknown')->unique_identifier)->toBeNull()
+        ->and(Cart::retrieve(null)->status)->toBe(Cart::STATUS_OPEN);
+});
+
+test('clearing a cart closes it with its items and continues with an open cart for the device', function () {
+    createCartLifecycleSchema();
+    insertLifecycleCart(['uuid' => 'full_uuid', 'public_id' => 'cart_full', 'unique_identifier' => 'device-4', 'status' => 'open', 'items' => '[{"id":"cart_item_1","subtotal":1000}]']);
+    insertLifecycleCart(['uuid' => 'empty_uuid', 'public_id' => 'cart_empty', 'unique_identifier' => 'device-5', 'status' => 'open']);
+    insertLifecycleCart(['uuid' => 'done_uuid', 'public_id' => 'cart_done', 'unique_identifier' => 'device-6', 'checkout_uuid' => 'checkout_uuid', 'status' => 'checked_out', 'items' => '[{"id":"cart_item_2"}]']);
+
+    $full  = Cart::where('uuid', 'full_uuid')->firstOrFail();
+    $next  = $full->clear();
+    $empty = Cart::where('uuid', 'empty_uuid')->firstOrFail();
+    $done  = Cart::where('uuid', 'done_uuid')->firstOrFail();
+    $after = $done->clear();
+    $row   = fn ($uuid) => Capsule::connection('mysql')->table('carts')->where('uuid', $uuid)->first();
+
+    expect($row('full_uuid')->status)->toBe(Cart::STATUS_CLEARED)
+        ->and($row('full_uuid')->items)->toBe('[{"id":"cart_item_1","subtotal":1000}]')
+        ->and(json_decode($row('full_uuid')->events)[0]->event)->toBe('cart.cleared')
+        ->and($next->uuid)->not->toBe('full_uuid')
+        ->and($next->unique_identifier)->toBe('device-4')
+        ->and($next->isOpen())->toBeTrue()
+        // an empty open cart has nothing to keep
+        ->and($empty->clear()->uuid)->toBe('empty_uuid')
+        ->and($row('empty_uuid')->status)->toBe(Cart::STATUS_OPEN)
+        // a checked-out cart is never touched
+        ->and($row('done_uuid')->status)->toBe(Cart::STATUS_CHECKED_OUT)
+        ->and($row('done_uuid')->items)->toBe('[{"id":"cart_item_2"}]')
+        ->and($after->unique_identifier)->toBe('device-6')
+        ->and($after->uuid)->not->toBe('done_uuid')
+        ->and($done->isOpen())->toBeFalse();
+});
+

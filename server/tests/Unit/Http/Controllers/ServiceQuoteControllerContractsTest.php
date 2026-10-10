@@ -227,6 +227,7 @@ function createServiceQuoteLookupSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('user_uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->string('customer_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->string('currency')->nullable();

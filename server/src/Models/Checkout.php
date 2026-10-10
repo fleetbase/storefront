@@ -10,6 +10,7 @@ use Fleetbase\Support\Utils;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class Checkout extends StorefrontModel
@@ -171,7 +172,31 @@ class Checkout extends StorefrontModel
         $cart = $this->cart;
 
         if ($cart) {
-            $this->cart->update(['checkout_uuid' => $this->uuid]);
+            $this->cart->update(['checkout_uuid' => $this->uuid, 'status' => Cart::STATUS_CHECKED_OUT]);
         }
+    }
+
+    /**
+     * The cart as it was when this checkout was created (cart_state): the items and prices
+     * that were priced and charged. Orders are created from it, so a cart changed or
+     * cleared between payment and order creation can't change the order. Null for older
+     * checkouts saved without it. The returned cart is a read-only copy, never saved.
+     */
+    public function cartAtCheckout(): ?Cart
+    {
+        $state = json_decode(json_encode($this->cart_state ?? null), true);
+        if (!is_array($state) || !array_key_exists('items', $state) || !is_array($state['items'])) {
+            return null;
+        }
+
+        $attributes           = Arr::only($state, ['uuid', 'public_id', 'company_uuid', 'user_uuid', 'checkout_uuid', 'status', 'customer_id', 'unique_identifier', 'currency', 'discount_code', 'expires_at', 'created_at', 'updated_at']);
+        $attributes['uuid']   = $attributes['uuid'] ?? $this->cart_uuid;
+        $attributes['items']  = json_encode($state['items']);
+        $attributes['events'] = json_encode($state['events'] ?? []);
+
+        $cart = new Cart();
+        $cart->setRawAttributes($attributes, true);
+
+        return $cart;
     }
 }
