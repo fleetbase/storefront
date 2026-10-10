@@ -1,0 +1,14 @@
+<div class="storefront-identity-stack" data-test-order-stores>
+    {{#each this.visible as |entry|}}
+        {{#if entry.store}}
+            <Resource::Pill @resourceType="store" @resource={{entry.store}} @size="xs" @class="storefront-identity-stack__pill" />
+        {{else}}
+            <span class="storefront-identity-stack__text" title={{entry.name}}>{{entry.name}}</span>
+        {{/if}}
+    {{else}}
+        <span class="text-gray-400">{{t "storefront.networks.orders.no-store"}}</span>
+    {{/each}}
+    {{#if this.overflow}}
+        <span class="storefront-identity-stack__overflow" title={{this.overflowTitle}}>+{{this.overflow}}</span>
+    {{/if}}
+</div>

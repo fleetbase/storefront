@@ -1,0 +1,14 @@
+<div class="storefront-order-total" data-test-order-total>
+    <span class="storefront-order-total__amount">{{format-currency this.total this.currency}}</span>
+    {{#if this.tip}}
+        <span class="storefront-order-total__tip">
+            {{#if (eq this.tipLabel "split")}}
+                {{t "storefront.networks.orders.tip-split" tip=(format-currency this.tip this.currency) count=@row.orderCount}}
+            {{else if (eq this.tipLabel "shared")}}
+                {{t "storefront.networks.orders.tip-shared" tip=(format-currency this.tip this.currency)}}
+            {{else}}
+                {{t "storefront.networks.orders.tip-to-store" tip=(format-currency this.tip this.currency)}}
+            {{/if}}
+        </span>
+    {{/if}}
+</div>

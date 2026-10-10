@@ -1,0 +1,25 @@
+<div class="storefront-order-actions" data-test-order-actions>
+    {{#if @row.isGroup}}
+        <span class="storefront-order-driver__muted">{{t "storefront.networks.orders.expand-hint"}}</span>
+    {{else}}
+        {{#if this.primary}}
+            <Button @size="xs" @type={{or this.primary.type "primary"}} @icon={{this.primary.icon}} @text={{this.primary.text}} @onClick={{fn this.run this.primary}} @permission="storefront update order" />
+        {{/if}}
+        <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @text={{false}} @renderInPlace={{false}} as |dd|>
+            <div class="next-dd-menu mt-1 mx-0" aria-labelledby="order-actions">
+                <div class="px-1">
+                    {{#each this.secondary as |item|}}
+                        {{#if item.separator}}
+                            <div class="next-dd-menu-seperator"></div>
+                        {{else}}
+                            <a href="javascript:;" class="next-dd-item {{item.class}} {{if item.disabled 'opacity-50 pointer-events-none'}}" {{on "click" (dropdown-fn dd this.run item)}}>
+                                {{#if item.icon}}<FaIcon @icon={{item.icon}} class="mr-1" />{{/if}}
+                                {{item.text}}
+                            </a>
+                        {{/if}}
+                    {{/each}}
+                </div>
+            </div>
+        </DropdownButton>
+    {{/if}}
+</div>

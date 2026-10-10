@@ -1,0 +1,16 @@
+<div class="storefront-order-driver" data-test-order-driver>
+    {{#if this.driver}}
+        <Resource::Pill @resourceType="driver" @resource={{this.driver}} @size="xs" />
+        {{#if (and @row.isGroup (gt @row.orderCount 1))}}
+            <span class="storefront-order-driver__note">{{t "storefront.networks.orders.driver-shared" count=@row.orderCount}}</span>
+        {{/if}}
+    {{else if this.isPickup}}
+        <span class="storefront-order-driver__muted">{{t "storefront.networks.orders.no-driver-needed"}}</span>
+    {{else if (gt this.driverCount 1)}}
+        <span class="storefront-order-driver__muted">{{t "storefront.networks.orders.drivers-count" count=this.driverCount}}</span>
+    {{else if this.canAssign}}
+        <Button @size="xs" @icon="id-card" @text={{t "storefront.networks.orders.assign-driver"}} @onClick={{fn @column.onAssign @row}} @permission="storefront update order" />
+    {{else}}
+        <span class="storefront-order-driver__muted">{{t "storefront.networks.orders.unassigned"}}</span>
+    {{/if}}
+</div>

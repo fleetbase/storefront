@@ -1,18 +1,69 @@
-<Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+<Layout::Section::Header @title={{t "storefront.common.orders"}} @subtitle={{t "storefront.networks.orders.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+    <div class="storefront-view-toggle mr-2" role="group" data-test-order-view-toggle>
+        <button type="button" class="storefront-view-toggle__option {{if this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "grouped")}}>{{t "storefront.networks.orders.group-by-checkout"}}</button>
+        <button type="button" class="storefront-view-toggle__option {{unless this.isGrouped 'is-active'}}" {{on "click" (fn this.setView "flat")}}>{{t "storefront.networks.orders.flat"}}</button>
+    </div>
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Layout::Section::Header>
 
-<Layout::Section::Body>
-    <Table
-        @wrapperClass="overscroll-y-none"
-        @rows={{@model}}
-        @columns={{this.registeredColumns}}
-        @selectable={{true}}
-        @canSelectAll={{true}}
-        @onSetup={{fn (mut this.table)}}
-        @pagination={{true}}
-        @paginationMeta={{@model.meta}}
-        @page={{this.page}}
-        @onPageChange={{fn (mut this.page)}}
-    />
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-order-status-tabs>
+        {{#each this.statusTabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                {{tab.label}}
+            </button>
+        {{/each}}
+    </div>
+
+    {{#if this.isGrouped}}
+        <Table
+            @wrapperClass="overscroll-y-none storefront-network-orders-table"
+            @rows={{this.rows}}
+            @columns={{this.registeredColumns}}
+            @canExpand={{true}}
+            @onSetup={{fn (mut this.table)}}
+            @pagination={{true}}
+            @paginationMeta={{@model.meta}}
+            @page={{this.page}}
+            @onPageChange={{fn (mut this.page)}}
+            @insertPagination={{true}}
+            @useTfootPagination={{true}}
+            as |t|
+        >
+            <t.head />
+            <t.body as |b|>
+                <b.expanded-row as |group|>
+                    {{#if group.isGroup}}
+                        <div class="storefront-order-group" data-test-order-group={{group.id}}>
+                            {{#each group.orders as |order|}}
+                                <div class="storefront-order-group__row">
+                                    {{#each t.columns as |column|}}
+                                        <div class="storefront-order-group__cell" style={{width-style-px column.width}}>
+                                            {{#if column.cellComponent}}
+                                                {{component column.cellComponent row=order column=column value=(get order column.valuePath)}}
+                                            {{else}}
+                                                {{get order column.valuePath}}
+                                            {{/if}}
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+                </b.expanded-row>
+            </t.body>
+        </Table>
+    {{else}}
+        <Table
+            @wrapperClass="overscroll-y-none storefront-network-orders-table"
+            @rows={{this.rows}}
+            @columns={{this.registeredColumns}}
+            @onSetup={{fn (mut this.table)}}
+            @pagination={{true}}
+            @paginationMeta={{@model.meta}}
+            @page={{this.page}}
+            @onPageChange={{fn (mut this.page)}}
+        />
+    {{/if}}
+    <p class="storefront-invitation-list__note px-4">{{t "storefront.networks.orders.group-note"}}</p>
 </Layout::Section::Body>

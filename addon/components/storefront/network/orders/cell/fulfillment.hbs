@@ -1,0 +1,6 @@
+{{#let (if @row.isGroup @row.is_pickup @row.meta.is_pickup) as |isPickup|}}
+    <span class="storefront-fulfillment {{if isPickup 'storefront-fulfillment--pickup' 'storefront-fulfillment--delivery'}}" data-test-order-fulfillment>
+        <FaIcon @icon={{if isPickup "store" "truck"}} @size="xs" class="mr-1" />
+        {{if isPickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}
+    </span>
+{{/let}}

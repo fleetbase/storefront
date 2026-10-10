@@ -367,6 +367,41 @@ storefront:
       recent-orders: Recent network orders
       all-orders: All orders
       no-orders: No orders through this network in the last seven days.
+    orders:
+      subtitle: Everything placed through the marketplace app, grouped by checkout
+      group-by-checkout: Group by checkout
+      flat: Flat
+      tabs:
+        all: All
+        needs-action: Needs action
+        preparing: Preparing
+        ready: Ready for pickup
+        dispatched: Out for delivery
+        completed: Completed
+        canceled: Canceled
+        custom: Filtered
+      columns:
+        reference: Checkout / order
+        fulfillment: Fulfillment
+        total: Total
+        placed: Placed
+      group-summary: "{orders, plural, one {# order} other {# orders}} · {items, plural, one {# item} other {# items}}"
+      part-of: "part of {checkout}"
+      items-count: "{count, plural, one {# item} other {# items}}"
+      no-customer: No customer
+      no-store: No store
+      delivery: Delivery
+      tip-split: "tip {tip} split {count} ways"
+      tip-shared: "+ tip {tip} shared"
+      tip-to-store: "tip {tip} to store"
+      driver-shared: "shared across {count} orders"
+      no-driver-needed: No driver needed
+      drivers-count: "{count} drivers"
+      assign-driver: Assign driver
+      unassigned: Unassigned
+      group-status: "{count} of {total} {status}"
+      expand-hint: Expand for each store's order
+      group-note: Group status is the least-advanced child; a group leaves "Needs action" when every child has a driver or is ready for pickup.
     invitations:
       title: Invitations
       invite-stores: Invite stores

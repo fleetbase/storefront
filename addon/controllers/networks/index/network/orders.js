@@ -6,329 +6,156 @@ import { tracked, cached } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
 import { action } from '@ember/object';
+import { groupOrdersByCheckout, STATUS_TABS } from '../../../../utils/order-groups';
 
+/**
+ * Everything placed through the network, grouped by checkout: a multi-store purchase is one
+ * row that expands into the order each store fulfils.
+ */
 export default class NetworksIndexNetworkOrdersController extends BaseController {
-    /**
-     * Inject the `notifications` service
-     *
-     * @var {Service}
-     */
     @service store;
     @service notifications;
-
-    /**
-     * Inject the `intl` service
-     *
-     * @var {Service}
-     */
     @service intl;
-
-    /**
-     * Inject the `modals-manager` service
-     *
-     * @var {Service}
-     */
     @service modalsManager;
-
-    /**
-     * Inject the `crud` service
-     *
-     * @var {Service}
-     */
     @service crud;
-
-    /**
-     * Inject the `fetch` service
-     *
-     * @var {Service}
-     */
     @service fetch;
-
-    /**
-     * Inject the `filters` service
-     *
-     * @var {Service}
-     */
     @service filters;
-
+    @service hostRouter;
     @service storefrontOrderActions;
 
-    /**
-     * Queryable parameters for this controller's model
-     *
-     * @var {Array}
-     */
-    queryParams = this.registeredQueryParams('network-order', []);
+    queryParams = this.registeredQueryParams('network-order', ['view']);
 
     @tracked page = 1;
     @tracked limit;
     @tracked query;
     @tracked sort = '-created_at';
-    @tracked public_id;
-    @tracked internal_id;
-    @tracked tracking;
-    @tracked facilitator;
-    @tracked customer;
-    @tracked driver;
-    @tracked payload;
-    @tracked pickup;
-    @tracked dropoff;
-    @tracked updated_by;
-    @tracked created_by;
     @tracked status;
+    @tracked view = 'grouped';
+    @tracked network;
+    @tracked stores = [];
+    @tracked table;
 
-    @tracked columns = [
-        {
-            id: 'public-id',
-            label: this.intl.t('storefront.common.id'),
-            valuePath: 'public_id',
-            width: '150px',
-            cellComponent: 'table/cell/anchor',
-            action: this.viewOrder,
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'internal-id',
-            label: this.intl.t('storefront.orders.index.internal-id'),
-            valuePath: 'internal_id',
-            width: '125px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'customer-name',
-            label: this.intl.t('storefront.orders.index.customer'),
-            valuePath: 'customer.name',
-            cellComponent: 'table/cell/identity',
-            resourceType: 'customer',
-            resourcePath: (order) => relationValue(order, 'customer') ?? buildIdentityStub(order, { type: order.customer_type ?? 'customer', nameKey: 'customer_name' }),
-            action: this.viewCustomer,
-            emptyText: 'No customer',
-            width: '125px',
-            resizable: true,
-            sortable: true,
-            hidden: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-customer'),
-            filterParam: 'customer',
-            model: 'customer',
-        },
-        {
-            id: 'pickup-name',
-            label: this.intl.t('storefront.common.pickup'),
-            valuePath: 'pickupName',
-            cellComponent: 'table/cell/identity',
-            resourceType: 'place',
-            resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'pickup') ?? buildIdentityStub(order, { type: 'place', nameKey: 'pickupName' }),
-            width: '160px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-pickup-location'),
-            filterParam: 'pickup',
-            model: 'place',
-        },
-        {
-            id: 'dropoff-name',
-            label: this.intl.t('storefront.common.dropoff'),
-            valuePath: 'dropoffName',
-            cellComponent: 'table/cell/identity',
-            resourceType: 'place',
-            resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'dropoff') ?? buildIdentityStub(order, { type: 'place', nameKey: 'dropoffName' }),
-            width: '160px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-order-dropoff-location'),
-            filterParam: 'dropoff',
-            model: 'place',
-        },
-        {
-            id: 'scheduled-at',
-            label: this.intl.t('storefront.orders.index.scheduled-at'),
-            valuePath: 'scheduledAt',
-            sortParam: 'scheduled_at',
-            filterParam: 'scheduled_at',
-            width: '150px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            id: 'item-count',
-            label: '# Items',
-            cellComponent: 'table/cell/base',
-            valuePath: 'item_count',
-            resizable: true,
-            hidden: true,
-            width: '50px',
-        },
-        {
-            id: 'transaction-amount',
-            label: this.intl.t('storefront.orders.index.transaction-total'),
-            cellComponent: 'table/cell/base',
-            valuePath: 'transaction_amount',
-            width: '50px',
-            resizable: true,
-            hidden: true,
-            sortable: true,
-        },
-        {
-            id: 'tracking-number-tracking-number',
-            label: this.intl.t('storefront.orders.index.tracking-number'),
-            cellComponent: 'table/cell/base',
-            valuePath: 'tracking_number.tracking_number',
-            width: '170px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'driver-assigned',
-            label: this.intl.t('storefront.orders.index.driver-assigned'),
-            cellComponent: 'table/cell/identity',
-            resourceType: 'driver',
-            valuePath: 'driver_assigned',
-            resourcePath: (order) =>
-                relationValue(order, 'driver_assigned') ??
-                buildIdentityStub(order, { type: 'driver', load: () => (order.driver_assigned_uuid ? this.store.findRecord('driver', order.driver_assigned_uuid) : null) }),
-            emptyText: 'No driver assigned',
-            width: '170px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-driver-for-order'),
-            filterParam: 'driver',
-            model: 'driver',
-            query: {
-                // no model, serializer, adapter for relations
-                without: ['fleets', 'vendor', 'vehicle', 'currentJob'],
+    get isGrouped() {
+        return this.view !== 'flat';
+    }
+
+    get activeStatusTab() {
+        const current = String(this.status ?? '')
+            .split(',')
+            .filter(Boolean)
+            .sort()
+            .join(',');
+
+        return STATUS_TABS.find((tab) => tab.statuses.slice().sort().join(',') === current)?.id ?? 'custom';
+    }
+
+    get statusTabs() {
+        return STATUS_TABS.map((tab) => ({
+            ...tab,
+            label: this.intl.t(`storefront.networks.orders.tabs.${tab.id}`),
+            isActive: tab.id === this.activeStatusTab,
+        }));
+    }
+
+    get storesById() {
+        return this.stores.reduce((map, store) => {
+            map[store.public_id] = store;
+            map[store.id] = store;
+            return map;
+        }, {});
+    }
+
+    /**
+     * Rows for the table: checkout groups in grouped view, orders otherwise.
+     */
+    get rows() {
+        return this.isGrouped ? groupOrdersByCheckout(this.model) : (this.model?.toArray?.() ?? Array.from(this.model ?? []));
+    }
+
+    @cached get columns() {
+        return [
+            {
+                id: 'reference',
+                label: this.intl.t('storefront.networks.orders.columns.reference'),
+                valuePath: 'public_id',
+                cellComponent: 'storefront/network/orders/cell/reference',
+                onView: this.viewOrder,
+                width: '190px',
+                resizable: true,
+                sortable: false,
             },
-        },
-        {
-            id: 'type',
-            label: this.intl.t('storefront.common.type'),
-            cellComponent: 'cell/humanize',
-            valuePath: 'type',
-            width: '100px',
-            resizable: true,
-            hidden: true,
-            sortable: true,
-        },
-        {
-            id: 'status',
-            label: this.intl.t('storefront.common.status'),
-            valuePath: 'status',
-            cellComponent: 'table/cell/status',
-            width: '120px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/multi-option',
-            // filterOptions: this.statusOptions,
-        },
-        {
-            id: 'created-at',
-            label: this.intl.t('storefront.orders.index.created-at'),
-            valuePath: 'createdAt',
-            sortParam: 'created_at',
-            filterParam: 'created_at',
-            width: '140px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            id: 'updated-at',
-            label: this.intl.t('storefront.orders.index.updated-at'),
-            valuePath: 'updatedAt',
-            sortParam: 'updated_at',
-            filterParam: 'updated_at',
-            width: '125px',
-            resizable: true,
-            sortable: true,
-            hidden: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            id: 'created-by-name',
-            label: this.intl.t('storefront.orders.index.created-by'),
-            valuePath: 'created_by_name',
-            width: '125px',
-            resizable: true,
-            hidden: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: 'Select user',
-            filterParam: 'created_by',
-            model: 'user',
-        },
-        {
-            id: 'updated-by-name',
-            label: this.intl.t('storefront.orders.index.updated-by'),
-            valuePath: 'updated_by_name',
-            width: '125px',
-            resizable: true,
-            hidden: true,
-            filterable: true,
-            filterComponent: 'filter/model',
-            filterComponentPlaceholder: this.intl.t('storefront.orders.index.select-user'),
-            filterParam: 'updated_by',
-            model: 'user',
-        },
-        {
-            id: 'row-actions',
-            label: '',
-            cellComponent: 'table/cell/dropdown',
-            ddButtonText: false,
-            ddButtonIcon: 'ellipsis-h',
-            ddButtonIconPrefix: 'fas',
-            ddMenuLabel: 'Order Actions',
-            cellClassNames: 'overflow-visible',
-            wrapperClass: 'flex items-center justify-end mx-2',
-            width: '12%',
-            actions: [
-                {
-                    id: 'view-order',
-                    label: this.intl.t('storefront.orders.index.view-order'),
-                    icon: 'eye',
-                    fn: this.viewOrder,
-                },
-                {
-                    id: 'cancel-order',
-                    label: this.intl.t('storefront.orders.index.cancel-order'),
-                    icon: 'ban',
-                    fn: this.cancelOrder,
-                },
-                {
-                    separator: true,
-                },
-                {
-                    id: 'delete-order',
-                    label: this.intl.t('storefront.orders.index.delete-order'),
-                    icon: 'trash',
-                    fn: this.deleteOrder,
-                },
-            ],
-            sortable: false,
-            filterable: false,
-            resizable: false,
-            searchable: false,
-        },
-    ];
+            {
+                id: 'customer',
+                label: this.intl.t('storefront.orders.index.customer'),
+                valuePath: 'customer.name',
+                cellComponent: 'table/cell/identity',
+                resourceType: 'customer',
+                resourcePath: (row) => relationValue(row, 'customer') ?? buildIdentityStub(row, { type: row.customer_type ?? 'customer', nameKey: 'customer_name' }),
+                action: this.viewCustomer,
+                emptyText: this.intl.t('storefront.networks.orders.no-customer'),
+                width: '170px',
+                resizable: true,
+            },
+            {
+                id: 'stores',
+                label: this.intl.t('storefront.networks.index.network.stores.store'),
+                cellComponent: 'storefront/network/orders/cell/stores',
+                storesById: this.storesById,
+                width: '200px',
+                resizable: true,
+            },
+            {
+                id: 'fulfillment',
+                label: this.intl.t('storefront.networks.orders.columns.fulfillment'),
+                cellComponent: 'storefront/network/orders/cell/fulfillment',
+                width: '110px',
+            },
+            {
+                id: 'total',
+                label: this.intl.t('storefront.networks.orders.columns.total'),
+                cellComponent: 'storefront/network/orders/cell/total',
+                width: '140px',
+                resizable: true,
+            },
+            {
+                id: 'driver',
+                label: this.intl.t('storefront.orders.index.driver-assigned'),
+                cellComponent: 'storefront/network/orders/cell/driver',
+                onAssign: this.assignDriver,
+                width: '170px',
+                resizable: true,
+            },
+            {
+                id: 'status',
+                label: this.intl.t('storefront.common.status'),
+                cellComponent: 'storefront/network/orders/cell/status',
+                width: '150px',
+                resizable: true,
+            },
+            {
+                id: 'placed',
+                label: this.intl.t('storefront.networks.orders.columns.placed'),
+                cellComponent: 'storefront/network/orders/cell/placed',
+                width: '110px',
+            },
+            {
+                id: 'row-actions',
+                label: '',
+                cellComponent: 'storefront/network/orders/cell/actions',
+                onView: this.viewOrder,
+                onCancel: this.cancelOrder,
+                onDelete: this.deleteOrder,
+                onChange: this.refresh,
+                cellClassNames: 'overflow-visible',
+                wrapperClass: 'flex items-center justify-end mx-2',
+                width: '170px',
+                sortable: false,
+                filterable: false,
+                resizable: false,
+                searchable: false,
+            },
+        ];
+    }
 
     /**
      * The search task.
@@ -336,22 +163,31 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
      * @void
      */
     @task({ restartable: true }) *search({ target: { value } }) {
-        // if no query don't search
         if (isBlank(value)) {
             this.query = null;
             return;
         }
 
-        // timeout for typing
         yield timeout(250);
 
-        // reset page for results
         if (this.page > 1) {
             this.page = 1;
         }
 
-        // update the query param
         this.query = value;
+    }
+
+    @action selectStatusTab(tab) {
+        this.status = tab.statuses?.length ? tab.statuses.join(',') : null;
+        this.page = 1;
+    }
+
+    @action setView(view) {
+        this.view = view;
+    }
+
+    @action refresh() {
+        return this.hostRouter.refresh();
     }
 
     /**
@@ -368,7 +204,21 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     }
 
     @action viewOrder(order) {
-        return this.storefrontOrderActions.viewOrder(order);
+        return this.storefrontOrderActions.viewOrder(order, { onChange: this.refresh });
+    }
+
+    @action assignDriver(order) {
+        return this.storefrontOrderActions.assignDriver(order, this.refresh);
+    }
+
+    @action cancelOrder(order) {
+        return this.storefrontOrderActions.cancelOrder(order, this.refresh);
+    }
+
+    @action deleteOrder(order) {
+        return this.crud.delete(order, {
+            onSuccess: () => this.refresh(),
+        });
     }
 
     /**

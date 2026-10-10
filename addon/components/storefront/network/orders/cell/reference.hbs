@@ -1,0 +1,13 @@
+<div class="storefront-order-ref" data-test-order-reference>
+    {{#if @row.isGroup}}
+        <span class="storefront-order-ref__id">{{@row.id}}</span>
+        <span class="storefront-order-ref__meta">{{t "storefront.networks.orders.group-summary" orders=@row.orderCount items=@row.itemCount}}</span>
+    {{else}}
+        <a href="javascript:;" class="storefront-order-ref__id storefront-order-ref__id--link" {{on "click" (fn @column.onView @row)}}>{{@row.public_id}}</a>
+        {{#if @row.meta.checkout_id}}
+            <span class="storefront-order-ref__meta">{{t "storefront.networks.orders.part-of" checkout=@row.meta.checkout_id}}</span>
+        {{else if @row.item_count}}
+            <span class="storefront-order-ref__meta">{{t "storefront.networks.orders.items-count" count=@row.item_count}}</span>
+        {{/if}}
+    {{/if}}
+</div>
