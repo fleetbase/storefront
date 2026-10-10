@@ -1023,6 +1023,14 @@ storefront:
       default-order-config: Default order config
       default-order-config-help: Applies to every order created for this store.
       default-order-config-placeholder: Select default order config
+      network-key: Network key
+      network-key-help: Used by the app and the API; it cannot change.
+      gateways: Payment gateways
+      notifications: Notification channels
+      contact-social: Contact and social
+      network-rules-lede: What the app allows across the stores in this network.
+      copy-network-key: Copy network key
+      network-key-copied: Network key copied.
     rules:
       online: Customers can see and order from this store in the app.
       pickup-label: Pickup orders
@@ -1044,6 +1052,13 @@ storefront:
       pod-label: Proof of delivery
       pod: The driver must capture proof before the order completes.
       network-note: Network-level rules (multi-cart checkout, tip splitting) live in the network's settings.
+      online-network: Customers can browse and order from this network in the app.
+      multi-cart-label: Multi-cart checkout
+      multi-cart: Customers can check out items from several stores in one order.
+      split-tips-label: Split store tips across stores
+      split-tips: A multi-store order's store tip is divided by each store's share; off, the network keeps it.
+      reviews-label: Customer reviews
+      reviews: Customers can review products and stores after a completed order.
     save-bar:
       unsaved: "{count, plural, one {# unsaved change} other {# unsaved changes}}"
       saved: All changes saved
@@ -1056,6 +1071,7 @@ storefront:
       store-key: Store Key
       store-key-help-text: This is your store key, use this to enable apps and integrations for your storefront.
     gateways:
+      empty: No payment gateways yet. Add one so customers can pay in the app.
       geteway-settings: Gateway Settings
       add-or-manage-your-paymeny-gateway-settings-here: Add or manage your payment gateway settings here.
       create-new-gateway: Create new gateway
@@ -1138,6 +1154,7 @@ storefront:
       text-location: Create new location
       store-hour: Manage store hours
     notification:
+      empty: No notification channels yet. Add one to reach customers by push.
       create-new-notification-channel: Create a new notification channel
       create-notification-channel: Create Notification Channel
       edit-notification-channel: Edit notification channel

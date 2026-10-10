@@ -72,6 +72,95 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
 
     @tracked orderConfigs = [];
 
+    /** The settings page is one route; the rail scrolls to its sections. */
+    @tracked activeSection = 'general';
+    @tracked optionsRevision = 0;
+    optionsSnapshot = '{}';
+    alertableSnapshot = '{}';
+
+    get railItems() {
+        const item = (id, label, icon, badge = null) => ({ id, label, icon, section: `network-settings-${id}`, isActive: this.activeSection === id, badge });
+
+        return [
+            item('general', this.intl.t('storefront.common.general'), 'cog'),
+            item('branding', this.intl.t('storefront.settings.sections.branding'), 'image'),
+            item('rules', this.intl.t('storefront.settings.sections.checkout-rules'), 'cart-shopping'),
+            item('alerts', this.intl.t('storefront.common.alerts'), 'bell'),
+            item('gateways', this.intl.t('storefront.settings.sections.gateways'), 'cash-register', this.gateways?.length || null),
+            item('notifications', this.intl.t('storefront.settings.sections.notifications'), 'bell-concierge', this.channels?.length || null),
+            item('api', this.intl.t('storefront.settings.sections.api-keys'), 'code'),
+        ];
+    }
+
+    @action openItem(item) {
+        this.activeSection = item.id;
+        document.getElementById(item.section)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    }
+
+    get optionsChanged() {
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.options ?? {}) !== this.optionsSnapshot;
+    }
+
+    get alertableChanged() {
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.alertable ?? {}) !== this.alertableSnapshot;
+    }
+
+    get changedAttributeNames() {
+        const changed = this.model?.changedAttributes?.() ?? {};
+
+        return Object.keys(changed).filter((key) => !['options', 'alertable'].includes(key));
+    }
+
+    get isDirty() {
+        return this.changedAttributeNames.length > 0 || this.optionsChanged || this.alertableChanged;
+    }
+
+    get dirtyCount() {
+        return this.changedAttributeNames.length + (this.optionsChanged ? 1 : 0) + (this.alertableChanged ? 1 : 0);
+    }
+
+    snapshotOptions() {
+        this.optionsSnapshot = JSON.stringify(this.model?.options ?? {});
+        this.alertableSnapshot = JSON.stringify(this.model?.alertable ?? {});
+        this.optionsRevision++;
+    }
+
+    @action touch() {
+        this.optionsRevision++;
+    }
+
+    @action discardChanges() {
+        this.model.rollbackAttributes();
+
+        try {
+            this.model.set('options', JSON.parse(this.optionsSnapshot));
+            this.model.set('alertable', JSON.parse(this.alertableSnapshot));
+        } catch {
+            // snapshots are JSON we wrote ourselves
+        }
+
+        this.optionsRevision++;
+    }
+
+    @action async copyNetworkKey() {
+        const key = this.model?.key;
+
+        if (!key) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(key);
+            this.notifications.success(this.intl.t('storefront.settings.sections.network-key-copied'));
+        } catch {
+            this.notifications.info(key);
+        }
+    }
+
     /**
      * Alias for model.gateways, representing the gateways associated with the network.
      *
@@ -92,12 +181,14 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
      * @method saveSettings
      * @public
      */
-    @action saveSettings() {
+    @action saveSettings(event) {
+        event?.preventDefault?.();
         this.isLoading = true;
 
         this.model
             .save()
             .then(() => {
+                this.snapshotOptions();
                 this.notifications.success(this.intl.t('storefront.networks.index.network.index.change-network-saved'));
             })
             .catch((error) => {

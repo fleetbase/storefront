@@ -45,6 +45,21 @@ class OrderFilter extends FleetOpsOrderFilter
         ]);
     }
 
+    /**
+     * Orders placed by one customer; accepts the contact uuid or public id.
+     */
+    public function customer(string $customer)
+    {
+        // The customer relation is polymorphic, so resolve a public id to the uuid first.
+        $uuid = \Illuminate\Support\Str::isUuid($customer) ? $customer : \Fleetbase\FleetOps\Models\Contact::where('public_id', $customer)->value('uuid');
+        $this->builder->where('customer_uuid', $uuid ?? $customer);
+    }
+
+    public function customerUuid(string $customer)
+    {
+        $this->builder->where('customer_uuid', $customer);
+    }
+
     public function storefront(string $storefront)
     {
         $this->builder->where('meta->storefront_id', $storefront);

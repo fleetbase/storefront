@@ -6386,3 +6386,101 @@ body[data-theme='dark'] .storefront-create-order__totals .is-total {
 .storefront-create-order__ok {
     color: #047857;
 }
+
+/* Settings: section toolbars, media previews, simple record lists (shared by store and network settings) */
+.storefront-settings-section__toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.storefront-settings-section__toolbar .storefront-settings-section__lede {
+    margin-bottom: 0;
+}
+
+.storefront-settings-media {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.storefront-settings-media__preview {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    object-fit: cover;
+    background: #f9fafb;
+}
+
+.storefront-settings-media__preview--wide {
+    width: 10rem;
+}
+
+body[data-theme='dark'] .storefront-settings-media__preview {
+    border-color: #374151;
+    background: #111827;
+}
+
+.storefront-settings-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+body[data-theme='dark'] .storefront-settings-list {
+    border-color: #374151;
+}
+
+.storefront-settings-list__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.625rem 0.75rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.storefront-settings-list__row:first-child {
+    border-top: 0;
+}
+
+body[data-theme='dark'] .storefront-settings-list__row {
+    border-color: #374151;
+}
+
+.storefront-settings-list__name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+body[data-theme='dark'] .storefront-settings-list__name {
+    color: #f3f4f6;
+}
+
+.storefront-settings-list__meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.storefront-settings-list__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+.storefront-save-bar__dot {
+    color: #f59e0b;
+    margin-right: 0.5rem;
+}
+
+.storefront-save-bar__check {
+    color: #22c55e;
+    margin-right: 0.5rem;
+}

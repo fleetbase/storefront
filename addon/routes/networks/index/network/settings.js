@@ -10,6 +10,8 @@ export default class NetworksIndexNetworkSettingsRoute extends Route {
 
     async setupController(controller) {
         super.setupController(...arguments);
+        controller.activeSection = 'general';
+        controller.snapshotOptions();
         controller.orderConfigs = await this.store.findAll('order-config');
     }
 }
