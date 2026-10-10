@@ -14,14 +14,6 @@
         {{/each}}
     </div>
 
-    <div class="flex flex-row items-center flex-wrap gap-2 px-4 my-3">
-        <NetworkCategoryPicker @network={{this.network}} @category={{this.category}} @onCreateNewCategory={{this.createNewCategory}} @onSelect={{this.selectCategory}} @onReady={{this.setCategoryPickerContext}} @wrapperClass="w-64" />
-        {{#if this.categoryModel}}
-            <Button @icon="arrow-left" @size="xs" @onClick={{this.categoryPicker.loadParentCategories}} />
-            <Button @icon="cog" @text={{t "storefront.networks.invitations.edit-category"}} @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />
-            <Button @icon="trash" @text={{t "storefront.networks.invitations.delete-category"}} @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
-        {{/if}}
-    </div>
 
     {{#if this.hasSelection}}
         <div class="storefront-bulk-bar mx-4 mb-3" data-test-network-store-bulk-bar>
