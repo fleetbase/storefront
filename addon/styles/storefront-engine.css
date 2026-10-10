@@ -254,7 +254,7 @@ body[data-theme='dark'] .storefront-product-addon-empty {
 }
 
 .storefront-product-search > svg {
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-product-collection {
@@ -388,7 +388,7 @@ body[data-theme='dark'] .storefront-product-row__muted {
     display: block;
     overflow: hidden;
     margin-top: 0.1rem;
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 0.6875rem;
     font-weight: 400;
     line-height: 1.1;
@@ -2531,7 +2531,7 @@ body[data-theme='dark'] .storefront-order-store__row-value a:hover {
     margin-top: 0.5rem;
     padding-top: 0.45rem;
     border-top: 1px dashed #d1d5db;
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 0.6875rem;
 }
 
@@ -2747,7 +2747,7 @@ body[data-theme='dark'] .storefront-order-store__row-value a:hover {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 0.6875rem;
 }
 
@@ -3205,7 +3205,7 @@ body[data-theme='dark'] .storefront-hours-strip__day.is-open .storefront-hours-s
 .storefront-switcher-menu__empty {
     padding: 0.5rem 0.625rem;
     font-size: 0.8125rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-switcher-tile {
@@ -4438,7 +4438,7 @@ body[data-theme='dark'] .storefront-save-bar {
 
 .storefront-save-bar__sections {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-save-bar__actions {
@@ -4754,7 +4754,7 @@ body[data-theme='dark'] .storefront-catalog-product__price {
 .storefront-catalog-product__price-note {
     font-size: 0.6875rem;
     font-weight: 400;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-catalog-picker {
@@ -5110,7 +5110,7 @@ body[data-theme='dark'] .storefront-promotion-card__value {
 }
 
 .storefront-promotion-card__description {
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-builder__steps {
@@ -5333,7 +5333,7 @@ body[data-theme='dark'] .storefront-truck-panel__catalog.is-assigned {
     height: 1.25rem;
     margin-right: 0.125rem;
     border-radius: 0.25rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-product-category__caret:hover {
@@ -5508,7 +5508,7 @@ body[data-theme='dark'] .storefront-attention-item__label {
 }
 
 .storefront-attention-item__chevron {
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 /* Network join landing and store-side invitation banner */
@@ -6162,7 +6162,7 @@ body[data-theme='dark'] .storefront-settings-list__name {
 }
 
 .storefront-share-cell__none {
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 /* Product card on the shared card anatomy: media overlay, price, notes */
@@ -6206,7 +6206,7 @@ body[data-theme='dark'] .storefront-settings-list__name {
     display: inline-flex;
     align-items: center;
     margin-right: 0.375rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-card.is-selected .storefront-card__select {
@@ -6227,7 +6227,7 @@ body[data-theme='dark'] .storefront-card__price {
 
 .storefront-card__price-compare {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-card__note {
@@ -6454,11 +6454,11 @@ body[data-theme='dark'] .storefront-sidebar-group__item:focus-visible {
 
 .storefront-sidebar-group__meta {
     font-size: 0.6875rem;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .storefront-sidebar-group__arrow {
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 /* Key / value rows inside panels (truck location, order data) */
@@ -6540,6 +6540,6 @@ body[data-theme='dark'] .storefront-catalog-product__price--button:focus-visible
 
 .storefront-catalog-product.is-hidden-here .storefront-catalog-product__name,
 .storefront-catalog-product.is-hidden-here .storefront-catalog-product__price {
-    color: #9ca3af;
+    color: #6b7280;
     text-decoration: line-through;
 }

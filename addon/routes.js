@@ -58,9 +58,6 @@ export default buildRoutes(function () {
         this.route('push-notifications');
         this.route('redemptions');
     });
-    this.route('coupons');
-    this.route('broadcast');
-    this.route('pages');
     this.route('settings', function () {
         this.route('index', { path: '/' });
         this.route('api');
