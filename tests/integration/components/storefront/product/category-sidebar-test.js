@@ -1,10 +1,27 @@
 import { module, test } from 'qunit';
+import Service from '@ember/service';
 import { setupRenderingTest } from 'dummy/tests/helpers';
 import { click, render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 
 module('Integration | Component | storefront/product/category-sidebar', function (hooks) {
     setupRenderingTest(hooks);
+
+    hooks.beforeEach(function () {
+        // the sidebar gates its buttons on abilities; grant everything here
+        this.owner.register(
+            'service:abilities',
+            class AbilitiesStub extends Service {
+                can() {
+                    return true;
+                }
+
+                cannot() {
+                    return false;
+                }
+            }
+        );
+    });
 
     test('it renders and selects product categories', async function (assert) {
         assert.expect(5);

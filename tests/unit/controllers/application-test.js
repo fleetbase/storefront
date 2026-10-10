@@ -211,17 +211,7 @@ module('Unit | Controller | application', function (hooks) {
             assert.strictEqual(slug, 'pizza', 'category navigation includes its slug');
         };
         categoryItem.onClick();
-        assert.deepEqual(
-            items[7].children.map((item) => item.route),
-            [
-                'console.storefront.settings.index',
-                'console.storefront.settings.locations',
-                'console.storefront.settings.gateways',
-                'console.storefront.settings.api',
-                'console.storefront.settings.notifications',
-            ],
-            'settings children use the requested order'
-        );
+        assert.strictEqual(items[7].route, 'console.storefront.settings', 'settings is one entry; its page carries the section rail');
         assert.strictEqual(items[8].url, 'https://github.com/fleetbase/storefront-app', 'launch app remains an external URL item');
     });
 
@@ -394,7 +384,7 @@ module('Unit | Controller | application', function (hooks) {
         assert.true(controller.isNetworkContext);
         assert.deepEqual(
             items.map((item) => item.label),
-            ['Overview', 'Stores', 'Trucks', 'Orders', 'Customers', 'Settings'],
+            ['Overview', 'Stores', 'Trucks', 'Orders', 'Customers', 'Categories', 'Settings'],
             'network sections replace the store sections'
         );
         assert.deepEqual(

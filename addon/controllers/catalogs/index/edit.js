@@ -25,6 +25,8 @@ export default class CatalogsIndexEditController extends Controller {
     @tracked renamingCategory = null;
     @tracked renameValue = '';
     @tracked revision = 0;
+    /** The open editor section, kept in the URL so links can land on Served by or Hours. */
+    queryParams = [{ activeSection: 'section' }];
     @tracked activeSection = 'categories';
     structureSnapshot = '';
 

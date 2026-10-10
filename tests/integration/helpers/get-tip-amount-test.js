@@ -6,12 +6,15 @@ import { hbs } from 'ember-cli-htmlbars';
 module('Integration | Helper | get-tip-amount', function (hooks) {
     setupRenderingTest(hooks);
 
-    // TODO: Replace this with your real tests.
-    test('it renders', async function (assert) {
-        this.set('inputValue', '1234');
+    test('a percentage tip is taken from the subtotal and formatted in the currency', async function (assert) {
+        await render(hbs`{{get-tip-amount "10%" 5000 "USD"}}`);
 
-        await render(hbs`{{get-tip-amount this.inputValue}}`);
+        assert.dom(this.element).hasText('$5.00');
+    });
 
-        assert.dom(this.element).hasText('1234');
+    test('a fixed tip is formatted as is', async function (assert) {
+        await render(hbs`{{get-tip-amount 350 5000 "USD"}}`);
+
+        assert.dom(this.element).hasText('$3.50');
     });
 });

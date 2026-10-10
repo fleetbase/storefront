@@ -23,6 +23,28 @@ if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetb
     });
 }
 
+// Console utilities the engine imports by module path; the dummy app has no console.
+if (typeof window.define === 'function') {
+    if (!window.requirejs?.entries?.['@fleetbase/console/utils/get-pod-methods']) {
+        window.define('@fleetbase/console/utils/get-pod-methods', ['exports'], function (exports) {
+            exports.default = function getPodMethods() {
+                return [
+                    { name: 'Scan', value: 'scan' },
+                    { name: 'Signature', value: 'signature' },
+                    { name: 'Photo', value: 'photo' },
+                ];
+            };
+        });
+    }
+    if (!window.requirejs?.entries?.['@fleetbase/console/utils/is-email']) {
+        window.define('@fleetbase/console/utils/is-email', ['exports'], function (exports) {
+            exports.default = function isEmail(value) {
+                return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            };
+        });
+    }
+}
+
 setApplication(Application.create(config.APP));
 
 setup(QUnit.assert);

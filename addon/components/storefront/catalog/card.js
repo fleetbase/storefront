@@ -51,4 +51,11 @@ export default class StorefrontCatalogCardComponent extends Component {
     get isEmpty() {
         return this.categories.length === 0;
     }
+
+    /** Row actions passed by the page; `isVisible(catalog)` filters them. */
+    get menuItems() {
+        const items = this.args.actions ?? [];
+
+        return items.filter((item) => item.separator || typeof item.isVisible !== 'function' || item.isVisible(this.catalog));
+    }
 }

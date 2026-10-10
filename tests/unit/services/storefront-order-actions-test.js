@@ -26,9 +26,9 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
         }
 
         class StorefrontStub extends Service {
-    contextScope() {
-        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
-    }
+            contextScope() {
+                return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+            }
 
             getActiveStore(key) {
                 assert.strictEqual(key, 'public_id');
@@ -41,12 +41,12 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
                 assert.strictEqual(definition.resource.public_id, 'order_test');
                 assert.strictEqual(definition.header, 'storefront/order/panel-header');
                 assert.notOk(definition.content);
-                assert.strictEqual(definition.tabs.length, 2);
-                assert.strictEqual(definition.tabs[0].label, 'Overview');
-                assert.strictEqual(definition.tabs[0].component, 'storefront/order/details');
-                assert.strictEqual(definition.tabs[1].key, 'invoice');
-                assert.strictEqual(definition.tabs[1].component, 'storefront/order/details/registered-tab');
-                assert.strictEqual(definition.width, '560px');
+                assert.strictEqual(definition.tabs.length, 7);
+                assert.strictEqual(definition.tabs[0].key, 'items');
+                assert.strictEqual(definition.tabs[0].component, 'storefront/order/details/tabs/items');
+                assert.strictEqual(definition.tabs[6].key, 'invoice');
+                assert.strictEqual(definition.tabs[6].component, 'storefront/order/details/registered-tab');
+                assert.strictEqual(definition.width, '600px');
             }
         }
 
@@ -78,19 +78,19 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
         const service = this.owner.lookup('service:storefront-order-actions');
 
-        let actions = service.actionButtonsFor({ id: 'order_1', status: 'created', meta: {} })[0].items;
+        let actions = service.actionItemsFor({ id: 'order_1', status: 'created', meta: {} });
         assert.strictEqual(actions[0].text, 'Accept order');
 
-        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: false } })[0].items;
+        actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: false } });
         assert.strictEqual(actions[0].text, 'Mark as Ready');
 
-        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', dispatched: true, meta: { is_pickup: false } })[0].items;
+        actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', dispatched: true, meta: { is_pickup: false } });
         assert.strictEqual(actions[0].text, 'Mark as Ready');
 
-        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: true } })[0].items;
+        actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: true } });
         assert.strictEqual(actions[0].text, 'Mark as Ready');
 
-        actions = service.actionButtonsFor({ id: 'order_1', status: 'pickup_ready', meta: { is_pickup: true } })[0].items;
+        actions = service.actionItemsFor({ id: 'order_1', status: 'pickup_ready', meta: { is_pickup: true } });
         assert.strictEqual(actions[0].text, 'Mark Picked Up');
     });
 
@@ -106,7 +106,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
             update(id, definition) {
                 assert.strictEqual(id, 'storefront-order:order_1');
-                assert.strictEqual(definition.actionButtons[0].items[0].text, 'Mark as Ready');
+                assert.strictEqual(definition.actionButtons[0].text, 'Mark as Ready');
             }
         }
 
@@ -139,10 +139,10 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
     test('it changes driver action label when a driver is assigned', function (assert) {
         const service = this.owner.lookup('service:storefront-order-actions');
 
-        let actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned: null })[0].items;
+        let actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned: null });
         assert.strictEqual(actions.find((action) => action.icon === 'id-card').text, 'Assign Driver');
 
-        actions = service.actionButtonsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned_uuid: 'driver_1' })[0].items;
+        actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: {}, driver_assigned_uuid: 'driver_1' });
         assert.strictEqual(actions.find((action) => action.icon === 'user-minus').text, 'Unassign Driver');
     });
 
@@ -158,7 +158,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
             update(id, definition) {
                 assert.strictEqual(id, 'storefront-order:order_1');
-                assert.notStrictEqual(definition.actionButtons[0].items[0].text, 'Mark as Ready');
+                assert.notStrictEqual(definition.actionButtons[0].text, 'Mark as Ready');
             }
         }
 

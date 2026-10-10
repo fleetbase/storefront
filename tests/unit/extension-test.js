@@ -23,7 +23,8 @@ module('Unit | Extension', function () {
         assert.deepEqual(
             storefrontRegistration.widgets.map((widget) => widget.id),
             [
-                'storefront-kpi-revenue-widget',
+                'storefront-attention-strip-widget',
+            'storefront-kpi-revenue-widget',
                 'storefront-kpi-orders-widget',
                 'storefront-kpi-aov-widget',
                 'storefront-kpi-active-orders-widget',

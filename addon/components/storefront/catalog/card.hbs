@@ -55,7 +55,23 @@
                         <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.catalog}} @permission="storefront update catalog" data-test-catalog-edit />
                     {{/if}}
                 {{/if}}
-                {{#if @onDelete}}
+                {{#if this.menuItems.length}}
+                    <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.actions"}} data-test-catalog-menu as |dd|>
+                        <div class="next-dd-menu mt-1 mx-0">
+                            <div class="px-1">
+                                {{#each this.menuItems as |item|}}
+                                    {{#if item.separator}}
+                                        <div class="next-dd-menu-seperator"></div>
+                                    {{else}}
+                                        <a href="javascript:;" class="next-dd-item {{item.class}}" {{on "click" (dropdown-fn dd (fn item.fn this.catalog))}} data-test-catalog-action={{item.id}}>
+                                            {{#if item.icon}}<FaIcon @icon={{item.icon}} class="mr-2" />{{/if}}{{item.label}}
+                                        </a>
+                                    {{/if}}
+                                {{/each}}
+                            </div>
+                        </div>
+                    </DropdownButton>
+                {{else if @onDelete}}
                     <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "storefront.common.delete"}} @onClick={{fn @onDelete this.catalog}} @permission="storefront delete catalog" data-test-catalog-delete />
                 {{/if}}
             </div>

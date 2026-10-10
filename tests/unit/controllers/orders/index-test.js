@@ -3,9 +3,27 @@ import { setupTest } from 'dummy/tests/helpers';
 import { setupIntl } from 'ember-intl/test-support';
 import Service from '@ember/service';
 
+class StorefrontStubService extends Service {
+    activeStore = { id: 'store_1', public_id: 'store_test', currency: 'USD' };
+    activeNetwork = null;
+    isNetworkContext = false;
+
+    getActiveStore(property = null) {
+        return property ? this.activeStore?.[property] : this.activeStore;
+    }
+
+    contextScope() {
+        return { storefront: this.activeStore?.public_id };
+    }
+}
+
 module('Unit | Controller | orders/index', function (hooks) {
     setupTest(hooks);
     setupIntl(hooks, 'en-us');
+
+    hooks.beforeEach(function () {
+        this.owner.register('service:storefront', StorefrontStubService);
+    });
 
     test('it exists', function (assert) {
         let controller = this.owner.lookup('controller:orders/index');

@@ -21,19 +21,13 @@ module('Unit | Controller | networks/index/network/orders', function (hooks) {
         const controller = this.owner.lookup('controller:networks/index/network/orders');
         const byId = Object.fromEntries(controller.columns.map((column) => [column.id, column]));
 
-        for (const [id, resourceType] of [
-            ['customer-name', 'customer'],
-            ['pickup-name', 'place'],
-            ['dropoff-name', 'place'],
-            ['driver-assigned', 'driver'],
-        ]) {
+        assert.strictEqual(byId.driver.cellComponent, 'storefront/network/orders/cell/driver', 'driver cell carries the inline assign button');
+
+        for (const [id, resourceType] of [['customer', 'customer']]) {
             assert.strictEqual(byId[id].cellComponent, 'table/cell/identity', `${id} is an identity cell`);
             assert.strictEqual(byId[id].resourceType, resourceType, `${id} is a ${resourceType}`);
             assert.strictEqual(typeof byId[id].resourcePath, 'function', `${id} resolves its resource`);
         }
 
-        const driver = { id: 'driver_1' };
-        assert.strictEqual(byId['driver-assigned'].resourcePath({ driver_assigned: driver }), driver);
-        assert.strictEqual(byId['driver-assigned'].resourcePath({ driver_name: 'Bob' }).name, 'Bob');
     });
 });

@@ -431,6 +431,11 @@ storefront:
       empty-state: Create a catalog to group products into a menu with its own categories and hours.
       create-catalog: Create catalog
     card:
+      assign: Assign to stores and trucks
+      publish: Publish
+      unpublish: Unpublish
+      published: Catalog published.
+      unpublished: Catalog unpublished; it is a draft again.
       store-only: Store only, no trucks
       draft-hint: Needs categories, products and hours
       continue-setup: Continue setup

@@ -18,7 +18,7 @@
             class="h-full"
             as |Item|
         >
-            <Storefront::Catalog::Card @catalog={{Item.model}} @onEdit={{this.editCatalog}} @onDelete={{this.deleteCatalog}} />
+            <Storefront::Catalog::Card @catalog={{Item.model}} @onEdit={{this.editCatalog}} @onDelete={{this.deleteCatalog}} @actions={{this.cardActions}} />
         </Layout::Resource::CardsGrid>
     </Layout::Section::Body>
 

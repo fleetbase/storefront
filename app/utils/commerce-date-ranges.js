@@ -1,1 +1,1 @@
-export { default } from '@fleetbase/storefront-engine/utils/commerce-date-ranges';
+export * from '@fleetbase/storefront-engine/utils/commerce-date-ranges';

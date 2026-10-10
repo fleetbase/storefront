@@ -116,6 +116,7 @@ export default class ApplicationController extends Controller {
                 description: 'Storefront dashboard and sales overview.',
                 icon: 'home',
                 route: 'console.storefront.home',
+                disabled: false,
                 keywords: ['dashboard', 'overview', 'metrics', 'sales'],
             },
             {
