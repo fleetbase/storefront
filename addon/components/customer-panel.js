@@ -164,7 +164,7 @@ export default class CustomerPanelComponent extends Component {
 
     @action newOrder() {
         try {
-            return this.hostRouter.transitionTo('console.storefront.orders.index.new', { queryParams: { customer: this.customer?.public_id } });
+            return this.hostRouter.transitionTo('console.storefront.orders.index.new', { queryParams: { for_customer: this.customer?.public_id } });
         } catch {
             return this.hostRouter.transitionTo('console.storefront.orders.index.new');
         }
