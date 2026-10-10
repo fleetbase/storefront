@@ -18,6 +18,7 @@ use Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Http\Middleware\SetStorefrontSession;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
@@ -998,6 +999,10 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            // Tell the app at once that the payment is confirmed; creating the order takes a
+            // moment, and a second update follows with the order.
+            static::publishCheckoutUpdate($checkout, true);
+
             // Create order from payment using reusable gateway-agnostic method
             $transactionDetails = [
                 'transaction_id' => $payment->payment_id,
@@ -1023,6 +1028,24 @@ class CheckoutController extends Controller
         }
 
         return $reply(['checkout' => $checkout->public_id, 'payment' => null, 'error' => null]);
+    }
+
+    /**
+     * Make the checkout's storefront (its network, else its store) the storefront of the
+     * current request, exactly as SetStorefrontSession does for the storefront API. Order
+     * creation reads the storefront from there, and requests from a payment provider (QPay's
+     * callback) arrive without one. Always the checkout's own, so an order is never created
+     * under another storefront's settings.
+     */
+    protected static function useCheckoutStorefront(Checkout $checkout): void
+    {
+        $owner = $checkout->network_uuid
+            ? Network::select(['key'])->where('uuid', $checkout->network_uuid)->first()
+            : ($checkout->store_uuid ? Store::select(['key'])->where('uuid', $checkout->store_uuid)->first() : null);
+
+        if ($owner && $owner->key) {
+            app(SetStorefrontSession::class)->setKey($owner->key);
+        }
     }
 
     /**
@@ -1112,6 +1135,11 @@ class CheckoutController extends Controller
                     'checkout_id'    => $checkout->public_id,
                     'transaction_id' => $transactionDetails['transaction_id'] ?? null,
                 ]);
+
+                // captureOrder() works within the storefront of the request. QPay's callback
+                // carries no storefront key, so set the checkout's own storefront the way the
+                // storefront API does for app requests.
+                static::useCheckoutStorefront($checkout);
 
                 // Create CaptureOrderRequest with payment details
                 $captureRequest = CaptureOrderRequest::create('', 'POST', [
@@ -2143,8 +2171,10 @@ class CheckoutController extends Controller
                 'order'    => $checkout->order ? new OrderResource($checkout->order) : null,
             ];
 
-            // Check if this is a QPay checkout
-            if ($checkout->gateway_uuid) {
+            // Check if this is a QPay checkout. Once the order exists it is the answer:
+            // QPay asks merchants not to check payments over and over (payment_check), so
+            // it is only asked while the order is still missing.
+            if ($checkout->gateway_uuid && !$response['order']) {
                 $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
 
                 if ($gateway && $gateway->code === 'qpay') {

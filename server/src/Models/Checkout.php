@@ -75,12 +75,20 @@ class Checkout extends StorefrontModel
         });
     }
 
+    /*
+     * The related models (Company, Order, Contact, ServiceQuote) choose the Fleetbase
+     * database themselves (Fleetbase\Models\Model::getConnectionName()). These relations
+     * used to call $this->setConnection(...), which switched the checkout itself to that
+     * database, so any later refresh or save of the checkout failed (checkouts lives in
+     * the storefront database) — e.g. after a QPay payment, before the order was created.
+     */
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function company()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Company::class);
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -88,7 +96,7 @@ class Checkout extends StorefrontModel
      */
     public function order()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Order::class);
+        return $this->belongsTo(Order::class);
     }
 
     /**
@@ -96,7 +104,7 @@ class Checkout extends StorefrontModel
      */
     public function owner()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->morphTo(__FUNCTION__, 'owner_type', 'owner_uuid')->withoutGlobalScopes();
+        return $this->morphTo(__FUNCTION__, 'owner_type', 'owner_uuid')->withoutGlobalScopes();
     }
 
     /**
@@ -104,7 +112,7 @@ class Checkout extends StorefrontModel
      */
     public function serviceQuote()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(ServiceQuote::class);
+        return $this->belongsTo(ServiceQuote::class);
     }
 
     /**
