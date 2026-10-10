@@ -4,7 +4,6 @@ storefront:
     off: Off
     on: On
     all: All
-    store: Store
     address: Address
     alerts: Alerts
     amount: Amount
