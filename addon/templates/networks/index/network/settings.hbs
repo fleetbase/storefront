@@ -117,6 +117,9 @@
                                     </FileUpload>
                                 </div>
                             </InputGroup>
+                            <InputGroup @name={{t "storefront.settings.index.map-marker"}} @helpText={{t "storefront.settings.index.map-marker-network-help-text"}}>
+                                <Select @options={{this.mapMarkers}} @optionValue="value" @optionLabel="name" @value={{this.mapMarker.value}} @onSelect={{this.setMapMarker}} class="w-full" />
+                            </InputGroup>
                         </div>
                     </ContentPanel>
                 </section>

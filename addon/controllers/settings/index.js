@@ -115,6 +115,15 @@ export default class SettingsIndexController extends Controller {
         this.optionsRevision++;
     }
 
+    /** How stores show on the app's map: an icon (store, warehouse, factory) or the store's logo. */
+    get mapMarkers() {
+        return ['store', 'warehouse', 'factory', 'logo'].map((value) => ({ value, name: this.intl.t(`storefront.settings.index.map-marker-${value}`) }));
+    }
+
+    get mapMarker() {
+        return this.mapMarkers.find((option) => option.value === (this.model?.options?.map_marker ?? 'store'));
+    }
+
     @action touch() {
         this.optionsRevision++;
     }
@@ -126,6 +135,10 @@ export default class SettingsIndexController extends Controller {
 
         this.model.set(`options.${key}`, value);
         this.optionsRevision++;
+    }
+
+    @action setMapMarker(option) {
+        this.setOption('map_marker', (option?.value ?? option) || 'store');
     }
 
     @action discardChanges() {

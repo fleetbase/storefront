@@ -125,6 +125,10 @@
                     </FileUpload>
                 </div>
             </InputGroup>
+
+            <InputGroup @name={{t "storefront.settings.index.map-marker"}} @helpText={{t "storefront.settings.index.map-marker-help-text"}}>
+                <Select @options={{this.mapMarkers}} @optionValue="value" @optionLabel="name" @value={{this.mapMarker.value}} @onSelect={{this.setMapMarker}} class="w-full" data-test-settings-map-marker />
+            </InputGroup>
             <ContentPanel @title={{t "storefront.settings.index.images-videos"}} @open={{false}} @pad={{false}} @wrapperClass="bordered-top">
             <div class="p-6">
                 {{#if this.isUploading}}

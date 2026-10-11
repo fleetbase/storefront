@@ -1245,6 +1245,13 @@ storefront:
       upload-new-logo: Upload new logo
       backdrop-help-text: Optional banner or background image for your store.
       upload-new-backdrop: Upload new backdrop
+      map-marker: Map marker
+      map-marker-help-text: How this store shows on the app map.
+      map-marker-network-help-text: How the network's stores show on the app map.
+      map-marker-store: Store icon
+      map-marker-warehouse: Warehouse icon
+      map-marker-factory: Factory icon
+      map-marker-logo: Store logo
       images-videos: Images & Videos
       drop-to-upload: Drop to upload
       ready-to-upload: ready for upload.

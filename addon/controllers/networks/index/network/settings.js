@@ -129,7 +129,25 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
         this.optionsRevision++;
     }
 
+    /** How stores show on the app's map: an icon (store, warehouse, factory) or the store's logo. */
+    get mapMarkers() {
+        return ['store', 'warehouse', 'factory', 'logo'].map((value) => ({ value, name: this.intl.t(`storefront.settings.index.map-marker-${value}`) }));
+    }
+
+    get mapMarker() {
+        return this.mapMarkers.find((option) => option.value === (this.model?.options?.map_marker ?? 'store'));
+    }
+
     @action touch() {
+        this.optionsRevision++;
+    }
+
+    @action setMapMarker(option) {
+        if (!this.model.options || typeof this.model.options !== 'object') {
+            this.model.set('options', {});
+        }
+
+        this.model.set('options.map_marker', (option?.value ?? option) || 'store');
         this.optionsRevision++;
     }
 
