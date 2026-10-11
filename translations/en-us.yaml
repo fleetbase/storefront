@@ -835,7 +835,7 @@ storefront:
             description-help-text: Give your store a brief description to let users know what your network is about.
             currency: Currency
             contact-social-panel:
-              panel-title: Contact & Social
+              panel-title: Contact and social
               phone: Phone
               email: Email
               email-help-text: Your business email.
@@ -1197,7 +1197,7 @@ storefront:
       new-product: New product
       edit-category: Edit this category…
       delete-category: Delete this category…
-      manage-addons: Manage Addons
+      manage-addons: Manage add-ons
       view-grid: Grid
       view-list: List
       manage-addons-dialog:
@@ -1352,7 +1352,7 @@ storefront:
       description-placeholder: Storefront Description
       description-help-text: Give your store a brief description to let users know what you sell.
       tags-placeholder: Add tags
-      contact-social: Contact & Social
+      contact-social: Contact and social
       website-help-text: Your business website URL.
       facebook-placeholder: Facebook ID
       facebook-help-text: Your business Facebook page ID.

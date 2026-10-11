@@ -6,7 +6,7 @@
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
     <Storefront::Promotions::HubTabs />
-    <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-promotion-status-tabs>
+    <div class="storefront-status-tabs px-5 pt-4" role="tablist" data-test-promotion-status-tabs>
         {{#each this.tabs as |tab|}}
             <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>{{tab.label}}</button>
         {{/each}}
@@ -14,7 +14,7 @@
 
     {{#if this.rows.length}}
         {{#if this.isCards}}
-            <Layout::Resource::CardsGrid @resource="promotion" @data={{this.rows}} @columns="3" @containerClass="p-4" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @paginationMeta={{@model.meta}} class="h-full" as |Item|>
+            <Layout::Resource::CardsGrid @resource="promotion" @data={{this.rows}} @columns="3" @containerClass="p-5" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @paginationMeta={{@model.meta}} class="h-full" as |Item|>
                 <Storefront::Promotion::Card @promotion={{Item.model}} @onEdit={{this.editPromotion}} @actions={{this.cardActions}} />
             </Layout::Resource::CardsGrid>
         {{else}}

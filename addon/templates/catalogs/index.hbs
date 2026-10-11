@@ -16,7 +16,7 @@
     </Storefront::PageHeader>
 
     <Layout::Section::Body class="overflow-y-scroll-i h-full">
-        <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-catalog-status-tabs>
+        <div class="storefront-status-tabs px-5 pt-4" role="tablist" data-test-catalog-status-tabs>
             {{#each this.statusTabs as |tab|}}
                 <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
                     <span>{{tab.label}}</span>
@@ -28,7 +28,7 @@
             @resource="catalog"
             @data={{this.visibleCatalogs}}
             @columns="4"
-            @containerClass="p-4"
+            @containerClass="p-5"
             @emptyStateText={{t "storefront.catalogs.index.empty-state"}}
             @createButtonText={{t "storefront.catalogs.index.create-catalog"}}
             @onCreateNew={{this.createCatalog}}
