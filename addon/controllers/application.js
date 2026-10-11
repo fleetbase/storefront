@@ -98,6 +98,14 @@ export default class ApplicationController extends Controller {
                 permission: 'storefront view network',
                 keywords: ['categories', 'groups', 'sections'],
             }),
+            networkItem('promotions', {
+                label: this.intl.t('storefront.sidebar.promotions'),
+                description: 'Promotions, campaigns, segments and redemptions the network runs.',
+                icon: 'bullhorn',
+                permission: 'storefront view promotions',
+                visible: this.can('storefront see promotions'),
+                keywords: ['discounts', 'coupons', 'promo codes', 'campaigns', 'segments', 'redemptions'],
+            }),
             networkItem('settings', {
                 label: this.intl.t('storefront.networks.index.network.settings'),
                 description: 'Network details, gateways and notification channels.',
@@ -183,46 +191,11 @@ export default class ApplicationController extends Controller {
                 label: this.intl.t('storefront.sidebar.promotions'),
                 description: 'Discounts, promo codes, customer segments and campaigns.',
                 icon: 'bullhorn',
+                route: 'console.storefront.promotions',
                 permission: 'storefront view promotions',
                 visible: this.can('storefront see promotions'),
                 disabled: !hasActiveStore,
-                children: [
-                    {
-                        label: this.intl.t('storefront.promotions.list.tab-title'),
-                        description: 'Create discounts and promo codes applied at checkout.',
-                        icon: 'tags',
-                        route: 'console.storefront.promotions.index',
-                        keywords: ['discounts', 'coupons', 'promo codes', 'sales', 'deals'],
-                    },
-                    {
-                        label: this.intl.t('storefront.promotions.campaigns.tab-title'),
-                        description: 'Send scheduled notifications to customer segments.',
-                        icon: 'bullhorn',
-                        route: 'console.storefront.promotions.campaigns',
-                        keywords: ['marketing', 'broadcast', 'notifications'],
-                    },
-                    {
-                        label: this.intl.t('storefront.promotions.segments.tab-title'),
-                        description: 'Group customers by their order history for targeting.',
-                        icon: 'users',
-                        route: 'console.storefront.promotions.segments',
-                        keywords: ['audience', 'customers', 'targeting'],
-                    },
-                    {
-                        label: 'Push Notifications',
-                        description: 'Send push notifications to storefront customers.',
-                        icon: 'bell',
-                        route: 'console.storefront.promotions.push-notifications',
-                        keywords: ['marketing', 'broadcast', 'campaigns'],
-                    },
-                    {
-                        label: this.intl.t('storefront.promotions.redemptions.tab-title'),
-                        description: 'Every time a promotion was used, with the order and the discount given.',
-                        icon: 'receipt',
-                        route: 'console.storefront.promotions.redemptions',
-                        keywords: ['redemptions', 'coupons used', 'discount given'],
-                    },
-                ],
+                keywords: ['discounts', 'coupons', 'promo codes', 'campaigns', 'segments', 'push notifications', 'redemptions'],
             },
             {
                 label: this.intl.t('storefront.sidebar.settings'),
@@ -259,29 +232,8 @@ export default class ApplicationController extends Controller {
         return memberships.filter((network) => network?.public_id).map((network) => ({ id: network.public_id, name: network.name, icon: 'network-wired', network }));
     }
 
-    /**
-     * Network context: the organisation's own stores that are members of the active
-     * network. Clicking one returns to that store's context.
-     */
-    get networkStoreItems() {
-        if (!this.isNetworkContext) {
-            return [];
-        }
-
-        const networkId = this.activeNetwork.id;
-        const stores = this.model?.stores?.toArray?.() ?? Array.from(this.model?.stores ?? []);
-
-        return stores
-            .filter((store) => (store.networks ?? []).some((network) => network?.uuid === networkId || network?.id === networkId))
-            .map((store) => ({ id: store.public_id, name: store.name, icon: 'store', meta: store.currency, store }));
-    }
-
     @action selectMemberNetwork(item) {
         return this.switchActiveNetwork(item.network);
-    }
-
-    @action selectNetworkStore(item) {
-        return this.switchActiveStore(item.store);
     }
 
     /** Invitations and memberships waiting on the operator, shown on the network's Stores item. */

@@ -46,6 +46,12 @@ export default buildRoutes(function () {
                     this.route('new');
                 });
                 this.route('categories');
+                this.route('promotions', function () {
+                    this.route('index', { path: '/' });
+                    this.route('campaigns');
+                    this.route('segments');
+                    this.route('redemptions');
+                });
                 this.route('settings');
             });
         });

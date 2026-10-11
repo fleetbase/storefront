@@ -1,7 +1,8 @@
 import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
+import { truckLatLng } from '@fleetbase/storefront-engine/components/storefront/truck/map';
 import { isBlank } from '@ember/utils';
 import { task, timeout } from 'ember-concurrency';
 
@@ -39,9 +40,14 @@ export default class FoodTrucksIndexController extends Controller {
         return this.model?.toArray?.() ?? Array.from(this.model ?? []);
     }
 
+    /** Online by the truck's own flag, else by its vehicle (a belongsTo proxy until it resolves). */
+    isOnline(truck) {
+        return Boolean(get(truck, 'online') || get(truck, 'vehicle.online'));
+    }
+
     get statusTabs() {
         const trucks = this.trucks;
-        const online = trucks.filter((truck) => truck.status !== 'inactive' && (truck.online || truck.vehicle?.online));
+        const online = trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
         const inactive = trucks.filter((truck) => truck.status === 'inactive');
         const offline = trucks.filter((truck) => !online.includes(truck) && !inactive.includes(truck));
 
@@ -58,9 +64,9 @@ export default class FoodTrucksIndexController extends Controller {
 
         switch (this.statusTab) {
             case 'online':
-                return trucks.filter((truck) => truck.status !== 'inactive' && (truck.online || truck.vehicle?.online));
+                return trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
             case 'offline':
-                return trucks.filter((truck) => truck.status !== 'inactive' && !(truck.online || truck.vehicle?.online));
+                return trucks.filter((truck) => truck.status !== 'inactive' && !this.isOnline(truck));
             case 'inactive':
                 return trucks.filter((truck) => truck.status === 'inactive');
             default:
@@ -75,16 +81,30 @@ export default class FoodTrucksIndexController extends Controller {
         return { store_uuid: this.storefront.activeStore?.id, status: 'active' };
     }
 
-    /**
-     * Trucks live on the Fleet-Ops map: the console's live map draws every online vehicle
-     * with its service areas and zones, so the Map button opens it rather than a second map.
-     */
-    @action openMap() {
-        try {
-            return this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index');
-        } catch {
-            this.notifications.warning(this.intl.t('storefront.trucks.index.map-unavailable'));
-        }
+    @tracked view = 'cards';
+
+    get isMapView() {
+        return this.view === 'map';
+    }
+
+    /** Trucks whose vehicle reported a position, for the map view. */
+    get mappableTrucks() {
+        return this.visibleTrucks.filter((truck) => truckLatLng(truck));
+    }
+
+    @action toggleMapView() {
+        this.view = this.isMapView ? 'cards' : 'map';
+    }
+
+    @action openVehicle(truck) {
+        const vehicleId = get(truck, 'vehicle.public_id');
+
+        return vehicleId ? this.hostRouter.transitionTo('console.fleet-ops.management.vehicles.index.details', vehicleId) : null;
+    }
+
+    /** An order from the truck panel opens on this context's orders page. */
+    @action viewOrder(order) {
+        return this.hostRouter.transitionTo('console.storefront.orders.index', { queryParams: { query: order.public_id } });
     }
 
     @action selectStatusTab(tab) {

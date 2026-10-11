@@ -384,7 +384,7 @@ module('Unit | Controller | application', function (hooks) {
         assert.true(controller.isNetworkContext);
         assert.deepEqual(
             items.map((item) => item.label),
-            ['Overview', 'Stores', 'Trucks', 'Orders', 'Customers', 'Categories', 'Settings'],
+            ['Overview', 'Stores', 'Trucks', 'Orders', 'Customers', 'Categories', 'Promotions', 'Settings'],
             'network sections replace the store sections'
         );
         assert.deepEqual(
@@ -396,6 +396,7 @@ module('Unit | Controller | application', function (hooks) {
                 'network:network_123:orders',
                 'network:network_123:customers',
                 'network:network_123:categories',
+                'network:network_123:promotions',
                 'network:network_123:settings',
             ],
             'items are keyed by network so two networks never share an entry'

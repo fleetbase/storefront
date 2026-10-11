@@ -2,6 +2,7 @@ import BaseController from '@fleetbase/storefront-engine/controllers/base-contro
 import { tracked, cached } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { getOwner } from '@ember/application';
 import { debounce } from '@ember/runloop';
 
 export default class PromotionsIndexController extends BaseController {
@@ -176,7 +177,13 @@ export default class PromotionsIndexController extends BaseController {
     @tracked table;
 
     get selectedPromotions() {
-        return this.table?.selectedRows ?? [];
+        const table = this.table;
+
+        if (!table || table.isDestroying || table.isDestroyed) {
+            return [];
+        }
+
+        return table.selectedRows ?? [];
     }
 
     get hasSelection() {
@@ -263,8 +270,26 @@ export default class PromotionsIndexController extends BaseController {
         this.builderPromotion = copy;
     }
 
+    get ownerId() {
+        return this.storefront.getContextOwner('id');
+    }
+
+    get ownerType() {
+        return this.storefront.contextOwnerType;
+    }
+
+    get ownerCurrency() {
+        return this.storefront.getContextOwner('currency');
+    }
+
+    get isNetworkOwner() {
+        return this.storefront.isNetworkContext;
+    }
+
     @action viewRedemptions(promotion) {
-        return this.hostRouter.transitionTo('console.storefront.promotions.redemptions', { queryParams: { promotion: promotion.id } });
+        return getOwner(this)
+            .lookup('controller:promotions')
+            .transitionToHub('promotions.redemptions', { queryParams: { promotion: promotion.id } });
     }
 
     @action closeBuilder() {
@@ -294,12 +319,10 @@ export default class PromotionsIndexController extends BaseController {
     }
 
     @action createPromotion() {
-        const activeStore = this.storefront.activeStore;
-
         this.builderPromotion = this.store.createRecord('promotion', {
-            owner_uuid: activeStore.id,
-            owner_type: 'storefront:store',
-            currency: activeStore.currency,
+            owner_uuid: this.ownerId,
+            owner_type: this.ownerType,
+            currency: this.ownerCurrency,
             applies_to: {},
             bogo_config: { buy_quantity: 1, get_quantity: 1, discount_percent: 100 },
         });

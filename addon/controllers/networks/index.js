@@ -89,7 +89,8 @@ export default class NetworksIndexController extends BaseController {
      *
      * @var {Array}
      */
-    queryParams = ['page', 'limit', 'sort', 'query'];
+    // Prefixed so the pages nested under a network can keep the plain keys (`page`, `query`).
+    queryParams = [{ page: 'n_page' }, { limit: 'n_limit' }, { sort: 'n_sort' }, { query: 'n_query' }];
 
     /**
      * The current page of data being viewed.

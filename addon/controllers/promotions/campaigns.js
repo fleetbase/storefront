@@ -111,8 +111,8 @@ export default class PromotionsCampaignsController extends BaseController {
 
     @action createCampaign() {
         const campaign = this.store.createRecord('campaign', {
-            owner_uuid: this.storefront.activeStore.id,
-            owner_type: 'storefront:store',
+            owner_uuid: this.storefront.getContextOwner('id'),
+            owner_type: this.storefront.contextOwnerType,
             channels: ['push', 'inbox'],
         });
 

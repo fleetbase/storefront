@@ -92,9 +92,25 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
         ];
     }
 
+    /**
+     * Scrolls the settings pane (not the console) so the section sits at the top. A plain
+     * scrollIntoView scrolls every ancestor and drags the sidebar and header off screen.
+     */
+    scrollSectionIntoView(sectionId) {
+        const element = document.getElementById(sectionId);
+        const pane = element?.closest('.storefront-settings-content');
+
+        if (!element || !pane) {
+            return;
+        }
+
+        const top = element.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - 12;
+        pane.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+    }
+
     @action openItem(item) {
         this.activeSection = item.id;
-        document.getElementById(item.section)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        this.scrollSectionIntoView(item.section);
     }
 
     get optionsChanged() {

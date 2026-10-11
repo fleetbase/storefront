@@ -5,7 +5,7 @@ import { inject as service } from '@ember/service';
 import { tracked, cached } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
 import { groupOrdersByCheckout, STATUS_TABS } from '../../../../utils/order-groups';
 
 /**
@@ -75,11 +75,90 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
     /**
      * Rows for the table: checkout groups in grouped view, orders otherwise.
      */
+    @tracked expandedGroups = new Set();
+    @tracked hiddenColumns = new Set();
+    @tracked storeFilter = null;
+    @tracked fulfillmentFilter = null;
+
+    /**
+     * Grouped view: a checkout group row, followed by its orders when expanded. The child
+     * rows carry the same columns so the cells line up under the group.
+     */
     get rows() {
-        return this.isGrouped ? groupOrdersByCheckout(this.model) : (this.model?.toArray?.() ?? Array.from(this.model ?? []));
+        const orders = this.model?.toArray?.() ?? Array.from(this.model ?? []);
+        const filtered = orders.filter((order) => {
+            if (this.storeFilter && (get(order, 'meta.storefront_id') ?? order.store_id) !== this.storeFilter) {
+                return false;
+            }
+
+            if (this.fulfillmentFilter === 'pickup' && !get(order, 'meta.is_pickup')) {
+                return false;
+            }
+
+            if (this.fulfillmentFilter === 'delivery' && get(order, 'meta.is_pickup')) {
+                return false;
+            }
+
+            return true;
+        });
+
+        if (!this.isGrouped) {
+            return filtered;
+        }
+
+        return groupOrdersByCheckout(filtered).flatMap((row) => {
+            if (!row.isGroup) {
+                return [row];
+            }
+
+            const expanded = this.expandedGroups.has(row.id);
+            row.expanded = expanded;
+
+            return expanded ? [row, ...row.orders.map((order) => Object.assign(order, { isChild: true, parentGroup: row.id }))] : [row];
+        });
+    }
+
+    @action toggleGroup(group) {
+        const next = new Set(this.expandedGroups);
+
+        if (next.has(group.id)) {
+            next.delete(group.id);
+        } else {
+            next.add(group.id);
+        }
+
+        this.expandedGroups = next;
+    }
+
+    get hasActiveFilters() {
+        return Boolean(this.storeFilter || this.fulfillmentFilter || this.activeStatusTab !== 'all');
+    }
+
+    @action setStoreFilter(storeId) {
+        this.storeFilter = storeId || null;
+    }
+
+    @action setFulfillmentFilter(value) {
+        this.fulfillmentFilter = value || null;
+    }
+
+    @action clearFilters() {
+        this.storeFilter = null;
+        this.fulfillmentFilter = null;
+        this.selectStatusTab(this.statusTabs[0]);
+    }
+
+    @action setColumns(columns) {
+        this.hiddenColumns = new Set(columns.filter((column) => column.hidden).map((column) => column.id));
     }
 
     @cached get columns() {
+        const hidden = this.hiddenColumns;
+
+        return this.columnDefinitions.map((column) => ({ ...column, hidden: hidden.has(column.id) }));
+    }
+
+    get columnDefinitions() {
         return [
             {
                 id: 'reference',
@@ -87,7 +166,8 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 valuePath: 'public_id',
                 cellComponent: 'storefront/network/orders/cell/reference',
                 onView: this.viewOrder,
-                width: '190px',
+                onToggle: this.toggleGroup,
+                width: '175px',
                 resizable: true,
                 sortable: false,
             },
@@ -100,7 +180,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 resourcePath: (row) => relationValue(row, 'customer') ?? buildIdentityStub(row, { type: row.customer_type ?? 'customer', nameKey: 'customer_name' }),
                 action: this.viewCustomer,
                 emptyText: this.intl.t('storefront.networks.orders.no-customer'),
-                width: '170px',
+                width: '140px',
                 resizable: true,
             },
             {
@@ -108,20 +188,20 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 label: this.intl.t('storefront.networks.index.network.stores.store'),
                 cellComponent: 'storefront/network/orders/cell/stores',
                 storesById: this.storesById,
-                width: '200px',
+                width: '160px',
                 resizable: true,
             },
             {
                 id: 'fulfillment',
                 label: this.intl.t('storefront.networks.orders.columns.fulfillment'),
                 cellComponent: 'storefront/network/orders/cell/fulfillment',
-                width: '110px',
+                width: '90px',
             },
             {
                 id: 'total',
                 label: this.intl.t('storefront.networks.orders.columns.total'),
                 cellComponent: 'storefront/network/orders/cell/total',
-                width: '140px',
+                width: '115px',
                 resizable: true,
             },
             {
@@ -129,21 +209,21 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 label: this.intl.t('storefront.orders.index.driver-assigned'),
                 cellComponent: 'storefront/network/orders/cell/driver',
                 onAssign: this.assignDriver,
-                width: '170px',
+                width: '135px',
                 resizable: true,
             },
             {
                 id: 'status',
                 label: this.intl.t('storefront.common.status'),
                 cellComponent: 'storefront/network/orders/cell/status',
-                width: '150px',
+                width: '120px',
                 resizable: true,
             },
             {
                 id: 'placed',
                 label: this.intl.t('storefront.networks.orders.columns.placed'),
                 cellComponent: 'storefront/network/orders/cell/placed',
-                width: '110px',
+                width: '70px',
             },
             {
                 id: 'row-actions',
@@ -154,8 +234,8 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 onDelete: this.deleteOrder,
                 onChange: this.refresh,
                 cellClassNames: 'overflow-visible',
-                wrapperClass: 'flex items-center justify-end mx-2',
-                width: '170px',
+                wrapperClass: 'flex items-center justify-end',
+                width: '160px',
                 sortable: false,
                 filterable: false,
                 resizable: false,

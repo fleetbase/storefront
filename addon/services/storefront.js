@@ -130,6 +130,19 @@ export default class StorefrontService extends Service.extend(Evented) {
      * Query scope for the active context: `{ network }` inside a network, `{ storefront }` for a store.
      * Every list and panel that can open in either context should take its scope from here.
      */
+    /**
+     * Whoever owns the records of the active context: the network, or else the store.
+     * @param {String|null} property - a property to read off the owner, or nothing for the record
+     */
+    getContextOwner(property = null) {
+        return this.isNetworkContext ? this.getActiveNetwork(property) : this.getActiveStore(property);
+    }
+
+    /** The morph type stored on owner-scoped records (promotions, campaigns, segments). */
+    get contextOwnerType() {
+        return this.isNetworkContext ? 'storefront:network' : 'storefront:store';
+    }
+
     contextScope() {
         if (this.isNetworkContext) {
             return { network: this.getActiveNetwork('public_id') };

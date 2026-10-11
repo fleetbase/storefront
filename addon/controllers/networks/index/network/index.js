@@ -60,6 +60,19 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         return application?.switchActiveStore?.(store);
     }
 
+    /** The header's meta line: currency · timezone · id, as the board draws it. */
+    get headerMeta() {
+        return [this.network?.currency, this.network?.timezone, this.network?.public_id].filter(Boolean).join(' · ');
+    }
+
+    get linkJoins() {
+        return Number(this.network?.options?.shareable_link_joins ?? 0);
+    }
+
+    @action viewOrder(order) {
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders', this.network.public_id, { queryParams: { o_query: order.public_id } });
+    }
+
     get recentOrders() {
         return this.overview?.recent_orders ?? [];
     }

@@ -44,6 +44,22 @@ export default class StorefrontTruckCardComponent extends Component {
         return getPlaceholderImage('vehicle');
     }
 
+    /** The driver Fleet-Ops assigned to the vehicle, when it has one. */
+    get driverName() {
+        const vehicle = this.vehicle;
+
+        if (!vehicle) {
+            return null;
+        }
+
+        return get(vehicle, 'driver_name') ?? get(vehicle, 'driver.name') ?? null;
+    }
+
+    /** Orders fulfilled from this truck today, as the API counts them. */
+    get ordersToday() {
+        return Number(get(this.truck, 'today.orders') ?? 0);
+    }
+
     get serviceAreaName() {
         return get(this.truck, 'service_area.name');
     }

@@ -83,8 +83,8 @@ export default class PromotionsSegmentsController extends BaseController {
 
     @action createSegment() {
         const segment = this.store.createRecord('customer-segment', {
-            owner_uuid: this.storefront.activeStore.id,
-            owner_type: 'storefront:store',
+            owner_uuid: this.storefront.getContextOwner('id'),
+            owner_type: this.storefront.contextOwnerType,
             rules: {},
         });
 
@@ -104,7 +104,7 @@ export default class PromotionsSegmentsController extends BaseController {
             acceptButtonIcon: 'save',
             modalClass: 'modal-lg',
             segment,
-            currency: this.storefront.activeStore?.currency,
+            currency: this.storefront.getContextOwner('currency'),
             decline: (modal) => {
                 segment.rollbackAttributes();
                 modal.done();

@@ -3,6 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action, get } from '@ember/object';
 import { task } from 'ember-concurrency';
+import { resolveResourceImage, getPlaceholderImage } from '@fleetbase/fleetops-data/utils/placeholder-images';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -49,8 +50,10 @@ export default class StorefrontTruckPanelComponent extends Component {
     @service intl;
     @service notifications;
     @service hostRouter;
+    @service store;
     @tracked tab = this.args.tab ?? 'details';
     @tracked revision = 0;
+    @tracked orders = [];
 
     statusOptions = ['active', 'inactive'];
 
@@ -100,8 +103,76 @@ export default class StorefrontTruckPanelComponent extends Component {
         return [
             { id: 'details', label: this.intl.t('storefront.trucks.panel.tabs.details') },
             { id: 'catalogs', label: this.intl.t('storefront.trucks.panel.tabs.catalogs'), count: this.assignedCount },
+            { id: 'orders', label: this.intl.t('storefront.trucks.panel.tabs.orders') },
             { id: 'location', label: this.intl.t('storefront.trucks.panel.tabs.location') },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.tab }));
+    }
+
+    get photoUrl() {
+        return resolveResourceImage(get(this.truck, 'vehicle.photo_url'), 'vehicle');
+    }
+
+    get placeholder() {
+        return getPlaceholderImage('vehicle');
+    }
+
+    /** The header's second line: id, owner, and whether the vehicle is online. */
+    get subtitle() {
+        const parts = [];
+
+        if (!this.truck?.isNew) {
+            parts.push(this.truck?.public_id);
+        }
+
+        if (this.truck?.ownerName) {
+            parts.push(this.intl.t('storefront.trucks.card.owned-by', { name: this.truck.ownerName }));
+        }
+
+        if (this.position.hasVehicle) {
+            parts.push(
+                this.position.online
+                    ? this.intl.t('storefront.common.online')
+                    : this.position.updatedAgo
+                      ? this.intl.t('storefront.trucks.card.last-online', { ago: this.position.updatedAgo })
+                      : this.intl.t('storefront.common.offline')
+            );
+        }
+
+        return parts.filter(Boolean).join(' · ');
+    }
+
+    /** Today's numbers as the API reports them for the truck. */
+    get today() {
+        const today = get(this.truck, 'today') ?? {};
+        const avgPrep = today.avg_prep_minutes;
+
+        return {
+            orders: Number(today.orders ?? 0),
+            revenue: Number(today.revenue ?? 0),
+            currency: today.currency ?? get(this.truck, 'store_summary.currency') ?? 'USD',
+            avgPrep,
+            hasPrep: Number.isFinite(Number(avgPrep)) && avgPrep !== null,
+        };
+    }
+
+    /** Orders fulfilled from this truck, newest first; loaded when the tab opens. */
+    @task *loadOrders() {
+        if (!this.truck?.public_id) {
+            this.orders = [];
+            return;
+        }
+
+        try {
+            const orders = yield this.store.query('order', { food_truck: this.truck.public_id, sort: '-created_at', limit: 15 });
+            this.orders = orders?.toArray?.() ?? Array.from(orders ?? []);
+        } catch (error) {
+            this.orders = [];
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action viewOrder(order) {
+        return this.args.onViewOrder?.(order);
     }
 
     get isDirty() {
@@ -165,6 +236,10 @@ export default class StorefrontTruckPanelComponent extends Component {
 
     @action selectTab(tab) {
         this.tab = tab.id ?? tab;
+
+        if (this.tab === 'orders' && !this.loadOrders.isRunning) {
+            this.loadOrders.perform();
+        }
     }
 
     @action setVehicle(vehicle) {

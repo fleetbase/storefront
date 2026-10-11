@@ -26,6 +26,7 @@ export default class NetworksIndexNetworkStoresRoute extends Route {
         // set the network to controller
         controller.network = this.network;
         controller.invitations = (await this.network.loadInvitations().catch(() => [])) ?? [];
+        controller.categories = (await this.store.query('category', { owner_uuid: this.network.id, for: 'storefront_network', limit: -1 }).catch(() => []))?.toArray?.() ?? [];
 
         // The overview endpoint already computes each member's last-7-day orders and share.
         const overview = await this.fetch.get(`networks/${this.network.id}/overview`, {}, { namespace: 'storefront/int/v1' }).catch(() => null);

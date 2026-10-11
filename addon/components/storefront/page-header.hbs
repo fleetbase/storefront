@@ -1,0 +1,29 @@
+{{! A page header on the console's section-header metrics (57px, same gutters) with room for an
+    identity (logo or icon), badges and a meta line, which Layout::Section::Header cannot show. }}
+<div class="storefront-page-header {{if @subtitle 'has-subtitle'}} {{@wrapperClass}}" data-test-page-header ...attributes>
+    <div class="storefront-page-header__left">
+        {{#if @imageUrl}}
+            <Image src={{@imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@title}} class="storefront-page-header__avatar" />
+        {{else if @icon}}
+            <span class="storefront-page-header__icon"><FaIcon @icon={{@icon}} /></span>
+        {{/if}}
+        <div class="storefront-page-header__text">
+            <div class="storefront-page-header__title-row">
+                <h2 class="storefront-page-header__title" id="next-view-section-subheader-title">{{@title}}</h2>
+                {{#if @badgeText}}
+                    <Badge @status={{or @badgeStatus "default"}} @text={{@badgeText}} @size="xs" @disableHumanize={{true}} @hideStatusDot={{@hideBadgeDot}} data-test-page-header-badge />
+                {{/if}}
+                {{yield to="badges"}}
+            </div>
+            {{#if @subtitle}}
+                <div class="storefront-page-header__subtitle" data-test-page-header-subtitle>{{@subtitle}}</div>
+            {{/if}}
+        </div>
+    </div>
+    <div class="storefront-page-header__actions">
+        {{#if @onSearch}}
+            <Input @type="text" @value={{@searchQuery}} aria-label={{t "common.search-input"}} placeholder={{or @searchPlaceholder (t "common.search")}} class="w-64 form-input form-input-sm storefront-page-header__search" {{on "input" @onSearch}} />
+        {{/if}}
+        {{yield}}
+    </div>
+</div>

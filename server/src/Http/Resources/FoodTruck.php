@@ -43,6 +43,8 @@ class FoodTruck extends FleetbaseResource
             'location'                       => $this->vehicle ? $this->vehicle->location : null,
             'online'                         => $this->vehicle ? $this->vehicle->online : false,
             'status'                         => $this->status,
+            // Today's orders, revenue and prep time for the console's truck card and panel.
+            'today'                          => $this->when(Http::isInternalRequest(), fn () => $this->todayStats()),
             // The store the truck belongs to, so a network can name it and order from it.
             'store'                          => $this->whenLoaded('store', fn () => $this->store ? [
                 'id'          => $this->store->public_id,

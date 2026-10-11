@@ -53,6 +53,10 @@ export function orderStoreName(order) {
     return typeof storefront === 'string' ? storefront : (storefront?.name ?? null);
 }
 
+export function orderItemCount(order) {
+    return get(order, 'payload.entities_count') ?? get(order, 'payload.entities.length') ?? order.item_count ?? 0;
+}
+
 export function groupKeyOf(order) {
     return get(order, 'meta.checkout_id') ?? get(order, 'meta.master_order_id') ?? null;
 }
@@ -113,7 +117,7 @@ export function summarizeGroup(group) {
     return Object.assign(group, {
         public_id: group.id,
         orderCount: orders.length,
-        itemCount: orders.reduce((sum, order) => sum + number(order.item_count ?? order.total_entities), 0),
+        itemCount: orders.reduce((sum, order) => sum + number(orderItemCount(order)), 0),
         customer: first.customer ?? null,
         customer_name: first.customer_name ?? first.customer?.name ?? null,
         customer_type: first.customer_type,

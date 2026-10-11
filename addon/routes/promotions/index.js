@@ -28,6 +28,6 @@ export default class PromotionsIndexRoute extends Route {
         const query = { ...params };
         delete query.view;
 
-        return this.store.query('promotion', { ...query, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('promotion', { ...query, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

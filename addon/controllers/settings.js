@@ -58,6 +58,22 @@ export default class SettingsController extends Controller {
 
     @tracked activeSection = 'general';
 
+    /**
+     * Scrolls the settings pane (not the console) so the section sits at the top. A plain
+     * scrollIntoView scrolls every ancestor and drags the sidebar and header off screen.
+     */
+    scrollSectionIntoView(sectionId) {
+        const element = document.getElementById(sectionId);
+        const pane = element?.closest('.storefront-settings-content');
+
+        if (!element || !pane) {
+            return;
+        }
+
+        const top = element.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - 12;
+        pane.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+    }
+
     @action openItem(item) {
         if (item.route) {
             return this.hostRouter.transitionTo(`console.storefront.${item.route}`);
@@ -65,10 +81,7 @@ export default class SettingsController extends Controller {
 
         this.activeSection = item.id;
 
-        const scrollToSection = () => {
-            const element = document.getElementById(item.section);
-            element?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-        };
+        const scrollToSection = () => this.scrollSectionIntoView(item.section);
 
         if (this.isGeneralRoute) {
             scrollToSection();

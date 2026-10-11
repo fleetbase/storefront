@@ -1,11 +1,17 @@
-<Layout::Section::Header @title={{t "storefront.networks.index.network.overview"}}>
-    <Button @icon="store" @text={{t "storefront.networks.index.network.stores.store"}} @size="sm" @onClick={{this.manageStores}} @wrapperClass="mr-2" />
-    <Button @icon="cog" @text={{t "storefront.networks.index.network.settings"}} @size="sm" @onClick={{this.openSettings}} @wrapperClass="mr-2" @permission="storefront update network" />
+<Storefront::PageHeader
+    @title={{this.network.name}}
+    @imageUrl={{this.network.logo_url}}
+    @badgeStatus={{if this.network.online "online" "offline"}}
+    @badgeText={{if this.network.online (t "storefront.common.online") (t "storefront.common.offline")}}
+    @subtitle={{this.headerMeta}}
+    data-test-network-overview-header
+>
+    <Button @icon="cog" @text={{t "storefront.networks.index.network.settings"}} @size="sm" @onClick={{this.openSettings}} @permission="storefront update network" />
     <Button @type="primary" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @size="sm" @onClick={{fn this.openInvitePanel "email"}} @permission="storefront update network" />
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
-    <div class="storefront-network-overview p-4 space-y-4" data-test-network-overview>
+    <div class="storefront-page storefront-network-overview" data-test-network-overview>
         <div class="storefront-stat-grid">
             <div class="storefront-stat-tile" data-test-stat="stores">
                 <div class="storefront-stat-tile__label">{{t "storefront.networks.index.network.stores.store"}}</div>
@@ -34,104 +40,129 @@
             </div>
         </div>
 
-        <ContentPanel @title={{t "storefront.networks.overview.members-title" count=this.members.length}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0" @actionButtons={{array (hash type="link" size="xs" text=(t "storefront.networks.overview.manage-stores") onClick=this.manageStores)}}>
+        <Storefront::SectionCard @id="members" @title={{t "storefront.networks.index.network.stores.store"}} @subtitle={{t "storefront.networks.overview.members-count" count=this.members.length}} @pad={{true}}>
+            <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" this.manageStores}}>{{t "storefront.networks.overview.manage-stores"}}</a></:actions>
+            <:default>
             {{#if this.members.length}}
-                <Layout::Resource::CardsGrid @resource="store" @data={{this.memberRows}} @columns="4" @containerClass="p-4" @showPagination={{false}} class="storefront-member-cards" as |Item|>
-                    <Layout::Resource::Card class="storefront-card storefront-member-card" data-test-member-row={{Item.model.member.public_id}} as |Card|>
-                        <Card.header>
-                            <div class="storefront-card__title">
-                                <span class="storefront-card__title-text">{{Item.model.member.name}}</span>
-                                <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if Item.model.member.online 'text-green-500' 'text-gray-400'}}" />
-                            </div>
-                            <div class="storefront-card__subtitle">{{if Item.model.member.category Item.model.member.category (t "storefront.networks.overview.no-category")}}</div>
-                        </Card.header>
-                        <Card.body class="storefront-card__media-body">
-                            <Image src={{Item.model.member.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{Item.model.member.name}} class="storefront-card__media storefront-card__media--contain" />
-                        </Card.body>
-                        <Card.footer>
-                            <div class="storefront-card__actions">
-                                <Badge @status={{Item.model.badgeStatus}} @text={{Item.model.badgeLabel}} @size="xs" />
-                                <div class="storefront-card__buttons">
-                                    <Button @icon="table-list" @size="xs" @helpText={{t "storefront.networks.overview.view-on-stores"}} @onClick={{fn this.viewMember Item.model.member}} data-test-member-view />
-                                    {{#if Item.model.ownStore}}
-                                        <Button @icon="arrow-right-to-bracket" @size="xs" @helpText={{t "storefront.networks.overview.open-store"}} @onClick={{fn this.openMemberStore Item.model.ownStore}} data-test-member-open />
-                                    {{/if}}
+                <div class="storefront-member-cards" data-test-member-cards>
+                    {{#each this.memberRows as |row|}}
+                        <Layout::Resource::Card class="storefront-card storefront-member-card" data-test-member-row={{row.member.public_id}} as |Card|>
+                            <Card.header>
+                                <div class="storefront-card__title">
+                                    <span class="storefront-card__title-text">{{row.member.name}}</span>
+                                    <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if row.member.online 'text-green-500' 'text-gray-400'}}" />
                                 </div>
-                            </div>
-                            <div class="storefront-card__meta">
-                                <span>{{t "storefront.networks.overview.orders-count-7d" count=Item.model.member.orders_7d}}</span>
-                                <span>{{format-currency Item.model.member.revenue_7d this.currency}} · {{t "storefront.networks.overview.share-of-network" share=Item.model.member.share}}</span>
-                            </div>
-                        </Card.footer>
-                    </Layout::Resource::Card>
-                </Layout::Resource::CardsGrid>
+                                <div class="storefront-card__subtitle">{{if row.member.category row.member.category (t "storefront.networks.overview.no-category")}}</div>
+                            </Card.header>
+                            <Card.body class="storefront-card__media-body">
+                                <Image src={{row.member.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{row.member.name}} class="storefront-card__media storefront-card__media--contain" />
+                            </Card.body>
+                            <Card.footer>
+                                <div class="storefront-card__actions">
+                                    <Badge @status={{row.badgeStatus}} @text={{row.badgeLabel}} @size="xs" />
+                                    <div class="storefront-card__buttons">
+                                        <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.actions"}} data-test-member-menu as |dd|>
+                                            <div class="next-dd-menu mt-1 mx-0">
+                                                <div class="px-1">
+                                                    <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.viewMember row.member)}}><FaIcon @icon="table-list" class="mr-2" />{{t "storefront.networks.overview.view-on-stores"}}</a>
+                                                    {{#if row.ownStore}}
+                                                        <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.openMemberStore row.ownStore)}}><FaIcon @icon="arrow-right-to-bracket" class="mr-2" />{{t "storefront.networks.overview.open-store"}}</a>
+                                                    {{/if}}
+                                                </div>
+                                            </div>
+                                        </DropdownButton>
+                                    </div>
+                                </div>
+                                <div class="storefront-card__meta">
+                                    <span>{{t "storefront.networks.overview.orders-count-7d" count=row.member.orders_7d}}</span>
+                                    <span>{{format-currency row.member.revenue_7d this.currency}} · {{t "storefront.networks.overview.share-of-network" share=row.member.share}}</span>
+                                </div>
+                            </Card.footer>
+                        </Layout::Resource::Card>
+                    {{/each}}
+                </div>
             {{else}}
                 <div class="storefront-empty-row">
                     <span>{{t "storefront.networks.overview.no-members"}}</span>
                     <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.openInvitePanel "email"}} />
                 </div>
             {{/if}}
-        </ContentPanel>
+            </:default>
+        </Storefront::SectionCard>
 
-        <ContentPanel @title={{t "storefront.networks.invitations.title"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0">
-            {{#if this.openInvitations.length}}
-                <div class="storefront-member-list">
+        <Storefront::SectionCard @id="invitations" @title={{t "storefront.networks.invitations.title"}}>
+            <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" (fn this.openInvitePanel "email")}}>{{t "storefront.networks.invitations.invite-stores"}}</a></:actions>
+            <:default>
+            <table class="storefront-table" data-test-invitations-table>
+                <thead>
+                    <tr>
+                        <th>{{t "storefront.networks.overview.invitee"}}</th>
+                        <th>{{t "storefront.networks.overview.sent"}}</th>
+                        <th>{{t "storefront.networks.overview.state"}}</th>
+                        <th class="text-right"><span class="sr-only">{{t "storefront.common.actions"}}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
                     {{#each this.openInvitations as |invitation|}}
-                        <div class="storefront-member-row" data-test-invitation-row={{invitation.id}}>
-                            <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="at" /></div>
-                            <div class="storefront-member-row__identity">
-                                <div class="storefront-member-row__name">{{invitation.email}}</div>
-                                <div class="storefront-member-row__meta">{{t "storefront.networks.invitations.sent-ago" ago=invitation.sentAgo}}</div>
-                            </div>
-                            <Badge @status={{invitation.status}} @text={{t (concat "storefront.networks.invitations.status." invitation.status)}} @size="xs" />
-                            <div class="storefront-card__buttons">
+                        <tr data-test-invitation-row={{invitation.id}}>
+                            <td><div class="storefront-table__identity"><span class="storefront-table__tile"><FaIcon @icon="at" @size="xs" /></span><span class="truncate">{{or invitation.email invitation.store_name}}</span></div></td>
+                            <td class="storefront-table__muted">{{invitation.sentAgo}}</td>
+                            <td><Badge @status={{invitation.status}} @text={{t (concat "storefront.networks.invitations.status." invitation.status)}} @size="xs" /></td>
+                            <td class="text-right">
                                 {{#if (eq invitation.status "pending")}}
-                                    <Button @size="xs" @icon="paper-plane" @text={{t "storefront.networks.invitations.resend"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
+                                    <Button @size="xs" @text={{t "storefront.networks.invitations.resend"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
                                     <Button @size="xs" @icon="ban" @helpText={{t "storefront.networks.invitations.revoke"}} @onClick={{fn this.revokeInvitation invitation}} @permission="storefront update network" />
                                 {{else}}
-                                    <Button @size="xs" @icon="redo" @text={{t "storefront.networks.invitations.invite-again"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
+                                    <Button @size="xs" @text={{t "storefront.networks.invitations.invite-again"}} @onClick={{fn this.resendInvitation invitation}} @permission="storefront update network" />
                                 {{/if}}
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
+                    {{else}}
+                        <tr><td colspan="4" class="storefront-table__muted">{{t "storefront.networks.invitations.none"}}</td></tr>
                     {{/each}}
-                </div>
-            {{else}}
-                <div class="storefront-empty-row">
-                    <span>{{t "storefront.networks.invitations.none"}}</span>
-                    <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.openInvitePanel "email"}} />
-                </div>
-            {{/if}}
-            <div class="storefront-member-row storefront-member-row--link">
-                <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="link" /></div>
-                <div class="storefront-member-row__identity">
-                    <div class="storefront-member-row__name">{{t "storefront.networks.invitations.shareable-link"}}</div>
-                    <div class="storefront-member-row__meta">{{if this.shareableLinkEnabled (t "storefront.common.on") (t "storefront.common.off")}}</div>
-                </div>
-                {{#if this.shareableLinkEnabled}}
-                    <ClickToCopy @value={{this.shareableLink}} class="storefront-member-row__link truncate" />
-                {{/if}}
-                <Button @size="xs" @icon="cog" @text={{t "storefront.networks.invitations.manage-link"}} @onClick={{fn this.openInvitePanel "link"}} />
-            </div>
-        </ContentPanel>
+                    <tr data-test-shareable-link-row>
+                        <td><div class="storefront-table__identity"><span class="storefront-table__tile"><FaIcon @icon="link" @size="xs" /></span><span>{{t "storefront.networks.invitations.shareable-link"}}</span></div></td>
+                        <td class="storefront-table__muted">{{if this.shareableLinkEnabled (t "storefront.common.on") (t "storefront.common.off")}}</td>
+                        <td>{{#if this.shareableLinkEnabled}}<span class="storefront-table__muted">{{t "storefront.networks.invitations.link-joins" count=this.linkJoins}}</span>{{/if}}</td>
+                        <td class="text-right">
+                            {{#if this.shareableLinkEnabled}}<ClickToCopy @value={{this.shareableLink}} class="storefront-table__copy">{{t "storefront.networks.overview.copy-link"}}</ClickToCopy>{{/if}}
+                            <Button @size="xs" @icon="cog" @helpText={{t "storefront.networks.invitations.manage-link"}} @onClick={{fn this.openInvitePanel "link"}} />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </:default>
+        </Storefront::SectionCard>
 
-        <ContentPanel @title={{t "storefront.networks.overview.recent-orders"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0" @actionButtons={{array (hash type="link" text=(t "storefront.networks.overview.all-orders") onClick=this.viewOrders size="xs")}}>
-            {{#if this.recentOrders.length}}
-                <div class="storefront-member-list">
+        <Storefront::SectionCard @id="recent-orders" @title={{t "storefront.networks.overview.recent-orders"}}>
+            <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" this.viewOrders}}>{{t "storefront.networks.overview.all-orders"}}</a></:actions>
+            <:default>
+            <table class="storefront-table" data-test-recent-orders-table>
+                <thead>
+                    <tr>
+                        <th>{{t "storefront.networks.orders.columns.reference"}}</th>
+                        <th>{{t "storefront.common.customer"}}</th>
+                        <th>{{t "storefront.networks.index.network.stores.store"}}</th>
+                        <th class="text-right">{{t "storefront.common.total"}}</th>
+                        <th>{{t "storefront.common.status"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
                     {{#each this.recentOrders as |order|}}
-                        <div class="storefront-member-row" data-test-recent-order={{order.public_id}}>
-                            <div class="storefront-member-row__identity">
-                                <div class="storefront-member-row__name">{{order.public_id}}</div>
-                                <div class="storefront-member-row__meta">{{n-a order.customer_name}} · {{n-a order.store_name}}</div>
-                            </div>
-                            <div class="storefront-member-row__amount">{{format-currency order.total order.currency}}</div>
-                            <Badge @status={{order.status}} @size="xs" />
-                        </div>
+                        <tr data-test-recent-order={{order.public_id}}>
+                            <td><a href="javascript:;" class="storefront-table__link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
+                            <td>{{n-a order.customer_name}}</td>
+                            <td class="storefront-table__muted">{{n-a order.store_name}}</td>
+                            <td class="text-right font-semibold">{{format-currency order.total order.currency}}</td>
+                            <td><Badge @status={{order.status}} @size="xs" /></td>
+                        </tr>
+                    {{else}}
+                        <tr><td colspan="5" class="storefront-table__muted">{{t "storefront.networks.overview.no-orders"}}</td></tr>
                     {{/each}}
-                </div>
-            {{else}}
-                <div class="storefront-empty-row"><span>{{t "storefront.networks.overview.no-orders"}}</span></div>
-            {{/if}}
-        </ContentPanel>
+                </tbody>
+            </table>
+            </:default>
+        </Storefront::SectionCard>
     </div>
 </Layout::Section::Body>
 

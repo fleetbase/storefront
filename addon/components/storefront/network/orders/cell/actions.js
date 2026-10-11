@@ -8,6 +8,7 @@ import { action } from '@ember/object';
  */
 export default class StorefrontNetworkOrdersCellActionsComponent extends Component {
     @service storefrontOrderActions;
+    @service intl;
 
     get items() {
         const { row, column } = this.args;
@@ -29,10 +30,10 @@ export default class StorefrontNetworkOrdersCellActionsComponent extends Compone
         const { row, column } = this.args;
 
         return [
-            { text: 'View order', icon: 'eye', fn: () => column?.onView?.(row) },
+            { text: this.intl.t('storefront.orders.index.view-order'), icon: 'eye', fn: () => column?.onView?.(row) },
             ...rest,
             { separator: true },
-            { text: 'Delete order', icon: 'trash', class: 'text-danger', fn: () => column?.onDelete?.(row) },
+            { text: this.intl.t('storefront.orders.index.delete-order'), icon: 'trash', class: 'text-danger', fn: () => column?.onDelete?.(row) },
         ];
     }
 

@@ -117,7 +117,9 @@ export default class StorefrontOrderActionsService extends Service {
         return [
             ...workflowItems,
             {
-                text: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'Unassign Driver' : 'Assign Driver',
+                text: this.storefrontOrderWorkflow.hasAssignedDriver(order)
+                    ? this.intl.t('storefront.orders.index.view.unassign-driver')
+                    : this.intl.t('storefront.orders.index.view.assign-driver'),
                 icon: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'user-minus' : 'id-card',
                 disabled: isTerminal,
                 fn: () => (this.storefrontOrderWorkflow.hasAssignedDriver(order) ? this.unassignDriver(order, callback) : this.assignDriver(order, callback)),
@@ -127,7 +129,7 @@ export default class StorefrontOrderActionsService extends Service {
             },
             {
                 id: 'cancel-order',
-                text: 'Cancel order',
+                text: this.intl.t('storefront.orders.index.view.cancel-order'),
                 icon: 'ban',
                 class: 'text-danger',
                 disabled: isTerminal,

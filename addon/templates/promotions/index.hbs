@@ -48,5 +48,5 @@
 </Layout::Section::Body>
 
 {{#if this.builderPromotion}}
-    <Storefront::Promotion::Builder @promotion={{this.builderPromotion}} @currency={{or this.builderPromotion.currency this.storefront.activeStore.currency}} @storeId={{this.storefront.activeStore.id}} @onClose={{this.closeBuilder}} @onSaved={{this.onBuilderSaved}} />
+    <Storefront::Promotion::Builder @promotion={{this.builderPromotion}} @currency={{or this.builderPromotion.currency this.ownerCurrency}} @storeId={{this.ownerId}} @isNetworkOwner={{this.isNetworkOwner}} @onClose={{this.closeBuilder}} @onSaved={{this.onBuilderSaved}} />
 {{/if}}

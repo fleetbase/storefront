@@ -22,6 +22,6 @@ export default class PromotionsSegmentsRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('customer-segment', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('customer-segment', { ...params, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

@@ -3,6 +3,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 
 export default class FoodTruckModel extends Model {
     /** @ids */
+    @attr('string') public_id;
     @attr('string') company_uuid;
     @attr('string') created_by_uuid;
     @attr('string') vehicle_uuid;
@@ -22,6 +23,7 @@ export default class FoodTruckModel extends Model {
     @attr('raw') network;
     @attr('string') status;
     @attr('boolean') online;
+    @attr('raw') today;
 
     /** @dates */
     @attr('date') created_at;

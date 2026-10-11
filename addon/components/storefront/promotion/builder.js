@@ -19,6 +19,7 @@ export default class StorefrontPromotionBuilderComponent extends Component {
     @tracked products = [];
     @tracked categories = [];
     @tracked excludedProducts = [];
+    @tracked stores = [];
     @tracked segment = null;
     @tracked announce = false;
 
@@ -41,6 +42,23 @@ export default class StorefrontPromotionBuilderComponent extends Component {
 
     get storeId() {
         return this.args.storeId ?? this.promotion?.owner_uuid;
+    }
+
+    /** A network-owned promotion: its targets come from the member stores. */
+    get isNetworkOwner() {
+        return Boolean(this.args.isNetworkOwner ?? this.promotion?.owner_type === 'storefront:network');
+    }
+
+    get productQuery() {
+        return this.isNetworkOwner ? { network: this.storeId } : { store_uuid: this.storeId };
+    }
+
+    get categoryQuery() {
+        return this.isNetworkOwner ? { for: 'storefront_network', owner_uuid: this.storeId } : { for: 'storefront_product', owner_uuid: this.storeId };
+    }
+
+    get storeQuery() {
+        return { network: this.storeId, limit: -1 };
     }
 
     get appliesTo() {
@@ -156,6 +174,7 @@ export default class StorefrontPromotionBuilderComponent extends Component {
         this.products = await this.findAll('product', this.appliesTo.products);
         this.categories = await this.findAll('category', this.appliesTo.categories);
         this.excludedProducts = await this.findAll('product', this.appliesTo.exclude_products);
+        this.stores = await this.findAll('store', this.appliesTo.stores);
 
         if (this.appliesTo.segment) {
             this.segment = await this.store.findRecord('customer-segment', this.appliesTo.segment).catch(() => null);

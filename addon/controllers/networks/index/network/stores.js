@@ -203,7 +203,14 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     }
 
     get selectedStores() {
-        return (this.table?.selectedRows ?? []).filter((row) => !row.isInvitation);
+        const table = this.table;
+
+        // The table is torn down and rebuilt between routes; a destroyed one must not be read.
+        if (!table || table.isDestroying || table.isDestroyed) {
+            return [];
+        }
+
+        return (table.selectedRows ?? []).filter((row) => !row.isInvitation);
     }
 
     get hasSelection() {
@@ -221,181 +228,185 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      *
      * @var {Array}
      */
-    @tracked columns = [
-        {
-            id: 'name',
-            label: this.intl.t('storefront.networks.index.network.stores.store'),
-            valuePath: 'name',
-            cellComponent: 'table/cell/identity',
-            resourceType: 'store',
-            resourcePath: (row) => (row.isInvitation ? buildIdentityStub(row, { type: 'store', nameKey: 'email', icon: 'at' }) : row),
-            popover: true,
-            width: '160px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-            showOnlineIndicator: true,
-            cellClassNames: 'network-store-name-column',
-        },
-        {
-            id: 'category-name',
-            label: this.intl.t('storefront.common.category'),
-            valuePath: 'category.name',
-            cellComponent: 'table/cell/base',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'status',
-            label: this.intl.t('storefront.common.status'),
-            valuePath: 'status_label',
-            cellComponent: 'table/cell/status',
-            width: '110px',
-            sortable: false,
-            filterable: false,
-            resizable: true,
-        },
-        {
-            id: 'orders-7d',
-            label: this.intl.t('storefront.networks.index.network.stores.orders-7d'),
-            valuePath: 'orders_7d',
-            cellComponent: 'table/cell/base',
-            width: '100px',
-            sortable: true,
-            filterable: false,
-            resizable: true,
-        },
-        {
-            id: 'share',
-            label: this.intl.t('storefront.networks.index.network.stores.share'),
-            valuePath: 'share',
-            cellComponent: 'storefront/network/share-cell',
-            width: '150px',
-            sortable: true,
-            filterable: false,
-            resizable: true,
-        },
-        {
-            id: 'currency',
-            label: this.intl.t('storefront.common.currency'),
-            valuePath: 'currency',
-            cellComponent: 'table/cell/base',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'created-at-short',
-            label: this.intl.t('storefront.networks.index.network.stores.joined'),
-            valuePath: 'createdAtShort',
-            sortParam: 'created_at',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            id: 'row-actions',
-            label: '',
-            cellComponent: 'table/cell/dropdown',
-            ddButtonText: false,
-            ddButtonIcon: 'ellipsis-h',
-            ddButtonIconPrefix: 'fas',
-            ddMenuLabel: 'Store Actions',
-            cellClassNames: 'overflow-visible',
-            wrapperClass: 'flex items-center justify-end mx-2',
-            width: '50px',
-            actions: [
-                {
-                    id: 'resend-invitation',
-                    label: this.intl.t('storefront.networks.invitations.resend'),
-                    fn: this.resendInvitation,
-                    isVisible: (row) => row.isInvitation && row.status === 'pending',
-                },
-                {
-                    id: 'invite-again',
-                    label: this.intl.t('storefront.networks.invitations.invite-again'),
-                    fn: this.resendInvitation,
-                    isVisible: (row) => row.isInvitation && row.status !== 'pending',
-                },
-                {
-                    id: 'revoke-invitation',
-                    label: this.intl.t('storefront.networks.invitations.revoke'),
-                    fn: this.revokeInvitation,
-                    isVisible: (row) => row.isInvitation && row.status === 'pending',
-                },
-                {
-                    id: 'view-store-details',
-                    label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
-                    fn: this.viewStoreDetails,
-                    isVisible: (row) => !row.isInvitation,
-                },
-                {
-                    id: 'edit-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
-                    fn: this.editStore,
-                    isVisible: (row) => !row.isInvitation,
-                },
-                {
-                    id: 'assign-store-to-category',
-                    label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
-                    fn: this.assignStoreToCategory,
-                    isVisible: (row) => !row.isInvitation,
-                },
-                {
-                    id: 'remove-store-category',
-                    label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
-                    fn: this.removeStoreCategory,
-                    isVisible: (row) => !row.isInvitation && row.category,
-                },
-                {
-                    separator: true,
-                    isVisible: (row) => !row.isInvitation,
-                },
-                {
-                    id: 'approve-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.approve'),
-                    fn: this.approveStore,
-                    isVisible: (row) => !row.isInvitation && row.isPendingApproval,
-                },
-                {
-                    id: 'reject-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.reject'),
-                    fn: this.rejectStore,
-                    isVisible: (row) => !row.isInvitation && row.isPendingApproval,
-                },
-                {
-                    id: 'suspend-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.suspend'),
-                    fn: this.suspendStore,
-                    isVisible: (row) => !row.isInvitation && !row.isSuspended && !row.isPendingApproval,
-                },
-                {
-                    id: 'reinstate-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.reinstate'),
-                    fn: this.reinstateStore,
-                    isVisible: (row) => !row.isInvitation && row.isSuspended,
-                },
-                {
-                    id: 'remove-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
-                    fn: this.removeStore,
-                    isVisible: (row) => !row.isInvitation,
-                },
-            ],
-            sortable: false,
-            filterable: false,
-            resizable: false,
-            searchable: false,
-        },
-    ];
+    get columns() {
+        return [
+            {
+                id: 'name',
+                label: this.intl.t('storefront.networks.index.network.stores.store'),
+                valuePath: 'name',
+                cellComponent: 'table/cell/identity',
+                resourceType: 'store',
+                resourcePath: (row) => (row.isInvitation ? buildIdentityStub(row, { type: 'store', nameKey: 'email', icon: 'at' }) : row),
+                popover: true,
+                width: '160px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/string',
+                showOnlineIndicator: true,
+                cellClassNames: 'network-store-name-column',
+            },
+            {
+                id: 'category-name',
+                label: this.intl.t('storefront.common.category'),
+                valuePath: 'category.name',
+                cellComponent: 'storefront/network/category-cell',
+                categories: this.categories,
+                onAssign: this.assignCategoryInline,
+                onRemove: this.removeStoreCategory,
+                width: '150px',
+                resizable: true,
+                sortable: false,
+                filterable: false,
+            },
+            {
+                id: 'status',
+                label: this.intl.t('storefront.common.status'),
+                valuePath: 'status_label',
+                cellComponent: 'table/cell/status',
+                width: '110px',
+                sortable: false,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'orders-7d',
+                label: this.intl.t('storefront.networks.index.network.stores.orders-7d'),
+                valuePath: 'orders_7d',
+                cellComponent: 'table/cell/base',
+                width: '100px',
+                sortable: true,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'share',
+                label: this.intl.t('storefront.networks.index.network.stores.share'),
+                valuePath: 'share',
+                cellComponent: 'storefront/network/share-cell',
+                width: '150px',
+                sortable: true,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'currency',
+                label: this.intl.t('storefront.common.currency'),
+                valuePath: 'currency',
+                cellComponent: 'table/cell/base',
+                width: '100px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/string',
+            },
+            {
+                id: 'created-at-short',
+                label: this.intl.t('storefront.networks.index.network.stores.joined'),
+                valuePath: 'createdAtShort',
+                sortParam: 'created_at',
+                width: '100px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/date',
+            },
+            {
+                id: 'row-actions',
+                label: '',
+                cellComponent: 'table/cell/dropdown',
+                ddButtonText: false,
+                ddButtonIcon: 'ellipsis-h',
+                ddButtonIconPrefix: 'fas',
+                ddMenuLabel: 'Store Actions',
+                cellClassNames: 'overflow-visible',
+                wrapperClass: 'flex items-center justify-end mx-2',
+                width: '50px',
+                actions: [
+                    {
+                        id: 'resend-invitation',
+                        label: this.intl.t('storefront.networks.invitations.resend'),
+                        fn: this.resendInvitation,
+                        isVisible: (row) => row.isInvitation && row.status === 'pending',
+                    },
+                    {
+                        id: 'invite-again',
+                        label: this.intl.t('storefront.networks.invitations.invite-again'),
+                        fn: this.resendInvitation,
+                        isVisible: (row) => row.isInvitation && row.status !== 'pending',
+                    },
+                    {
+                        id: 'revoke-invitation',
+                        label: this.intl.t('storefront.networks.invitations.revoke'),
+                        fn: this.revokeInvitation,
+                        isVisible: (row) => row.isInvitation && row.status === 'pending',
+                    },
+                    {
+                        id: 'view-store-details',
+                        label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
+                        fn: this.viewStoreDetails,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'edit-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
+                        fn: this.editStore,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'assign-store-to-category',
+                        label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
+                        fn: this.assignStoreToCategory,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'remove-store-category',
+                        label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
+                        fn: this.removeStoreCategory,
+                        isVisible: (row) => !row.isInvitation && row.category,
+                    },
+                    {
+                        separator: true,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'approve-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.approve'),
+                        fn: this.approveStore,
+                        isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                    },
+                    {
+                        id: 'reject-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.reject'),
+                        fn: this.rejectStore,
+                        isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                    },
+                    {
+                        id: 'suspend-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.suspend'),
+                        fn: this.suspendStore,
+                        isVisible: (row) => !row.isInvitation && !row.isSuspended && !row.isPendingApproval,
+                    },
+                    {
+                        id: 'reinstate-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.reinstate'),
+                        fn: this.reinstateStore,
+                        isVisible: (row) => !row.isInvitation && row.isSuspended,
+                    },
+                    {
+                        id: 'remove-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+                        fn: this.removeStore,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                ],
+                sortable: false,
+                filterable: false,
+                resizable: false,
+                searchable: false,
+            },
+        ];
+    }
 
     /**
      * The search task.
@@ -509,6 +520,57 @@ export default class NetworksIndexNetworkStoresController extends BaseController
         this.clearSelection?.();
 
         return this.hostRouter.refresh();
+    }
+
+    @tracked categories = [];
+    @tracked filterCategory = null;
+
+    /** The header's meta line: members and open invitations, as the board draws it. */
+    get headerMeta() {
+        const members = this.intl.t('storefront.networks.overview.members-count', { count: this.members.length });
+        const pending = this.intl.t('storefront.networks.invitations.pending-count', { count: this.pendingInvitations.length });
+
+        return `${members} · ${pending}`;
+    }
+
+    get filterOptions() {
+        return {
+            statuses: this.statusTabs,
+            categories: this.categories,
+        };
+    }
+
+    get hasActiveFilters() {
+        return this.statusTab !== 'all' || Boolean(this.category);
+    }
+
+    @action setCategoryFilter(categoryId) {
+        this.category = categoryId || null;
+        this.filterCategory = categoryId || null;
+    }
+
+    @action clearFilters() {
+        this.statusTab = 'all';
+        this.category = null;
+        this.filterCategory = null;
+    }
+
+    /** Inline category change from the Category column; the table reloads after. */
+    @action async assignCategoryInline(store, category) {
+        try {
+            await this.addStoreToCategory(store, category);
+            this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-stores-update'));
+            await this.hostRouter.refresh();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    /** Client-side "Showing x to y of z" for the stores list, which is not paginated by the API. */
+    get showingLabel() {
+        const count = this.visibleStores.length;
+
+        return this.intl.t('storefront.networks.index.network.stores.showing', { from: count ? 1 : 0, to: count, total: count });
     }
 
     @action setCategoryPickerContext(context) {

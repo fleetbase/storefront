@@ -22,6 +22,7 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
             zone: { name: 'Zone 3' },
             catalogs: [{ name: 'Lunch menu' }, { name: 'Breakfast' }],
             store_summary: { name: 'Fleetbase Market' },
+            today: { orders: 14 },
         });
         this.set('noop', () => {});
 
@@ -30,15 +31,16 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         assert.dom('[data-test-storefront-truck-card]').exists();
         assert.dom('[data-test-truck-vehicle] [data-test-resource-pill-title]').hasText('Truck 10');
         assert.dom('[data-test-truck-vehicle] [data-test-pill-online-indicator]').hasClass('text-green-500');
-        assert.dom('[data-test-truck-area]').hasText('Central · Zone 3');
+        assert.dom('[data-test-truck-area]').hasText('Central service area · Zone 3');
+        assert.dom('[data-test-truck-vehicle] [data-test-resource-pill-subtitle]').hasText('No driver assigned');
         assert.dom('[data-test-truck-photo]').hasAttribute('src', 'https://cdn.test/truck.png');
         // A catalog without hours is always serving, so the badge names it.
         assert.dom('[data-test-truck-presence]').includesText('Serving · Lunch menu');
-        assert.dom('[data-test-truck-catalogs-count]').hasText('2 catalogs');
+        assert.dom('[data-test-truck-catalogs-count]').hasText('2 catalogs · 14 orders today');
         assert.dom('[data-test-truck-store]').hasText('Owned by Fleetbase Market');
         assert.dom('[data-test-truck-edit]').exists();
-        assert.dom('[data-test-truck-catalogs]').exists();
-        assert.dom('[data-test-truck-delete]').exists();
+        // Assign catalogs, open vehicle and delete sit behind the one ellipsis menu.
+        assert.dom('[data-test-truck-menu]').exists();
     });
 
     test('presence reads inactive, offline, or online with nothing to sell', async function (assert) {
@@ -53,7 +55,7 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         this.set('truck', { status: 'active', online: true, catalogs: [] });
         await render(hbs`<Storefront::Truck::Card @truck={{this.truck}} />`);
         assert.dom('[data-test-truck-presence]').includesText('Online, no catalog');
-        assert.dom('[data-test-truck-catalogs-count]').hasText('No catalogs');
+        assert.dom('[data-test-truck-catalogs-count]').hasText('No catalogs · no orders today');
         assert.dom('[data-test-truck-area]').hasText('No service area');
         assert.dom('[data-test-truck-vehicle] [data-test-resource-pill-title]').hasText('No vehicle assigned');
     });

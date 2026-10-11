@@ -23,6 +23,6 @@ export default class PromotionsCampaignsRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('campaign', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('campaign', { ...params, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

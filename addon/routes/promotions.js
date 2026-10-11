@@ -9,7 +9,7 @@ export default class PromotionsRoute extends Route {
     @service storefront;
 
     model() {
-        return this.fetch.get('promotions/hub', { owner: this.storefront.getActiveStore('id') }, { namespace: 'storefront/int/v1' }).catch(() => null);
+        return this.fetch.get('promotions/hub', { owner: this.storefront.getContextOwner('id') }, { namespace: 'storefront/int/v1' }).catch(() => null);
     }
 
     setupController(controller, model) {

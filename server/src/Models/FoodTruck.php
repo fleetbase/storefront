@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\FleetOps\Models\Driver;
+use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\ServiceArea;
 use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Models\Zone;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class FoodTruck extends StorefrontModel
@@ -213,6 +215,34 @@ class FoodTruck extends StorefrontModel
         $this->loadMissing('vehicle');
 
         return $this->vehicle->location;
+    }
+
+    /**
+     * What the truck did today in its owner's timezone: orders fulfilled from it (the checkout
+     * stamps `meta.food_truck_id`), what they came to, and how long they took to leave the truck.
+     */
+    public function todayStats(): array
+    {
+        $owner    = $this->owner();
+        $timezone = $owner?->timezone ?: config('app.timezone', 'UTC');
+        $currency = $owner?->currency;
+        $start    = Carbon::now($timezone)->startOfDay()->setTimezone('UTC');
+        $end      = Carbon::now($timezone)->endOfDay()->setTimezone('UTC');
+
+        $row = Order::query()
+            ->where('company_uuid', $this->company_uuid)
+            ->where('meta->food_truck_id', $this->public_id)
+            ->whereBetween('created_at', [$start, $end])
+            ->whereNull('deleted_at')
+            ->selectRaw("COUNT(*) as orders_count, COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(meta, '$.total')) AS DECIMAL(14,2))), 0) as revenue, AVG(TIMESTAMPDIFF(MINUTE, created_at, COALESCE(dispatched_at, started_at))) as avg_prep_minutes")
+            ->first();
+
+        return [
+            'orders'           => (int) ($row->orders_count ?? 0),
+            'revenue'          => (float) ($row->revenue ?? 0),
+            'currency'         => $currency,
+            'avg_prep_minutes' => $row && $row->avg_prep_minutes !== null ? (int) round((float) $row->avg_prep_minutes) : null,
+        ];
     }
 
     /**

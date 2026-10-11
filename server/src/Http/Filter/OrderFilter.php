@@ -60,6 +60,14 @@ class OrderFilter extends FleetOpsOrderFilter
         $this->builder->where('customer_uuid', $customer);
     }
 
+    /**
+     * Orders fulfilled from a truck (the checkout stamps `meta.food_truck_id`).
+     */
+    public function foodTruck(string $foodTruck)
+    {
+        $this->builder->where('meta->food_truck_id', $foodTruck);
+    }
+
     public function storefront(string $storefront)
     {
         $this->builder->where('meta->storefront_id', $storefront);

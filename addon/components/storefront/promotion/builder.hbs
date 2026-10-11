@@ -85,20 +85,27 @@
                             {{else if (eq step.id "targets")}}
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{t "storefront.promotions.form.targeting-help"}}</p>
                                 <InputGroup @name={{t "storefront.promotions.form.products"}} as |inputId|>
-                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{hash store_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.products-placeholder"}} @selectedModel={{this.products}} @onChange={{fn this.setTargets "products" "products"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{this.productQuery}} @placeholder={{t "storefront.promotions.form.products-placeholder"}} @selectedModel={{this.products}} @onChange={{fn this.setTargets "products" "products"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
                                         {{model.name}}
                                     </ModelSelectMultiple>
                                 </InputGroup>
                                 <InputGroup @name={{t "storefront.promotions.form.categories"}} as |inputId|>
-                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="category" @query={{hash for="storefront_product" owner_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.categories-placeholder"}} @selectedModel={{this.categories}} @onChange={{fn this.setTargets "categories" "categories"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="category" @query={{this.categoryQuery}} @placeholder={{t "storefront.promotions.form.categories-placeholder"}} @selectedModel={{this.categories}} @onChange={{fn this.setTargets "categories" "categories"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
                                         {{model.name}}
                                     </ModelSelectMultiple>
                                 </InputGroup>
                                 <InputGroup @name={{t "storefront.promotions.form.exclude-products"}} as |inputId|>
-                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{hash store_uuid=this.storeId}} @placeholder={{t "storefront.promotions.form.exclude-products-placeholder"}} @selectedModel={{this.excludedProducts}} @onChange={{fn this.setTargets "exclude_products" "excludedProducts"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
+                                    <ModelSelectMultiple @triggerId={{inputId}} @modelName="product" @query={{this.productQuery}} @placeholder={{t "storefront.promotions.form.exclude-products-placeholder"}} @selectedModel={{this.excludedProducts}} @onChange={{fn this.setTargets "exclude_products" "excludedProducts"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
                                         {{model.name}}
                                     </ModelSelectMultiple>
                                 </InputGroup>
+                                {{#if this.isNetworkOwner}}
+                                    <InputGroup @name={{t "storefront.promotions.builder.stores"}} @helpText={{t "storefront.promotions.builder.stores-help"}} as |inputId|>
+                                        <ModelSelectMultiple @triggerId={{inputId}} @modelName="store" @query={{this.storeQuery}} @placeholder={{t "storefront.promotions.builder.stores-placeholder"}} @selectedModel={{this.stores}} @onChange={{fn this.setTargets "stores" "stores"}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} data-test-builder-stores as |model|>
+                                            {{model.name}}
+                                        </ModelSelectMultiple>
+                                    </InputGroup>
+                                {{/if}}
                                 <InputGroup @name={{t "storefront.promotions.builder.segment"}} @helpText={{t "storefront.promotions.builder.segment-help"}} as |inputId|>
                                     <ModelSelect @triggerId={{inputId}} @modelName="customer-segment" @query={{hash owner=this.storeId}} @placeholder={{t "storefront.promotions.builder.segment-placeholder"}} @selectedModel={{this.segment}} @onChange={{this.setSegment}} @allowClear={{true}} @triggerClass="form-select form-input w-full" @renderInPlace={{true}} @infiniteScroll={{false}} as |model|>
                                         {{model.name}}

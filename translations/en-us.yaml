@@ -2,6 +2,7 @@ storefront:
   extension-name: Storefront
   common:
     save: Save
+    filters: Filters
     off: Off
     on: On
     all: All
@@ -41,6 +42,7 @@ storefront:
     import: Import
     invalid: Invalid
     loading: Loading...
+    more: More
     logo: logo
     name: Name
     neighborhood: Neighborhood
@@ -477,6 +479,7 @@ storefront:
       tabs:
         details: Details
         catalogs: Catalogs
+        orders: Orders
         location: Location
       location-lede: Where the vehicle last reported from, as Fleet-Ops tracks it.
       last-position: Last position
@@ -487,6 +490,18 @@ storefront:
       open-vehicle: Open vehicle
       no-vehicle-yet: Pick a vehicle on the Details tab to see where it is.
       new-truck: New truck
+      delete-truck: Delete truck
+      not-assigned: not assigned
+      sections:
+        vehicle-crew: Vehicle and crew
+        catalogs: Catalogs on this truck
+        today: Today
+      today:
+        revenue: Revenue
+        avg-prep: Avg prep
+        minutes: '{value} min'
+      orders-lede: Orders fulfilled from this truck, newest first.
+      no-orders: No orders from this truck yet.
       vehicle: Vehicle
       vehicle-help: The Fleet-Ops vehicle; its driver and online state come from Fleet-Ops.
       vehicle-placeholder: Select the vehicle for this truck
@@ -505,16 +520,22 @@ storefront:
       saved: Truck saved.
     network:
       subtitle: Trucks run by this network and by the stores that sell through it.
+    map:
+      unavailable: The map could not be loaded in this console.
     index:
       subtitle: A Fleet-Ops vehicle that sells from a catalog inside a service area.
       new-truck: New truck
       map: Map
-      map-unavailable: The Fleet-Ops map is not available in this console.
+      search: Search trucks
+      map-note: '{count} of {total} trucks have a reported position.'
       inactive: Inactive
       empty-state: Add a truck to sell from a vehicle inside a service area.
       create-truck: Add truck
     card:
       no-vehicle: No vehicle assigned
+      no-driver: No driver assigned
+      service-area: '{name} service area'
+      orders-today: '{count, plural, =0 {no orders today} one {# order today} other {# orders today}}'
       no-service-area: No service area
       inactive: Inactive
       offline: Offline
@@ -581,6 +602,11 @@ storefront:
     card:
       stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"
     overview:
+      members-count: "{count, plural, =0 {no members} one {# member} other {# members}}"
+      invitee: Invitee
+      sent: Sent
+      state: State
+      copy-link: Copy
       manage-stores: Manage stores
       no-category: No category
       view-on-stores: View on the Stores page
@@ -600,6 +626,7 @@ storefront:
       all-orders: All orders
       no-orders: No orders through this network in the last seven days.
     orders:
+      search: Search orders
       subtitle: Everything placed through the marketplace app, grouped by checkout
       group-by-checkout: Group by checkout
       flat: Flat
@@ -674,6 +701,7 @@ storefront:
       title: Invitations
       invite-stores: Invite stores
       invited: Invited
+      pending-count: "{count, plural, =0 {no invitations pending} one {# invitation pending} other {# invitations pending}}"
       none: No open invitations.
       sent-ago: "Sent {ago}"
       resend: Resend
@@ -861,6 +889,12 @@ storefront:
         stores:
           store: Stores
           suspended: Suspended
+          suspend-short: Suspend
+          remove-short: Remove from network
+          approve-short: Approve
+          search: Search stores
+          no-categories: No categories yet
+          showing: "Showing {from} to {to} of {total}"
           awaiting-approval: Awaiting approval
           approve: Approve membership
           reject: Reject membership
@@ -1396,6 +1430,9 @@ storefront:
       min-subtotal-help: Threshold in the store currency; leave empty for none.
       codes-after-save: Save the promotion first, then generate its codes here.
       segment: Customer segment
+      stores: Stores
+      stores-help: Leave empty to apply at every member store.
+      stores-placeholder: Select member stores
       segment-help: Only customers in this segment get the promotion.
       segment-placeholder: Everyone
       summary:

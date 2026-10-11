@@ -24,6 +24,6 @@ export default class PromotionsRedemptionsRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('promotion-redemption', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('promotion-redemption', { ...params, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

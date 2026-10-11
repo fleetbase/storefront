@@ -64,4 +64,14 @@ class ProductFilter extends Filter
     {
         $this->builder->where('is_recommended', filter_var($flag, FILTER_VALIDATE_BOOLEAN));
     }
+
+    /**
+     * Products sold by the stores of a network, for network-owned promotions and catalogs.
+     */
+    public function network(string $network)
+    {
+        $this->builder->whereHas('store.networks', function ($query) use ($network) {
+            $query->where('network_uuid', $network);
+        });
+    }
 }

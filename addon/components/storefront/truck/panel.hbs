@@ -1,20 +1,41 @@
 <Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="600px" @minResizeWidth={{480}} @fullHeight={{true}} @isOpen={{true}}>
-    <Overlay::Header @title={{this.title}} @onPressCancel={{this.close}}>
+    <Overlay::Header @onPressCancel={{this.close}} class="storefront-truck-panel__header" @actionsWrapperClass="storefront-truck-panel__header-actions">
+        <:default>
+            <div class="storefront-truck-panel__identity" data-test-truck-panel-identity>
+                <div class="storefront-truck-panel__avatar-wrap">
+                    <Image src={{this.photoUrl}} @fallbackSrc={{this.placeholder}} alt={{this.title}} class="storefront-truck-panel__avatar" />
+                    {{#if this.truck.vehicle.id}}<span class="storefront-truck-panel__dot {{if this.position.online 'is-online'}}"></span>{{/if}}
+                </div>
+                <div class="min-w-0">
+                    <div class="storefront-truck-panel__title">{{this.title}}</div>
+                    <div class="storefront-truck-panel__meta">{{this.subtitle}}</div>
+                </div>
+            </div>
+        </:default>
         <:actions>
             {{#if this.truck.vehicle.id}}
-                <Vehicle::Pill @vehicle={{this.truck.vehicle}} @showOnlineIndicator={{true}} @size="xs" />
-                <Button @size="xs" @icon="arrow-up-right-from-square" @text={{t "storefront.trucks.panel.open-vehicle"}} @onClick={{this.openVehicle}} @permission="fleet-ops view vehicle" class="ml-2" data-test-truck-open-vehicle />
+                <Button @size="xs" @icon="arrow-up-right-from-square" @text={{t "storefront.trucks.panel.open-vehicle"}} @onClick={{this.openVehicle}} @permission="fleet-ops view vehicle" data-test-truck-open-vehicle />
             {{/if}}
+            {{#unless this.truck.isNew}}
+                <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-truck-panel-menu as |dd|>
+                    <div class="next-dd-menu mt-1 mx-0">
+                        <div class="px-1">
+                            <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.selectTab "catalogs")}}><FaIcon @icon="book-open" class="mr-1" />{{t "storefront.trucks.card.assign-catalogs"}}</a>
+                            {{#if this.position.hasPosition}}
+                                <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.selectTab "location")}}><FaIcon @icon="map" class="mr-1" />{{t "storefront.trucks.panel.tabs.location"}}</a>
+                            {{/if}}
+                            {{#if @onDelete}}
+                                <div class="next-dd-menu-seperator"></div>
+                                <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd @onDelete this.truck)}} data-test-truck-panel-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.trucks.panel.delete-truck"}}</a>
+                            {{/if}}
+                        </div>
+                    </div>
+                </DropdownButton>
+            {{/unless}}
         </:actions>
     </Overlay::Header>
     <Overlay::Body class="p-0i" @wrapperClass="storefront-truck-panel" data-test-truck-panel>
-        {{#if this.truck.ownerName}}
-            <p class="storefront-invite-panel__lede">
-                {{t "storefront.trucks.card.owned-by" name=this.truck.ownerName}}
-                {{#if this.truck.isNetworkOwned}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.common.network"}} />{{/if}}
-            </p>
-        {{/if}}
-        <div class="storefront-invite-panel__tabs" role="tablist">
+        <div class="storefront-truck-panel__tabs" role="tablist">
             {{#each this.tabs as |tab|}}
                 <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-invite-panel__tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-truck-tab={{tab.id}}>
                     {{tab.label}}{{#if tab.count}} <span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
@@ -23,7 +44,8 @@
         </div>
 
         {{#if (eq this.tab "details")}}
-            <div class="storefront-invite-panel__section space-y-4">
+            <div class="storefront-truck-panel__section" data-test-truck-details>
+                <h3 class="storefront-truck-panel__section-title">{{t "storefront.trucks.panel.sections.vehicle-crew"}}</h3>
                 <InputGroup @name={{t "storefront.trucks.panel.vehicle"}} @helpText={{t "storefront.trucks.panel.vehicle-help"}}>
                     <ModelSelect @modelName="vehicle" @selectedItemComponent={{component "select-option/vehicle" compact=true}} @selectedModel={{this.truck.vehicle}} @placeholder={{t "storefront.trucks.panel.vehicle-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.setVehicle}} as |model|>
                         <SelectOption::Vehicle @option={{model}} />
@@ -45,14 +67,96 @@
                         {{/if}}
                     </InputGroup>
                 </div>
-                <InputGroup @name={{t "storefront.common.status"}} @helpText={{t "storefront.trucks.panel.status-help"}}>
+                <InputGroup @name={{t "storefront.common.status"}} @helpText={{t "storefront.trucks.panel.status-help"}} @wrapperClass="mb-0">
                     <Select class="w-full" @value={{this.truck.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} />
                 </InputGroup>
             </div>
+        {{/if}}
+
+        {{#if (or (eq this.tab "details") (eq this.tab "catalogs"))}}
+            <div class="storefront-truck-panel__section" data-test-truck-catalogs-section>
+                <h3 class="storefront-truck-panel__section-title">{{t "storefront.trucks.panel.sections.catalogs"}}</h3>
+                <p class="storefront-truck-panel__lede">{{t "storefront.trucks.panel.catalogs-lede"}}</p>
+                {{#if this.catalogRows.length}}
+                    <div class="storefront-member-list storefront-catalog-served-by" data-test-truck-catalogs>
+                        {{#each this.catalogRows as |row|}}
+                            <button type="button" class="storefront-member-row storefront-truck-panel__catalog {{if row.isAssigned 'is-assigned'}}" {{on "click" (fn this.toggleCatalog row.catalog)}} data-test-truck-catalog={{row.catalog.id}} aria-pressed={{if row.isAssigned "true" "false"}}>
+                                <FaIcon @icon={{if row.isAssigned "check-square" "square"}} @prefix="far" class="storefront-truck-panel__check" />
+                                <div class="storefront-member-row__identity">
+                                    <div class="storefront-member-row__name">{{row.catalog.name}}</div>
+                                    <div class="storefront-member-row__meta">{{row.hoursSummary}} · {{t "storefront.catalogs.card.products-count" count=row.productsCount}}{{#if row.ownerName}} · {{row.ownerName}}{{/if}}</div>
+                                </div>
+                                {{#if row.servingNow}}
+                                    <Badge @status="online" @size="xs" @text={{t "storefront.catalogs.editor.serving"}} />
+                                {{else if row.isAssigned}}
+                                    <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.trucks.panel.outside-hours"}} />
+                                {{else}}
+                                    <span class="storefront-truck-panel__muted">{{t "storefront.trucks.panel.not-assigned"}}</span>
+                                {{/if}}
+                            </button>
+                        {{/each}}
+                    </div>
+                    <p class="storefront-invitation-list__note">{{t "storefront.trucks.panel.catalogs-note"}}</p>
+                {{else}}
+                    <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-catalogs"}}</span></div>
+                {{/if}}
+            </div>
+        {{/if}}
+
+        {{#if (eq this.tab "details")}}
+            {{#unless this.truck.isNew}}
+                <div class="storefront-truck-panel__section" data-test-truck-today>
+                    <h3 class="storefront-truck-panel__section-title">{{t "storefront.trucks.panel.sections.today"}}</h3>
+                    <div class="storefront-truck-panel__kpis">
+                        <div class="storefront-stat-tile">
+                            <span class="storefront-stat-tile__label">{{t "storefront.common.orders"}}</span>
+                            <span class="storefront-stat-tile__value" data-test-truck-today-orders>{{this.today.orders}}</span>
+                        </div>
+                        <div class="storefront-stat-tile">
+                            <span class="storefront-stat-tile__label">{{t "storefront.trucks.panel.today.revenue"}}</span>
+                            <span class="storefront-stat-tile__value" data-test-truck-today-revenue>{{format-currency this.today.revenue this.today.currency}}</span>
+                        </div>
+                        <div class="storefront-stat-tile">
+                            <span class="storefront-stat-tile__label">{{t "storefront.trucks.panel.today.avg-prep"}}</span>
+                            <span class="storefront-stat-tile__value" data-test-truck-today-prep>{{#if this.today.hasPrep}}{{t "storefront.trucks.panel.today.minutes" value=this.today.avgPrep}}{{else}}–{{/if}}</span>
+                        </div>
+                    </div>
+                    {{#if this.position.hasPosition}}
+                        <Storefront::Truck::Map @trucks={{array this.truck}} @height="200px" class="mt-3" />
+                    {{else}}
+                        <div class="storefront-truck-panel__map-empty">{{t "storefront.trucks.panel.no-position"}}</div>
+                    {{/if}}
+                </div>
+            {{/unless}}
+        {{else if (eq this.tab "orders")}}
+            <div class="storefront-truck-panel__section" data-test-truck-orders>
+                <p class="storefront-truck-panel__lede">{{t "storefront.trucks.panel.orders-lede"}}</p>
+                {{#if this.loadOrders.isRunning}}
+                    <div class="storefront-empty-row"><Spinner class="mr-2" /><span>{{t "storefront.common.loading"}}</span></div>
+                {{else if this.orders.length}}
+                    <div class="storefront-member-list">
+                        {{#each this.orders as |order|}}
+                            <button type="button" class="storefront-member-row storefront-truck-panel__order" {{on "click" (fn this.viewOrder order)}} data-test-truck-order={{order.public_id}}>
+                                <div class="storefront-member-row__identity">
+                                    <div class="storefront-member-row__name">{{order.public_id}}</div>
+                                    <div class="storefront-member-row__meta">{{n-a order.customer_name order.customer.name}} · {{order.createdAgo}}</div>
+                                </div>
+                                <span class="storefront-truck-panel__order-total">{{format-currency (or order.meta.total order.transaction_amount) (or order.meta.currency order.currency)}}</span>
+                                <Badge @status={{order.status}} @size="xs" />
+                            </button>
+                        {{/each}}
+                    </div>
+                {{else}}
+                    <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-orders"}}</span></div>
+                {{/if}}
+            </div>
         {{else if (eq this.tab "location")}}
-            <div class="storefront-invite-panel__section space-y-3" data-test-truck-location>
-                <p class="storefront-settings-section__lede mb-0">{{t "storefront.trucks.panel.location-lede"}}</p>
+            <div class="storefront-truck-panel__section" data-test-truck-location>
+                <p class="storefront-truck-panel__lede">{{t "storefront.trucks.panel.location-lede"}}</p>
                 {{#if this.position.hasVehicle}}
+                    {{#if this.position.hasPosition}}
+                        <Storefront::Truck::Map @trucks={{array this.truck}} @height="280px" class="mb-3" />
+                    {{/if}}
                     <div class="storefront-kv">
                         <div class="storefront-kv__row">
                             <span class="storefront-kv__key">{{t "storefront.common.status"}}</span>
@@ -73,34 +177,9 @@
                             <span class="storefront-kv__value">{{n-a this.position.serviceArea}}{{#if this.position.zone}} · {{this.position.zone}}{{/if}}</span>
                         </div>
                     </div>
-                    <Button @icon="map" @text={{t "storefront.trucks.panel.open-map"}} @onClick={{this.openMap}} @permission="fleet-ops view order" data-test-truck-open-map />
+                    <Button @icon="map" @size="sm" @text={{t "storefront.trucks.panel.open-map"}} @onClick={{this.openMap}} @permission="fleet-ops view order" class="mt-3" data-test-truck-open-map />
                 {{else}}
                     <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-vehicle-yet"}}</span></div>
-                {{/if}}
-            </div>
-        {{else}}
-            <div class="storefront-invite-panel__section space-y-3">
-                <p class="storefront-settings-section__lede mb-0">{{t "storefront.trucks.panel.catalogs-lede"}}</p>
-                {{#if this.catalogRows.length}}
-                    <div class="storefront-member-list storefront-catalog-served-by" data-test-truck-catalogs>
-                        {{#each this.catalogRows as |row|}}
-                            <button type="button" class="storefront-member-row storefront-truck-panel__catalog {{if row.isAssigned 'is-assigned'}}" {{on "click" (fn this.toggleCatalog row.catalog)}} data-test-truck-catalog={{row.catalog.id}} aria-pressed={{if row.isAssigned "true" "false"}}>
-                                <FaIcon @icon={{if row.isAssigned "check-square" "square"}} @prefix="far" class="storefront-truck-panel__check" />
-                                <div class="storefront-member-row__identity">
-                                    <div class="storefront-member-row__name">{{row.catalog.name}}</div>
-                                    <div class="storefront-member-row__meta">{{row.hoursSummary}} · {{t "storefront.catalogs.card.products-count" count=row.productsCount}}{{#if row.ownerName}} · {{row.ownerName}}{{/if}}</div>
-                                </div>
-                                {{#if row.servingNow}}
-                                    <Badge @status="online" @size="xs" @text={{t "storefront.catalogs.editor.serving"}} />
-                                {{else if row.isAssigned}}
-                                    <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.trucks.panel.outside-hours"}} />
-                                {{/if}}
-                            </button>
-                        {{/each}}
-                    </div>
-                    <p class="storefront-invitation-list__note">{{t "storefront.trucks.panel.catalogs-note"}}</p>
-                {{else}}
-                    <div class="storefront-empty-row"><span>{{t "storefront.trucks.panel.no-catalogs"}}</span></div>
                 {{/if}}
             </div>
         {{/if}}
