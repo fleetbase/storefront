@@ -7587,6 +7587,13 @@ body[data-theme='dark'] .storefront-truck-map {
     min-height: 20rem;
 }
 
+/* Buttons never wrap their label: every storefront screen, panel and the menus it renders into the wormhole. */
+[class*='console-storefront'] .btn,
+[class*='storefront-'] .btn,
+.storefront-overlay-body .btn {
+    white-space: nowrap;
+}
+
 /* Panel headings (product form, and any overlay that renders its own header block) */
 .storefront-panel-heading__title {
     font-size: 0.9375rem;
