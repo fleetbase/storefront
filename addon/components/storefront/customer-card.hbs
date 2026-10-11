@@ -13,7 +13,9 @@
         <div class="storefront-card__facts" data-test-customer-facts>
             <div class="storefront-card__fact"><FaIcon @icon="envelope" @size="xs" class="mr-2" />{{#if this.customer.email}}<a href="mailto:{{this.customer.email}}">{{this.customer.email}}</a>{{else}}{{n-a null}}{{/if}}</div>
             <div class="storefront-card__fact"><FaIcon @icon="phone" @size="xs" class="mr-2" />{{#if this.customer.phone}}<a href="tel:{{this.customer.phone}}">{{this.customer.phone}}</a>{{else}}{{n-a null}}{{/if}}</div>
-            <div class="storefront-card__fact"><FaIcon @icon="map-marker-alt" @size="xs" class="mr-2" />{{t "storefront.customers.card.places-count" count=this.placesCount}}</div>
+            {{#if this.placesCount}}
+                <div class="storefront-card__fact"><FaIcon @icon="map-marker-alt" @size="xs" class="mr-2" />{{t "storefront.customers.card.places-count" count=this.placesCount}}</div>
+            {{/if}}
         </div>
     </Card.body>
     <Card.footer class={{@footerClass}}>
