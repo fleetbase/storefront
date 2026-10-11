@@ -3876,6 +3876,14 @@ body[data-theme='dark'] .storefront-order-driver__muted {
     gap: 0.25rem;
 }
 
+.storefront-identity-stack--tiles {
+    flex-wrap: nowrap;
+}
+
+.storefront-identity-stack--tiles .storefront-identity-stack__pill {
+    min-width: 0;
+}
+
 .storefront-identity-stack__text {
     max-width: 10rem;
     overflow: hidden;

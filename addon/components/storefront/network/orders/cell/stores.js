@@ -16,6 +16,11 @@ export default class StorefrontNetworkOrdersCellStoresComponent extends Componen
         return ids.map((id, index) => ({ id, store: storesById[id] ?? null, name: storesById[id]?.name ?? names[index] ?? names[0] ?? id }));
     }
 
+    /** More than one store: tiles only, so a group row keeps a single line. */
+    get isStack() {
+        return this.entries.length > 1;
+    }
+
     get visible() {
         return this.entries.slice(0, MAX_VISIBLE);
     }

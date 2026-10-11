@@ -1,6 +1,6 @@
 <div class="storefront-order-actions" data-test-order-actions>
     {{#if @row.isGroup}}
-        <span class="storefront-order-driver__muted">{{t "storefront.networks.orders.expand-hint"}}</span>
+        {{! A checkout group acts through its orders; the chevron in the reference cell opens them. }}
     {{else}}
         {{#if this.primary}}
             <Button @size="xs" @type={{or this.primary.type "primary"}} @icon={{this.primary.icon}} @text={{this.primary.text}} @onClick={{fn this.run this.primary}} @permission="storefront update order" />

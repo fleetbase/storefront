@@ -704,6 +704,7 @@ storefront:
       review: Review
       badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
     categories:
+      subtitle: "{count, plural, =0 {No categories yet} one {# category} other {# categories}} customers browse in the network app"
       title: Categories
       new-category: New category
       parent: Parent
