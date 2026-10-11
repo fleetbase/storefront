@@ -930,11 +930,11 @@ storefront:
           add-stores-button-text: Add Stores
           invite-stores-button-text: Invite Stores
           created-at: Created At
-          view-store-details: View Store Details
-          edit-store: Edit Store
-          assign-category: Assign Category
-          remove-category: Remove Category
-          remove-store-from-network: Remove Store from Network
+          view-store-details: View store
+          edit-store: Open store
+          assign-category: Change category
+          remove-category: Remove category
+          remove-store-from-network: Remove from network
           delete-network-category: Delete network category?
           deleting-category-move-all-stores-inside-on-top-level: Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?
           add-store-to-category: Add store to category
