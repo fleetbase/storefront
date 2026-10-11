@@ -32,7 +32,8 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         assert.dom('[data-test-truck-vehicle] [data-test-pill-online-indicator]').hasClass('text-green-500');
         assert.dom('[data-test-truck-area]').hasText('Central · Zone 3');
         assert.dom('[data-test-truck-photo]').hasAttribute('src', 'https://cdn.test/truck.png');
-        assert.dom('[data-test-truck-presence]').includesText('Online');
+        // A catalog without hours is always serving, so the badge names it.
+        assert.dom('[data-test-truck-presence]').includesText('Serving · Lunch menu');
         assert.dom('[data-test-truck-catalogs-count]').hasText('2 catalogs');
         assert.dom('[data-test-truck-store]').hasText('Owned by Fleetbase Market');
         assert.dom('[data-test-truck-edit]').exists();

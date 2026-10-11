@@ -92,6 +92,10 @@ export default class StorefrontTruckCardComponent extends Component {
 
     /** For an offline truck: when its vehicle last reported, as Fleet-Ops tracks it. */
     get lastOnline() {
-        return this.isOnline ? null : get(this.vehicle, 'updatedAgo');
+        if (this.isOnline || !this.vehicle) {
+            return null;
+        }
+
+        return get(this.vehicle, 'updatedAgo') ?? null;
     }
 }

@@ -23,7 +23,7 @@
             <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
         </RegistryYield>
         <div class="storefront-card__actions">
-            <Badge @status={{this.presence.status}} @text={{t this.presence.labelKey catalog=this.presence.catalog}} @size="xs" data-test-truck-presence />
+            <Badge @status={{this.presence.status}} @text={{t this.presence.labelKey catalog=this.presence.catalog}} @disableHumanize={{true}} @size="xs" data-test-truck-presence />
             <div class="storefront-card__buttons">
                 {{#if @onEdit}}
                     <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.truck}} @permission="storefront update food-truck" data-test-truck-edit />
