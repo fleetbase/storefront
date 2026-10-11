@@ -34,7 +34,7 @@
             {{/unless}}
         </:actions>
     </Overlay::Header>
-    <Overlay::Body class="p-0i" @wrapperClass="storefront-truck-panel" data-test-truck-panel>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-truck-panel" data-test-truck-panel>
         <div class="storefront-truck-panel__tabs" role="tablist">
             {{#each this.tabs as |tab|}}
                 <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-invite-panel__tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-truck-tab={{tab.id}}>

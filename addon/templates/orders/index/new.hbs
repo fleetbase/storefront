@@ -7,7 +7,7 @@
             </div>
         </:default>
     </Overlay::Header>
-    <Overlay::Body class="p-0i storefront-create-order__scroll" @wrapperClass="storefront-create-order" data-test-create-order>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-create-order" data-test-create-order>
         <div class="storefront-create-order__steps">
             {{#if this.isNetworkContext}}
                 {{! Network context: which member store the order is placed with }}

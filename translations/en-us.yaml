@@ -15,7 +15,7 @@ storefront:
     amount: Amount
     api: API
     back: Back
-    backdrop: backdrop
+    backdrop: Backdrop
     building: Building
     bulk-action: Bulk Action
     cash: Cash
@@ -43,7 +43,7 @@ storefront:
     invalid: Invalid
     loading: Loading...
     more: More
-    logo: logo
+    logo: Logo
     name: Name
     neighborhood: Neighborhood
     online: Online

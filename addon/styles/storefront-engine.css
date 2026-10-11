@@ -5799,8 +5799,9 @@ body[data-theme='dark'] .storefront-invitation-banner__meta {
 
 /* Create order: steps on the left, live summary on the right */
 
-/* The overlay body is sized to the whole panel, so its last header-height of content hides below the window; keep the summary footer reachable. */
-.next-content-overlay.full-height > .next-content-overlay-panel-container > .next-content-overlay-panel .next-content-overlay-panel-body.storefront-create-order__scroll {
+/* The shared overlay sizes its body to the whole panel and ignores its own header, so the last
+   57px of a panel's content hides below the window; storefront panels opt in to the corrected height. */
+.next-content-overlay.full-height > .next-content-overlay-panel-container > .next-content-overlay-panel .next-content-overlay-panel-body.storefront-overlay-body {
     height: calc(100% - 57px);
     min-height: calc(100% - 57px);
     max-height: calc(100% - 57px);
@@ -6339,6 +6340,10 @@ body[data-theme='dark'] .storefront-create-order__footer {
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 0.75rem;
+}
+
+.storefront-settings-section__toolbar .btn {
+    white-space: nowrap;
 }
 
 .storefront-settings-section__toolbar .storefront-settings-section__lede {
@@ -7434,7 +7439,12 @@ body[data-theme='dark'] .storefront-truck-panel__meta {
 .storefront-truck-panel__header-actions {
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
     gap: 0.375rem;
+}
+
+.storefront-truck-panel__header-actions .btn {
+    white-space: nowrap;
 }
 
 .storefront-truck-panel__tabs {
