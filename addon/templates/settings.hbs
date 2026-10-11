@@ -1,7 +1,7 @@
 <div class="storefront-settings-shell" data-test-settings-shell>
-    <Layout::Section::Header @title={{t "storefront.common.settings"}} @hideActions={{false}}>
+    <Storefront::PageHeader @title={{t "storefront.common.settings"}} @subtitle={{this.headerMeta}} data-test-settings-header>
         <Button @size="sm" @icon="key" @text={{t "storefront.settings.shell.copy-store-key"}} @onClick={{this.copyStoreKey}} data-test-copy-store-key />
-    </Layout::Section::Header>
+    </Storefront::PageHeader>
     <div class="storefront-settings-shell__body">
         <Storefront::SettingsRail @items={{this.railItems}} @onSelect={{this.openItem}} />
         <div class="storefront-settings-content">

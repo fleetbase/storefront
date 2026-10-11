@@ -78,6 +78,11 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
     optionsSnapshot = '{}';
     alertableSnapshot = '{}';
 
+    /** The header's meta line: name · id · currency · timezone. */
+    get headerMeta() {
+        return [this.model?.name, this.model?.public_id, this.model?.currency, this.model?.timezone].filter(Boolean).join(' · ');
+    }
+
     get railItems() {
         const item = (id, label, icon, badge = null) => ({ id, label, icon, section: `network-settings-${id}`, isActive: this.activeSection === id, badge });
 

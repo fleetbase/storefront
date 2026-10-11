@@ -7757,3 +7757,40 @@ body[data-theme='dark'] .storefront-catalog-product-table td {
     white-space: nowrap;
     vertical-align: middle;
 }
+
+/* Plain section: the heading row stays, the body sits on the page (the boards box tables, not card grids) */
+.storefront-section-card.is-plain {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.storefront-section-card.is-plain > .storefront-section-card__head {
+    padding: 0 0 0.625rem;
+    border-bottom: 0;
+}
+
+.storefront-section-card.is-plain > .storefront-section-card__body {
+    padding: 0;
+}
+
+/* Network overview: stores on the left, invitations and recent orders on the right */
+.storefront-network-overview__columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(34rem, 100%), 1fr));
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.storefront-network-overview__side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.storefront-network-overview__columns .storefront-member-cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(12.5rem, 100%), 1fr));
+}

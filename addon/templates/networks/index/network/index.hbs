@@ -40,7 +40,8 @@
             </div>
         </div>
 
-        <Storefront::SectionCard @id="members" @title={{t "storefront.networks.index.network.stores.store"}} @subtitle={{t "storefront.networks.overview.members-count" count=this.members.length}} @pad={{true}}>
+        <div class="storefront-network-overview__columns">
+        <Storefront::SectionCard @id="members" @title={{t "storefront.networks.index.network.stores.store"}} @subtitle={{t "storefront.networks.overview.members-count" count=this.members.length}} @plain={{true}}>
             <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" this.manageStores}}>{{t "storefront.networks.overview.manage-stores"}}</a></:actions>
             <:default>
             {{#if this.members.length}}
@@ -90,6 +91,7 @@
             </:default>
         </Storefront::SectionCard>
 
+        <div class="storefront-network-overview__side">
         <Storefront::SectionCard @id="invitations" @title={{t "storefront.networks.invitations.title"}}>
             <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" (fn this.openInvitePanel "email")}}>{{t "storefront.networks.invitations.invite-stores"}}</a></:actions>
             <:default>
@@ -163,6 +165,8 @@
             </table>
             </:default>
         </Storefront::SectionCard>
+        </div>
+        </div>
     </div>
 </Layout::Section::Body>
 

@@ -703,6 +703,10 @@ storefront:
       banner-title: "{network} invited this store to join"
       review: Review
       badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
+    customers:
+      subtitle: Customers who have ordered through the network app
+      search: Search customers
+      note: A customer belongs to the store that first served them; the network sees everyone who ordered through it.
     categories:
       subtitle: "{count, plural, =0 {No categories yet} one {# category} other {# categories}} customers browse in the network app"
       title: Categories

@@ -5,10 +5,10 @@ export default class NetworksIndexNetworkCustomersRoute extends Route {
     @service store;
 
     queryParams = {
-        page: { refreshModel: true, as: 'n_page' },
-        limit: { refreshModel: true, as: 'n_limit' },
-        sort: { refreshModel: true, as: 'n_sort' },
-        query: { refreshModel: true, as: 'n_query' },
+        page: { refreshModel: true, as: 'c_page' },
+        limit: { refreshModel: true, as: 'c_limit' },
+        sort: { refreshModel: true, as: 'c_sort' },
+        query: { refreshModel: true, as: 'c_query' },
         status: { refreshModel: true, as: 'n_status' },
         phone: { refreshModel: true },
         email: { refreshModel: true },

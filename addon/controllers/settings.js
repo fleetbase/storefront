@@ -23,6 +23,13 @@ export default class SettingsController extends Controller {
         return this.currentRouteName.endsWith('settings.index');
     }
 
+    /** The header's meta line: name · id · currency · timezone. */
+    get headerMeta() {
+        const store = this.activeStore;
+
+        return [store?.name, store?.public_id, store?.currency, store?.timezone].filter(Boolean).join(' · ');
+    }
+
     get railItems() {
         const routeItem = (id, label, icon, route, extra = {}) => ({
             id,
