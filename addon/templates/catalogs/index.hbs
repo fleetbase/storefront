@@ -1,10 +1,19 @@
 {{#if this.isEditing}}
     {{outlet}}
 {{else}}
-    <Layout::Section::Header @title={{t "storefront.common.catalogs"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
-        <Button @type="primary" @icon="plus" @text={{t "storefront.common.new"}} @permission="storefront create catalog" @onClick={{this.createCatalog}} class="mr-2" />
-        <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export catalog" />
-    </Layout::Section::Header>
+    <Storefront::PageHeader @title={{t "storefront.common.catalogs"}} @subtitle={{t "storefront.catalogs.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.catalogs.index.search"}} data-test-catalogs-header>
+        <DropdownButton @text={{this.sortLabel}} @icon="arrow-down-wide-short" @size="sm" @renderInPlace={{false}} data-test-catalogs-sort as |dd|>
+            <div class="next-dd-menu mt-1 mx-0">
+                <div class="px-1">
+                    {{#each this.sortOptions as |option|}}
+                        <a href="javascript:;" class="next-dd-item {{if option.isActive 'is-active'}}" {{on "click" (dropdown-fn dd this.setSort option.value)}}>{{#if option.isActive}}<FaIcon @icon="check" class="mr-2" />{{/if}}{{option.label}}</a>
+                    {{/each}}
+                </div>
+            </div>
+        </DropdownButton>
+        <Button @size="sm" @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export catalog" />
+        <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.catalogs.index.new-catalog"}} @permission="storefront create catalog" @onClick={{this.createCatalog}} data-test-new-catalog />
+    </Storefront::PageHeader>
 
     <Layout::Section::Body class="overflow-y-scroll-i h-full">
         <div class="storefront-status-tabs px-4 pt-3" role="tablist" data-test-catalog-status-tabs>

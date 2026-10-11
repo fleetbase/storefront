@@ -46,15 +46,41 @@ export default class CatalogsIndexController extends Controller {
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
     }
 
+    @tracked sort = 'name';
+
+    get sortOptions() {
+        return [
+            { value: 'name', label: this.intl.t('storefront.catalogs.index.sort.name') },
+            { value: 'updated', label: this.intl.t('storefront.catalogs.index.sort.updated') },
+        ].map((option) => ({ ...option, isActive: option.value === this.sort }));
+    }
+
+    get sortLabel() {
+        const active = this.sortOptions.find((option) => option.isActive) ?? this.sortOptions[0];
+
+        return this.intl.t('storefront.products.sort.label', { sort: active.label });
+    }
+
+    @action setSort(value) {
+        this.sort = value;
+    }
+
     get visibleCatalogs() {
+        let catalogs = this.catalogs;
+
         switch (this.statusTab) {
             case 'published':
-                return this.catalogs.filter((catalog) => catalog.status === 'published');
+                catalogs = catalogs.filter((catalog) => catalog.status === 'published');
+                break;
             case 'draft':
-                return this.catalogs.filter((catalog) => catalog.status !== 'published');
-            default:
-                return this.catalogs;
+                catalogs = catalogs.filter((catalog) => catalog.status !== 'published');
+                break;
         }
+
+        const byName = (a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''));
+        const byUpdated = (a, b) => new Date(b.updated_at ?? 0) - new Date(a.updated_at ?? 0);
+
+        return [...catalogs].sort(this.sort === 'updated' ? byUpdated : byName);
     }
 
     @action selectStatusTab(tab) {

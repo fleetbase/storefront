@@ -467,6 +467,12 @@ storefront:
       leave-body: Your unsaved changes to this catalog will be lost.
       leave: Leave
     index:
+      subtitle: "A catalog is a menu: its own categories, the products in them, the hours it is served, and the stores and trucks that serve it."
+      search: Search catalogs
+      new-catalog: New catalog
+      sort:
+        name: name
+        updated: last updated
       empty-state: Create a catalog to group products into a menu with its own categories and hours.
       create-catalog: Create catalog
     card:

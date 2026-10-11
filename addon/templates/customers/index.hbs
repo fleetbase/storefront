@@ -5,7 +5,7 @@
     </Layout::Section::Header>
 
     <Layout::Section::Body class="overflow-y-scroll-i h-full">
-        <Layout::Resource::CardsGrid @resource="customer" @data={{@model}} @columns="4" @containerClass="p-4" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @emptyStateText={{t "storefront.customers.index.empty"}} class="h-full" as |Item|>
+        <Layout::Resource::CardsGrid @resource="customer" @data={{@model}} @columns="4" @containerClass="p-4" @showPagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @emptyStateText={{t "storefront.customers.index.empty"}} class="h-full" as |Item|>
             <Storefront::CustomerCard @customer={{Item.model}} @onView={{this.viewCustomer}} @onNewOrder={{this.newOrderFor}} />
         </Layout::Resource::CardsGrid>
     </Layout::Section::Body>

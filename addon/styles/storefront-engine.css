@@ -7712,3 +7712,25 @@ body[data-theme='dark'] .storefront-catalog-product-table td {
     gap: 0.5rem;
     white-space: nowrap;
 }
+
+/* Customer card: the id line stays on one line so every card in the row has the same height */
+.storefront-customer-card .storefront-card__subtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-customer-card .storefront-card__subtitle .click-to-copy {
+    display: inline;
+}
+
+.storefront-customer-card .storefront-card__fact {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The shared cards grid spaces its children vertically; grid gaps already do that, and the extra top margin on every card but the first stretches the first row. */
+[class*='grid-cols'] > .storefront-card {
+    margin-top: 0 !important;
+}
