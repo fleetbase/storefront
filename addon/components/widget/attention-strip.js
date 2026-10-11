@@ -37,7 +37,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'confirm',
                 count: data.orders_to_confirm ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.orders-to-confirm'),
+                label: this.intl.t('storefront.dashboard.attention.orders-to-confirm', { count: data.orders_to_confirm ?? 0 }),
                 hint: oldest ? this.intl.t('storefront.dashboard.attention.oldest', { age: oldest }) : null,
                 icon: 'bell',
                 tone: 'warn',
@@ -47,7 +47,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'pickup',
                 count: data.ready_for_pickup ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.ready-for-pickup'),
+                label: this.intl.t('storefront.dashboard.attention.ready-for-pickup', { count: data.ready_for_pickup ?? 0 }),
                 hint: this.intl.t('storefront.dashboard.attention.customers-notified'),
                 icon: 'store',
                 tone: 'info',
@@ -57,7 +57,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'driver',
                 count: data.awaiting_driver ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.awaiting-driver'),
+                label: this.intl.t('storefront.dashboard.attention.awaiting-driver', { count: data.awaiting_driver ?? 0 }),
                 hint: null,
                 icon: 'id-card',
                 tone: 'warn',
@@ -67,7 +67,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'stock',
                 count: data.out_of_stock ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.out-of-stock'),
+                label: this.intl.t('storefront.dashboard.attention.out-of-stock', { count: data.out_of_stock ?? 0 }),
                 hint: this.intl.t('storefront.dashboard.attention.still-published'),
                 icon: 'box-open',
                 tone: 'danger',
@@ -77,7 +77,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'trucks',
                 count: data.trucks_offline ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.trucks-offline'),
+                label: this.intl.t('storefront.dashboard.attention.trucks-offline', { count: data.trucks_offline ?? 0 }),
                 hint: null,
                 icon: 'truck',
                 tone: 'muted',
@@ -86,7 +86,7 @@ export default class WidgetAttentionStripComponent extends Component {
             {
                 id: 'invitations',
                 count: data.network_invitations ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.network-invitations'),
+                label: this.intl.t('storefront.dashboard.attention.network-invitations', { count: data.network_invitations ?? 0 }),
                 hint: (data.invitation_networks ?? []).join(', ') || null,
                 icon: 'network-wired',
                 tone: 'info',

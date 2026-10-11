@@ -93,7 +93,13 @@
                     <LinkTo @route={{@editRoute}} @model={{@product}} disabled={{cannot "storefront update product"}} class="btn btn-xs btn-default" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
                         <FaIcon @icon="pencil" />
                     </LinkTo>
-                    <Button @type="danger" @size="xs" @icon="trash" @helpText={{t "storefront.common.delete"}} @onClick={{fn @onDelete @product}} @permission="storefront delete product" />
+                    <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-product-menu as |dd|>
+                        <div class="next-dd-menu mt-1 mx-0">
+                            <div class="px-1">
+                                <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd @onDelete @product)}} data-test-product-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.common.delete"}}</a>
+                            </div>
+                        </div>
+                    </DropdownButton>
                 </div>
             </div>
             <div class="storefront-card__chips">

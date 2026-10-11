@@ -581,15 +581,15 @@ storefront:
       subtitle: What the store acts on today.
       all-clear: Nothing waiting on you right now.
       refresh: Refresh
-      orders-to-confirm: orders to confirm
+      orders-to-confirm: "{count, plural, one {order to confirm} other {orders to confirm}}"
       oldest: "oldest {age}"
       ready-for-pickup: ready for pickup
       customers-notified: customers notified
-      awaiting-driver: deliveries without a driver
-      out-of-stock: products out of stock
+      awaiting-driver: "{count, plural, one {delivery without a driver} other {deliveries without a driver}}"
+      out-of-stock: "{count, plural, one {product out of stock} other {products out of stock}}"
       still-published: still published
-      trucks-offline: trucks offline
-      network-invitations: network invitations
+      trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
+      network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
   order:
     asap: ASAP
     incl-tip: "incl. tip {tip}"
@@ -1185,6 +1185,11 @@ storefront:
         category: A published product needs a category.
         media: A published product should have at least one image.
     index:
+      summary: "{products, plural, =0 {No products} one {# product} other {# products}} · {categories, plural, =0 {no categories} one {# category} other {# categories}}"
+      search: Search products
+      new-product: New product
+      edit-category: Edit this category…
+      delete-category: Delete this category…
       manage-addons: Manage Addons
       view-grid: Grid
       view-list: List

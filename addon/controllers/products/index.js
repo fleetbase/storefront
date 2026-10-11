@@ -52,6 +52,13 @@ export default class ProductsIndexController extends BaseController {
         return this.summary?.by_category ?? {};
     }
 
+    /** The header's meta line: products and categories in this store. */
+    get headerMeta() {
+        const categories = this.model?.length ?? Object.keys(this.categoryCounts).length;
+
+        return this.intl.t('storefront.products.index.summary', { products: this.summary?.total ?? 0, categories });
+    }
+
     get statusTab() {
         const controller = this.activeProductsController;
 
