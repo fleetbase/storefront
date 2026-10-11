@@ -153,6 +153,12 @@ export default class StorefrontTruckPanelComponent extends Component {
         };
     }
 
+    @action openVehicle() {
+        const vehicleId = get(this.truck, 'vehicle.public_id');
+
+        return vehicleId ? this.hostRouter.transitionTo('console.fleet-ops.management.vehicles.index.details', vehicleId) : null;
+    }
+
     @action openMap() {
         return this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index');
     }

@@ -1,6 +1,7 @@
 import Component from '@glimmer/component';
 import { get } from '@ember/object';
 import { resolveResourceImage, getPlaceholderImage } from '@fleetbase/fleetops-data/utils/placeholder-images';
+import { catalogServingNow } from './panel';
 
 /**
  * A truck (the `food-truck` resource) on the shared card anatomy: the vehicle
@@ -61,7 +62,12 @@ export default class StorefrontTruckCardComponent extends Component {
         return get(this.truck, 'store_summary.name');
     }
 
-    /** What the store needs to know at a glance: serving, online with nothing to sell, or offline. */
+    /** The assigned catalogs within their hours right now. */
+    get servingCatalogs() {
+        return this.catalogs.filter((catalog) => get(catalog, 'status') !== 'draft' && catalogServingNow(catalog));
+    }
+
+    /** What the store needs to know at a glance: serving which catalog, online with nothing to sell, or offline. */
     get presence() {
         if (!this.isActive) {
             return { status: 'inactive', labelKey: 'storefront.trucks.card.inactive' };
@@ -75,6 +81,17 @@ export default class StorefrontTruckCardComponent extends Component {
             return { status: 'warning', labelKey: 'storefront.trucks.card.no-catalog' };
         }
 
-        return { status: 'online', labelKey: 'storefront.trucks.card.online' };
+        const serving = this.servingCatalogs;
+
+        if (serving.length === 0) {
+            return { status: 'warning', labelKey: 'storefront.trucks.card.no-catalog-in-hours' };
+        }
+
+        return { status: 'online', labelKey: 'storefront.trucks.card.serving', catalog: get(serving[0], 'name') };
+    }
+
+    /** For an offline truck: when its vehicle last reported, as Fleet-Ops tracks it. */
+    get lastOnline() {
+        return this.isOnline ? null : get(this.vehicle, 'updatedAgo');
     }
 }

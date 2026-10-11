@@ -173,6 +173,48 @@ export default class PromotionsIndexController extends BaseController {
         ];
     }
 
+    @tracked table;
+
+    get selectedPromotions() {
+        return this.table?.selectedRows ?? [];
+    }
+
+    get hasSelection() {
+        return this.selectedPromotions.length > 0;
+    }
+
+    @action clearSelection() {
+        this.table?.selectedRows?.forEach?.((row) => this.table.deselectRow?.(row));
+        this.table?.clearSelectedRows?.();
+    }
+
+    /**
+     * Bulk pause, resume or end: the same status change as the row action, on every selected row.
+     */
+    @action async bulkSetStatus(status) {
+        const promotions = [...this.selectedPromotions];
+
+        if (!promotions.length) {
+            return;
+        }
+
+        try {
+            await Promise.all(
+                promotions.map((promotion) => {
+                    promotion.status = status;
+
+                    return promotion.save();
+                })
+            );
+            this.notifications.success(this.intl.t('storefront.promotions.list.bulk-updated', { count: promotions.length }));
+            this.clearSelection();
+            this.hostRouter.refresh();
+        } catch (error) {
+            promotions.forEach((promotion) => promotion.rollbackAttributes());
+            this.notifications.serverError(error);
+        }
+    }
+
     @action search({ target }) {
         debounce(this, this.setQuery, target.value, 300);
     }

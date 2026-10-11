@@ -3,6 +3,7 @@
         <:actions>
             {{#if this.truck.vehicle.id}}
                 <Vehicle::Pill @vehicle={{this.truck.vehicle}} @showOnlineIndicator={{true}} @size="xs" />
+                <Button @size="xs" @icon="arrow-up-right-from-square" @text={{t "storefront.trucks.panel.open-vehicle"}} @onClick={{this.openVehicle}} @permission="fleet-ops view vehicle" class="ml-2" data-test-truck-open-vehicle />
             {{/if}}
         </:actions>
     </Overlay::Header>

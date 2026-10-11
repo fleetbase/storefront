@@ -23,7 +23,7 @@
             <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
         </RegistryYield>
         <div class="storefront-card__actions">
-            <Badge @status={{this.presence.status}} @text={{t this.presence.labelKey}} @size="xs" data-test-truck-presence />
+            <Badge @status={{this.presence.status}} @text={{t this.presence.labelKey catalog=this.presence.catalog}} @size="xs" data-test-truck-presence />
             <div class="storefront-card__buttons">
                 {{#if @onEdit}}
                     <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.truck}} @permission="storefront update food-truck" data-test-truck-edit />
@@ -37,7 +37,7 @@
             </div>
         </div>
         <div class="storefront-card__meta">
-            <span data-test-truck-catalogs-count>{{t "storefront.trucks.card.catalogs-count" count=this.catalogs.length}}</span>
+            <span data-test-truck-catalogs-count>{{t "storefront.trucks.card.catalogs-count" count=this.catalogs.length}}{{#if this.lastOnline}} · {{t "storefront.trucks.card.last-online" ago=this.lastOnline}}{{/if}}</span>
             {{#if this.truck.isNetworkOwned}}
                 <span data-test-truck-store><FaIcon @icon="network-wired" @size="xs" class="mr-1" />{{t "storefront.trucks.card.owned-by" name=this.truck.network.name}}</span>
             {{else if this.storeName}}

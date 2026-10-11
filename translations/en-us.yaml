@@ -477,6 +477,7 @@ storefront:
       last-seen: Last update
       ago: "{value} ago"
       open-map: Open on the Fleet-Ops map
+      open-vehicle: Open vehicle
       no-vehicle-yet: Pick a vehicle on the Details tab to see where it is.
       new-truck: New truck
       vehicle: Vehicle
@@ -511,6 +512,9 @@ storefront:
       inactive: Inactive
       offline: Offline
       no-catalog: Online, no catalog
+      no-catalog-in-hours: Online · no catalog in hours
+      serving: "Serving · {catalog}"
+      last-online: "last online {ago} ago"
       online: Online
       assign-catalogs: Assign catalogs
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
@@ -1439,6 +1443,7 @@ storefront:
       sent: Sent
       canceled: Canceled
     list:
+      bulk-updated: "{count, plural, one {# promotion updated.} other {# promotions updated.}}"
       tab-title: Promotions
       header: Promotions
       duplicate: Duplicate
