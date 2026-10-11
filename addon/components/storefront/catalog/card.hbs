@@ -46,7 +46,7 @@
             <RegistryComponent @catalog={{this.catalog}} @resource={{this.catalog}} />
         </RegistryYield>
         <div class="storefront-card__actions">
-            <span class="storefront-card__count" data-test-catalog-products-count>{{t "storefront.catalogs.card.products-count" count=this.productsCount}}</span>
+            <span class="storefront-card__count" data-test-catalog-products-count>{{t "storefront.catalogs.card.products-count" count=this.productsCount}}{{#if this.outOfStockCount}} · <span class="storefront-card__warn">{{t "storefront.catalogs.card.out-of-stock-count" count=this.outOfStockCount}}</span>{{/if}}</span>
             <div class="storefront-card__buttons">
                 {{#if @onEdit}}
                     {{#if this.isDraft}}

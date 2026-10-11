@@ -58,6 +58,7 @@ export default class ApplicationRoute extends Route {
         this.storefront.synchronizeActiveStore(stores);
         this.storefront.listenForIncomingOrders();
         this.storefront.loadPendingInvitations();
+        this.storefront.loadAttention();
     }
 
     disableSandbox() {

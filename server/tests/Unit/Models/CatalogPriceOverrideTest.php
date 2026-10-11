@@ -129,6 +129,14 @@ test('a category keeps per-catalog price and availability overrides on its produ
     expect((int) $pivots['90000000-0000-4000-8000-000000000001']->price)->toBe(750)
         ->and($pivots['90000000-0000-4000-8000-000000000002']->price)->toBeNull()
         ->and($pivots['90000000-0000-4000-8000-000000000002']->is_available)->toBeNull();
+
+    // Without an override map the existing overrides are left alone; an explicit map that
+    // omits a product clears it.
+    $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002']);
+    expect((int) CatalogProduct::where('product_uuid', '90000000-0000-4000-8000-000000000001')->value('price'))->toBe(750);
+
+    $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002'], []);
+    expect(CatalogProduct::where('product_uuid', '90000000-0000-4000-8000-000000000001')->value('price'))->toBeNull();
 });
 
 test('the catalog product resource serves the catalog price and availability instead of the store ones', function () {

@@ -124,6 +124,7 @@ export default class ApplicationController extends Controller {
                 description: 'Manage incoming storefront orders.',
                 icon: 'file-invoice-dollar',
                 route: 'console.storefront.orders',
+                badge: this.ordersToConfirm || null,
                 permission: 'storefront list order',
                 visible: this.can('storefront see order'),
                 disabled: !hasActiveStore,
@@ -280,6 +281,11 @@ export default class ApplicationController extends Controller {
 
     @action selectNetworkStore(item) {
         return this.switchActiveStore(item.store);
+    }
+
+    /** Orders waiting to be confirmed, shown as the Orders badge. */
+    get ordersToConfirm() {
+        return Number(this.storefront.attention?.orders_to_confirm ?? 0);
     }
 
     get activeStoreUuid() {

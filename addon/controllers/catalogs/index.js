@@ -30,6 +30,36 @@ export default class CatalogsIndexController extends Controller {
         this.query = value;
     }
     @tracked statusOptions = ['draft', 'published'];
+    @tracked statusTab = 'all';
+
+    get catalogs() {
+        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+    }
+
+    get statusTabs() {
+        const catalogs = this.catalogs;
+
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: catalogs.length },
+            { id: 'published', label: this.intl.t('storefront.products.statuses.published'), count: catalogs.filter((catalog) => catalog.status === 'published').length },
+            { id: 'draft', label: this.intl.t('storefront.products.statuses.draft'), count: catalogs.filter((catalog) => catalog.status !== 'published').length },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    get visibleCatalogs() {
+        switch (this.statusTab) {
+            case 'published':
+                return this.catalogs.filter((catalog) => catalog.status === 'published');
+            case 'draft':
+                return this.catalogs.filter((catalog) => catalog.status !== 'published');
+            default:
+                return this.catalogs;
+        }
+    }
+
+    @action selectStatusTab(tab) {
+        this.statusTab = tab.id ?? tab;
+    }
 
     /**
      * The editor route renders in this template's outlet; the grid hides while it is open.

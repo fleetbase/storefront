@@ -11,7 +11,6 @@ import { formatDistanceToNowStrict } from 'date-fns';
 export default class WidgetAttentionStripComponent extends Component {
     static widgetId = 'storefront-attention-strip-widget';
 
-    @service fetch;
     @service storefront;
     @service hostRouter;
     @service intl;
@@ -23,6 +22,7 @@ export default class WidgetAttentionStripComponent extends Component {
         this.load.perform();
         this.storefront.on('order.broadcasted', () => this.load.perform());
         this.storefront.on('storefront.changed', () => this.load.perform());
+        this.storefront.on('order.accepted', () => this.load.perform());
     }
 
     get storeId() {
@@ -102,7 +102,8 @@ export default class WidgetAttentionStripComponent extends Component {
     @task *load() {
         try {
             this.error = null;
-            this.data = yield this.fetch.get('analytics/attention', { storefront: this.storeId }, { namespace: 'storefront/int/v1' });
+            // The service holds the counts so the sidebar's Orders badge shows the same number.
+            this.data = yield this.storefront.loadAttention();
         } catch (error) {
             this.error = error;
         }

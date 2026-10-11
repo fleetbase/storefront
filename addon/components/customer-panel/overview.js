@@ -13,6 +13,7 @@ export default class CustomerPanelOverviewComponent extends Component {
     @service storefront;
     @service storefrontOrderActions;
     @service notifications;
+    @service hostRouter;
     @tracked orders = [];
 
     constructor() {
@@ -44,6 +45,19 @@ export default class CustomerPanelOverviewComponent extends Component {
 
     get stores() {
         return this.insights?.stores ?? [];
+    }
+
+    /** The segments whose rules this customer matches, from the insights endpoint. */
+    get segments() {
+        return this.insights?.segments ?? [];
+    }
+
+    @action openSegment(segment) {
+        return this.hostRouter.transitionTo('console.storefront.promotions.segments', { queryParams: { segment: segment.public_id ?? segment.id } });
+    }
+
+    @action manageSegments() {
+        return this.hostRouter.transitionTo('console.storefront.promotions.segments');
     }
 
     get showStores() {

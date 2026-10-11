@@ -44,6 +44,21 @@
         {{/if}}
     </ContentPanel>
 
+    <ContentPanel @title={{t "storefront.customers.panel.segments"}} @open={{true}} @pad={{true}} @wrapperClass="bordered-top">
+        <div class="storefront-settings-section__toolbar">
+            {{#if this.segments.length}}
+                <div class="storefront-card__chips" data-test-customer-segments>
+                    {{#each this.segments as |segment|}}
+                        <a href="javascript:;" class="storefront-card__chip" {{on "click" (fn this.openSegment segment)}}>{{segment.name}}</a>
+                    {{/each}}
+                </div>
+            {{else}}
+                <div class="storefront-settings-section__note mt-0">{{t "storefront.customers.panel.no-segments"}}</div>
+            {{/if}}
+            <Button @size="xs" @icon="users" @text={{t "storefront.customers.panel.manage-segments"}} @onClick={{this.manageSegments}} @permission="storefront view customer-segment" />
+        </div>
+    </ContentPanel>
+
     {{#if this.showStores}}
         <ContentPanel @title={{t "storefront.customers.panel.stores-ordered-from"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0">
             {{#if this.stores.length}}

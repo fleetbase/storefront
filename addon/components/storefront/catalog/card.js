@@ -28,6 +28,28 @@ export default class StorefrontCatalogCardComponent extends Component {
         return this.categorySummaries.reduce((total, category) => total + category.count, 0);
     }
 
+    /** Products in this catalog the store has marked unavailable. */
+    get outOfStockCount() {
+        const seen = new Set();
+        let count = 0;
+
+        this.categories.forEach((category) => {
+            (get(category, 'products') ?? []).forEach((product) => {
+                const id = get(product, 'id');
+
+                if (!seen.has(id)) {
+                    seen.add(id);
+
+                    if (get(product, 'is_available') === false) {
+                        count++;
+                    }
+                }
+            });
+        });
+
+        return count;
+    }
+
     get hours() {
         const hours = get(this.catalog, 'hours');
 

@@ -1,0 +1,18 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-4" data-test-add-products-to-catalog>
+        <InputGroup @name={{t "storefront.common.catalog"}} @helpText={{t "storefront.products.bulk.catalog-help"}}>
+            <ModelSelect @modelName="catalog" @query={{hash store_uuid=@options.storeId limit=-1}} @selectedModel={{@options.catalog}} @placeholder={{t "storefront.products.bulk.pick-catalog"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectCatalog}} as |model|>
+                {{model.name}}
+            </ModelSelect>
+        </InputGroup>
+        {{#if @options.catalog}}
+            <InputGroup @name={{t "storefront.common.category"}} @helpText={{t "storefront.products.bulk.category-help"}}>
+                {{#if this.categories.length}}
+                    <Select @value={{@options.category.id}} @options={{this.categories}} @optionValue="id" @optionLabel="name" @placeholder={{t "storefront.products.bulk.pick-category"}} @onSelect={{this.selectCategory}} class="w-full" />
+                {{else}}
+                    <div class="storefront-empty-row"><span>{{t "storefront.products.bulk.no-categories"}}</span></div>
+                {{/if}}
+            </InputGroup>
+        {{/if}}
+    </div>
+</Modal::Default>

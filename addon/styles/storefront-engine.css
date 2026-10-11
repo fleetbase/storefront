@@ -809,7 +809,37 @@ body[data-theme='dark'] .storefront-dashboard-title h1 {
 }
 
 .storefront-dashboard-actions {
+    flex: 1 1 auto;
     justify-content: flex-end;
+}
+
+/* The dashboard's own title (the dashboard name) moves into the dashboard select; the
+   header leads with the store and its open state, like the board. */
+.storefront-dashboard-title {
+    display: none;
+}
+
+.storefront-dashboard-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    margin-right: auto;
+}
+
+.storefront-dashboard-heading__name {
+    margin: 0;
+    overflow: hidden;
+    color: #111827;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme='dark'] .storefront-dashboard-heading__name {
+    color: #f9fafb;
 }
 
 .storefront-dashboard-date-control {
@@ -1443,27 +1473,31 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(1) {
-    width: 20%;
+    width: 18%;
 }
 
 .storefront-orders-table th:nth-child(2) {
-    width: 10%;
+    width: 18%;
 }
 
 .storefront-orders-table th:nth-child(3) {
-    width: 15%;
+    width: 10%;
 }
 
 .storefront-orders-table th:nth-child(4) {
-    width: 15%;
+    width: 16%;
 }
 
 .storefront-orders-table th:nth-child(5) {
-    width: 15%;
+    width: 10%;
 }
 
 .storefront-orders-table th:nth-child(6) {
-    width: 25%;
+    width: 10%;
+}
+
+.storefront-orders-table th:nth-child(7) {
+    width: 18%;
 }
 
 .storefront-customers-table th:nth-child(1) {
@@ -5314,7 +5348,17 @@ body[data-theme='dark'] .storefront-truck-panel__catalog.is-assigned {
 
 /* Products page: toolbar, nested categories, smart groups, selection */
 .storefront-products-toolbar {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 0.25rem 1rem 0;
+}
+
+.storefront-products-toolbar .storefront-status-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .storefront-product-category--depth-1 {
@@ -6542,4 +6586,8 @@ body[data-theme='dark'] .storefront-catalog-product__price--button:focus-visible
 .storefront-catalog-product.is-hidden-here .storefront-catalog-product__price {
     color: #6b7280;
     text-decoration: line-through;
+}
+
+.storefront-card__warn {
+    color: #d97706;
 }

@@ -250,6 +250,15 @@ storefront:
         phone: Phone
         email: Email
       orders:
+        next: Next
+        order: Order
+        refresh: Refresh orders
+        active-only: Active only
+        all-orders: All orders
+        driver-not-needed: Not needed
+        unassigned: Unassigned
+        empty: No recent orders yet.
+        recent-count: "{count, plural, =0 {No recent orders} one {# recent order} other {# recent orders}}"
         widget-title: Recent Orders
         id-column: Order ID
         cancel-order: Cancel Order
@@ -320,6 +329,9 @@ storefront:
     title: Storefront Dashboard
   customers:
     panel:
+      segments: Segments
+      no-segments: Not in any segment right now.
+      manage-segments: Manage segments
       tabs:
         overview: Overview
         orders: Orders
@@ -441,6 +453,7 @@ storefront:
       empty-state: Create a catalog to group products into a menu with its own categories and hours.
       create-catalog: Create catalog
     card:
+      out-of-stock-count: "{count, plural, one {# out of stock} other {# out of stock}}"
       assign: Assign to stores and trucks
       publish: Publish
       unpublish: Unpublish
@@ -1019,11 +1032,27 @@ storefront:
       bookable: Bookable
       missing: "Missing: {items}"
       restock-hint: Out of stock and still published. Restock or unpublish.
+    sort:
+      label: "Sort: {sort}"
+      recently-updated: recently updated
+      newest: newest first
+      name: name
+      price-low: price, low to high
+      price-high: price, high to low
     bulk:
       publish: Publish
       unpublish: Unpublish
       move: Move to category
       mark-on-sale: Mark on sale
+      add-to-catalog: Add to catalog
+      add-to-catalog-title: "Add {count, plural, one {# product} other {# products}} to a catalog"
+      pick-catalog: Pick a catalog
+      pick-category: Pick a category
+      pick-catalog-first: Pick a catalog and a category first.
+      catalog-help: One of this store's catalogs.
+      category-help: The catalog category the products are listed under.
+      no-categories: This catalog has no categories yet. Add one in the catalog editor first.
+      added-to-catalog: "{count, plural, one {# product added} other {# products added}} to {category} in {catalog}."
       published: "{count, plural, one {# product published.} other {# products published.}}"
       unpublished: "{count, plural, one {# product unpublished.} other {# products unpublished.}}"
       on-sale: "{count, plural, one {# product marked on sale.} other {# products marked on sale.}}"
@@ -1121,6 +1150,8 @@ storefront:
       alerts: Alerts
       api-keys: API keys
       store-key: Store key
+      timezone: Timezone
+      timezone-help: Hours and scheduled orders are read in this timezone.
       store-key-help: Used by the app and the API; it cannot change.
       default-order-config: Default order config
       default-order-config-help: Applies to every order created for this store.

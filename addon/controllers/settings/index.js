@@ -30,11 +30,27 @@ export default class SettingsIndexController extends Controller {
     optionsSnapshot = '{}';
     alertableSnapshot = '{}';
 
+    /** IANA zones the browser knows, with the store's current zone kept even when the list lacks it. */
+    get timezones() {
+        let zones = [];
+
+        try {
+            zones = Intl.supportedValuesOf('timeZone');
+        } catch {
+            zones = ['UTC'];
+        }
+
+        const current = this.model?.timezone;
+
+        return current && !zones.includes(current) ? [current, ...zones] : zones;
+    }
+
     sectionLabels = {
         name: 'general',
         description: 'general',
         tags: 'general',
         currency: 'general',
+        timezone: 'general',
         order_config_uuid: 'general',
         phone: 'general',
         email: 'general',

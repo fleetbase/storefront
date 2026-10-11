@@ -72,7 +72,7 @@ class CatalogCategory extends Category
      *
      * @return $this
      */
-    public function setProducts(array $products = [], array $overrides = []): CatalogCategory
+    public function setProducts(array $products = [], ?array $overrides = null): CatalogCategory
     {
         // Ensure products relation is loaded if needed (optional).
         $this->loadMissing('products');
@@ -83,8 +83,12 @@ class CatalogCategory extends Category
 
         // Normalize incoming product UUIDs, and collect the per-catalog overrides carried
         // either on the product entries (`price`, `is_available`) or in `$overrides` by uuid.
+        // When `$overrides` is given it is the whole map: a product missing from it inherits
+        // the store price and availability again. Null leaves existing overrides untouched.
         $incomingProductUuids = [];
         $overridesByUuid      = [];
+        $syncOverrides        = $overrides !== null;
+        $overrides ??= [];
         foreach ($products as $item) {
             $uuid = is_string($item) ? $item : data_get($item, 'uuid');
             if (!is_string($uuid) || !Str::isUuid($uuid)) {
@@ -123,17 +127,28 @@ class CatalogCategory extends Category
             ], static::normalizeOverride($overridesByUuid[$productUuid] ?? [])));
         }
 
-        // 3) Apply overrides to products that stay; an entry with null values clears them
-        if ($overrides !== [] || $overridesByUuid !== []) {
-            foreach ($existingPivotRecords as $pivot) {
-                if (!in_array($pivot->product_uuid, $incomingProductUuids, true) || !array_key_exists($pivot->product_uuid, $overridesByUuid)) {
+        // 3) Apply overrides to products that stay: entries update, and when the whole map
+        //    was given, products without an entry are cleared back to the store values.
+        foreach ($existingPivotRecords as $pivot) {
+            if (!in_array($pivot->product_uuid, $incomingProductUuids, true)) {
+                continue;
+            }
+
+            $hasEntry = array_key_exists($pivot->product_uuid, $overridesByUuid);
+            if (!$hasEntry && !$syncOverrides) {
+                continue;
+            }
+
+            $next = static::normalizeOverride($hasEntry ? $overridesByUuid[$pivot->product_uuid] : []);
+            if ((int) ($pivot->price ?? -1) === (int) ($next['price'] ?? -1) && $pivot->is_available === $next['is_available'] && !($hasEntry && $pivot->price === null && $next['price'] !== null)) {
+                if ($pivot->price === null && $next['price'] === null && $pivot->is_available === $next['is_available']) {
                     continue;
                 }
-
-                CatalogProduct::where('catalog_category_uuid', $this->uuid)
-                    ->where('product_uuid', $pivot->product_uuid)
-                    ->update(static::normalizeOverride($overridesByUuid[$pivot->product_uuid]));
             }
+
+            CatalogProduct::where('catalog_category_uuid', $this->uuid)
+                ->where('product_uuid', $pivot->product_uuid)
+                ->update($next);
         }
 
         return $this;

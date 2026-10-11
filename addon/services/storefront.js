@@ -20,6 +20,8 @@ export default class StorefrontService extends Service.extend(Evented) {
     @tracked activeStoreId;
     @tracked activeNetworkId;
     @tracked pendingInvitations = [];
+    /** The store's "needs attention" counts (orders to confirm, pickups ready, ...), shared by the dashboard strip and the sidebar badge. */
+    @tracked attention = null;
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -174,6 +176,26 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.activeStoreId = nextStoreId;
 
         return nextStore;
+    }
+
+    /**
+     * Loads the active store's attention counts from the analytics endpoint.
+     */
+    async loadAttention() {
+        const storeId = this.activeStore?.public_id ?? this.activeStore?.id;
+
+        if (!storeId) {
+            this.attention = null;
+            return null;
+        }
+
+        try {
+            this.attention = await this.fetch.get('analytics/attention', { storefront: storeId }, { namespace: 'storefront/int/v1' });
+        } catch {
+            this.attention = null;
+        }
+
+        return this.attention;
     }
 
     /**

@@ -77,6 +77,81 @@ export default class ProductsIndexController extends BaseController {
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
     }
 
+    sortChoices = [
+        { value: '-updated_at', key: 'storefront.products.sort.recently-updated' },
+        { value: '-created_at', key: 'storefront.products.sort.newest' },
+        { value: 'name', key: 'storefront.products.sort.name' },
+        { value: 'price', key: 'storefront.products.sort.price-low' },
+        { value: '-price', key: 'storefront.products.sort.price-high' },
+    ];
+
+    get sortOptions() {
+        const current = this.activeProductsController?.sort || '-updated_at';
+
+        return this.sortChoices.map((choice) => ({ ...choice, label: this.intl.t(choice.key), isActive: choice.value === current }));
+    }
+
+    get sortLabel() {
+        const active = this.sortOptions.find((option) => option.isActive) ?? this.sortOptions[0];
+
+        return this.intl.t('storefront.products.sort.label', { sort: active.label });
+    }
+
+    @action setSort(value) {
+        const controller = this.activeProductsController;
+
+        if (controller) {
+            controller.sort = value;
+            controller.page = 1;
+        }
+    }
+
+    /**
+     * Adds the selected products to a category of one of the store's catalogs; the
+     * catalog is saved the way the editor saves it.
+     */
+    @action bulkAddToCatalog() {
+        const products = [...this.selected];
+
+        if (!products.length) {
+            return;
+        }
+
+        this.modalsManager.show('modals/add-products-to-catalog', {
+            title: this.intl.t('storefront.products.bulk.add-to-catalog-title', { count: products.length }),
+            acceptButtonText: this.intl.t('storefront.products.bulk.add-to-catalog'),
+            acceptButtonIcon: 'book-open',
+            storeId: this.storefront.activeStore?.id,
+            catalog: null,
+            category: null,
+            confirm: async (modal) => {
+                const catalog = modal.getOption('catalog');
+                const category = modal.getOption('category');
+
+                if (!catalog || !category) {
+                    return this.notifications.warning(this.intl.t('storefront.products.bulk.pick-catalog-first'));
+                }
+
+                modal.startLoading();
+
+                try {
+                    products.forEach((product) => {
+                        if (!category.products.includes(product)) {
+                            category.products.pushObject(product);
+                        }
+                    });
+                    await catalog.save();
+                    this.notifications.success(this.intl.t('storefront.products.bulk.added-to-catalog', { count: products.length, catalog: catalog.name, category: category.name }));
+                    this.clearSelection();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
     get selectedIds() {
         return new Set(this.selected.map((product) => product.id));
     }

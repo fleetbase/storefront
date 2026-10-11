@@ -11,10 +11,13 @@
         class="storefront-dashboard-page"
     >
         {{#if this.activeStore}}
-            <span class="storefront-open-state {{if this.openState.isOpen 'is-open' 'is-closed'}} {{unless this.openState.hasHours 'is-unknown'}}" title={{this.activeStore.name}} data-test-open-state data-open={{if this.openState.isOpen "true" "false"}}>
-                <span class="storefront-open-state__dot"></span>
-                {{this.openStateLabel}}
-            </span>
+            <div class="storefront-dashboard-heading" data-test-dashboard-heading>
+                <h1 class="storefront-dashboard-heading__name">{{this.activeStore.name}}</h1>
+                <span class="storefront-open-state {{if this.openState.isOpen 'is-open' 'is-closed'}} {{unless this.openState.hasHours 'is-unknown'}}" title={{this.activeStore.name}} data-test-open-state data-open={{if this.openState.isOpen "true" "false"}}>
+                    <span class="storefront-open-state__dot"></span>
+                    {{this.openStateLabel}}
+                </span>
+            </div>
         {{/if}}
         <div class="storefront-dashboard-date-control storefront-datepicker">
             <DatePicker

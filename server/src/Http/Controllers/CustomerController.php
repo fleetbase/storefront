@@ -4,8 +4,9 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Models\CustomerSegment;
+use Fleetbase\Storefront\Promotions\SegmentResolver;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 class CustomerController extends StorefrontController
 {
@@ -52,8 +53,21 @@ class CustomerController extends StorefrontController
             'orders'    => $group->count(),
         ])->values();
 
+        // The segments (of the store or network asked for, else every segment of the
+        // company) whose rules this customer matches right now.
+        $segments = CustomerSegment::query()
+            ->where('company_uuid', session('company'))
+            ->when($request->filled('network'), fn ($query) => $query->whereHas('owner', fn ($owner) => $owner->where('public_id', $request->input('network'))->orWhere('uuid', $request->input('network'))))
+            ->when(!$request->filled('network') && $request->filled('storefront'), fn ($query) => $query->whereHas('owner', fn ($owner) => $owner->where('public_id', $request->input('storefront'))->orWhere('uuid', $request->input('storefront'))))
+            ->with('owner')
+            ->get()
+            ->filter(fn (CustomerSegment $segment) => $segment->owner && app(SegmentResolver::class)->query($segment->owner, (array) ($segment->rules ?? []))->where('uuid', $customer->uuid)->exists())
+            ->map(fn (CustomerSegment $segment) => ['id' => $segment->uuid, 'public_id' => $segment->public_id, 'name' => $segment->name])
+            ->values();
+
         return response()->json([
             'orders'                => $count,
+            'segments'              => $segments,
             'canceled'              => $orders->count() - $count,
             'spend'                 => $spend,
             'average'               => $count > 0 ? round($spend / $count, 2) : 0,

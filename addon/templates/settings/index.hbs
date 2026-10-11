@@ -16,6 +16,9 @@
                 <InputGroup @name={{t "storefront.common.currency"}}>
                     <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
                 </InputGroup>
+                <InputGroup @name={{t "storefront.settings.sections.timezone"}} @helpText={{t "storefront.settings.sections.timezone-help"}}>
+                    <Select @value={{@model.timezone}} @options={{this.timezones}} @onSelect={{fn (mut @model.timezone)}} @placeholder={{t "storefront.settings.sections.timezone"}} class="w-full" data-test-settings-timezone />
+                </InputGroup>
                 <InputGroup @name={{t "storefront.settings.sections.default-order-config"}} @helpText={{t "storefront.settings.sections.default-order-config-help"}}>
                     <Select
                         @value={{@model.order_config_uuid}}
