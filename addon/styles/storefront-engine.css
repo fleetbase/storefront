@@ -7781,25 +7781,6 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
     padding: 0;
 }
 
-/* Network overview: stores on the left, invitations and recent orders on the right */
-.storefront-network-overview__columns {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(34rem, 100%), 1fr));
-    gap: 1.25rem;
-    align-items: start;
-}
-
-.storefront-network-overview__side {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    min-width: 0;
-}
-
-.storefront-network-overview__columns .storefront-member-cards {
-    grid-template-columns: repeat(auto-fill, minmax(min(12.5rem, 100%), 1fr));
-}
-
 /* ContentPanel inside storefront settings, product form, customer and order panels: a quiet section
    heading (sentence case, 13px) over the fields, instead of the console's uppercase toolbar look. */
 .storefront-settings-section .next-content-panel-header,

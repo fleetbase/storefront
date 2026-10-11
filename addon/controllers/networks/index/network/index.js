@@ -11,6 +11,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     @service store;
     @service notifications;
     @service hostRouter;
+    @service storefrontOrderActions;
     @service modalsManager;
     @tracked network;
     @tracked overview;
@@ -69,8 +70,9 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         return Number(this.network?.options?.shareable_link_joins ?? 0);
     }
 
+    /** Opens the order's details panel in place; the overview refreshes when the panel changes it. */
     @action viewOrder(order) {
-        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders', this.network.public_id, { queryParams: { o_query: order.public_id } });
+        return this.storefrontOrderActions.viewOrder(order, { onChange: () => this.refresh() });
     }
 
     get recentOrders() {
