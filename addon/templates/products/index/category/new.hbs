@@ -1,22 +1,15 @@
 <Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="640px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
-    <Overlay::Header
-        @title={{this.overlayTitle}}
-        @titleClass="truncate"
-        @titleWrapperClass="w-3/4"
-        @headerLeftClass="w-70pc"
-        @headerLeftInnerClass="w-full flex-1"
-        @onPressCancel={{this.transitionBack}}
-    >
+    <Overlay::Header @onPressCancel={{this.transitionBack}} class="storefront-product-form__header" @actionsWrapperClass="storefront-product-form__header-actions">
+        <:default>
+            <div class="min-w-0">
+                <div class="storefront-panel-heading__title">{{if this.product.isNew this.overlayTitle this.product.name}}</div>
+                {{#unless this.product.isNew}}
+                    <div class="storefront-panel-heading__meta">{{this.product.public_id}}{{#if this.product.category.name}} · {{this.product.category.name}}{{/if}} · {{format-currency this.product.price (or this.product.currency this.activeStore.currency)}}</div>
+                {{/unless}}
+            </div>
+        </:default>
         <:actions>
             <Select class="form-select form-input-sm storefront-product-form__status" @value={{this.product.status}} @placeholder={{t "storefront.common.status"}} @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} data-test-product-status />
-            <Button
-                @icon={{this.overlayActionButtonIcon}}
-                @type="primary"
-                @text={{this.overlayActionButtonTitle}}
-                @onClick={{perform this.saveProduct}}
-                @isLoading={{not this.saveProduct.isIdle}}
-                @permission={{this.abilityPermission}}
-            />
         </:actions>
     </Overlay::Header>
 

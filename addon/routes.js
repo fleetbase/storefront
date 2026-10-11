@@ -8,7 +8,8 @@ export default buildRoutes(function () {
                 this.route('new');
                 this.route('edit', { path: '/:public_id' });
             });
-            this.route('category', { path: '/:slug' }, function () {
+            // Under its own segment so a product id (`/products/:public_id`) never resolves as a category slug.
+            this.route('category', { path: '/category/:slug' }, function () {
                 this.route('new');
                 this.route('edit', { path: '/:public_id' });
             });

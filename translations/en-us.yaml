@@ -392,6 +392,14 @@ storefront:
     editor:
       rename-category: Rename category
       back: All catalogs
+      delete-catalog: Delete catalog
+      sold-here: Sold here
+      columns:
+        product: Product
+        price: Price in catalog
+        availability: Availability
+        stock: Stock
+        actions: Actions
       name-placeholder: Catalog name
       categories-count: "{count, plural, =0 {no categories} one {# category} other {# categories}}"
       served-by-count: "served by {stores, plural, =0 {no stores} one {# store} other {# stores}} and {trucks, plural, =0 {no trucks} one {# truck} other {# trucks}}"
@@ -1135,6 +1143,30 @@ storefront:
         variants: Variants and add-ons
         availability: Availability
         media: Media
+      sections:
+        product: Product
+        pricing: Pricing
+        flags: Storefront flags
+      fields:
+        name: Name
+        description: Description
+        description-placeholder: What the customer reads in the app
+        category: Category
+        category-placeholder: Select a category
+        sku: SKU
+        sku-help: Optional; shown on order lines and exports.
+        tags: Tags
+        tags-placeholder: Add tags
+        price: Price
+        price-help: What the customer pays for one unit.
+        sale-price: Sale price
+        sale-price-help: Charged instead of the price while the product is on sale.
+      flags:
+        service: This is a service (booked, not delivered)
+        bookable: This service is bookable
+        on-sale: On sale, shows the sale price
+        recommended: Recommended, pinned at the top of its category
+        available: Available to order
       more: More
       more-subtitle: "translations ({translations}), metadata ({metadata} keys)"
       needs-attention: "{count, plural, one {# field needs attention} other {# fields need attention}}"

@@ -7586,3 +7586,122 @@ body[data-theme='dark'] .storefront-truck-map {
     flex: 1 1 auto;
     min-height: 20rem;
 }
+
+/* Panel headings (product form, and any overlay that renders its own header block) */
+.storefront-panel-heading__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme='dark'] .storefront-panel-heading__title {
+    color: #f9fafb;
+}
+
+.storefront-panel-heading__meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme='dark'] .storefront-panel-heading__meta {
+    color: #9ca3af;
+}
+
+.storefront-product-form__header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.375rem;
+}
+
+/* Catalog editor: the products of the selected category as a table */
+.storefront-catalog-product-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.8125rem;
+}
+
+.storefront-catalog-product-table col.is-price {
+    width: 7.5rem;
+}
+
+.storefront-catalog-product-table col.is-availability {
+    width: 6.5rem;
+}
+
+.storefront-catalog-product-table col.is-stock {
+    width: 6rem;
+}
+
+.storefront-catalog-product-table col.is-actions {
+    width: 3rem;
+}
+
+.storefront-catalog-product-table .storefront-catalog-product__name,
+.storefront-catalog-product-table .storefront-catalog-product__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-catalog-product-table .storefront-catalog-product__identity {
+    min-width: 0;
+}
+
+.storefront-catalog-product-table th {
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #4b5563;
+    white-space: nowrap;
+}
+
+.storefront-catalog-product-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.storefront-catalog-product-table th.is-right,
+.storefront-catalog-product-table td.is-right {
+    text-align: right;
+}
+
+.storefront-catalog-product-table tr.is-hidden-here td {
+    opacity: 0.6;
+}
+
+body[data-theme='dark'] .storefront-catalog-product-table th {
+    border-color: #374151;
+    color: #9ca3af;
+}
+
+body[data-theme='dark'] .storefront-catalog-product-table td {
+    border-color: #374151;
+}
+
+.storefront-catalog-product__cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.storefront-catalog-product__availability {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}

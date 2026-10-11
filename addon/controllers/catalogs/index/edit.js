@@ -196,6 +196,23 @@ export default class CatalogsIndexEditController extends Controller {
         return this.catalog?.subjects ?? [];
     }
 
+    /** The header's meta line: id · categories · products · hours · served by. */
+    get headerMeta() {
+        this.revision;
+        const subjects = this.servedBy;
+        const trucks = subjects.filter((subject) => subject.type === 'food-truck').length;
+
+        return [
+            this.catalog?.public_id,
+            this.intl.t('storefront.catalogs.editor.categories-count', { count: this.categories.length }),
+            this.intl.t('storefront.catalogs.card.products-count', { count: this.productsCount }),
+            this.hoursSummary,
+            this.intl.t('storefront.catalogs.editor.served-by-count', { stores: subjects.length - trucks, trucks }),
+        ]
+            .filter(Boolean)
+            .join(' · ');
+    }
+
     get structure() {
         this.revision;
 
