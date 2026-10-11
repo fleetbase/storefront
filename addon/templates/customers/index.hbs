@@ -1,3 +1,17 @@
+{{#if this.isCards}}
+    <Layout::Section::Header @title={{t "storefront.common.customers"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+        <Storefront::ViewToggle @options={{array (hash id="cards" icon="th-large" title=(t "storefront.customers.index.view-cards")) (hash id="table" icon="list" title=(t "storefront.customers.index.view-table"))}} @value={{this.viewMode}} @onChange={{this.setViewMode}} @label={{t "storefront.common.view"}} @wrapperClass="mr-2" />
+        <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export customer" />
+    </Layout::Section::Header>
+
+    <Layout::Section::Body class="overflow-y-scroll-i h-full">
+        <Layout::Resource::CardsGrid @resource="customer" @data={{@model}} @columns="4" @containerClass="p-4" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @emptyStateText={{t "storefront.customers.index.empty"}} class="h-full" as |Item|>
+            <Storefront::CustomerCard @customer={{Item.model}} @onView={{this.viewCustomer}} @onNewOrder={{this.newOrderFor}} />
+        </Layout::Resource::CardsGrid>
+    </Layout::Section::Body>
+
+    {{outlet}}
+{{else}}
 <Layout::Resource::Tabular
     @registry="storefront:customer:table"
     @resource="customer"
@@ -14,3 +28,4 @@
 />
 
 {{outlet}}
+{{/if}}

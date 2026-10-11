@@ -261,8 +261,27 @@ export default class CustomersIndexController extends BaseController {
         },
     ];
 
+    @tracked viewMode = 'table';
+
+    get isCards() {
+        return this.viewMode === 'cards';
+    }
+
+    @action setViewMode(viewMode) {
+        this.viewMode = viewMode;
+    }
+
+    @action newOrderFor(customer) {
+        return this.transitionToRoute('orders.index.new', { queryParams: { for_customer: customer.id } });
+    }
+
     get actionButtons() {
         return [
+            {
+                icon: this.isCards ? 'list' : 'th-large',
+                text: this.isCards ? this.intl.t('storefront.customers.index.view-table') : this.intl.t('storefront.customers.index.view-cards'),
+                onClick: () => this.setViewMode(this.isCards ? 'table' : 'cards'),
+            },
             {
                 icon: 'long-arrow-up',
                 iconClass: 'rotate-icon-45',

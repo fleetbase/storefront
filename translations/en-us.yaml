@@ -328,6 +328,10 @@ storefront:
   home:
     title: Storefront Dashboard
   customers:
+    card:
+      places-count: "{count, plural, =0 {No saved places} one {# saved place} other {# saved places}}"
+      account: App account
+      since: "Customer since {date}"
     panel:
       segments: Segments
       no-segments: Not in any segment right now.
@@ -365,6 +369,9 @@ storefront:
       canceled-orders: Canceled orders
       notes: Internal notes
     index:
+      view-cards: Cards
+      view-table: Table
+      empty: No customers yet. They appear here after their first order or sign-up.
       internal-id: Internal ID
       create-at: Created At
       update-at: Updated At
