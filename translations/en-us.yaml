@@ -654,6 +654,7 @@ storefront:
         canceled: Canceled
         custom: Filtered
       columns:
+        next: Next
         reference: Checkout / order
         fulfillment: Fulfillment
         total: Total
@@ -1022,6 +1023,7 @@ storefront:
         location: Pick the store location.
         minimum: "Minimum order {amount} not met."
     index:
+      items: Items
       internal-id: Internal ID
       customer: Customer
       select-order-customer: Select order customer

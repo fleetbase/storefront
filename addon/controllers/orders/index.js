@@ -18,6 +18,7 @@ export default class OrdersIndexController extends BaseController {
     @service filters;
     @service hostRouter;
     @service storefront;
+    @service storefrontOrderActions;
     @tracked page = 1;
     @tracked limit;
     @tracked query;
@@ -146,8 +147,8 @@ export default class OrdersIndexController extends BaseController {
             resourceType: 'customer',
             resourcePath: (order) => relationValue(order, 'customer') ?? buildIdentityStub(order, { type: order.customer_type ?? 'customer', nameKey: 'customer_name' }),
             action: this.viewCustomer,
-            emptyText: 'No customer',
-            width: '100px',
+            emptyText: this.intl.t('storefront.networks.orders.no-customer'),
+            width: '130px',
             resizable: true,
             sortable: true,
             hidden: false,
@@ -158,15 +159,12 @@ export default class OrdersIndexController extends BaseController {
             model: 'customer',
         },
         {
-            id: 'meta-total',
-            label: this.intl.t('storefront.orders.index.total'),
-            cellComponent: 'table/cell/currency',
-            currency: this.currency,
-            valuePath: 'meta.total',
-            width: '100px',
-            resizable: true,
-            hidden: false,
-            sortable: true,
+            id: 'fulfillment',
+            label: this.intl.t('storefront.networks.orders.columns.fulfillment'),
+            cellComponent: 'storefront/network/orders/cell/fulfillment',
+            width: '95px',
+            sortable: false,
+            filterable: false,
         },
         {
             id: 'pickup-name',
@@ -177,6 +175,7 @@ export default class OrdersIndexController extends BaseController {
             resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'pickup') ?? buildIdentityStub(order, { type: 'place', nameKey: 'pickupName' }),
             width: '150px',
             resizable: true,
+            hidden: true,
             sortable: true,
             filterable: true,
             filterComponent: 'filter/model',
@@ -191,7 +190,7 @@ export default class OrdersIndexController extends BaseController {
             cellComponent: 'table/cell/identity',
             resourceType: 'place',
             resourcePath: (order) => relationValue(relationValue(order, 'payload'), 'dropoff') ?? buildIdentityStub(order, { type: 'place', nameKey: 'dropoffName' }),
-            width: '150px',
+            width: '140px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -203,14 +202,10 @@ export default class OrdersIndexController extends BaseController {
         {
             id: 'driver-assigned',
             label: this.intl.t('storefront.orders.index.driver-assigned'),
-            cellComponent: 'table/cell/identity',
-            resourceType: 'driver',
+            cellComponent: 'storefront/network/orders/cell/driver',
+            onAssign: this.assignDriver,
             valuePath: 'driver_assigned',
-            resourcePath: (order) =>
-                relationValue(order, 'driver_assigned') ??
-                buildIdentityStub(order, { type: 'driver', load: () => (order.driver_assigned_uuid ? this.store.findRecord('driver', order.driver_assigned_uuid) : null) }),
-            emptyText: 'No driver assigned',
-            width: '150px',
+            width: '140px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -222,6 +217,16 @@ export default class OrdersIndexController extends BaseController {
                 // no model, serializer, adapter for relations
                 without: ['fleets', 'vendor', 'vehicle', 'currentJob'],
             },
+        },
+        {
+            id: 'meta-total',
+            label: this.intl.t('storefront.orders.index.total'),
+            cellComponent: 'storefront/network/orders/cell/total',
+            valuePath: 'meta.total',
+            width: '110px',
+            resizable: true,
+            hidden: false,
+            sortable: true,
         },
         {
             id: 'scheduled-at',
@@ -238,7 +243,7 @@ export default class OrdersIndexController extends BaseController {
         },
         {
             id: 'item-count',
-            label: '# Items',
+            label: this.intl.t('storefront.orders.index.items'),
             cellComponent: 'table/cell/base',
             valuePath: 'item_count',
             resizable: true,
@@ -252,6 +257,7 @@ export default class OrdersIndexController extends BaseController {
             valuePath: 'tracking_number.tracking_number',
             width: '160px',
             resizable: true,
+            hidden: true,
             sortable: true,
             filterable: true,
             filterComponent: 'filter/string',
@@ -271,7 +277,7 @@ export default class OrdersIndexController extends BaseController {
             label: this.intl.t('storefront.common.status'),
             valuePath: 'status',
             cellComponent: 'table/cell/status',
-            width: '140px',
+            width: '110px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -280,11 +286,11 @@ export default class OrdersIndexController extends BaseController {
         },
         {
             id: 'created-at-short',
-            label: this.intl.t('storefront.orders.index.created-at'),
+            label: this.intl.t('storefront.networks.orders.columns.placed'),
             valuePath: 'createdAtShort',
             sortParam: 'created_at',
             filterParam: 'created_at',
-            width: '100px',
+            width: '85px',
             resizable: true,
             sortable: true,
             filterable: true,
@@ -331,50 +337,16 @@ export default class OrdersIndexController extends BaseController {
         },
         {
             id: 'row-actions',
-            label: '',
-            cellComponent: 'table/cell/dropdown',
-            ddButtonText: false,
-            ddButtonIcon: 'ellipsis-h',
-            ddButtonIconPrefix: 'fas',
-            ddMenuLabel: 'Order Actions',
+            label: this.intl.t('storefront.networks.orders.columns.next'),
+            cellComponent: 'storefront/network/orders/cell/actions',
+            onView: this.viewOrder,
+            onCancel: this.cancelOrder,
+            onDelete: this.deleteOrder,
+            onChange: this.refreshOrders,
             cellClassNames: 'overflow-visible',
-            wrapperClass: 'flex items-center justify-end mx-2',
+            wrapperClass: 'flex items-center justify-end',
             sticky: 'right',
-            width: 60,
-            actions: [
-                {
-                    id: 'view-order',
-                    label: this.intl.t('fleet-ops.operations.orders.index.view-order'),
-                    icon: 'eye',
-                    fn: this.viewOrder,
-                    permission: 'fleet-ops view order',
-                },
-                {
-                    id: 'dispatch-order',
-                    label: this.intl.t('fleet-ops.operations.orders.index.dispatch-order'),
-                    icon: 'paper-plane',
-                    fn: this.dispatchOrder,
-                    permission: 'fleet-ops dispatch order',
-                    isVisible: (order) => order.canBeDispatched,
-                },
-                {
-                    id: 'cancel-order',
-                    label: this.intl.t('storefront.component.widget.orders.cancel-order'),
-                    icon: 'ban',
-                    fn: this.cancelOrder,
-                    permission: 'fleet-ops cancel order',
-                },
-                {
-                    separator: true,
-                },
-                {
-                    id: 'delete-order',
-                    label: this.intl.t('fleet-ops.operations.orders.index.delete-order'),
-                    icon: 'trash',
-                    fn: this.deleteOrder,
-                    permission: 'fleet-ops delete order',
-                },
-            ],
+            width: '160px',
             sortable: false,
             filterable: false,
             resizable: false,
@@ -426,6 +398,14 @@ export default class OrdersIndexController extends BaseController {
 
     @action createOrder() {
         return this.transitionToRoute('orders.index.new');
+    }
+
+    @action refreshOrders() {
+        return this.hostRouter.refresh();
+    }
+
+    @action assignDriver(order) {
+        return this.storefrontOrderActions.assignDriver(order, this.refreshOrders);
     }
 
     @action viewOrder(order) {
