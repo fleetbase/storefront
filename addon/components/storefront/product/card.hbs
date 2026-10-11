@@ -21,7 +21,13 @@
             {{/if}}
         </span>
         <span><Badge @status={{this.displayStatus}} /></span>
-        <span class="storefront-product-row__muted">{{this.variantCount}} variants · {{this.addonGroupCount}} add-ons</span>
+        <span class="storefront-product-row__muted">
+            {{#if this.hasChips}}
+                {{#if this.variantCount}}{{t "storefront.products.card.variants" count=this.variantCount}}{{/if}}{{#if (and this.variantCount this.addonGroupCount)}} · {{/if}}{{#if this.addonGroupCount}}{{t "storefront.products.card.addons" count=this.addonGroupCount}}{{/if}}
+            {{else}}
+                {{t "storefront.products.card.simple"}}
+            {{/if}}
+        </span>
         <span class="storefront-product-row__actions">
             <LinkTo
                 @route={{@editRoute}}
@@ -102,12 +108,15 @@
                     </DropdownButton>
                 </div>
             </div>
-            <div class="storefront-card__chips">
-                <span class="storefront-card__chip">{{t "storefront.products.card.variants" count=this.variantCount}}</span>
-                <span class="storefront-card__chip">{{t "storefront.products.card.addons" count=this.addonGroupCount}}</span>
-                {{#if @product.is_service}}<span class="storefront-card__chip">{{t "storefront.products.card.service"}}</span>{{/if}}
-                {{#if @product.is_bookable}}<span class="storefront-card__chip">{{t "storefront.products.card.bookable"}}</span>{{/if}}
-            </div>
+            {{#if this.hasChips}}
+                <div class="storefront-card__chips" data-test-product-chips>
+                    {{#if this.variantCount}}<span class="storefront-card__chip">{{t "storefront.products.card.variants" count=this.variantCount}}</span>{{/if}}
+                    {{#if this.addonGroupCount}}<span class="storefront-card__chip">{{t "storefront.products.card.addons" count=this.addonGroupCount}}</span>{{/if}}
+                    {{#if this.catalogsCount}}<span class="storefront-card__chip" data-test-product-catalogs>{{t "storefront.products.card.in-catalogs" count=this.catalogsCount}}</span>{{/if}}
+                    {{#if @product.is_service}}<span class="storefront-card__chip">{{t "storefront.products.card.service"}}</span>{{/if}}
+                    {{#if @product.is_bookable}}<span class="storefront-card__chip">{{t "storefront.products.card.bookable"}}</span>{{/if}}
+                </div>
+            {{/if}}
             {{#if (and this.isDraft this.missing.length)}}
                 <div class="storefront-card__note storefront-card__note--warning" data-test-product-missing>
                     <FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{t "storefront.products.card.missing" items=(join ", " this.missing)}}

@@ -241,12 +241,50 @@ class Product extends StorefrontModel
     {
         return $this->belongsToMany(
             CatalogCategory::class,
-            'catalog_category_product',
+            'catalog_category_products',
             'product_uuid',
             'catalog_category_uuid'
         )
         ->using(CatalogProduct::class)
         ->withTimestamps();
+    }
+
+    /**
+     * Correlated subselect counting the distinct catalogs a product is sold in, for
+     * `addSelect(['catalogs_count' => Product::catalogsCountQuery()])` on a product list.
+     * Catalog categories live in the core `categories` table (one catalog per category);
+     * the pivot lives in the storefront database, so the join is database-qualified.
+     */
+    public static function catalogsCountQuery(): \Illuminate\Database\Query\Builder
+    {
+        $categoriesTable = (new Category())->getConnection()->getDatabaseName() . '.categories';
+
+        return CatalogProduct::query()
+            ->getQuery()
+            ->selectRaw('count(distinct catalog_category.owner_uuid)')
+            ->from('catalog_category_products', 'catalog_product')
+            ->join($categoriesTable . ' as catalog_category', 'catalog_category.uuid', '=', 'catalog_product.catalog_category_uuid')
+            ->whereColumn('catalog_product.product_uuid', 'products.uuid')
+            ->whereNull('catalog_product.deleted_at');
+    }
+
+    /**
+     * Distinct catalogs this product is sold in: the value selected by
+     * `catalogsCountQuery()` when present, otherwise looked up for this one product.
+     */
+    public function getCatalogsCountAttribute($value): int
+    {
+        if ($value !== null) {
+            return (int) $value;
+        }
+
+        $categoryUuids = CatalogProduct::query()->where('product_uuid', $this->uuid)->whereNull('deleted_at')->pluck('catalog_category_uuid');
+
+        if ($categoryUuids->isEmpty()) {
+            return 0;
+        }
+
+        return Category::query()->whereIn('uuid', $categoryUuids)->distinct()->count('owner_uuid');
     }
 
     /**

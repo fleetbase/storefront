@@ -276,3 +276,29 @@ test('storefront order filter applies storefront metadata tracking and payload r
             'driverAssigned'
         );
 });
+
+test('the order fulfillment filter narrows to pickup or delivery orders and ignores anything else', function () {
+    $pickup = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'pickup']);
+    $pickupSql = $pickup->toSql();
+    expect($pickupSql)->toContain('is_pickup')
+        ->and(str_contains($pickupSql, 'true') || in_array(true, $pickup->getBindings(), true))->toBeTrue();
+
+    $delivery = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'Delivery']);
+    $deliverySql = $delivery->toSql();
+    expect($deliverySql)->toContain('is_pickup')
+        ->and($deliverySql)->toContain('is null')
+        ->and(str_contains($deliverySql, 'false') || in_array(false, $delivery->getBindings(), true))->toBeTrue();
+
+    $none = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'teleport']);
+    expect($none->toSql())->not->toContain('is_pickup');
+});
+
+test('the internal product list selects a catalogs count per product in the same query', function () {
+    $builder = applyStorefrontFilter(ProductFilter::class, (new Product())->newQuery(), 'int/v1/storefront/products');
+    $sql     = $builder->toSql();
+
+    expect($sql)->toContain('"products".*')
+        ->and($sql)->toContain('as "catalogs_count"')
+        ->and($sql)->toContain('count(distinct catalog_category.owner_uuid)')
+        ->and($sql)->toContain('"catalog_product"."product_uuid" = "products"."uuid"');
+});

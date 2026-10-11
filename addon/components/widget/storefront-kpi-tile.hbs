@@ -17,11 +17,13 @@
         </div>
 
         <div class="mt-3 flex items-center justify-between gap-2 text-[11px]">
-            <span class="text-gray-500 dark:text-gray-400 truncate">{{or @period "vs previous period"}}</span>
-            <span class="storefront-kpi-delta storefront-animate-value inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold">
-                <FaIcon @icon={{this.deltaIcon}} />
-                {{this.deltaText}}
-            </span>
+            <span class="text-gray-500 dark:text-gray-400 truncate" data-test-kpi-period>{{this.periodText}}</span>
+            {{#if this.hasPreviousPeriod}}
+                <span class="storefront-kpi-delta storefront-animate-value inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold">
+                    <FaIcon @icon={{this.deltaIcon}} />
+                    {{this.deltaText}}
+                </span>
+            {{/if}}
         </div>
     </div>
 </div>

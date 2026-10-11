@@ -14,12 +14,12 @@ module('Unit | Service | storefront-order-workflow', function (hooks) {
         );
         assert.deepEqual(
             service.primaryActionDescriptorsFor({ status: 'accepted', type: 'storefront', order_config: orderConfig, meta: {} }).map((descriptor) => descriptor.text),
-            ['Mark as Ready']
+            ['Mark as ready']
         );
         assert.deepEqual(service.primaryActionDescriptorsFor({ status: 'preparing', type: 'storefront', order_config: orderConfig, meta: {} }), []);
         assert.deepEqual(
             service.primaryActionDescriptorsFor({ status: 'pickup_ready', type: 'storefront', order_config: orderConfig, meta: { is_pickup: true } }).map((descriptor) => descriptor.text),
-            ['Mark Picked Up']
+            ['Mark picked up']
         );
     });
 

@@ -81,6 +81,13 @@ export default class PromotionsSegmentsController extends BaseController {
         this.page = 1;
     }
 
+    /** The segment open in the panel. */
+    @tracked panelSegment = null;
+
+    get panelCurrency() {
+        return this.storefront.getContextOwner('currency');
+    }
+
     @action createSegment() {
         const segment = this.store.createRecord('customer-segment', {
             owner_uuid: this.storefront.getContextOwner('id'),
@@ -88,42 +95,19 @@ export default class PromotionsSegmentsController extends BaseController {
             rules: {},
         });
 
-        return this.editSegment(segment, {
-            title: this.intl.t('storefront.promotions.segments.new-segment'),
-            decline: (modal) => {
-                segment.rollbackAttributes();
-                modal.done();
-            },
-        });
+        this.panelSegment = segment;
     }
 
-    @action editSegment(segment, options = {}) {
-        this.modalsManager.show('modals/customer-segment-form', {
-            title: this.intl.t('storefront.promotions.segments.edit-segment'),
-            acceptButtonText: this.intl.t('storefront.promotions.common.save'),
-            acceptButtonIcon: 'save',
-            modalClass: 'modal-lg',
-            segment,
-            currency: this.storefront.getContextOwner('currency'),
-            decline: (modal) => {
-                segment.rollbackAttributes();
-                modal.done();
-            },
-            confirm: async (modal) => {
-                modal.startLoading();
+    @action editSegment(segment) {
+        this.panelSegment = segment;
+    }
 
-                try {
-                    await segment.save();
-                    this.notifications.success(this.intl.t('storefront.promotions.segments.saved-success'));
-                    this.hostRouter.refresh();
-                    modal.done();
-                } catch (error) {
-                    this.notifications.serverError(error);
-                    modal.stopLoading();
-                }
-            },
-            ...options,
-        });
+    @action closeSegmentPanel() {
+        this.panelSegment = null;
+    }
+
+    @action onSegmentSaved() {
+        return this.hostRouter.refresh();
     }
 
     @action deleteSegment(segment) {

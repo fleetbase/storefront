@@ -25,6 +25,17 @@ export default class StorefrontProductCardComponent extends Component {
         return this.args.product?.addon_categories?.length ?? 0;
     }
 
+    /** Chips only say something when there is something: a card with no variants or add-ons shows none. */
+    get hasChips() {
+        const { product } = this.args;
+        return Boolean(this.variantCount || this.addonGroupCount || this.catalogsCount || product?.is_service || product?.is_bookable);
+    }
+
+    get catalogsCount() {
+        const count = parseInt(this.args.product?.catalogs_count, 10);
+        return Number.isFinite(count) ? count : 0;
+    }
+
     get hasSalePrice() {
         const { product } = this.args;
         return Boolean(product?.is_on_sale && product?.sale_price);

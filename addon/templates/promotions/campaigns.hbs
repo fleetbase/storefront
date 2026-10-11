@@ -1,27 +1,18 @@
-<Layout::Section::Header
-    @title={{t "storefront.promotions.campaigns.header"}}
-    @searchQuery={{this.query}}
-    @searchPlaceholder={{t "storefront.promotions.campaigns.search-placeholder"}}
-    @onSearch={{this.search}}
->
+<Storefront::PageHeader @title={{t "storefront.promotions.hub.title"}} @subtitle={{t "storefront.promotions.hub.subtitle"}} @icon="tags" @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.campaigns.search-placeholder"}} @onSearch={{this.search}} data-test-promotions-header>
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.campaigns.new-campaign"}} @onClick={{this.createCampaign}} @permission="storefront create campaign" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
     <Storefront::Promotions::HubTabs />
     {{#if @model.length}}
-        <Table
-            @wrapperClass="overscroll-y-none"
-            @rows={{@model}}
-            @columns={{this.registeredColumns}}
-            @selectable={{false}}
-            @canSelectAll={{false}}
-            @pagination={{true}}
-            @paginationMeta={{@model.meta}}
-            @page={{this.page}}
-            @onPageChange={{fn (mut this.page)}}
-        />
+        <div class="storefront-table-card" data-test-promotions-table-card>
+            <Table @wrapperClass="storefront-table-card__table" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @tfoot={{false}} />
+            <div class="storefront-table-card__footer">
+                <span class="storefront-table-card__note"></span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
+        </div>
     {{else}}
         <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
             <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
@@ -46,3 +37,7 @@
         </div>
     {{/if}}
 </Layout::Section::Body>
+
+{{#if this.panelCampaign}}
+    <Storefront::Promotion::CampaignPanel @campaign={{this.panelCampaign}} @when={{this.panelWhen}} @onClose={{this.closeCampaignPanel}} @onSaved={{this.onCampaignSaved}} />
+{{/if}}

@@ -1,13 +1,19 @@
-<Layout::Section::Header @title={{t "storefront.promotions.redemptions.header"}} @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.redemptions.search-placeholder"}} @onSearch={{perform this.search}}>
+<Storefront::PageHeader @title={{t "storefront.promotions.hub.title"}} @subtitle={{t "storefront.promotions.hub.subtitle"}} @icon="tags" @searchQuery={{this.query}} @searchPlaceholder={{t "storefront.promotions.redemptions.search-placeholder"}} @onSearch={{perform this.search}} data-test-promotions-header>
     {{#if (or this.promotion this.status)}}
         <Button @size="sm" @icon="times" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
     {{/if}}
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
     <Storefront::Promotions::HubTabs />
     {{#if @model.length}}
-        <Table @wrapperClass="overscroll-y-none" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @pagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} />
+        <div class="storefront-table-card" data-test-promotions-table-card>
+            <Table @wrapperClass="storefront-table-card__table" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @tfoot={{false}} />
+            <div class="storefront-table-card__footer">
+                <span class="storefront-table-card__note"></span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
+        </div>
     {{else}}
         <div class="flex flex-col items-center justify-center px-4 py-12 text-center" data-test-redemptions-empty>
             <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">

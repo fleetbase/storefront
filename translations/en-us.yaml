@@ -44,6 +44,12 @@ storefront:
     import: Import
     invalid: Invalid
     loading: Loading...
+    loading-storefront: Loading storefront...
+    error-state:
+      title: This page could not be loaded
+      description: Something went wrong while loading this page. Try again, or go back to the dashboard.
+      retry: Try again
+      back: Back to dashboard
     more: More
     logo: Logo
     name: Name
@@ -51,6 +57,7 @@ storefront:
     online: Online
     offline: Offline
     last-modified: Last modified
+    order: Order
     orders: Orders
     phone: Phone
     photos: Photos
@@ -476,6 +483,8 @@ storefront:
       serving: Serving
       no-served-by: Nobody serves this catalog yet.
       assign-store-or-truck: Assign a store or truck
+      stop-serving: "Stop serving from {name}"
+      served-by-removed: "{name} no longer serves this catalog."
       stores: Stores
       stores-help: Stores that serve this catalog at their locations.
       trucks-help: Trucks that serve this catalog while they are online.
@@ -587,6 +596,10 @@ storefront:
       owned-by: "Owned by {name}"
   dashboard:
     kpi:
+      metric: Metric
+      vs-previous-period: vs previous period
+      no-previous-period: No previous period
+      load-error: Unable to load metric
       active-orders: Active orders
       orders: Orders
       aov: Average order value
@@ -1198,6 +1211,8 @@ storefront:
     card:
       untitled: Untitled product
       variants: "{count, plural, =0 {No variants} one {# variant} other {# variants}}"
+      simple: Simple product
+      in-catalogs: "{count, plural, one {in # catalog} other {in # catalogs}}"
       addons: "{count, plural, =0 {No add-ons} one {# add-on} other {# add-ons}}"
       service: Service
       bookable: Bookable
@@ -1289,6 +1304,7 @@ storefront:
         media: A published product should have at least one image.
     index:
       summary: "{products, plural, =0 {No products} one {# product} other {# products}} · {categories, plural, =0 {no categories} one {# category} other {# categories}}"
+      summary-categories: "{categories, plural, =0 {No categories} one {# category} other {# categories}}"
       search: Search products
       new-product: New product
       edit-category: Edit this category…
@@ -1541,6 +1557,7 @@ storefront:
     launch-app: Launch App
   promotions:
     hub:
+      title: Promotions
       subtitle: One place for offers, the campaigns that announce them, the segments they target, and the pushes that go out.
       active: Active
       scheduled: Scheduled
@@ -1825,6 +1842,7 @@ storefront:
       header: Customer segments
       new-segment: New segment
       edit-segment: Edit segment
+      required-name: Enter a segment name.
       search-placeholder: Search segments...
       empty-title: No customer segments yet
       empty-help: Group customers by their order history and activity to target campaigns.

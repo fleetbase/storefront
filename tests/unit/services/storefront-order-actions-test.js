@@ -82,16 +82,16 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
         assert.strictEqual(actions[0].text, 'Accept order');
 
         actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: false } });
-        assert.strictEqual(actions[0].text, 'Mark as Ready');
+        assert.strictEqual(actions[0].text, 'Mark as ready');
 
         actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', dispatched: true, meta: { is_pickup: false } });
-        assert.strictEqual(actions[0].text, 'Mark as Ready');
+        assert.strictEqual(actions[0].text, 'Mark as ready');
 
         actions = service.actionItemsFor({ id: 'order_1', status: 'accepted', meta: { is_pickup: true } });
-        assert.strictEqual(actions[0].text, 'Mark as Ready');
+        assert.strictEqual(actions[0].text, 'Mark as ready');
 
         actions = service.actionItemsFor({ id: 'order_1', status: 'pickup_ready', meta: { is_pickup: true } });
-        assert.strictEqual(actions[0].text, 'Mark Picked Up');
+        assert.strictEqual(actions[0].text, 'Mark picked up');
     });
 
     test('it applies mutation status before invoking callbacks', function (assert) {
@@ -106,7 +106,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
             update(id, definition) {
                 assert.strictEqual(id, 'storefront-order:order_1');
-                assert.strictEqual(definition.actionButtons[0].text, 'Mark as Ready');
+                assert.strictEqual(definition.actionButtons[0].text, 'Mark as ready');
             }
         }
 
@@ -158,7 +158,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
 
             update(id, definition) {
                 assert.strictEqual(id, 'storefront-order:order_1');
-                assert.notStrictEqual(definition.actionButtons[0].text, 'Mark as Ready');
+                assert.notStrictEqual(definition.actionButtons[0].text, 'Mark as ready');
             }
         }
 

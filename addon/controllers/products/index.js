@@ -56,7 +56,12 @@ export default class ProductsIndexController extends BaseController {
     get headerMeta() {
         const categories = this.model?.length ?? Object.keys(this.categoryCounts).length;
 
-        return this.intl.t('storefront.products.index.summary', { products: this.summary?.total ?? 0, categories });
+        // Before the first list response there is no product count to claim, only the categories.
+        if (!this.summary) {
+            return this.intl.t('storefront.products.index.summary-categories', { categories });
+        }
+
+        return this.intl.t('storefront.products.index.summary', { products: this.summary.total ?? 0, categories });
     }
 
     get statusTab() {

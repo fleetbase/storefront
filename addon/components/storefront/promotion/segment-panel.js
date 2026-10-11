@@ -3,12 +3,17 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { cancel, debounce } from '@ember/runloop';
+import { task } from 'ember-concurrency';
 
 /**
- * Create / edit a customer segment with a live count of matching customers.
+ * Create or edit a customer segment in the shared right-hand panel, with a live count of
+ * the customers its rules match. Replaces the segment modal.
  */
-export default class ModalsCustomerSegmentFormComponent extends Component {
+export default class StorefrontPromotionSegmentPanelComponent extends Component {
     @service fetch;
+    @service intl;
+    @service notifications;
+
     @tracked matching = null;
     @tracked isLoadingCount = false;
     @tracked countUnavailable = false;
@@ -34,7 +39,15 @@ export default class ModalsCustomerSegmentFormComponent extends Component {
     }
 
     get segment() {
-        return this.args.options.segment;
+        return this.args.segment;
+    }
+
+    get title() {
+        return this.intl.t(this.segment.isNew ? 'storefront.promotions.segments.new-segment' : 'storefront.promotions.segments.edit-segment');
+    }
+
+    get isDirty() {
+        return Boolean(this.segment.isNew || this.segment.hasDirtyAttributes);
     }
 
     get hasMatching() {
@@ -95,5 +108,28 @@ export default class ModalsCustomerSegmentFormComponent extends Component {
                 this.isLoadingCount = false;
             }
         }
+    }
+
+    @task *save() {
+        if (!this.segment.name?.trim()) {
+            return this.notifications.warning(this.intl.t('storefront.promotions.segments.required-name'));
+        }
+
+        try {
+            yield this.segment.save();
+            this.notifications.success(this.intl.t('storefront.promotions.segments.saved-success'));
+            this.args.onSaved?.(this.segment);
+            this.args.onClose?.();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action close() {
+        if (typeof this.segment.rollbackAttributes === 'function') {
+            this.segment.rollbackAttributes();
+        }
+
+        this.args.onClose?.();
     }
 }

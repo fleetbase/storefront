@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Http\Filter;
 
+use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Http\Filter\Filter;
 use Fleetbase\Models\Category;
 
@@ -10,6 +11,7 @@ class ProductFilter extends Filter
     public function queryForInternal()
     {
         $this->builder->where('company_uuid', $this->session->get('company'));
+        $this->builder->select('products.*')->addSelect(['catalogs_count' => Product::catalogsCountQuery()]);
     }
 
     public function query(?string $query)

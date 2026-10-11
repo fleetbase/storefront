@@ -157,7 +157,13 @@ export default class OrdersIndexController extends BaseController {
             cellComponent: 'storefront/network/orders/cell/fulfillment',
             width: '95px',
             sortable: false,
-            filterable: false,
+            filterable: true,
+            filterComponent: 'filter/select',
+            filterParam: 'fulfillment',
+            filterOptions: [
+                { value: 'pickup', label: this.intl.t('storefront.common.pickup') },
+                { value: 'delivery', label: this.intl.t('storefront.common.delivery') },
+            ],
         },
         {
             id: 'pickup-name',

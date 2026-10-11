@@ -50,6 +50,7 @@ class Product extends FleetbaseResource
             'translations'       => $this->translations ?? [],
             'addon_categories'   => $this->mapAddonCategories($this->addonCategories),
             'variants'           => $this->mapVariants($this->variants),
+            'catalogs_count'     => $this->when(Http::isInternalRequest(), fn () => $this->catalogs_count),
             'files'              => $this->when(Http::isInternalRequest(), $this->files),
             'images'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files)),
             'videos'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files, 'video')),

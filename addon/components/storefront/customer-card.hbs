@@ -3,7 +3,7 @@
         <RegistryYield @registry="storefront:component:customer:card:header:start" as |RegistryComponent|>
             <RegistryComponent @customer={{this.customer}} @resource={{this.customer}} />
         </RegistryYield>
-        <Customer::Pill @customer={{this.customer}} @onClick={{if @onView (fn @onView this.customer)}} class="storefront-card__identity" />
+        <Customer::Pill @customer={{this.customer}} @subtitle={{null}} @onClick={{if @onView (fn @onView this.customer)}} class="storefront-card__identity" />
         <div class="storefront-card__subtitle">{{t "storefront.common.customer"}} · <ClickToCopy @value={{this.customer.public_id}}>{{this.customer.public_id}}</ClickToCopy></div>
         <RegistryYield @registry="storefront:component:customer:card:header:end" as |RegistryComponent|>
             <RegistryComponent @customer={{this.customer}} @resource={{this.customer}} />

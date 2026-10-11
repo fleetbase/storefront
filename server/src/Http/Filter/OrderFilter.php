@@ -68,6 +68,23 @@ class OrderFilter extends FleetOpsOrderFilter
         $this->builder->where('meta->food_truck_id', $foodTruck);
     }
 
+    /**
+     * Pickup or delivery orders. The checkout stamps `meta.is_pickup`; anything not
+     * flagged for pickup is a delivery.
+     */
+    public function fulfillment(string $fulfillment)
+    {
+        $fulfillment = strtolower(trim($fulfillment));
+
+        if ($fulfillment === 'pickup') {
+            $this->builder->where('meta->is_pickup', true);
+        } elseif ($fulfillment === 'delivery') {
+            $this->builder->where(function ($query) {
+                $query->whereNull('meta->is_pickup')->orWhere('meta->is_pickup', false);
+            });
+        }
+    }
+
     public function storefront(string $storefront)
     {
         $this->builder->where('meta->storefront_id', $storefront);

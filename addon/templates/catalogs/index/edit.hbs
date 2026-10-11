@@ -182,13 +182,25 @@
                                     <div class="storefront-member-row__meta">{{if (eq subject.type "food-truck") (t "storefront.common.food-trucks") (t "storefront.common.store")}}{{#if subject.plate}} · {{subject.plate}}{{/if}}</div>
                                 </div>
                                 <Badge @status={{if subject.online "online" "offline"}} @text={{if subject.online (t "storefront.catalogs.editor.serving") (t "storefront.common.offline")}} @size="xs" />
+                                <Button
+                                    @size="xs"
+                                    @icon="xmark"
+                                    @helpText={{t "storefront.catalogs.editor.stop-serving" name=subject.name}}
+                                    @onClick={{fn this.removeServedBy subject}}
+                                    @permission="storefront update catalog"
+                                    class="storefront-member-row__remove"
+                                    data-test-remove-served-by={{subject.id}}
+                                />
                             </div>
                         {{/each}}
                     </div>
+                    <button type="button" class="storefront-empty-row storefront-empty-row--action" disabled={{cannot "storefront update catalog"}} {{on "click" this.manageServedBy}} data-test-assign-served-by>
+                        <FaIcon @icon="plus" @size="xs" class="mr-2" />{{t "storefront.catalogs.editor.assign-store-or-truck"}}
+                    </button>
                 {{else}}
                     <div class="storefront-empty-row">
                         <span>{{t "storefront.catalogs.editor.no-served-by"}}</span>
-                        <Button @size="xs" @icon="plus" @text={{t "storefront.catalogs.editor.assign-store-or-truck"}} @onClick={{this.manageServedBy}} />
+                        <Button @size="xs" @icon="plus" @text={{t "storefront.catalogs.editor.assign-store-or-truck"}} @onClick={{this.manageServedBy}} @permission="storefront update catalog" data-test-assign-served-by />
                     </div>
                 {{/if}}
             </div>

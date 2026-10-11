@@ -22,6 +22,7 @@ export default class OrdersIndexRoute extends Route {
         facilitator: { refreshModel: true },
         driver: { refreshModel: true },
         customer: { refreshModel: true },
+        fulfillment: { refreshModel: true },
         pickup: { refreshModel: true },
         dropoff: { refreshModel: true },
         after: { refreshModel: true },

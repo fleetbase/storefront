@@ -6,7 +6,6 @@ import { action } from '@ember/object';
 export default class ProductsIndexCategoryRoute extends Route {
     @service store;
     @service currentUser;
-    @service loader;
     @service intl;
     @service abilities;
     @service hostRouter;
@@ -33,10 +32,6 @@ export default class ProductsIndexCategoryRoute extends Route {
         if (typeof targetName === 'string' && !targetName.startsWith('console.storefront.products.index.category')) {
             this.controllerFor('products.index').category = null;
         }
-    }
-
-    @action loading(transition) {
-        this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading products...' });
     }
 
     beforeModel() {

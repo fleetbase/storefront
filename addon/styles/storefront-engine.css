@@ -7,6 +7,23 @@
  *   radius  0.375rem controls and rows · 0.5rem cards and panels · 9999px pills
  *   space   0.25 / 0.5 / 0.75 / 1rem; page gutter 1rem
  */
+
+/*
+ * Dark palette tiers. Page < surface < raised, each opaque so a grey never depends on
+ * what sits behind it; hairlines (dividers inside a surface) are one step darker than
+ * the surface border so a card has a clear outer edge and quiet inner lines.
+ */
+body[data-theme='dark'] {
+    --sf-page: #111827;
+    --sf-surface: #1f2937;
+    --sf-raised: #273244;
+    --sf-border: #374151;
+    --sf-border-raised: #3b4657;
+    --sf-hairline: #2d3748;
+    --sf-input: #111827;
+    --sf-input-border: #4b5563;
+}
+
 .ui-combo-box .options-list a.combo-box-option.selected,
 .ui-combo-box .selected-list a.combo-box-option.selected,
 .ui-combo-box .options-list a.combo-box-option.selected:hover,
@@ -1689,7 +1706,7 @@ body[data-theme='dark'] .storefront-customer-order-count {
 body[data-theme='dark'] .storefront-order-card,
 body[data-theme='dark'] .storefront-customer-card {
     border-color: #374151;
-    background-color: #111827;
+    background-color: var(--sf-surface);
 }
 
 body[data-theme='dark'] .storefront-order-card:hover,
@@ -1748,7 +1765,7 @@ body[data-theme='dark'] .storefront-order-panel-header {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.625rem;
+    gap: 0.5rem;
     padding: 0.75rem 1rem;
 }
 
@@ -1760,17 +1777,22 @@ body[data-theme='dark'] .storefront-order-panel-header {
 }
 
 .storefront-order-panel-heading__main {
+    flex: 1 1 auto;
     min-width: 0;
-    align-items: flex-start;
-    gap: 0.75rem;
-}
-
-.storefront-order-panel-heading__actions .btn {
-    white-space: nowrap;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .storefront-order-panel-heading__actions {
-    gap: 0.5rem;
+    flex: 0 0 auto;
+    gap: 0.375rem;
+}
+
+/* Four actions share a 600px panel with the id and status: tighter buttons, same hit height */
+.storefront-order-panel-heading__actions .btn {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    white-space: nowrap;
 }
 
 .storefront-order-panel-heading__badges {
@@ -1787,8 +1809,8 @@ body[data-theme='dark'] .storefront-order-panel-header {
 
 .storefront-order-panel-heading__icon {
     display: inline-flex;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
@@ -1827,10 +1849,12 @@ body[data-theme='dark'] .storefront-order-totals span {
 .storefront-order-panel-heading__title {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    min-width: 0;
+    white-space: nowrap;
     gap: 0.375rem;
     color: #111827;
-    font-size: 1rem;
+    font-size: 0.9375rem;
     font-weight: 800;
 }
 
@@ -1840,7 +1864,11 @@ body[data-theme='dark'] .storefront-order-panel-heading__title {
 
 .storefront-order-panel-heading__meta {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
     gap: 0.5rem;
     color: #6b7280;
     font-size: 0.76rem;
@@ -1920,7 +1948,7 @@ body[data-theme='dark'] .storefront-order-snapshot__grid > div,
 body[data-theme='dark'] .storefront-order-detail-card,
 body[data-theme='dark'] .storefront-order-detail-block {
     border-color: #1f2937;
-    background: #111827;
+    background: var(--sf-surface);
 }
 
 .storefront-order-snapshot__grid strong,
@@ -3207,7 +3235,7 @@ body[data-theme='dark'] .storefront-hours-strip__day.is-open .storefront-hours-s
 }
 
 .storefront-switcher-menu[data-theme='dark'] .storefront-switcher-menu__item.is-active {
-    background-color: rgb(55 65 81 / 80%);
+    background-color: #374151;
 }
 
 .storefront-switcher-menu__label {
@@ -3302,8 +3330,8 @@ body[data-theme='dark'] .storefront-hours-strip__day.is-open .storefront-hours-s
 }
 
 body[data-theme='dark'] .storefront-network-page__header {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-network-page__logo {
@@ -3452,7 +3480,7 @@ body[data-theme='dark'] .storefront-stat-tile__hint {
 }
 
 body[data-theme='dark'] .storefront-member-row {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-member-row:last-child {
@@ -3465,8 +3493,8 @@ body[data-theme='dark'] .storefront-member-row {
 }
 
 body[data-theme='dark'] .storefront-member-row--link {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-member-row__logo {
@@ -3590,7 +3618,7 @@ body[data-theme='dark'] .storefront-empty-row {
 }
 
 body[data-theme='dark'] .storefront-status-tabs {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-status-tab {
@@ -3691,8 +3719,8 @@ body[data-theme='dark'] .storefront-invitation-list {
 
 body[data-theme='dark'] .storefront-invitation-list__title {
     color: #9ca3af;
-    background-color: rgb(55 65 81 / 50%);
-    border-color: #374151;
+    background-color: var(--sf-raised);
+    border-color: var(--sf-border-raised);
 }
 
 .storefront-invitation-list__note {
@@ -3775,7 +3803,7 @@ body[data-theme='dark'] .storefront-invite-panel__tab.is-active {
 }
 
 body[data-theme='dark'] .storefront-invite-panel__footer {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 /* Network orders: grouped by checkout */
@@ -3955,7 +3983,7 @@ body[data-theme='dark'] .storefront-order-total__amount {
 }
 
 body[data-theme='dark'] .storefront-order-group {
-    background-color: rgb(55 65 81 / 40%);
+    background-color: var(--sf-raised);
     border-left-color: #1d4ed8;
 }
 
@@ -3968,7 +3996,7 @@ body[data-theme='dark'] .storefront-order-group {
 }
 
 body[data-theme='dark'] .storefront-order-group__row {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-order-group__row:last-child {
@@ -3998,8 +4026,8 @@ body[data-theme='dark'] .storefront-order-group__row {
 }
 
 body[data-theme='dark'] .storefront-flow-steps {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-flow-steps__list {
@@ -4185,8 +4213,8 @@ body[data-theme='dark'] .storefront-identity-strip__muted {
 }
 
 body[data-theme='dark'] .storefront-settings-shell__header {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-settings-shell__identity {
@@ -4388,7 +4416,7 @@ body[data-theme='dark'] .storefront-settings-section__lede {
 }
 
 body[data-theme='dark'] .storefront-rules {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-rule {
@@ -4400,7 +4428,7 @@ body[data-theme='dark'] .storefront-rules {
 }
 
 body[data-theme='dark'] .storefront-rule {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-rule:last-child {
@@ -4412,7 +4440,7 @@ body[data-theme='dark'] .storefront-rule {
 }
 
 body[data-theme='dark'] .storefront-rule.is-on {
-    background-color: rgb(55 65 81 / 30%);
+    background-color: var(--sf-raised);
 }
 
 .storefront-rule__icon {
@@ -4536,8 +4564,8 @@ body[data-theme='dark'] .storefront-save-bar {
 }
 
 body[data-theme='dark'] .storefront-catalog-editor__header {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-catalog-editor__identity {
@@ -4737,7 +4765,7 @@ body[data-theme='dark'] .storefront-catalog-category__select {
 }
 
 body[data-theme='dark'] .storefront-catalog-products__header {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-catalog-products__title {
@@ -4842,7 +4870,7 @@ body[data-theme='dark'] .storefront-catalog-product__price {
 }
 
 body[data-theme='dark'] .storefront-catalog-picker__header {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-catalog-picker__hint {
@@ -4912,7 +4940,7 @@ body[data-theme='dark'] .storefront-catalog-picker__item.is-selected {
 }
 
 body[data-theme='dark'] .storefront-catalog-picker__footer {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-catalog-health__row {
@@ -5081,8 +5109,8 @@ body[data-theme='dark'] .storefront-customer-header__meta {
 }
 
 body[data-theme='dark'] .storefront-customer-header__strip {
-    border-color: #374151;
-    background-color: rgb(55 65 81 / 50%);
+    border-color: var(--sf-border-raised);
+    background-color: var(--sf-raised);
 }
 
 .storefront-customer-facts {
@@ -5735,7 +5763,7 @@ body[data-theme='dark'] .storefront-join__row strong {
 
 body[data-theme='dark'] .storefront-join__result {
     color: #f3f4f6;
-    background-color: rgb(55 65 81 / 50%);
+    background-color: var(--sf-raised);
 }
 
 .storefront-join__actions {
@@ -7038,7 +7066,7 @@ body[data-theme='dark'] .storefront-section-card {
 }
 
 body[data-theme='dark'] .storefront-section-card__head {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-section-card__title {
@@ -7204,7 +7232,7 @@ body[data-theme='dark'] .storefront-table-card {
 }
 
 body[data-theme='dark'] .storefront-table-card__toolbar {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
 }
 
 .storefront-table-card__toolbar .storefront-status-tabs {
@@ -7223,7 +7251,7 @@ body[data-theme='dark'] .storefront-table-card__toolbar {
 }
 
 body[data-theme='dark'] .storefront-table-card__bulk {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
     background: rgb(30 58 138 / 30%);
     color: #bfdbfe;
 }
@@ -7265,7 +7293,7 @@ body[data-theme='dark'] .storefront-table-card__bulk {
 }
 
 body[data-theme='dark'] .storefront-table-card__footer {
-    border-color: #374151;
+    border-color: var(--sf-hairline);
     color: #9ca3af;
 }
 
@@ -7858,4 +7886,248 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
 .storefront-order-store__facts dd {
     margin: 0;
     min-width: 0;
+}
+
+/* Loading substates: the skeleton page fills the section like the page it stands in for */
+.storefront-loading {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.storefront-loading--body .ui-skeleton-page-body {
+    padding: 1.25rem;
+}
+
+/* Error substate */
+.storefront-error-state {
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+}
+
+.storefront-error-state__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 26rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+
+body[data-theme='dark'] .storefront-error-state__card {
+    border-color: #374151;
+    background: #1f2937;
+}
+
+.storefront-error-state__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 9999px;
+    background: #fef3c7;
+    color: #b45309;
+}
+
+body[data-theme='dark'] .storefront-error-state__icon {
+    background: rgb(180 83 9 / 25%);
+    color: #fcd34d;
+}
+
+.storefront-error-state__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+body[data-theme='dark'] .storefront-error-state__title {
+    color: #f3f4f6;
+}
+
+.storefront-error-state__message {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: #6b7280;
+    overflow-wrap: anywhere;
+}
+
+body[data-theme='dark'] .storefront-error-state__message {
+    color: #9ca3af;
+}
+
+.storefront-error-state__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* Rows inside a table card sit on the card's surface, not the page, so the card keeps its tier */
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table,
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table thead tr th,
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody,
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr,
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr td {
+    background-color: var(--sf-surface);
+    border-color: var(--sf-hairline);
+}
+
+body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr:hover td {
+    background-color: var(--sf-raised);
+}
+
+/* Served-by list: a row's remove control and the assign row under the list */
+.storefront-member-row__remove {
+    margin-left: 0.5rem;
+    flex: 0 0 auto;
+}
+
+.storefront-empty-row--action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    border-style: dashed;
+    color: #2563eb;
+}
+
+.storefront-empty-row--action:hover:not(:disabled) {
+    background-color: #eff6ff;
+}
+
+.storefront-empty-row--action:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+body[data-theme='dark'] .storefront-empty-row--action {
+    color: #93c5fd;
+}
+
+body[data-theme='dark'] .storefront-empty-row--action:hover:not(:disabled) {
+    background-color: var(--sf-raised);
+}
+
+/* Promotions hub: the table card sits on the page gutters below the hub tabs */
+.storefront-promotions-hub .storefront-table-card {
+    margin: 1rem 1.25rem 1.25rem;
+}
+
+.storefront-promotions-hub__cards-toolbar {
+    display: flex;
+    align-items: center;
+}
+
+/* Order panel heading: the id never truncates; the store or network badge gives way first */
+.storefront-order-panel-heading__title > span:first-child {
+    flex: 0 0 auto;
+}
+
+.storefront-order-panel-heading__fulfillment-badge {
+    flex: 0 1 auto;
+    min-width: 2.5rem;
+    max-width: 11rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.storefront-order-panel-heading__meta > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.storefront-order-panel-heading__meta > .storefront-order-panel-heading__fulfillment-badge {
+    margin-right: 0.25rem;
+}
+
+.storefront-order-panel-heading__meta > span + span::before {
+    content: '·';
+    margin-right: 0.5rem;
+    color: #9ca3af;
+}
+
+.storefront-order-panel-heading .storefront-flow-steps,
+.storefront-order-panel-heading .storefront-identity-strip {
+    margin-top: 0;
+}
+
+/* Push notifications page: one section card, form width capped like the settings sections */
+.storefront-push-page__form {
+    max-width: 42rem;
+}
+
+/* Form panels (campaign, segment): scrolling body, sticky save bar, quiet section rules */
+.storefront-form-panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.storefront-form-panel__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.storefront-form-panel__save-bar {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
+.storefront-form-panel__section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+body[data-theme='dark'] .storefront-form-panel__section {
+    border-color: var(--sf-hairline);
+}
+
+.storefront-form-panel__heading {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+body[data-theme='dark'] .storefront-form-panel__heading {
+    color: #f9fafb;
+}
+
+.storefront-form-panel__hint,
+.storefront-form-panel__status {
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-form-panel__hint,
+body[data-theme='dark'] .storefront-form-panel__status {
+    color: #9ca3af;
+}
+
+.storefront-form-panel__note {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    background-color: #f9fafb;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+body[data-theme='dark'] .storefront-form-panel__note {
+    background-color: var(--sf-raised);
+    color: #d1d5db;
 }

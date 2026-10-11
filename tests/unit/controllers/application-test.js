@@ -190,7 +190,7 @@ module('Unit | Controller | application', function (hooks) {
         assert.false(items[2].disabled, 'resource items are enabled when an active store exists');
         assert.deepEqual(
             items[2].children.map((item) => item.label),
-            ['All Products', 'Pizza'],
+            ['All products', 'Pizza'],
             'products includes all products plus active store product categories'
         );
         assert.strictEqual(items[2].children[0].route, 'console.storefront.products.index.index', 'all products does not match category routes');

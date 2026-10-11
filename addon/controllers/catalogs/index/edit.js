@@ -414,6 +414,23 @@ export default class CatalogsIndexEditController extends Controller {
         this.touch();
     }
 
+    /**
+     * Stop one store or truck serving this catalog, inline from its row. The API takes the
+     * whole served-by set, so the remaining subjects are sent back without this one.
+     */
+    @action async removeServedBy(subject) {
+        const catalog = this.catalog;
+        const keep = (subjects) => subjects.filter((item) => item.id !== subject.id);
+
+        try {
+            await catalog.assignSubjects({ stores: keep(catalog.storeSubjects), food_trucks: keep(catalog.truckSubjects) });
+            this.notifications.success(this.intl.t('storefront.catalogs.editor.served-by-removed', { name: subject.name }));
+            this.touch();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
     @action manageServedBy() {
         const catalog = this.catalog;
         const memberStoreIds = new Set(catalog.storeSubjects.map((subject) => subject.id));

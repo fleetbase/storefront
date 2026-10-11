@@ -67,7 +67,7 @@ export function registerWidgets(widgetService) {
             component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/kpi-active-orders'),
             grid_options: { w: 3, h: 4, minW: 3, minH: 4 },
             category: 'KPI Tiles',
-            default: true,
+            default: false,
         }),
         new Widget({
             id: 'storefront-kpi-completed-orders-widget',
@@ -77,7 +77,7 @@ export function registerWidgets(widgetService) {
             component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/kpi-completed-orders'),
             grid_options: { w: 3, h: 4, minW: 3, minH: 4 },
             category: 'KPI Tiles',
-            default: true,
+            default: false,
         }),
         new Widget({
             id: 'storefront-kpi-customers-widget',
@@ -87,7 +87,7 @@ export function registerWidgets(widgetService) {
             component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/kpi-customers'),
             grid_options: { w: 3, h: 4, minW: 3, minH: 4 },
             category: 'KPI Tiles',
-            default: true,
+            default: false,
         }),
         new Widget({
             id: 'storefront-kpi-cart-conversion-widget',
@@ -107,7 +107,7 @@ export function registerWidgets(widgetService) {
             component: new ExtensionComponent('@fleetbase/storefront-engine', 'widget/kpi-cancellation-rate'),
             grid_options: { w: 3, h: 4, minW: 3, minH: 4 },
             category: 'KPI Tiles',
-            default: true,
+            default: false,
         }),
         new Widget({
             id: 'storefront-revenue-trend-widget',
