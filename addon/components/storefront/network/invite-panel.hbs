@@ -52,10 +52,23 @@
             <div class="storefront-invite-panel__section space-y-4">
                 <Toggle @isToggled={{this.shareableLinkEnabled}} @onToggle={{perform this.toggleShareableLink}} @label={{t "storefront.component.modals.share-network.enable-shareable-link"}} @helpText={{t "storefront.component.modals.share-network.anyone-with-this-link-able-to-join-your-network"}} />
                 {{#if this.shareableLinkEnabled}}
+                    <p class="storefront-invite-panel__hint" data-test-link-joins>{{t "storefront.networks.invitations.link-joins" count=this.linkJoins}}</p>
                     <InputGroup @name={{t "storefront.networks.invitations.link"}}>
-                        <ClickToCopy @value={{this.shareableLink}} class="rounded-md border dark:border-gray-900 dark:bg-gray-900 truncate px-4 py-2.5 text-sm text-green-500 dark:text-green-300" />
+                        <div class="flex items-center space-x-2">
+                            <ClickToCopy @value={{this.shareableLink}} class="rounded-md border dark:border-gray-900 dark:bg-gray-900 truncate px-4 py-2.5 text-sm text-green-500 dark:text-green-300 flex-1 min-w-0" />
+                            <Button @size="sm" @icon="rotate" @text={{t "storefront.networks.invitations.regenerate"}} @onClick={{this.regenerateLink}} @isLoading={{this.updateLink.isRunning}} @permission="storefront update network" data-test-link-regenerate />
+                        </div>
                     </InputGroup>
-                    <p class="storefront-invite-panel__hint">{{t "storefront.networks.invitations.link-hint"}}</p>
+                    <p class="storefront-invite-panel__hint">{{t "storefront.networks.invitations.link-hint"}} {{t "storefront.networks.invitations.regenerate-hint"}}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                        <InputGroup @name={{t "storefront.networks.invitations.link-expires"}} @helpText={{this.linkExpiresLabel}}>
+                            <Select @value={{this.linkExpiresInDays}} @options={{this.linkExpiryItems}} @optionValue="value" @optionLabel="label" @onSelect={{this.setLinkExpiryValue}} class="w-full" data-test-link-expires />
+                        </InputGroup>
+                        <InputGroup @name={{t "storefront.networks.invitations.category-on-joining"}}>
+                            <Select @value={{this.linkCategory.id}} @options={{this.categories}} @optionValue="id" @optionLabel="name" @placeholder={{t "storefront.networks.invitations.let-store-choose"}} @onSelect={{this.setLinkCategoryId}} @allowClear={{true}} class="w-full" data-test-link-category />
+                        </InputGroup>
+                    </div>
+                    <Toggle @isToggled={{this.linkApprovesAutomatically}} @onToggle={{this.setApproveAutomatically}} @label={{t "storefront.networks.invitations.approve-automatically"}} @helpText={{t "storefront.networks.invitations.approve-automatically-help"}} data-test-link-auto-approve />
                 {{/if}}
                 <div class="storefront-invite-panel__footer">
                     <Button @type="primary" @text={{t "storefront.networks.index.network.stores.done"}} @onClick={{this.close}} />

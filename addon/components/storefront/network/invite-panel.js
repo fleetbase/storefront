@@ -84,12 +84,56 @@ export default class StorefrontNetworkInvitePanelComponent extends Component {
         return this.sendableRecipients.length > 0 && !this.send.isRunning;
     }
 
+    /** The join link carries the network's link token; the console's join route resolves it. */
     get shareableLink() {
-        return createShareableLink(`join/network/${this.network.public_id}`);
+        const token = this.network.options?.shareable_link_token ?? this.network.public_id;
+
+        return createShareableLink(`storefront/networks/join/${token}`);
     }
 
     get shareableLinkEnabled() {
         return Boolean(this.network.options?.shareable_link_enabled);
+    }
+
+    get linkExpiresInDays() {
+        const expiresAt = this.network.options?.shareable_link_expires_at;
+
+        if (!expiresAt) {
+            return 0;
+        }
+
+        const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);
+
+        return days > 0 ? 30 : 0;
+    }
+
+    get linkExpiryItems() {
+        return [
+            { value: 0, label: this.intl.t('storefront.networks.invitations.expires-never') },
+            { value: 30, label: this.intl.t('storefront.networks.invitations.expires-30') },
+        ].map((item) => ({ ...item, isActive: item.value === this.linkExpiresInDays }));
+    }
+
+    get linkExpiresLabel() {
+        const expiresAt = this.network.options?.shareable_link_expires_at;
+
+        return expiresAt
+            ? this.intl.t('storefront.networks.invitations.link-expires-on', { date: new Date(expiresAt).toLocaleDateString() })
+            : this.intl.t('storefront.networks.invitations.expires-never');
+    }
+
+    get linkCategory() {
+        const categoryId = this.network.options?.shareable_link_category_uuid;
+
+        return categoryId ? (this.categories.find((category) => category.id === categoryId) ?? null) : null;
+    }
+
+    get linkApprovesAutomatically() {
+        return this.network.options?.shareable_link_requires_approval === false;
+    }
+
+    get linkJoins() {
+        return Number(this.network.options?.shareable_link_joins ?? 0);
     }
 
     get availableOwnStores() {
@@ -158,12 +202,37 @@ export default class StorefrontNetworkInvitePanelComponent extends Component {
     }
 
     @task *toggleShareableLink(enabled) {
+        yield this.updateLink.perform({ enabled });
+    }
+
+    /**
+     * Link settings go through the network's shareable-link endpoint, which owns the token.
+     */
+    @task *updateLink(payload) {
         try {
-            this.network.set('options', { ...(this.network.options ?? {}), shareable_link_enabled: enabled });
-            yield this.network.save();
+            const response = yield this.fetch.post(`networks/${this.network.id}/shareable-link`, payload, { namespace: 'storefront/int/v1' });
+
+            this.network.set('options', { ...(response?.options ?? this.network.options ?? {}), shareable_link_joins: response?.link?.joins ?? 0 });
+            this.notifications.success(this.intl.t('storefront.networks.invitations.link-updated'));
         } catch (error) {
             this.notifications.serverError(error);
         }
+    }
+
+    @action regenerateLink() {
+        return this.updateLink.perform({ regenerate: true });
+    }
+
+    @action setLinkExpiryValue(value) {
+        return this.updateLink.perform({ expires_in_days: Number(value) || 0 });
+    }
+
+    @action setLinkCategoryId(categoryId) {
+        return this.updateLink.perform({ category_uuid: categoryId || null });
+    }
+
+    @action setApproveAutomatically(enabled) {
+        return this.updateLink.perform({ requires_approval: !enabled });
     }
 
     @action selectTab(tab) {

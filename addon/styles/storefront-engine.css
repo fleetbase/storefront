@@ -6591,3 +6591,8 @@ body[data-theme='dark'] .storefront-catalog-product__price--button:focus-visible
 .storefront-card__warn {
     color: #d97706;
 }
+
+.storefront-card__media--contain {
+    object-fit: contain;
+    padding: 0.75rem;
+}

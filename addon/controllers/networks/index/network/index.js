@@ -2,11 +2,13 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { getOwner } from '@ember/application';
 import { formatDistanceToNow } from 'date-fns';
 import createShareableLink from '../../../../utils/create-shareable-link';
 
 export default class NetworksIndexNetworkIndexController extends Controller {
     @service intl;
+    @service store;
     @service notifications;
     @service hostRouter;
     @service modalsManager;
@@ -22,6 +24,40 @@ export default class NetworksIndexNetworkIndexController extends Controller {
 
     get members() {
         return this.overview?.members ?? [];
+    }
+
+    /**
+     * Member cards: the store's membership badge, and the store record when this
+     * organisation administers it (so the card can open its context).
+     */
+    get memberRows() {
+        const ownStores = this.store.peekAll('store');
+
+        return this.members.map((member) => {
+            const status = member.membership_status ?? 'active';
+            let badgeStatus = member.online ? 'online' : 'offline';
+            let badgeLabel = member.online ? this.intl.t('storefront.common.active') : this.intl.t('storefront.common.offline');
+
+            if (status === 'suspended') {
+                badgeStatus = 'danger';
+                badgeLabel = this.intl.t('storefront.networks.index.network.stores.suspended');
+            } else if (status === 'pending') {
+                badgeStatus = 'warning';
+                badgeLabel = this.intl.t('storefront.networks.index.network.stores.awaiting-approval');
+            }
+
+            return { member, badgeStatus, badgeLabel, ownStore: ownStores.find((store) => store.public_id === member.public_id) ?? null };
+        });
+    }
+
+    @action viewMember(member) {
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.stores', this.network.public_id, { queryParams: { storeQuery: member.name } });
+    }
+
+    @action openMemberStore(store) {
+        const application = getOwner(this).lookup('controller:application');
+
+        return application?.switchActiveStore?.(store);
     }
 
     get recentOrders() {
@@ -43,7 +79,7 @@ export default class NetworksIndexNetworkIndexController extends Controller {
     }
 
     get shareableLink() {
-        return createShareableLink(`join/network/${this.network?.public_id}`);
+        return createShareableLink(`storefront/networks/join/${this.network?.options?.shareable_link_token ?? this.network?.public_id}`);
     }
 
     get shareableLinkEnabled() {

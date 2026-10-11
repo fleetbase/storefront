@@ -193,7 +193,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
         return this.openInvitations.map((invitation) => ({
             ...invitation,
             isInvitation: true,
-            name: invitation.email,
+            name: invitation.email ?? invitation.store_name ?? this.intl.t('storefront.networks.invitations.via-link'),
             status_label: invitation.status === 'pending' ? 'invited' : invitation.status,
             orders_7d: null,
             share: null,

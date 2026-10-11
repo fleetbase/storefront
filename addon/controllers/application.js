@@ -63,6 +63,7 @@ export default class ApplicationController extends Controller {
                 label: this.intl.t('storefront.networks.index.network.stores.store'),
                 description: 'Stores selling through this network, their categories and invitations.',
                 icon: 'store',
+                badge: this.networkPendingCount || null,
                 permission: 'storefront view network',
                 keywords: ['stores', 'members', 'invite', 'categories'],
             }),
@@ -281,6 +282,13 @@ export default class ApplicationController extends Controller {
 
     @action selectNetworkStore(item) {
         return this.switchActiveStore(item.store);
+    }
+
+    /** Invitations and memberships waiting on the operator, shown on the network's Stores item. */
+    get networkPendingCount() {
+        const invitations = this.activeNetwork?.invitations ?? [];
+
+        return invitations.filter((invitation) => ['pending', 'awaiting_approval'].includes(invitation?.status)).length;
     }
 
     /** Orders waiting to be confirmed, shown as the Orders badge. */

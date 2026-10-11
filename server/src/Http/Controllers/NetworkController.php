@@ -186,7 +186,26 @@ class NetworkController extends StorefrontController
     {
         $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject', 'createdBy'])->first();
 
-        if (!$invitation || !$invitation->subject) {
+        // Not an emailed invitation: maybe the network's shareable join link.
+        if (!$invitation) {
+            $network = $this->networkForLink($uri);
+
+            if (!$network) {
+                return response()->error('This invitation is no longer available.', 404);
+            }
+
+            $link     = static::linkSettings($network);
+            $category = $link['category_uuid'] ? Category::where('uuid', $link['category_uuid'])->first() : null;
+
+            return response()->json([
+                'invitation' => static::serializeLinkInvitation($network, $uri, $link),
+                'sender'     => null,
+                'category'   => $category ? ['id' => $category->uuid, 'name' => $category->name] : null,
+                'network'    => static::serializeNetworkForJoin($network),
+            ]);
+        }
+
+        if (!$invitation->subject) {
             return response()->error('This invitation is no longer available.', 404);
         }
 
@@ -222,7 +241,47 @@ class NetworkController extends StorefrontController
     {
         $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject'])->first();
 
-        if (!$invitation || !$invitation->subject) {
+        // Joining through the shareable link: the link's settings decide the category and
+        // whether the operator reviews the store; an invitation row is created so the
+        // network sees who joined and how.
+        if (!$invitation) {
+            $network = $this->networkForLink($uri);
+
+            if (!$network) {
+                return response()->error('This invitation is no longer available.', 404);
+            }
+
+            $link  = static::linkSettings($network);
+            $store = Store::where('company_uuid', session('company'))->where(fn ($query) => $query->where('uuid', $request->input('store'))->orWhere('public_id', $request->input('store')))->first();
+
+            if (!$store) {
+                return response()->error('Pick one of your stores to join with.', 422);
+            }
+
+            if (NetworkStore::where(['network_uuid' => $network->uuid, 'store_uuid' => $store->uuid])->exists()) {
+                return response()->error('This store is already a member of the network.', 422);
+            }
+
+            $invitation = Invite::create([
+                'company_uuid'    => $network->company_uuid,
+                'created_by_uuid' => session('user'),
+                'subject_uuid'    => $network->uuid,
+                'subject_type'    => Utils::getMutationType($network),
+                'protocol'        => 'link',
+                'recipients'      => array_values(array_filter([$store->email])),
+                'reason'          => 'join_storefront_network',
+                'meta'            => array_filter([
+                    'status'           => 'pending',
+                    'category_uuid'    => $link['category_uuid'],
+                    'require_approval' => $link['requires_approval'],
+                    'via'              => 'link',
+                    'store_name'       => $store->name,
+                ], fn ($value) => $value !== null && $value !== ''),
+            ]);
+            $invitation->setRelation('subject', $network);
+        }
+
+        if (!$invitation->subject) {
             return response()->error('This invitation is no longer available.', 404);
         }
 
@@ -280,7 +339,8 @@ class NetworkController extends StorefrontController
         $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->first();
 
         if (!$invitation) {
-            return response()->error('This invitation is no longer available.', 404);
+            // A shareable link has nothing to close.
+            return $this->networkForLink($uri) ? response()->json(['status' => 'ok']) : response()->error('This invitation is no longer available.', 404);
         }
 
         $meta                = $invitation->meta ?? [];
@@ -361,30 +421,35 @@ class NetworkController extends StorefrontController
 
         $invitations = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->orderBy('created_at', 'desc')->get()->map(fn (Invite $invitation) => static::serializeInvitation($invitation));
         $byStore     = $liveOrders->groupBy(fn ($order) => data_get($order, 'meta.storefront_id'));
-        $stores      = $network->stores->map(function (Store $store) use ($byStore, $liveOrders, $revenue) {
+        $categories  = Category::whereIn('uuid', $network->stores->map(fn (Store $store) => $store->pivot->category_uuid ?? null)->filter()->unique()->values())->get()->keyBy('uuid');
+        $stores      = $network->stores->map(function (Store $store) use ($byStore, $liveOrders, $revenue, $categories) {
             $storeOrders  = $byStore->get($store->public_id, collect());
             $storeRevenue = round($storeOrders->sum(fn ($order) => (float) (data_get($order, 'meta.total') ?? 0)), 2);
+            $category     = $categories->get($store->pivot->category_uuid ?? '');
 
             return [
-                'uuid'          => $store->uuid,
-                'public_id'     => $store->public_id,
-                'name'          => $store->name,
-                'logo_url'      => $store->logo_url,
-                'online'        => (bool) $store->online,
-                'currency'      => $store->currency,
-                'category_uuid' => $store->pivot->category_uuid ?? null,
-                'orders_7d'     => $storeOrders->count(),
-                'revenue_7d'    => $storeRevenue,
-                'share'         => $liveOrders->count() > 0 ? round(($storeOrders->count() / $liveOrders->count()) * 100) : 0,
-                'revenue_share' => $revenue > 0 ? round(($storeRevenue / $revenue) * 100) : 0,
+                'uuid'              => $store->uuid,
+                'public_id'         => $store->public_id,
+                'name'              => $store->name,
+                'logo_url'          => $store->logo_url,
+                'online'            => (bool) $store->online,
+                'currency'          => $store->currency,
+                'category_uuid'     => $store->pivot->category_uuid ?? null,
+                'category'          => $category?->name,
+                'membership_status' => $store->pivot->status ?? NetworkStore::STATUS_ACTIVE,
+                'orders_7d'         => $storeOrders->count(),
+                'revenue_7d'        => $storeRevenue,
+                'share'             => $liveOrders->count() > 0 ? round(($storeOrders->count() / $liveOrders->count()) * 100) : 0,
+                'revenue_share'     => $revenue > 0 ? round(($storeRevenue / $revenue) * 100) : 0,
             ];
         })->values();
 
         return response()->json([
             'currency' => $network->currency,
             'stores'   => [
-                'total'  => $network->stores->count(),
-                'online' => $network->stores->where('online', true)->count(),
+                'total'   => $network->stores->count(),
+                'online'  => $network->stores->where('online', true)->count(),
+                'pending' => $network->stores->filter(fn (Store $store) => ($store->pivot->status ?? null) === NetworkStore::STATUS_PENDING)->count(),
             ],
             'invitations' => [
                 'pending'  => $invitations->where('status', 'pending')->count(),
@@ -446,6 +511,8 @@ class NetworkController extends StorefrontController
             'category_uuid'    => data_get($meta, 'category_uuid'),
             'message'          => data_get($meta, 'message'),
             'require_approval' => (bool) data_get($meta, 'require_approval', false),
+            'via'              => $invitation->protocol === 'link' ? 'link' : 'email',
+            'store_name'       => data_get($meta, 'store_name'),
             'resent_at'        => data_get($meta, 'resent_at'),
             'declined_at'      => data_get($meta, 'declined_at'),
             'accepted_at'      => data_get($meta, 'accepted_at'),
@@ -482,6 +549,128 @@ class NetworkController extends StorefrontController
         $this->forgetCachedResponses();
 
         return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * The network's shareable join link: turn it on or off, regenerate its token, and set
+     * how long it lives, the category a store joins in and whether the operator reviews joins.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function updateShareableLink(string $id, NetworkActionRequest $request)
+    {
+        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        $options = (array) ($network->options ?? []);
+
+        if ($request->has('enabled')) {
+            $options['shareable_link_enabled'] = $request->boolean('enabled');
+        }
+
+        if (!empty($options['shareable_link_enabled']) && (empty($options['shareable_link_token']) || $request->boolean('regenerate'))) {
+            $options['shareable_link_token'] = Str::lower(Str::random(24));
+        }
+
+        if ($request->has('expires_in_days')) {
+            $days                                 = $request->input('expires_in_days');
+            $options['shareable_link_expires_at'] = is_numeric($days) && (int) $days > 0 ? Carbon::now()->addDays((int) $days)->toIso8601String() : null;
+        }
+
+        if ($request->has('category_uuid')) {
+            $options['shareable_link_category_uuid'] = $request->input('category_uuid') ?: null;
+        }
+
+        if ($request->has('requires_approval')) {
+            $options['shareable_link_requires_approval'] = $request->boolean('requires_approval');
+        }
+
+        $network->options = $options;
+        $network->save();
+
+        return response()->json(['status' => 'ok', 'options' => $network->options, 'link' => static::linkSettings($network)]);
+    }
+
+    /**
+     * The network a join link token (or, for older links, a network public id) belongs to,
+     * when its link is on and not expired.
+     */
+    protected function networkForLink(string $uri): ?Network
+    {
+        $network = Network::where('options->shareable_link_token', $uri)->orWhere('public_id', $uri)->first();
+
+        if (!$network || !data_get($network->options, 'shareable_link_enabled')) {
+            return null;
+        }
+
+        $token = data_get($network->options, 'shareable_link_token');
+        if ($token && $token !== $uri) {
+            // The link was regenerated; the old token no longer opens the network.
+            return null;
+        }
+
+        $expiresAt = data_get($network->options, 'shareable_link_expires_at');
+        if ($expiresAt && Carbon::parse($expiresAt)->isPast()) {
+            return null;
+        }
+
+        return $network;
+    }
+
+    /**
+     * @return array{enabled: bool, token: string|null, expires_at: string|null, category_uuid: string|null, requires_approval: bool, joins: int}
+     */
+    public static function linkSettings(Network $network): array
+    {
+        $options = (array) ($network->options ?? []);
+
+        return [
+            'enabled'           => (bool) ($options['shareable_link_enabled'] ?? false),
+            'token'             => $options['shareable_link_token'] ?? null,
+            'expires_at'        => $options['shareable_link_expires_at'] ?? null,
+            'category_uuid'     => $options['shareable_link_category_uuid'] ?? null,
+            'requires_approval' => (bool) ($options['shareable_link_requires_approval'] ?? true),
+            'joins'             => Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network', 'protocol' => 'link'])->count(),
+        ];
+    }
+
+    /**
+     * A join-link lookup in the shape of an invitation, so the join page renders it the same way.
+     */
+    public static function serializeLinkInvitation(Network $network, string $uri, array $link): array
+    {
+        return [
+            'id'               => null,
+            'uri'              => $uri,
+            'email'            => null,
+            'recipients'       => [],
+            'status'           => 'pending',
+            'via'              => 'link',
+            'category_uuid'    => $link['category_uuid'],
+            'message'          => null,
+            'require_approval' => $link['requires_approval'],
+            'expires_at'       => $link['expires_at'] ? Carbon::parse($link['expires_at']) : null,
+            'created_at'       => null,
+        ];
+    }
+
+    public static function serializeNetworkForJoin(Network $network): array
+    {
+        return [
+            'id'           => $network->uuid,
+            'public_id'    => $network->public_id,
+            'name'         => $network->name,
+            'description'  => $network->description,
+            'logo_url'     => $network->logo_url,
+            'currency'     => $network->currency,
+            'timezone'     => $network->timezone,
+            'stores_count' => $network->stores()->count(),
+            'online'       => (bool) $network->online,
+            'website'      => $network->website,
+        ];
     }
 
     /**

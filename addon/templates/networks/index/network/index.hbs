@@ -34,27 +34,37 @@
             </div>
         </div>
 
-        <ContentPanel @title={{t "storefront.networks.overview.members-title" count=this.members.length}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0">
+        <ContentPanel @title={{t "storefront.networks.overview.members-title" count=this.members.length}} @open={{true}} @pad={{false}} @wrapperClass="bordered-top" @panelBodyClass="p-0" @actionButtons={{array (hash type="link" size="xs" text=(t "storefront.networks.overview.manage-stores") onClick=this.manageStores)}}>
             {{#if this.members.length}}
-                <div class="storefront-member-list">
-                    {{#each this.members as |member|}}
-                        <div class="storefront-member-row" data-test-member-row={{member.public_id}}>
-                            <Image src={{member.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{member.name}} class="storefront-member-row__logo" />
-                            <div class="storefront-member-row__identity">
-                                <div class="storefront-member-row__name">
-                                    <span>{{member.name}}</span>
-                                    <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if member.online 'text-green-500' 'text-gray-400'}}" />
+                <Layout::Resource::CardsGrid @resource="store" @data={{this.memberRows}} @columns="4" @containerClass="p-4" @showPagination={{false}} class="storefront-member-cards" as |Item|>
+                    <Layout::Resource::Card class="storefront-card storefront-member-card" data-test-member-row={{Item.model.member.public_id}} as |Card|>
+                        <Card.header>
+                            <div class="storefront-card__title">
+                                <span class="storefront-card__title-text">{{Item.model.member.name}}</span>
+                                <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if Item.model.member.online 'text-green-500' 'text-gray-400'}}" />
+                            </div>
+                            <div class="storefront-card__subtitle">{{if Item.model.member.category Item.model.member.category (t "storefront.networks.overview.no-category")}}</div>
+                        </Card.header>
+                        <Card.body class="storefront-card__media-body">
+                            <Image src={{Item.model.member.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{Item.model.member.name}} class="storefront-card__media storefront-card__media--contain" />
+                        </Card.body>
+                        <Card.footer>
+                            <div class="storefront-card__actions">
+                                <Badge @status={{Item.model.badgeStatus}} @text={{Item.model.badgeLabel}} @size="xs" />
+                                <div class="storefront-card__buttons">
+                                    <Button @icon="table-list" @size="xs" @helpText={{t "storefront.networks.overview.view-on-stores"}} @onClick={{fn this.viewMember Item.model.member}} data-test-member-view />
+                                    {{#if Item.model.ownStore}}
+                                        <Button @icon="arrow-right-to-bracket" @size="xs" @helpText={{t "storefront.networks.overview.open-store"}} @onClick={{fn this.openMemberStore Item.model.ownStore}} data-test-member-open />
+                                    {{/if}}
                                 </div>
-                                <div class="storefront-member-row__meta">{{member.currency}} · {{t "storefront.networks.overview.orders-count-7d" count=member.orders_7d}}</div>
                             </div>
-                            <div class="storefront-member-row__share">
-                                <div class="storefront-member-row__share-label">{{format-currency member.revenue_7d this.currency}} · {{t "storefront.networks.overview.share-of-network" share=member.revenue_share}}</div>
-                                <div class="storefront-share-bar"><div class="storefront-share-bar__fill" style={{width-style member.share}}></div></div>
+                            <div class="storefront-card__meta">
+                                <span>{{t "storefront.networks.overview.orders-count-7d" count=Item.model.member.orders_7d}}</span>
+                                <span>{{format-currency Item.model.member.revenue_7d this.currency}} · {{t "storefront.networks.overview.share-of-network" share=Item.model.member.share}}</span>
                             </div>
-                            <Badge @status={{if member.online "online" "offline"}} @text={{if member.online (t "storefront.common.online") (t "storefront.common.offline")}} @size="xs" />
-                        </div>
-                    {{/each}}
-                </div>
+                        </Card.footer>
+                    </Layout::Resource::Card>
+                </Layout::Resource::CardsGrid>
             {{else}}
                 <div class="storefront-empty-row">
                     <span>{{t "storefront.networks.overview.no-members"}}</span>

@@ -574,6 +574,10 @@ storefront:
     card:
       stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"
     overview:
+      manage-stores: Manage stores
+      no-category: No category
+      view-on-stores: View on the Stores page
+      open-store: Open this store's context
       online-count: "{count, plural, =0 {none online} one {# online} other {# online}}"
       invitations-hint: "pending, {declined} declined"
       orders-7d: Orders · 7 days
@@ -675,6 +679,15 @@ storefront:
       manage-link: Manage link
       link: Link
       link-hint: Anyone with the link can request to join. Turning the link off invalidates it immediately.
+      regenerate: Regenerate
+      regenerate-hint: Regenerating invalidates the old link immediately.
+      link-expires: Link expires
+      link-expires-on: "Expires {date}"
+      link-joins: "{count, plural, =0 {No store has joined with it yet} one {# store joined with it} other {# stores joined with it}}"
+      approve-automatically: Approve automatically (no review step)
+      approve-automatically-help: Off keeps approval with you; a store that joins by link waits on the Stores page until you approve it.
+      link-updated: Join link updated.
+      via-link: Joined by link
       status:
         pending: Pending
         declined: Declined
