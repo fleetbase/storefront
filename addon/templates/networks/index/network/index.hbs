@@ -48,11 +48,7 @@
                     {{#each this.memberRows as |row|}}
                         <Layout::Resource::Card class="storefront-card storefront-member-card" data-test-member-row={{row.member.public_id}} as |Card|>
                             <Card.header>
-                                <div class="storefront-card__title">
-                                    <span class="storefront-card__title-text">{{row.member.name}}</span>
-                                    <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if row.member.online 'text-green-500' 'text-gray-400'}}" />
-                                </div>
-                                <div class="storefront-card__subtitle">{{if row.member.category row.member.category (t "storefront.networks.overview.no-category")}}</div>
+                                <Store::Pill @store={{row.member}} @subtitle={{if row.member.category row.member.category (t "storefront.networks.overview.no-category")}} @showOnlineIndicator={{true}} @static={{true}} class="storefront-card__identity" data-test-member-pill />
                             </Card.header>
                             <Card.body class="storefront-card__media-body">
                                 <Image src={{row.member.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{row.member.name}} class="storefront-card__media storefront-card__media--contain" />

@@ -1,7 +1,7 @@
-<ContentPanel @title="Variants" @open={{true}} @wrapperClass="bordered-top" @panelBodyWrapperClass="px-0i">
+<ContentPanel @title={{t "storefront.products.form.sections.variants"}} @open={{true}} @wrapperClass="bordered-top" @panelBodyWrapperClass="px-0i">
     <TabNavigation @tabs={{@variantTabs}}>
         <:actions>
-            <Button @text="New Variant" @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{@createProductVariant}} @permission="storefront create product-variant" />
+            <Button @text={{t "storefront.products.form.actions.new-variant"}} @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{@createProductVariant}} @permission="storefront create product-variant" />
         </:actions>
         <:default as |activeTab|>
             {{#let activeTab.variant as |variant|}}
@@ -11,7 +11,7 @@
                             class="mr-2"
                             @type="danger"
                             @size="xs"
-                            @text="Remove Variant"
+                            @text={{t "storefront.products.form.actions.remove-variant"}}
                             @icon="trash"
                             @onClick={{fn @removeProductVariant variant}}
                             @permission="storefront delete product-variant"
@@ -20,7 +20,7 @@
                             class="mr-2"
                             @type="warning"
                             @size="xs"
-                            @text="Edit Variant"
+                            @text={{t "storefront.products.form.actions.edit-variant"}}
                             @icon="pencil"
                             @onClick={{fn @editProductVariant variant}}
                             @permission="storefront update product-variant"
@@ -61,14 +61,14 @@
                                 <Button
                                     @type="danger"
                                     @size="xs"
-                                    @text="Remove"
+                                    @text={{t "common.remove"}}
                                     @icon="trash"
                                     @onClick={{fn @removeVariantOption variant index}}
                                     @permission="storefront delete product-variant-option"
                                 />
                             </div>
                         {{else}}
-                            <div class="storefront-product-addon-empty">No options in this variant.</div>
+                            <div class="storefront-product-addon-empty">{{t "storefront.products.form.fields.no-options"}}</div>
                         {{/each}}
                     </div>
                 </div>

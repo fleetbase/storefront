@@ -1,6 +1,5 @@
 <Storefront::PageHeader @title={{t "storefront.common.food-trucks"}} @subtitle={{t "storefront.trucks.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.trucks.index.search"}} data-test-trucks-header>
     <Button @size="sm" @icon="map" @text={{t "storefront.trucks.index.map"}} class={{if this.isMapView "storefront-filter-button is-active" "storefront-filter-button"}} @onClick={{this.toggleMapView}} data-test-trucks-map />
-    <Button @size="sm" @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export food-truck" />
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.trucks.index.new-truck"}} @onClick={{this.createFoodTruck}} @permission="storefront create food-truck" data-test-trucks-new />
 </Storefront::PageHeader>
 

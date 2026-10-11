@@ -5,7 +5,7 @@
                 <Select
                     @value={{@options.gateway.code}}
                     class="w-full"
-                    @placeholder="Select gateway type"
+                    @placeholder={{t "storefront.settings.sections.select-gateway-type"}}
                     @options={{@options.schemaOptions}}
                     @onSelect={{@options.selectSchema}}
                     @humanize={{true}}

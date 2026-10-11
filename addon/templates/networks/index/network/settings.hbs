@@ -89,7 +89,7 @@
                             >
                                 <div class="storefront-settings-media">
                                     <Image src={{@model.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{concat @model.name " logo"}} class="storefront-settings-media__preview" />
-                                    <FileUpload @name="logo" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
+                                    <FileUpload @name={{t "storefront.common.logo"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_logo"}} as |queue|>
                                         <a tabindex={{0}} class="btn btn-sm btn-default">
                                             {{#if queue.files.length}}
                                                 <Spinner class="mr-1" /><span>{{t "storefront.common.uploading"}}</span>
@@ -106,7 +106,7 @@
                             >
                                 <div class="storefront-settings-media">
                                     <Image src={{@model.backdrop_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{concat @model.name " backdrop"}} class="storefront-settings-media__preview storefront-settings-media__preview--wide" />
-                                    <FileUpload @name="backdrop" @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
+                                    <FileUpload @name={{t "storefront.common.backdrop"}} @accept="image/*" @onFileAdded={{fn this.uploadFile "storefront_backdrop"}} as |queue|>
                                         <a tabindex={{0}} class="btn btn-sm btn-default">
                                             {{#if queue.files.length}}
                                                 <Spinner class="mr-1" /><span>{{t "storefront.common.uploading"}}</span>

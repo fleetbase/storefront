@@ -14,7 +14,6 @@
     {{/if}}
     <Button @size="sm" @icon="tags" @text={{t "storefront.products.index.manage-addons"}} @permission="storefront list product-addon" @onClick={{this.manageAddons}} />
     <Button @size="sm" @icon="file-import" @text={{t "storefront.common.import"}} @permission="storefront import product" @onClick={{this.importProducts}} />
-    <Button @size="sm" @icon="long-arrow-up" @iconClass="rotate-icon-45" @permission="storefront export product" @text={{t "storefront.common.export"}} />
     <Button @type="primary" @size="sm" @icon="plus" @iconPrefix="fas" @text={{t "storefront.products.index.new-product"}} @onClick={{this.createNewProduct}} @permission="storefront create product" data-test-new-product />
 </Storefront::PageHeader>
 

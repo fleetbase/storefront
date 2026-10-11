@@ -93,13 +93,14 @@ module('Integration | Component | storefront/order/details', function (hooks) {
 
         const titles = findAll('.next-content-panel-title-container').map((element) => element.textContent.trim());
 
-        for (const title of ['Activity', 'Store', 'Order', 'Details', 'Customer Insights', 'Route', 'Metadata']) {
+        for (const title of ['Activity', 'Store', 'Order', 'Details', 'Customer insights', 'Route', 'Metadata']) {
             assert.ok(
                 titles.some((text) => text.includes(title)),
                 `a panel titled ${title} renders`
             );
         }
-        assert.dom('.storefront-order-person__name').hasTextContaining('Tasty Store');
+        // The store renders as the shared store pill, named from the order's meta until the record loads.
+        assert.dom('[data-test-order-store-pill]').hasTextContaining('Tasty Store');
         assert.dom('[data-test-order-driver-pill] [data-test-resource-pill-title]').hasText('No driver assigned', 'an unassigned driver is a static pill with the fallback title');
         assert.dom('[data-test-order-customer-pill] [data-test-resource-pill-title]').hasText('No customer');
         assert.dom('.storefront-order-item__image').exists();

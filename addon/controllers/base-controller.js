@@ -49,6 +49,19 @@ export default class BaseController extends Controller {
      * @param {String} resource
      * @returns {Array}
      */
+    /**
+     * `bulkActions` with the bulk actions extensions registered under `storefront:<resource>:table` merged in.
+     *
+     * @param {String} resource
+     * @param {Array} bulkActions
+     * @returns {Array}
+     */
+    mergeRegisteredBulkActions(resource, bulkActions = []) {
+        const resourceView = lookupResourceView(getOwner(this));
+
+        return resourceView ? resourceView.mergeSlot(`storefront:${resource}:table`, 'bulk-actions', bulkActions, { controller: this }) : bulkActions;
+    }
+
     registeredTableActions(resource) {
         return mergeHeaderButtons(lookupResourceView(getOwner(this)), `storefront:${resource}:table`, [], { controller: this });
     }

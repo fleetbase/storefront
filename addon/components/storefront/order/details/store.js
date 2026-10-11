@@ -37,6 +37,13 @@ export default class StorefrontOrderDetailsStoreComponent extends Component {
         return this.storefrontDisplay.logo_url;
     }
 
+    /** The second line of the pill: the store's network category when the order carries it, else its currency. */
+    get storeSubtitle() {
+        const meta = this.args.resource?.meta ?? {};
+
+        return meta.storefront_category ?? meta.store_category ?? this.storefrontDisplay.currency ?? null;
+    }
+
     get storePhone() {
         return this.storefrontDisplay.phone;
     }

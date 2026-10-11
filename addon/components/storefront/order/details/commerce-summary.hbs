@@ -1,5 +1,5 @@
 <ContentPanel
-    @title="Order"
+    @title={{t "storefront.order.sections.order"}}
     @prefixTitleRight={{if @resource.payload.cod_amount "Cash" (n-a (titleize @resource.meta.gateway))}}
     @prefixTitleRightClass={{if @resource.payload.cod_amount "text-green-400" "text-blue-400"}}
     @open={{true}}
@@ -47,14 +47,14 @@
         {{else}}
             <div class="storefront-order-empty-state">
                 <FaIcon @icon="receipt" />
-                <span>No order items were found.</span>
+                <span>{{t "storefront.order.sections.no-items"}}</span>
             </div>
         {{/if}}
 
         <div class="storefront-order-totals mt-1">
             <div><span>Subtotal</span><strong>{{format-currency @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{#unless @resource.meta.is_pickup}}
-                <div><span>Delivery fee</span><strong>{{format-currency @resource.meta.delivery_fee @resource.meta.currency}}</strong></div>
+                <div><span>{{t "storefront.orders.create.delivery-fee"}}</span><strong>{{format-currency @resource.meta.delivery_fee @resource.meta.currency}}</strong></div>
             {{/unless}}
             {{#each this.promotions as |promotion|}}
                 <div class="text-green-600 dark:text-green-400">
@@ -71,7 +71,7 @@
                 <div><span>Tip</span><strong>{{get-tip-amount @resource.meta.tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{/if}}
             {{#if @resource.meta.delivery_tip}}
-                <div><span>Delivery tip</span><strong>{{get-tip-amount @resource.meta.delivery_tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+                <div><span>{{t "storefront.order.sections.delivery-tip"}}</span><strong>{{get-tip-amount @resource.meta.delivery_tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{/if}}
             <div class="storefront-order-totals__total">
                 <span>Total</span>

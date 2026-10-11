@@ -36,7 +36,7 @@
         {{else}}
             <div class="storefront-product-empty" data-test-storefront-product-empty>
                 <FaIcon @icon="box-open" />
-                <h3>No products found</h3>
+                <h3>{{t "storefront.orders.create.no-products"}}</h3>
                 <p>{{if @category "Create the first product in this category." "Create a category, then add products to your catalog."}}</p>
             </div>
         {{/if}}

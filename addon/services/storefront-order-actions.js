@@ -583,7 +583,7 @@ export default class StorefrontOrderActionsService extends Service {
         }
 
         this.modalsManager.confirm({
-            title: 'Update Order Activity',
+            title: this.intl.t('storefront.order.update-activity'),
             body: `Update this order to ${activity._resolved_status ?? activity.status ?? activity.code}?`,
             acceptButtonText: 'Update Activity',
             acceptButtonIcon: 'signal',

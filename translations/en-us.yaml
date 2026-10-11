@@ -1,6 +1,8 @@
 storefront:
   extension-name: Storefront
   common:
+    food-truck: Truck
+    promotion: Promotion
     save: Save
     filters: Filters
     off: Off
@@ -86,6 +88,26 @@ storefront:
     catalog: Catalog
     catalogs: Catalogs
   sidebar:
+    all-products: All products
+    descriptions:
+      network-overview: Members, invitations, orders and revenue across the network.
+      network-stores: Stores selling through this network, their categories and invitations.
+      network-trucks: Trucks run by the stores in this network.
+      network-orders: Orders placed through this network.
+      network-customers: Customers who ordered through this network.
+      network-categories: The categories stores are grouped under in the network app.
+      network-promotions: Promotions, campaigns, segments and redemptions the network runs.
+      network-settings: Network details, gateways and notification channels.
+      dashboard: Storefront dashboard and sales overview.
+      orders: Manage incoming storefront orders.
+      products: Manage products, categories, variants and add-ons.
+      all-products: Browse and manage product inventory.
+      catalogs: Create and manage storefront catalogs.
+      customers: Review storefront customers and order history.
+      trucks: Manage trucks, where they serve and what they sell.
+      promotions: Discounts, promo codes, customer segments and campaigns.
+      settings: Store details, hours, locations, checkout rules, gateways, notifications and API keys.
+      launch-app: Open the storefront application repository.
     storefront: Storefront
     dashboard: Dashboard
     products: Products
@@ -371,6 +393,8 @@ storefront:
       canceled-orders: Canceled orders
       notes: Internal notes
     index:
+      subtitle: People who have ordered from this store
+      search: Search customers
       view-cards: Cards
       view-table: Table
       empty: No customers yet. They appear here after their first order or sign-up.
@@ -562,6 +586,24 @@ storefront:
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
   dashboard:
+    kpi:
+      active-orders: Active orders
+      orders: Orders
+      aov: Average order value
+      revenue: Revenue
+      cancellation-rate: Cancellation rate
+      customers: Customers
+      completed-orders: Completed orders
+      cart-conversion: Cart conversion
+    widgets:
+      no-recent-customers: No recent customers yet.
+      new-vs-returning: New vs returning buyers
+      repeat-rate: Repeat purchase rate
+      no-customer-activity: No customer activity yet.
+      no-order-activity: No order activity yet.
+      best-sellers: Best sellers by revenue
+      no-product-sales: No product sales yet.
+      no-revenue: No revenue data yet.
     open-state:
       open: "Open · closes {time}"
       closed-until: "Closed · opens {time}"
@@ -591,6 +633,31 @@ storefront:
       trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
       network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
   order:
+    sections:
+      details: Details
+      metadata: Metadata
+      customer-insights: Customer insights
+      order: Order
+      comments: Comments
+      no-items: No order items were found.
+      delivery-tip: Delivery tip
+      delivery-address: Delivery address
+    tracking:
+      based-on: Based on provider route and driver signal
+      reported-total: Reported total
+      between-stops: Between stops
+      provider: Provider
+      fallback: Fallback
+      traffic-aware: Traffic aware
+      confidence: Confidence
+      driver-signal: Driver signal
+      warnings: Warnings
+    workflow:
+      dispatch-provider: Dispatch provider
+      mark-as-ready: Mark as ready
+      mark-picked-up: Mark picked up
+    reload-activity: Reload activity
+    update-activity: Update order activity
     asap: ASAP
     incl-tip: "incl. tip {tip}"
     other-orders-in-checkout: "{count, plural, =0 {Other orders in this checkout} one {# other order in this checkout} other {# other orders in this checkout}}"
@@ -707,7 +774,11 @@ storefront:
       subtitle: Customers who have ordered through the network app
       search: Search customers
       note: A customer belongs to the store that first served them; the network sees everyone who ordered through it.
+    share:
+      lede: Share with people and organizations
     categories:
+      icon: Category icon
+      upload-icon: Upload category icon
       subtitle: "{count, plural, =0 {No categories yet} one {# category} other {# categories}} customers browse in the network app"
       title: Categories
       new-category: New category
@@ -963,6 +1034,11 @@ storefront:
           remove-store-category-body: You are about to remove {storeName} from the category {categoryName}, do you wish to proceed?
   orders:
     create:
+      add-product-from-storefront: Add product from storefront
+      select-store: Select store
+      select-category: Select product category
+      filter-by-category: Filter by product category
+      select-product-title: Select a product to add to the order
       title: New order
       fulfillment-help: Pickup hides the dropoff and the delivery fee; Schedule adds a time within store hours.
       store-location: Store location
@@ -1028,6 +1104,10 @@ storefront:
         location: Pick the store location.
         minimum: "Minimum order {amount} not met."
     index:
+      subtitle: Orders placed through the app and the console, newest first
+      search: Search orders
+      empty-title: No orders yet
+      empty-help: Orders placed in the app and from the console show up here.
       items: Items
       internal-id: Internal ID
       customer: Customer
@@ -1151,6 +1231,13 @@ storefront:
       moved: "{count, plural, one {# product moved} other {# products moved}} to {category}."
       delete-title: "Delete {count, plural, one {# product} other {# products}}?"
     form:
+      add-metafield: Add metafield
+      actions:
+        make-primary: Make primary
+        new-variant: New variant
+        remove-variant: Remove variant
+        edit-variant: Edit variant
+        select-addon-categories: Select add-on categories
       tabs:
         details: Details
         variants: Variants and add-ons
@@ -1160,6 +1247,10 @@ storefront:
         product: Product
         pricing: Pricing
         flags: Storefront flags
+        videos: YouTube videos
+        media: Images and videos
+        variants: Variants
+        addons: Add-ons
       fields:
         name: Name
         description: Description
@@ -1174,6 +1265,11 @@ storefront:
         price-help: What the customer pays for one unit.
         sale-price: Sale price
         sale-price-help: Charged instead of the price while the product is on sale.
+        video-placeholder: Enter a YouTube video URL
+        video-urls: YouTube video URLs
+        video-urls-help: Videos shown on the product in the app.
+        no-options: No options in this variant.
+        checkout-modifiers: Checkout modifiers
       flags:
         service: This is a service (booked, not delivered)
         bookable: This service is bookable
@@ -1258,6 +1354,7 @@ storefront:
       copy-store-key: Copy store key
       store-key-copied: Store key copied.
     sections:
+      select-gateway-type: Select gateway type
       hours: Hours
       locations: Locations
       payment-gateways: Payment gateways

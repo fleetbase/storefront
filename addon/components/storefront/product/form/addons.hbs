@@ -1,11 +1,11 @@
-<ContentPanel @title="Add-ons" @open={{true}} @wrapperClass="bordered-top">
+<ContentPanel @title={{t "storefront.products.form.sections.addons"}} @open={{true}} @wrapperClass="bordered-top">
     <div class="storefront-product-form-section-header">
         <div>
-            <h4>Checkout modifiers</h4>
+            <h4>{{t "storefront.products.form.fields.checkout-modifiers"}}</h4>
             <p>Attach reusable add-on groups and hide options that should not apply to this product.</p>
         </div>
         <Button
-            @text="Select Addon Categories"
+            @text={{t "storefront.products.form.actions.select-addon-categories"}}
             @icon="plus"
             @size="xs"
             @iconPrefix="fas"
@@ -25,7 +25,7 @@
                         @type="danger"
                         @size="xs"
                         @icon="trash"
-                        @text="Remove"
+                        @text={{t "common.remove"}}
                         @onClick={{fn @removeAddonCategory index}}
                         @permission="storefront delete product-addon"
                     />

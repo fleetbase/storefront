@@ -1,7 +1,7 @@
 import { inject as service } from '@ember/service';
 import { isBlank } from '@ember/utils';
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import { timeout, task } from 'ember-concurrency';
 import { action } from '@ember/object';
 
@@ -275,20 +275,28 @@ export default class CustomersIndexController extends BaseController {
         return this.transitionToRoute('orders.index.new', { queryParams: { for_customer: customer.id } });
     }
 
-    get actionButtons() {
-        return [
-            {
-                icon: this.isCards ? 'list' : 'th-large',
-                text: this.isCards ? this.intl.t('storefront.customers.index.view-table') : this.intl.t('storefront.customers.index.view-cards'),
-                onClick: () => this.setViewMode(this.isCards ? 'table' : 'cards'),
-            },
-            {
-                icon: 'long-arrow-up',
-                iconClass: 'rotate-icon-45',
-                text: this.intl.t('storefront.common.export'),
-                permission: 'storefront export customer',
-            },
-        ];
+    @tracked hiddenColumns = new Set();
+
+    @action setColumns(columns) {
+        this.hiddenColumns = new Set(columns.filter((column) => column.hidden).map((column) => column.id));
+    }
+
+    @cached get registeredColumns() {
+        const hidden = this.hiddenColumns;
+
+        return this.mergeRegisteredColumns(
+            'customer',
+            this.columns.map((column) => ({ ...column, hidden: hidden.has(column.id) || Boolean(column.hidden) }))
+        );
+    }
+
+    get registeredActionButtons() {
+        return this.registeredTableActions('customer');
+    }
+
+    @action handleSort(sortString) {
+        this.sort = sortString;
+        this.page = 1;
     }
 
     @action viewCustomer(customer) {

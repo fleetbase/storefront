@@ -57,7 +57,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @tracked metadataButtons = [
         {
             type: 'default',
-            text: 'Add Metafield',
+            text: this.intl.t('storefront.products.form.add-metafield'),
             icon: 'plus',
             iconPrefix: 'fas',
             onClick: this.addMetaField,

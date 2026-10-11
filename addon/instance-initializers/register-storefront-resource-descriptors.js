@@ -1,7 +1,7 @@
 import { get } from '@ember/object';
 
 /**
- * Registers the Storefront resources (store, network) with the shared resource
+ * Registers the Storefront resources (store, network, product, catalog, truck, promotion) with the shared resource
  * identity registry so they render as identity cells, pills and summaries with
  * the same components every other resource uses. Runs for the host and again for
  * the engine; only fills in keys nobody has registered.
@@ -112,6 +112,98 @@ export function buildStorefrontResourceDescriptors(owner) {
             ],
             canOpen: () => true,
             open: (network) => transitionTo('console.storefront.networks.index.network.index', network),
+        },
+        {
+            key: 'product',
+            labelKey: 'storefront.products.index.product',
+            icon: 'box-open',
+            modelNames: ['product'],
+            aliases: ['storefront-product'],
+            polymorphicTypes: ['storefront:product', 'Fleetbase\\Storefront\\Models\\Product'],
+            permission: 'storefront view product',
+            statusTones: {
+                published: 'text-green-500',
+                draft: 'text-gray-400',
+            },
+            title: (product) => first(product, 'name', 'public_id'),
+            identifier: (product) => first(product, 'sku', 'category.name', 'public_id'),
+            image: (product) => first(product, 'primary_image_url'),
+            status: (product) => first(product, 'status'),
+            badges: (product) =>
+                [first(product, 'price') ? { key: 'price', icon: 'tag', label: `${first(product, 'currency') ?? ''} ${first(product, 'price')}`.trim() } : null].filter(Boolean),
+            selectDetails: (product) => [first(product, 'sku'), first(product, 'category.name')],
+            facts: (product) => [
+                fact('sku', first(product, 'sku')),
+                fact('category', first(product, 'category.name')),
+                fact('price', first(product, 'price')),
+                fact('status', first(product, 'status')),
+            ],
+            canOpen: () => true,
+            open: (product) => transitionTo('console.storefront.products.index.index.edit', product),
+        },
+        {
+            key: 'catalog',
+            labelKey: 'storefront.common.catalog',
+            icon: 'book-open',
+            modelNames: ['catalog'],
+            aliases: ['storefront-catalog'],
+            polymorphicTypes: ['storefront:catalog', 'Fleetbase\\Storefront\\Models\\Catalog'],
+            permission: 'storefront view catalog',
+            statusTones: {
+                published: 'text-green-500',
+                draft: 'text-gray-400',
+            },
+            title: (catalog) => first(catalog, 'name', 'public_id'),
+            identifier: (catalog) => first(catalog, 'public_id'),
+            image: () => null,
+            status: (catalog) => first(catalog, 'status'),
+            selectDetails: (catalog) => [first(catalog, 'status'), first(catalog, 'description')],
+            facts: (catalog) => [fact('status', first(catalog, 'status')), fact('description', first(catalog, 'description'))],
+            canOpen: () => true,
+            open: (catalog) => transitionTo('console.storefront.catalogs.index.edit', catalog),
+        },
+        {
+            key: 'food-truck',
+            labelKey: 'storefront.common.food-truck',
+            icon: 'truck',
+            modelNames: ['food-truck'],
+            aliases: ['truck', 'storefront-food-truck'],
+            polymorphicTypes: ['storefront:food-truck', 'Fleetbase\\Storefront\\Models\\FoodTruck'],
+            permission: 'storefront view food-truck',
+            statusTones: {
+                online: 'text-green-500',
+                offline: 'text-gray-400',
+            },
+            title: (truck) => first(truck, 'vehicle.display_name', 'vehicle.plate_number', 'public_id'),
+            identifier: (truck) => first(truck, 'vehicle.plate_number', 'service_area.name', 'public_id'),
+            image: (truck) => first(truck, 'vehicle.photo_url'),
+            online,
+            status: presence,
+            selectDetails: (truck) => [first(truck, 'service_area.name'), first(truck, 'zone.name')],
+            facts: (truck) => [fact('service area', first(truck, 'service_area.name')), fact('zone', first(truck, 'zone.name')), fact('status', first(truck, 'status'))],
+            canOpen: () => false,
+        },
+        {
+            key: 'promotion',
+            labelKey: 'storefront.common.promotion',
+            icon: 'tags',
+            modelNames: ['promotion'],
+            aliases: ['storefront-promotion'],
+            polymorphicTypes: ['storefront:promotion', 'Fleetbase\\Storefront\\Models\\Promotion'],
+            permission: 'storefront view promotion',
+            statusTones: {
+                active: 'text-green-500',
+                paused: 'text-amber-500',
+                ended: 'text-gray-400',
+                draft: 'text-gray-400',
+            },
+            title: (promotion) => first(promotion, 'name', 'public_id'),
+            identifier: (promotion) => first(promotion, 'type', 'public_id'),
+            image: () => null,
+            status: (promotion) => first(promotion, 'status'),
+            selectDetails: (promotion) => [first(promotion, 'type'), first(promotion, 'trigger')],
+            facts: (promotion) => [fact('type', first(promotion, 'type')), fact('trigger', first(promotion, 'trigger')), fact('status', first(promotion, 'status'))],
+            canOpen: () => false,
         },
     ];
 }

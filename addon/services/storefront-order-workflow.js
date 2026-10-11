@@ -1,4 +1,4 @@
-import Service from '@ember/service';
+import Service, { inject as service } from '@ember/service';
 import toBoolean from '@fleetbase/ember-core/utils/to-boolean';
 
 const DEFAULT_STOREFRONT_CONFIG_NAMESPACE = 'system:order-config:storefront';
@@ -11,6 +11,7 @@ const DEFAULT_STOREFRONT_QUICK_ACTIONS = {
 };
 
 export default class StorefrontOrderWorkflowService extends Service {
+    @service intl;
     statusFor(order) {
         return String(order?.status ?? '').toLowerCase();
     }
@@ -137,12 +138,12 @@ export default class StorefrontOrderWorkflowService extends Service {
 
             case 'mark_ready':
                 if (this.isBookingOrder(order)) {
-                    return { action, text: 'Dispatch provider', icon: 'paper-plane', type: 'magic' };
+                    return { action, text: this.intl.t('storefront.order.workflow.dispatch-provider'), icon: 'paper-plane', type: 'magic' };
                 }
 
                 return {
                     action,
-                    text: 'Mark as Ready',
+                    text: this.intl.t('storefront.order.workflow.mark-as-ready'),
                     icon: this.isPickupOrder(order) ? 'bell-concierge' : 'paper-plane',
                     type: this.isPickupOrder(order) ? 'success' : 'magic',
                 };
@@ -150,7 +151,7 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'mark_picked_up':
                 return {
                     action: 'mark_completed',
-                    text: 'Mark Picked Up',
+                    text: this.intl.t('storefront.order.workflow.mark-picked-up'),
                     icon: 'check',
                     type: 'success',
                 };

@@ -29,7 +29,7 @@
             <div class="flex flex-row dark:text-gray-100 mt-4">
                 <div class="flex flex-row items-center mr-4">
                     <RadioButton @radioClass="focus:ring-blue-500 mr-2" @radioId="image_icon_type" @value="image" @groupValue={{@options.iconType}} @name="icon_type" @changed={{fn (mut @options.iconType)}} />
-                    <span>Upload category icon</span>
+                    <span>{{t "storefront.networks.categories.upload-icon"}}</span>
                 </div>
                 <div class="flex flex-row items-center ">
                     <RadioButton @radioClass="focus:ring-blue-500 mr-2" @radioId="svg_icon_type" @value="svg" @groupValue={{@options.iconType}} @name="icon_type" @changed={{fn (mut @options.iconType)}} />
@@ -37,7 +37,7 @@
                 </div>
             </div>
         </InputGroup>
-        <InputGroup @name="Category icon">
+        <InputGroup @name={{t "storefront.networks.categories.icon"}}>
             <div class="w-32">
                 <img src={{@options.category.icon_url}} alt={{@options.category.name}} class="w-full rounded-md" />
                 <FileUpload @name="icons" @accept="image/*" @onFileAdded={{@options.uploadIcon}} as |queue|>

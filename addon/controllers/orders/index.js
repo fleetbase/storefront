@@ -1,7 +1,7 @@
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
 import { relationValue } from '@fleetbase/ember-ui/utils/resource-registry';
 import { buildIdentityStub } from '@fleetbase/fleetops-data/utils/identity-stub';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import { action, get } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { isBlank } from '@ember/utils';
@@ -70,13 +70,6 @@ export default class OrdersIndexController extends BaseController {
                 text: this.intl.t('storefront.orders.create.title'),
                 permission: 'storefront create order',
                 onClick: this.createOrder,
-            },
-            {
-                id: 'export',
-                icon: 'long-arrow-up',
-                iconClass: 'rotate-icon-45',
-                text: this.intl.t('storefront.common.export'),
-                permission: 'storefront export order',
             },
         ];
     }
@@ -357,6 +350,56 @@ export default class OrdersIndexController extends BaseController {
     constructor() {
         super(...arguments);
         this.currency = get(this.storefront, 'activeStore.currency');
+        this.hiddenColumns = new Set(this.columns.filter((column) => column.hidden).map((column) => column.id));
+    }
+
+    /** Column visibility, driven by the column picker; the definitions above only set the defaults. */
+    @tracked hiddenColumns = new Set();
+
+    @action setColumns(columns) {
+        this.hiddenColumns = new Set(columns.filter((column) => column.hidden).map((column) => column.id));
+    }
+
+    @cached get registeredColumns() {
+        const hidden = this.hiddenColumns;
+
+        return this.mergeRegisteredColumns(
+            'order',
+            this.columns.map((column) => ({ ...column, hidden: hidden.has(column.id) }))
+        );
+    }
+
+    get registeredActionButtons() {
+        return this.registeredTableActions('order');
+    }
+
+    get registeredBulkActions() {
+        return this.mergeRegisteredBulkActions('order', this.bulkActions);
+    }
+
+    /** The rows ticked in the table; empty once the table is torn down. */
+    get selectedOrders() {
+        const table = this.table;
+
+        if (!table || table.isDestroyed || table.isDestroying) {
+            return [];
+        }
+
+        return table.selectedRows ?? [];
+    }
+
+    get hasSelection() {
+        return this.selectedOrders.length > 0;
+    }
+
+    @action clearSelection() {
+        this.table?.untoggleSelectAll?.();
+        (this.table?.selectedRows ?? []).forEach((row) => row.set?.('checked', false));
+    }
+
+    @action handleSort(sortString) {
+        this.sort = sortString;
+        this.page = 1;
     }
 
     /**

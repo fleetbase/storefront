@@ -1,4 +1,4 @@
-<ContentPanel @title="Images & Videos" @open={{true}} @wrapperClass="bordered-top">
+<ContentPanel @title={{t "storefront.products.form.sections.media"}} @open={{true}} @wrapperClass="bordered-top">
     <div class="space-y-2">
         {{#let (file-queue name="files" onFileAdded=@queueFile accept=(join "," @acceptedFileTypes)) as |queue|}}
             <FileDropzone @queue={{queue}} @disabled={{@disabled}} class="dropzone file-dropzone" as |dropzone|>
@@ -61,7 +61,7 @@
                     <div class="flex items-center justify-evenly">
                         <Button
                             @icon="magic"
-                            @text="Make Primary"
+                            @text={{t "storefront.products.form.actions.make-primary"}}
                             @size="xs"
                             @textClass="text-xs truncate"
                             @onClick={{fn @makePrimaryFile file}}

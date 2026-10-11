@@ -81,7 +81,7 @@
                                 {{this.smartAdjustedEtaUnavailableLabel}}
                             {{/if}}
                         </div>
-                        <div class="tracking-intelligence-cell__sub">Based on provider route and driver signal</div>
+                        <div class="tracking-intelligence-cell__sub">{{t "storefront.order.tracking.based-on"}}</div>
                     </div>
                     <div class="tracking-intelligence-cell">
                         <div class="tracking-intelligence-cell__label">Reported ETA</div>
@@ -126,7 +126,7 @@
 
                 <div class="tracking-intelligence-distance">
                     <div class="tracking-intelligence-distance__row">
-                        <span>Reported total</span>
+                        <span>{{t "storefront.order.tracking.reported-total"}}</span>
                         <strong>
                             {{#if this.hasRemainingDistance}}
                                 {{format-meters @resource.tracker_data.route.distance_m}}
@@ -139,7 +139,7 @@
                         </div>
                     </div>
                     <div class="tracking-intelligence-distance__row">
-                        <span>Between stops</span>
+                        <span>{{t "storefront.order.tracking.between-stops"}}</span>
                         <strong>
                             {{#if this.hasCurrentLegDistance}}
                                 {{format-meters this.currentLeg.distance_m}}
