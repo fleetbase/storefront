@@ -4,7 +4,7 @@
             <span class="storefront-builder__step-count">{{t "storefront.promotions.builder.step-of" step=(add this.stepIndex 1) total=this.steps.length}}</span>
         </:actions>
     </Overlay::Header>
-    <Overlay::Body class="p-0i" @wrapperClass="storefront-builder" data-test-promotion-builder>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-builder" data-test-promotion-builder>
         <ol class="storefront-builder__steps">
             {{#each this.steps as |step|}}
                 <li class="storefront-builder__step {{if step.isActive 'is-active'}} {{if step.isDone 'is-done'}}" data-test-builder-step={{step.id}}>

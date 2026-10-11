@@ -1,6 +1,6 @@
 <Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="600px" @minResizeWidth={{480}} @fullHeight={{true}} @isOpen={{true}}>
     <Overlay::Header @title={{t "storefront.networks.invitations.panel-title" network=this.network.name}} @onPressCancel={{this.close}} />
-    <Overlay::Body class="p-0i" @wrapperClass="storefront-invite-panel" data-test-invite-panel>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-invite-panel" data-test-invite-panel>
         <p class="storefront-invite-panel__lede">{{t "storefront.networks.invitations.panel-lede"}}</p>
 
         <div class="storefront-invite-panel__tabs" role="tablist">

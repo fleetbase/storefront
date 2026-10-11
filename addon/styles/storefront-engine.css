@@ -1765,6 +1765,10 @@ body[data-theme='dark'] .storefront-order-panel-header {
     gap: 0.75rem;
 }
 
+.storefront-order-panel-heading__actions .btn {
+    white-space: nowrap;
+}
+
 .storefront-order-panel-heading__actions {
     gap: 0.5rem;
 }
@@ -1857,7 +1861,6 @@ body[data-theme='dark'] .storefront-order-panel-tablist {
 }
 
 .storefront-order-panel-tab-content {
-    height: calc(100vh - 8.75rem);
     padding: 0;
 }
 
@@ -5800,11 +5803,39 @@ body[data-theme='dark'] .storefront-invitation-banner__meta {
 /* Create order: steps on the left, live summary on the right */
 
 /* The shared overlay sizes its body to the whole panel and ignores its own header, so the last
-   57px of a panel's content hides below the window; storefront panels opt in to the corrected height. */
+   header-height of a panel's content hides below the window. Storefront panels opt in: the panel
+   becomes a column and the body takes what the header leaves. */
+.next-content-overlay-panel:has(> .storefront-overlay-body) {
+    display: flex;
+    flex-direction: column;
+}
+
 .next-content-overlay.full-height > .next-content-overlay-panel-container > .next-content-overlay-panel .next-content-overlay-panel-body.storefront-overlay-body {
-    height: calc(100% - 57px);
-    min-height: calc(100% - 57px);
-    max-height: calc(100% - 57px);
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+}
+
+/* Tabbed panels (order details, customer): the tab list keeps its height and the tab content scrolls within what is left. */
+.storefront-overlay-body.no-scroll,
+.storefront-overlay-body.no-scroll > .next-content-overlay-panel-body-inner-wrapper,
+.storefront-overlay-body.no-scroll > .next-content-overlay-panel-body-inner-wrapper > .tab-navigation {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.storefront-overlay-body.no-scroll > .next-content-overlay-panel-body-inner-wrapper,
+.storefront-overlay-body.no-scroll > .next-content-overlay-panel-body-inner-wrapper > .tab-navigation {
+    flex: 1 1 auto;
+    height: auto;
+}
+
+.storefront-overlay-body.no-scroll .tab-navigation > .tab-content {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
 }
 
 .storefront-create-order {
