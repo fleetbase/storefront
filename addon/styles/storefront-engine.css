@@ -5798,6 +5798,14 @@ body[data-theme='dark'] .storefront-invitation-banner__meta {
 }
 
 /* Create order: steps on the left, live summary on the right */
+
+/* The overlay body is sized to the whole panel, so its last header-height of content hides below the window; keep the summary footer reachable. */
+.next-content-overlay.full-height > .next-content-overlay-panel-container > .next-content-overlay-panel .next-content-overlay-panel-body.storefront-create-order__scroll {
+    height: calc(100% - 57px);
+    min-height: calc(100% - 57px);
+    max-height: calc(100% - 57px);
+}
+
 .storefront-create-order {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 23rem;
@@ -5950,6 +5958,7 @@ body[data-theme='dark'] .storefront-create-order__picked {
 
 .storefront-create-order__place {
     display: flex;
+    width: 100%;
     align-items: center;
     gap: 0.625rem;
     padding: 0.5rem 0.625rem;
@@ -5991,6 +6000,10 @@ body[data-theme='dark'] .storefront-create-order__tile {
     border-color: #4b5563;
     background-color: #374151;
     color: #d1d5db;
+}
+
+.storefront-create-order__place [class*='status-badge'] {
+    white-space: nowrap;
 }
 
 .storefront-create-order__place-text {
