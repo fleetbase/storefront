@@ -51,8 +51,8 @@ export default class OrdersIndexNewController extends Controller {
     @tracked configVariants = {};
     @tracked configAddons = [];
     @tracked configQuantity = 1;
+    @tracked showPicker = false;
 
-    paymentOptions = ['cash', 'paid'];
     tipModes = ['none', 'fixed', 'percent', 'custom'];
 
     reset() {
@@ -135,6 +135,33 @@ export default class OrdersIndexNewController extends Controller {
 
     get defaultPlaceId() {
         return this.selectedCustomer?.place_uuid ?? this.selectedCustomer?.place?.id ?? null;
+    }
+
+    /** Whether the product picker is on screen: opened by Add products, or while the order is still empty. */
+    /** Console orders are cash on delivery or already paid; cards are collected in the app. */
+    get paymentOptions() {
+        return [
+            { value: 'cash', label: this.intl.t('storefront.orders.create.payment-cash') },
+            { value: 'paid', label: this.intl.t('storefront.orders.create.payment-paid') },
+        ];
+    }
+
+    get pickerVisible() {
+        return this.showPicker || this.lines.length === 0;
+    }
+
+    @action openPicker() {
+        this.showPicker = true;
+    }
+
+    @action closePicker() {
+        this.showPicker = false;
+        this.configuring = null;
+    }
+
+    /** The store locations as selectable cards. */
+    get locationRows() {
+        return this.locations.map((location) => ({ location, isSelected: location === this.pickupLocation }));
     }
 
     get placeRows() {

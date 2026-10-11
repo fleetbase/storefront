@@ -944,6 +944,18 @@ storefront:
   orders:
     create:
       title: New order
+      fulfillment-help: Pickup hides the dropoff and the delivery fee; Schedule adds a time within store hours.
+      store-location: Store location
+      no-locations: This store has no locations yet; add one under Settings.
+      add-products: Add products
+      options: Options
+      qty: Qty
+      decrease: Decrease quantity
+      increase: Increase quantity
+      promotion: Promotion
+      method: Method
+      product: Product
+      price: Price
       fulfillment: Fulfillment
       subtitle: a console order follows the same flow as an app order
       change-customer: Change customer
