@@ -12,6 +12,15 @@ class FetchStubService extends Service {
     }
 }
 
+class AbilitiesStubService extends Service {
+    can() {
+        return true;
+    }
+    cannot() {
+        return false;
+    }
+}
+
 class NotificationsStubService extends Service {
     messages = [];
     warning(message) {
@@ -31,6 +40,7 @@ module('Integration | Component | storefront/promotion/segment-panel', function 
     hooks.beforeEach(function () {
         this.owner.register('service:fetch', FetchStubService);
         this.owner.register('service:notifications', NotificationsStubService);
+        this.owner.register('service:abilities', AbilitiesStubService);
     });
 
     test('it previews the matching customers, refreshes on a rule change and saves', async function (assert) {
@@ -64,7 +74,7 @@ module('Integration | Component | storefront/promotion/segment-panel', function 
         await click('[data-test-segment-panel-save]');
         assert.strictEqual(segment.saved, 0, 'a name is required');
 
-        await fillIn('[data-test-segment-name] input', 'Regulars');
+        await fillIn('[data-test-segment-name]', 'Regulars');
         await click('[data-test-segment-panel-save]');
         assert.strictEqual(segment.saved, 1);
         assert.strictEqual(closed.length, 1);
