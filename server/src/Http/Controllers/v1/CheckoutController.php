@@ -1776,7 +1776,7 @@ class CheckoutController extends Controller
         $origins      = $serviceQuote->getMeta('origin');
         // set origin
         $origin      = Arr::first($origins);
-        $waypoints   = array_slice($origins, 1);
+        $waypoints   = static::pickupWaypoints(array_slice($origins, 1));
         $destination = $serviceQuote->getMeta('destination');
         // The cart as it was priced and charged (see Checkout::cartAtCheckout()).
         $cart        = $checkout->cartAtCheckout() ?? $checkout->cart;
@@ -2279,6 +2279,18 @@ class CheckoutController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * The stores after the first on a network order, as payload waypoints the driver
+     * collects from. Without a type a waypoint is a dropoff, so drivers, the console and
+     * the tracking page read the other stores as places the order is delivered to.
+     *
+     * An origin is a store location's place public id, or a place given as an array.
+     */
+    private static function pickupWaypoints(array $origins): array
+    {
+        return array_map(fn ($origin) => is_array($origin) ? ['place' => $origin, 'type' => 'pickup'] : ['id' => $origin, 'type' => 'pickup'], array_values($origins));
     }
 
     /**
