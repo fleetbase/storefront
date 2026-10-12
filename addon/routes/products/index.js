@@ -32,12 +32,13 @@ export default class ProductsIndexRoute extends Route {
         }
     }
 
-    model(params = {}) {
+    // The categories for the sidebar. The page's own query params (view mode, sort, status
+    // tab) belong to the product list, never to this query.
+    model() {
         return this.store.query('category', {
             for: 'storefront_product',
             owner_uuid: this.currentUser.getOption('activeStorefront'),
             limit: -1,
-            ...params,
         });
     }
 }
