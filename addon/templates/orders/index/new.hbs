@@ -118,7 +118,7 @@
                                     </div>
                                 {{else}}
                                     <div class="storefront-create-order__dropoff-row">
-                                        <ModelSelect @modelName="place" @selectedModel={{this.dropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
+                                        <ModelSelect @modelName="place" @selectedModel={{this.otherDropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
                                             <SelectOption::Place @option={{model}} />
                                         </ModelSelect>
                                         <Button @size="sm" @icon="plus" @text={{t "storefront.orders.create.new-address"}} @onClick={{this.openNewAddress}} @permission="fleet-ops create place" data-test-new-address />

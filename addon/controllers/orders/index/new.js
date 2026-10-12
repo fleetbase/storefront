@@ -61,6 +61,7 @@ export default class OrdersIndexNewController extends Controller {
     reset() {
         this.selectedCustomer = null;
         this.newAddress = null;
+        this.loadedPlaces = null;
         this.isPickup = false;
         this.isScheduled = false;
         this.scheduledAt = null;
@@ -131,8 +132,11 @@ export default class OrdersIndexNewController extends Controller {
         return this.quote?.currency ?? this.activeStore?.currency ?? 'USD';
     }
 
+    /** Places loaded for the selected customer; the customer list payload does not carry them. */
+    @tracked loadedPlaces = null;
+
     get customerPlaces() {
-        const places = this.selectedCustomer?.places;
+        const places = this.loadedPlaces ?? this.selectedCustomer?.places;
 
         return places?.toArray?.() ?? Array.from(places ?? []);
     }
@@ -166,6 +170,12 @@ export default class OrdersIndexNewController extends Controller {
     /** The store locations as selectable cards. */
     get locationRows() {
         return this.locations.map((location) => ({ location, isSelected: location === this.pickupLocation }));
+    }
+
+    /** The dropoff when it is not one of the customer's saved places (those show as tiles). */
+    get otherDropoff() {
+        const dropoff = this.dropoff;
+        return dropoff && !this.customerPlaces.some((place) => place.id === dropoff.id) ? dropoff : null;
     }
 
     get placeRows() {
@@ -373,8 +383,37 @@ export default class OrdersIndexNewController extends Controller {
     @action selectCustomer(customer) {
         this.selectedCustomer = customer;
         this.newAddress = null;
+        this.loadedPlaces = null;
+        if (customer) {
+            this.loadCustomerPlaces.perform(customer);
+        }
         this.dropoff = this.customerPlaces.find((place) => place.id === this.defaultPlaceId) ?? this.customerPlaces[0] ?? null;
         this.requote.perform();
+    }
+
+    /**
+     * The customer's saved places come with the contact record (the customers list leaves
+     * them out); the default place becomes the dropoff when none is chosen yet.
+     */
+    @task({ restartable: true }) *loadCustomerPlaces(customer) {
+        try {
+            const contact = yield this.store.findRecord('contact', customer.public_id ?? customer.id);
+            const places = yield contact.places;
+            if (this.selectedCustomer !== customer) {
+                return;
+            }
+
+            this.loadedPlaces = places?.toArray?.() ?? Array.from(places ?? []);
+            if (!this.dropoff) {
+                const defaultId = contact.place_uuid ?? this.defaultPlaceId;
+                this.dropoff = this.loadedPlaces.find((place) => place.id === defaultId) ?? this.loadedPlaces[0] ?? null;
+                if (this.dropoff) {
+                    this.requote.perform();
+                }
+            }
+        } catch {
+            // Keep whatever the customer record carried.
+        }
     }
 
     get canSaveNewAddress() {
@@ -436,6 +475,7 @@ export default class OrdersIndexNewController extends Controller {
             const place = this.store.push(this.store.normalize('place', payload));
 
             customer.places?.pushObject?.(place);
+            this.loadedPlaces = [...this.customerPlaces.filter((item) => item.id !== place.id), place];
             this.newAddress = null;
             this.selectDropoff(place);
             this.notifications.success(this.intl.t('storefront.orders.create.address-saved', { name: customer.name }));
