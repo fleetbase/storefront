@@ -12,13 +12,7 @@
         <span class="storefront-order-ref__text">
             <a href="javascript:;" class="storefront-order-ref__id storefront-order-ref__id--link" {{on "click" (fn @column.onView @row)}}>{{@row.public_id}}</a>
             <span class="storefront-order-ref__meta">
-                {{#if @row.isChild}}
-                    {{t "storefront.networks.orders.items-count" count=(or @row.payload.entities_count @row.item_count 0)}}
-                {{else if @row.meta.checkout_id}}
-                    {{t "storefront.networks.orders.part-of" checkout=@row.meta.checkout_id}}
-                {{else}}
-                    {{t "storefront.networks.orders.items-count" count=(or @row.payload.entities_count @row.item_count 0)}}
-                {{/if}}
+                {{t "storefront.networks.orders.items-count" count=(or @row.payload.entities_count @row.item_count 0)}}
             </span>
         </span>
     {{/if}}

@@ -1,12 +1,26 @@
-<div class="storefront-identity-stack {{if this.isStack 'storefront-identity-stack--tiles'}}" data-test-order-stores>
+<div class="storefront-identity-stack {{if this.isStack 'storefront-identity-stack--avatars'}}" data-test-order-stores>
     {{#each this.visible as |entry|}}
         {{#if entry.store}}
             {{#if this.isStack}}
-                {{! A checkout group: one tile per store, names on hover, so the row stays one line. }}
-                <Resource::Pill @resourceType="store" @resource={{entry.store}} @size="xs" @class="storefront-identity-stack__pill" title={{entry.name}}><span class="sr-only">{{entry.name}}</span></Resource::Pill>
+                {{! A checkout across stores: one round logo per store, the name and summary on hover. }}
+                <Resource::Pill
+                    @resourceType="store"
+                    @resource={{entry.store}}
+                    @size="xs"
+                    @class="storefront-identity-stack__avatar"
+                    @contentWrapperClass="sr-only"
+                    @showOnlineIndicator={{false}}
+                    @popoverPlacement="top"
+                    aria-label={{entry.name}}
+                    data-test-order-store-avatar
+                >
+                    <span class="sr-only">{{entry.name}}</span>
+                </Resource::Pill>
             {{else}}
-                <Resource::Pill @resourceType="store" @resource={{entry.store}} @size="xs" @class="storefront-identity-stack__pill" />
+                <Resource::Pill @resourceType="store" @resource={{entry.store}} @subtitle={{null}} @size="xs" @class="storefront-identity-stack__pill" />
             {{/if}}
+        {{else if this.isStack}}
+            <span class="storefront-identity-stack__initial" title={{entry.name}} aria-label={{entry.name}}>{{entry.initial}}</span>
         {{else}}
             <span class="storefront-identity-stack__text" title={{entry.name}}>{{entry.name}}</span>
         {{/if}}

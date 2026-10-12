@@ -64,12 +64,15 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
         }));
     }
 
+    /** The network's stores by id, plus the network itself for orders placed against it directly. */
     get storesById() {
+        const initial = this.network ? { [this.network.public_id]: this.network, [this.network.id]: this.network } : {};
+
         return this.stores.reduce((map, store) => {
             map[store.public_id] = store;
             map[store.id] = store;
             return map;
-        }, {});
+        }, initial);
     }
 
     /**
@@ -170,6 +173,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 width: '175px',
                 resizable: true,
                 sortable: false,
+                sticky: true,
             },
             {
                 id: 'customer',
@@ -238,6 +242,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 width: '160px',
                 sortable: false,
                 filterable: false,
+                sticky: 'right',
                 resizable: false,
                 searchable: false,
             },
