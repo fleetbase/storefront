@@ -2,7 +2,7 @@
     <div class="storefront-product-collection {{unless this.hasProducts 'is-empty'}} {{if this.isListView "is-list"}}">
         {{#if this.hasProducts}}
             {{#if this.isListView}}
-                <table class="storefront-products-table" data-test-products-table>
+                <table class="storefront-products-table {{unless @onToggleSelect 'has-no-check'}}" data-test-products-table>
                     <thead>
                         <tr>
                             {{#if @onToggleSelect}}
@@ -10,7 +10,7 @@
                                     <Checkbox @value={{this.allSelected}} @onToggle={{this.toggleAll}} aria-label={{t "storefront.common.select-all"}} data-test-products-select-all />
                                 </th>
                             {{/if}}
-                            <th>{{t "storefront.orders.create.product"}}</th>
+                            <th class="storefront-products-table__col-product">{{t "storefront.orders.create.product"}}</th>
                             <th class="storefront-products-table__col-sku">{{t "storefront.common.sku"}}</th>
                             <th class="storefront-products-table__col-category">{{t "storefront.common.category"}}</th>
                             <th class="storefront-products-table__col-price">{{t "storefront.orders.create.price"}}</th>

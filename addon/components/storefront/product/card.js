@@ -9,6 +9,12 @@ export default class StorefrontProductCardComponent extends Component {
     @service modalsManager;
     @service intl;
 
+    /** The API answers with its own placeholder when a product has no image; that is no image. */
+    get hasImage() {
+        const url = this.args.product?.primary_image_url;
+        return Boolean(url) && url !== FALLBACK_IMAGE_URL && !url.includes('/static/image-file-icon');
+    }
+
     get imageUrl() {
         return this.args.product?.primary_image_url ?? FALLBACK_IMAGE_URL;
     }
@@ -90,7 +96,7 @@ export default class StorefrontProductCardComponent extends Component {
             missing.push('category');
         }
 
-        if (!product.primary_image_url) {
+        if (!this.hasImage) {
             missing.push('image');
         }
 

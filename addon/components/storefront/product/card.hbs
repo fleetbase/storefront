@@ -46,19 +46,23 @@
         <Card.body class="storefront-product-card__body {{@bodyClass}}">
             <div class="storefront-product-card__media">
                 <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__media-link" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
-                    <Image src={{this.imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@product.name}} class="storefront-product-card__image" data-test-product-image />
+                    {{#if this.hasImage}}
+                        <Image src={{this.imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@product.name}} class="storefront-product-card__image" data-test-product-image />
+                    {{else}}
+                        <span class="storefront-product-card__no-image" data-test-product-image><FaIcon @icon="image" @size="2x" /></span>
+                    {{/if}}
                 </LinkTo>
                 <div class="storefront-product-card__flags">
-                    {{#if @onToggleSelect}}
-                        <span class="storefront-product-card__select {{if this.isSelected 'is-selected'}}">
-                            <Checkbox @value={{this.isSelected}} @onToggle={{this.toggleSelect}} aria-label={{t "storefront.common.select"}} data-test-product-select />
-                        </span>
-                    {{/if}}
                     <Badge @status={{this.displayStatus}} @size="xs" @hideStatusDot={{true}} data-test-product-status />
                     {{#if @product.is_on_sale}}<Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.on-sale"}} />{{/if}}
                     {{#if @product.is_recommended}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.recommended"}} />{{/if}}
                     {{#if this.isOutOfStock}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.card.unavailable"}} />{{/if}}
                 </div>
+                {{#if @onToggleSelect}}
+                    <span class="storefront-product-card__select {{if this.isSelected 'is-selected'}}">
+                        <Checkbox @value={{this.isSelected}} @onToggle={{this.toggleSelect}} aria-label={{t "storefront.common.select"}} data-test-product-select />
+                    </span>
+                {{/if}}
                 <button type="button" class="storefront-product-card__preview" aria-label={{concat (t "storefront.common.preview") " " @product.name}} {{on "click" this.previewImage}}>
                     <FaIcon @icon="expand" @size="xs" />
                 </button>

@@ -2,11 +2,9 @@
     {{! Under the products toolbar: the list in the view the user chose. }}
     <Skeleton::Page @hideHeader={{true}} @label={{t "storefront.common.loading"}} class="storefront-loading {{@class}}" data-test-storefront-loading={{if this.isList "products-list" "products-grid"}} data-test-products-loading-view={{if this.isList "list" "grid"}}>
         {{#if this.isList}}
-            <div class="ui-skeleton-table-card">
-                <Skeleton::Table @rows={{8}} @columns={{7}} @checkbox={{true}} />
-            </div>
+            <Skeleton::Table @rows={{10}} @columns={{7}} @checkbox={{true}} @class="storefront-skeleton-products-table" />
         {{else}}
-            <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @mediaHeight={{144}} @lines={{4}} @footerActions={{2}} />
+            <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @lines={{4}} @footerActions={{2}} @class="storefront-skeleton-product-grid" />
         {{/if}}
     </Skeleton::Page>
 {{else}}
@@ -54,11 +52,9 @@
             </div>
             <div class="storefront-skeleton-products__list">
                 {{#if this.isList}}
-                    <div class="ui-skeleton-table-card">
-                        <Skeleton::Table @rows={{8}} @columns={{7}} @checkbox={{true}} />
-                    </div>
+                    <Skeleton::Table @rows={{10}} @columns={{7}} @checkbox={{true}} @class="storefront-skeleton-products-table" />
                 {{else}}
-                    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @mediaHeight={{144}} @lines={{4}} @footerActions={{2}} />
+                    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @lines={{4}} @footerActions={{2}} @class="storefront-skeleton-product-grid" />
                 {{/if}}
             </div>
         </div>
