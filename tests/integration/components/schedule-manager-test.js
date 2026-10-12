@@ -17,16 +17,18 @@ module('Integration | Component | schedule-manager', function (hooks) {
 
         await render(hbs`<ScheduleManager @subject={{this.subject}} @subjectKey="store_location_uuid" @hourModelType="store-hour" />`);
 
-        const panels = this.element.querySelectorAll('.next-content-panel');
-        assert.strictEqual(panels.length, 7, 'one panel per weekday');
+        const days = this.element.querySelectorAll('[data-test-schedule-day]');
+        assert.strictEqual(days.length, 7, 'one row per weekday');
 
         const byDay = {};
-        panels.forEach((panel) => {
-            byDay[panel.querySelector('h4').textContent.trim()] = panel.querySelector('.next-content-panel-body').textContent;
+        days.forEach((day) => {
+            byDay[day.getAttribute('data-test-schedule-day')] = [...day.querySelectorAll('.storefront-schedule__slot')].map((slot) => slot.textContent.trim());
         });
 
-        assert.ok(byDay.Monday.includes('08:00 AM - 09:00 PM'), 'lowercase monday lands under Monday');
-        assert.ok(byDay.Tuesday.includes('10:00 AM - 02:00 PM'), 'capitalised Tuesday lands under Tuesday');
-        assert.notOk(byDay.Wednesday.trim(), 'days without hours stay empty');
+        assert.deepEqual(byDay.Monday, ['08:00 AM - 09:00 PM'], 'lowercase monday lands under Monday');
+        assert.deepEqual(byDay.Tuesday, ['10:00 AM - 02:00 PM'], 'capitalised Tuesday lands under Tuesday');
+        assert.deepEqual(byDay.Wednesday, [], 'days without hours have no slots');
+        assert.dom('[data-test-schedule-day="Monday"] .storefront-schedule__name').hasText('Monday', 'the day is named in the console language');
+        assert.dom('[data-test-schedule-add="Monday"]').exists('each day offers Add hours');
     });
 });

@@ -99,8 +99,8 @@ module('Integration | Component | storefront/order/details', function (hooks) {
                 `a panel titled ${title} renders`
             );
         }
-        // The store renders as the shared store pill, named from the order's meta until the record loads.
-        assert.dom('[data-test-order-store-pill]').hasTextContaining('Tasty Store');
+        // The store renders as a store profile, named from the order's meta until the record loads.
+        assert.dom('[data-test-order-store-name]').hasText('Tasty Store');
         assert.dom('[data-test-order-driver-pill] [data-test-resource-pill-title]').hasText('No driver assigned', 'an unassigned driver is a static pill with the fallback title');
         assert.dom('[data-test-order-customer-pill] [data-test-resource-pill-title]').hasText('No customer');
         assert.dom('.storefront-order-item__image').exists();
