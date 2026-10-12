@@ -1,7 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'dummy/tests/helpers';
 import { setupIntl } from 'ember-intl/test-support';
-import { render } from '@ember/test-helpers';
+import { render, click } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 import { initialize } from '@fleetbase/fleetops-data/instance-initializers/register-shared-resource-descriptors';
 
@@ -58,5 +58,17 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         assert.dom('[data-test-truck-catalogs-count]').hasText('No catalogs · no orders today');
         assert.dom('[data-test-truck-area]').hasText('No service area');
         assert.dom('[data-test-truck-vehicle] [data-test-resource-pill-title]').hasText('No vehicle assigned');
+    });
+
+    test('the title opens the truck, not the Fleet-Ops vehicle', async function (assert) {
+        const opened = [];
+        this.set('truck', { id: 't1', status: 'active', vehicle: { id: 'v1', display_name: 'Truck 10', online: true }, catalogs: [] });
+        this.set('open', (truck) => opened.push(truck));
+
+        await render(hbs`<Storefront::Truck::Card @truck={{this.truck}} @onOpen={{this.open}} />`);
+        await click('[data-test-truck-vehicle] [data-test-resource-pill-title]');
+
+        assert.strictEqual(opened.length, 1);
+        assert.strictEqual(opened[0], this.truck);
     });
 });

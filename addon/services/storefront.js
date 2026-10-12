@@ -232,6 +232,7 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.modalsManager.show('modals/incoming-order', {
             title: this.intl.t('storefront.service.storefront.new-incoming-order'),
             acceptButtonText: alreadyAccepted ? this.intl.t('common.ok') : this.intl.t('storefront.service.storefront.accept-order'),
+            acceptButtonScheme: alreadyAccepted ? 'primary' : 'success',
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             hideDeclineButton: alreadyAccepted,
@@ -239,7 +240,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
-            modalClass: 'scrollable-height-dialog',
+            modalClass: 'scrollable-height-dialog storefront-incoming-order-modal',
             order,
             store,
             confirm: async (modal) => {

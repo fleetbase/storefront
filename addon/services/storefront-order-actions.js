@@ -393,7 +393,7 @@ export default class StorefrontOrderActionsService extends Service {
             acceptButtonText: this.intl.t('storefront.component.widget.orders.accept-order'),
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
-            modalClass: 'scrollable-height-dialog',
+            modalClass: 'scrollable-height-dialog storefront-incoming-order-modal',
             order,
             store,
             assignDriver: async () => {

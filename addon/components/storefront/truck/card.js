@@ -10,6 +10,11 @@ import { catalogServingNow } from './panel';
  * catalogs it carries.
  */
 export default class StorefrontTruckCardComponent extends Component {
+    /** Opens the truck from its title, when the page gives a way to. */
+    get openTruck() {
+        return typeof this.args.onOpen === 'function' ? () => this.args.onOpen(this.truck) : null;
+    }
+
     get truck() {
         return this.args.truck ?? this.args.foodTruck ?? this.args.resource;
     }

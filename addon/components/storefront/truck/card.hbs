@@ -9,8 +9,8 @@
             @titleFallback={{t "storefront.trucks.card.no-vehicle"}}
             @subtitle={{or this.driverName (t "storefront.trucks.card.no-driver")}}
             @showOnlineIndicator={{true}}
-            @static={{not (or @onOpen this.vehicle.id)}}
-            @onClick={{if @onOpen (fn @onOpen this.truck)}}
+            @static={{not (or this.openTruck this.vehicle.id)}}
+            @onClick={{this.openTruck}}
             class="storefront-card__identity"
             data-test-truck-vehicle
         />

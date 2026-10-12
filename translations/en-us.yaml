@@ -232,6 +232,15 @@ storefront:
         optionally-select-category: Optionally select a category to import products into
         select-category: Select Category
       incoming-order:
+        placed: Placed {ago}
+        items-count: "{count, plural, one {# item} other {# items}}"
+        paid-in-app: Paid in app
+        scheduled-for: For {date}
+        collects-from: Customer collects from
+        leaves-from: Leaves from
+        deliver-to: Deliver to
+        note: Note from the customer
+        scan-hint: Scan or print for handover
         assigned: Driver Assigned
         not-assigned: No driver assigned
         no-phone: No phone
