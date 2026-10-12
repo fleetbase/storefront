@@ -7918,13 +7918,17 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
    border and radius, so the heading and body never show different backgrounds. A panel nested
    in a section body is the same card, one level in. Order and customer sections stay flush,
    separated by the panel's own top rule. */
-:is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab) .next-content-panel > .next-content-panel-header {
+:is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab)
+    .next-content-panel-wrapper
+    .next-content-panel-container
+    .next-content-panel
+    > .next-content-panel-header {
     display: flex;
     align-items: center;
     min-height: 2.5rem;
     padding: 0 0.75rem;
-    border-top-width: 0;
-    border-bottom-width: 0;
+    border-width: 0;
+    border-radius: 0;
     box-shadow: none;
     background: transparent;
 }
@@ -7958,9 +7962,20 @@ body[data-theme='dark'] :is(.storefront-settings-section, .storefront-customer-o
 :is(.storefront-customer-overview, .storefront-order-tab)
     .next-content-panel-wrapper.bordered-top
     + .next-content-panel-wrapper.bordered-top
+    .next-content-panel-container
     .next-content-panel
     > .next-content-panel-header {
-    border-top-width: 1px;
+    border-top: 1px solid #e5e7eb;
+}
+
+body[data-theme='dark']
+    :is(.storefront-customer-overview, .storefront-order-tab)
+    .next-content-panel-wrapper.bordered-top
+    + .next-content-panel-wrapper.bordered-top
+    .next-content-panel-container
+    .next-content-panel
+    > .next-content-panel-header {
+    border-top-color: var(--sf-hairline);
 }
 
 /* Settings: each section is one card */
@@ -7984,6 +7999,16 @@ body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper
 
 body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper .next-content-panel > .next-content-panel-body {
     background: transparent;
+}
+
+/* The body alone holds the 12px inset, so headings and fields share one left edge at every level */
+.storefront-settings-section
+    .next-content-panel-wrapper
+    .next-content-panel-container.is-open
+    .next-content-panel
+    > .next-content-panel-body
+    > .next-content-panel-body-wrapper.next-content-panel-body-inner {
+    padding: 0;
 }
 
 /* A panel inside a section (Contact and social): the same card one level in, on the raised tier */
