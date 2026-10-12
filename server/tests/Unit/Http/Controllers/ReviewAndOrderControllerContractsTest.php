@@ -447,9 +447,11 @@ test('review listing applies storefront ownership sorting limits and offsets', f
 
     $resource = (new ReviewController())->query($request);
 
+    // Highest first is review_two (5) then review_one (1); the other store's review (4) would
+    // sit between them if ownership were not applied, so offset 1 must land on review_one.
     expect($request->input('sort'))->toBe(['-rating', '-created_at'])
         ->and($resource->resource)->toHaveCount(1)
-        ->and($resource->resource->first()->uuid)->toBe('review_two_uuid');
+        ->and($resource->resource->first()->uuid)->toBe('review_one_uuid');
 });
 
 test('network review listing and counts validate membership and apply pagination', function () {

@@ -114,9 +114,12 @@ function storefrontProductResourceFixture(): ProductModel
         'slug'               => 'cold-brew-kit',
         'translations'       => ['mn' => ['name' => 'Cold Brew']],
         'youtube_urls'       => ['https://youtube.test/demo'],
+        // As selected by Product::catalogsCountQuery() on a console product list.
+        'catalogs_count'     => 2,
         'created_at'         => '2026-01-01',
         'updated_at'         => '2026-01-02',
     ]);
+    $product->setRelation('store', null);
     $product->setRelation('category', (object) ['public_id' => 'category_123']);
     $product->setRelation('primaryImage', $image);
     $product->setRelation('addonCategories', collect([$addonCategory]));
@@ -156,6 +159,7 @@ test('public product resource exposes purchasable shape and filters media types'
             'store_uuid',
             'files',
             'type',
+            'catalogs_count',
         ])->and($data['addon_categories'][0])->toMatchArray([
             'id'             => 'addon_category_123',
             'name'           => 'Packaging',
@@ -183,12 +187,13 @@ test('internal product resource includes database identities and raw files', fun
     $data    = (new ProductResource(storefrontProductResourceFixture()))->resolve($request);
 
     expect($data)->toMatchArray([
-        'id'           => 10,
-        'uuid'         => 'product_uuid',
-        'public_id'    => 'product_123',
-        'company_uuid' => 'company_uuid',
-        'store_uuid'   => 'store_uuid',
-        'type'         => 'product',
+        'id'             => 10,
+        'uuid'           => 'product_uuid',
+        'public_id'      => 'product_123',
+        'company_uuid'   => 'company_uuid',
+        'store_uuid'     => 'store_uuid',
+        'catalogs_count' => 2,
+        'type'           => 'product',
     ])->and($data)->toHaveKey('files')
         ->and($data)->not->toHaveKeys(['images', 'videos'])
         ->and($data['addon_categories'][0])->toMatchArray([

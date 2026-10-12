@@ -433,6 +433,9 @@ beforeEach(function () {
     }
     app()->instance(Spatie\Activitylog\ActivityLogStatus::class, new Spatie\Activitylog\ActivityLogStatus(new Illuminate\Config\Repository(['activitylog' => ['enabled' => false]])));
     $this->notifications = fakeChatNotifications();
+    // The driver-assigned notice is sent once per order and driver, remembered in the
+    // cache, which the test app shares across tests.
+    Illuminate\Support\Facades\Cache::flush();
 });
 
 afterEach(function () {

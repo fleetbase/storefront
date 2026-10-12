@@ -492,7 +492,10 @@ class CheckoutChannelPayloadStub extends TestableCheckoutController
 
 function enableCheckoutSocketAuth(bool $enabled = true): void
 {
-    config(['broadcasting.connections.socketcluster.auth_key' => $enabled ? 'checkout-socket-test-key-0123456789abcdef' : null]);
+    config([
+        'broadcasting.connections.socketcluster.auth_enabled' => $enabled,
+        'broadcasting.connections.socketcluster.auth_key'     => $enabled ? 'checkout-socket-test-key-0123456789abcdef' : null,
+    ]);
 }
 
 afterEach(function () {
@@ -602,6 +605,7 @@ function createCheckoutBoundarySchema(): void
         $table->string('checkout_uuid')->nullable();
         $table->string('status')->default('reserved');
         $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('stores', function ($table) {
         $table->increments('id');
@@ -2157,7 +2161,7 @@ test('qpay checkout creates sandbox ebarimt invoices and persists invoice metada
         ->and(CheckoutQPayStub::$sandboxUsed)->toBeTrue()
         ->and(CheckoutQPayStub::$authenticated)->toBeTrue()
         ->and(CheckoutQPayStub::$invoiceKind)->toBe('ebarimt')
-        ->and(CheckoutQPayStub::$invoiceArguments[0])->toBe('TEST_INVOICE')
+        ->and(CheckoutQPayStub::$invoiceArguments[0])->toBe('TEST_EB_INVOICE')
         ->and(CheckoutQPayStub::$invoiceArguments[7])->not->toBeEmpty();
 
     $gateway->forceFill([
@@ -2833,9 +2837,14 @@ test('qpay callback reports missing checkout identifiers sessions and gateways',
     createCheckoutBoundarySchema();
     $controller = new CheckoutController();
 
-    $missingId = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST'));
-    $unknown   = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
+    // QPay itself is always answered with HTTP 200 and the body SUCCESS; `respond=1` returns the details as JSON.
+    $qpayReply = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST'));
+    $missingId = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
+        'respond' => true,
+    ]));
+    $unknown = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
         'checkout' => 'checkout_missing',
+        'respond'  => true,
     ]));
     Model::getConnectionResolver()->connection('mysql')->table('checkouts')->insert([
         'public_id'   => 'checkout_public',
@@ -2843,7 +2852,11 @@ test('qpay callback reports missing checkout identifiers sessions and gateways',
     ]);
     $missingGateway = $controller->captureQPayCallback(Request::create('/checkout/qpay', 'POST', [
         'checkout' => 'checkout_public',
+        'respond'  => true,
     ]));
+
+    expect($qpayReply->getStatusCode())->toBe(200)
+        ->and($qpayReply->getData(true))->toBe('SUCCESS');
 
     expect($missingId->getData(true))->toBe([
         'error'    => 'CHECKOUT_ID_MISSING',
@@ -2944,39 +2957,63 @@ test('qpay callback handles invoice payment sandbox and provider failure states 
         'test'     => 'error',
     ]));
 
+    // The verified payment is recorded on the checkout once, as a summary of QPay's row.
+    $recordedPayment = (array) Checkout::where('uuid', 'checkout_uuid')->firstOrFail()->getOption('qpay_payment');
+
+    expect($recordedPayment)->toMatchArray([
+        'payment_id'       => 'payment_checkout',
+        'payment_status'   => 'PAID',
+        'payment_amount'   => 2500,
+        'payment_currency' => 'MNT',
+        'payment_wallet'   => 'QPay',
+    ])->and($recordedPayment)->toHaveKey('recorded_at');
+
     expect($missingInvoice->getData(true))->toBe([
         'error'    => 'MISSING_INVOICE_ID',
         'checkout' => 'checkout_abcdefgh',
         'payment'  => null,
     ])->and($notFound->getData(true))->toBe([
-        'error'    => 'PAYMENT_NOTFOUND',
+        'error'    => 'PAYMENT_NOT_PAID',
         'checkout' => 'checkout_abcdefgh',
         'payment'  => null,
     ])->and($paid->getData(true)['payment']['payment_id'])->toBe('payment_checkout')
         ->and($providerFailure->getData(true))->toBe(['error' => 'QPay unavailable'])
-        ->and($silentProviderFailure->getData(true))->toBe([])
+        // QPay's own call is answered SUCCESS even when checking the payment failed.
+        ->and($silentProviderFailure->getData(true))->toBe('SUCCESS')
         ->and($sandboxSuccess->getData(true)['payment'])->not->toBeNull()
         ->and($sandboxError->getData(true)['error']['error'])->toBe('PAYMENT_NOT_PAID')
         ->and(CheckoutQPayStub::$sandboxUsed)->toBeTrue()
         ->and(CheckoutQPayStub::$authenticated)->toBeTrue()
         ->and(Fleetbase\Support\SocketCluster\SocketClusterService::$published)->toBe([
-            // The realtime payload carries what a storefront client acts on — never the raw payment row.
+            // The realtime payload carries what a storefront client acts on: the recorded payment
+            // summary, never the raw payment row. A paid callback publishes as soon as the payment is
+            // verified and again once the order is created.
             ['checkout.checkout_abcdefgh', [
                 'checkout' => 'checkout_abcdefgh',
                 'status'   => 'completed',
                 'order'    => ['id' => 'order_abcdefgh'],
+                'payment'  => $recordedPayment,
                 'error'    => null,
             ]],
             ['checkout.checkout_abcdefgh', [
                 'checkout' => 'checkout_abcdefgh',
                 'status'   => 'completed',
                 'order'    => ['id' => 'order_abcdefgh'],
+                'payment'  => $recordedPayment,
+                'error'    => null,
+            ]],
+            ['checkout.checkout_abcdefgh', [
+                'checkout' => 'checkout_abcdefgh',
+                'status'   => 'completed',
+                'order'    => ['id' => 'order_abcdefgh'],
+                'payment'  => $recordedPayment,
                 'error'    => null,
             ]],
             ['checkout.checkout_abcdefgh', [
                 'checkout' => 'checkout_abcdefgh',
                 'status'   => 'failed',
                 'order'    => null,
+                'payment'  => null,
                 'error'    => [
                     'error'   => 'PAYMENT_NOT_PAID',
                     'message' => 'Payment has not been paid!',
@@ -3045,6 +3082,7 @@ test('qpay callback publishes paid before an order exists and survives a failed 
                 'checkout' => 'checkout_pending',
                 'status'   => 'paid',
                 'order'    => null,
+                'payment'  => null,
                 'error'    => null,
             ]],
         ]);
@@ -3097,12 +3135,17 @@ test('qpay callback publishes the order serialized as checkout status returns it
     ]));
     $published = Fleetbase\Support\SocketCluster\SocketClusterService::$published;
 
-    expect($published)->toHaveCount(1)
-        ->and($published[0][0])->toBe('checkout.checkout_abcdefgh')
-        ->and(array_keys($published[0][1]))->toBe(['checkout', 'status', 'order', 'error'])
-        ->and($published[0][1]['status'])->toBe('completed')
-        ->and($published[0][1]['order']['id'])->toBe('order_status')
-        ->and($published[0][1]['error'])->toBeNull();
+    // Published as soon as the payment is verified, then again once the order is created.
+    expect($published)->toHaveCount(2);
+
+    foreach ($published as [$channel, $payload]) {
+        expect($channel)->toBe('checkout.checkout_abcdefgh')
+            ->and(array_keys($payload))->toBe(['checkout', 'status', 'order', 'payment', 'error'])
+            ->and($payload['status'])->toBe('completed')
+            ->and($payload['order']['id'])->toBe('order_status')
+            ->and($payload['payment']['payment_id'])->toBe('payment_checkout')
+            ->and($payload['error'])->toBeNull();
+    }
 });
 
 test('initialized checkouts carry a checkout-scoped socket token only while socket auth is enabled', function () {
@@ -3606,9 +3649,12 @@ test('multiple order capture creates child and master logistics orders for a net
         'sku'         => 'COFFEE-1',
         'price'       => 1000,
     ]);
+    // Store pickups are found by place uuid, which is a real UUID (see Storefront::getStoreFromLocation()).
+    $originUuid    = '11111111-1111-4111-8111-111111111111';
+    $originTwoUuid = '22222222-2222-4222-8222-222222222222';
     $connection->table('places')->insert([
         [
-            'uuid'         => 'origin_uuid',
+            'uuid'         => $originUuid,
             'public_id'    => 'place_abcdefgh',
             'company_uuid' => 'company_uuid',
             'name'         => 'Store pickup',
@@ -3620,7 +3666,7 @@ test('multiple order capture creates child and master logistics orders for a net
             'name'         => 'Customer dropoff',
         ],
         [
-            'uuid'         => 'origin_two_uuid',
+            'uuid'         => $originTwoUuid,
             'public_id'    => 'place_qrstuvwx',
             'company_uuid' => 'company_uuid',
             'name'         => 'Second store pickup',
@@ -3631,14 +3677,14 @@ test('multiple order capture creates child and master logistics orders for a net
             'uuid'       => 'store_location_uuid',
             'public_id'  => 'store_location_abcdefgh',
             'store_uuid' => 'store_uuid',
-            'place_uuid' => 'origin_uuid',
+            'place_uuid' => $originUuid,
             'name'       => 'Main location',
         ],
         [
             'uuid'       => 'store_location_two_uuid',
             'public_id'  => 'store_location_ijklmnop',
             'store_uuid' => 'store_two_uuid',
-            'place_uuid' => 'origin_two_uuid',
+            'place_uuid' => $originTwoUuid,
             'name'       => 'Second location',
         ],
     ]);

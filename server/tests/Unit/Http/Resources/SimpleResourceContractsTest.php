@@ -368,5 +368,15 @@ test('network resource includes requested related collections and storefront fla
         'is_network' => true,
         'is_store'   => false,
     ])->and($data)->toHaveKeys(['stores', 'categories'])
-        ->and($data)->not->toHaveKeys(['gateways', 'notification_channels', 'uuid']);
+        ->and($data)->not->toHaveKeys(['gateways', 'notification_channels', 'uuid', 'stores_count']);
+
+    // The console reads the member store count, taken from a selected count when present.
+    $network->forceFill(['stores_count' => '3']);
+    $internal = (new NetworkResource($network))->resolve(setSimpleStorefrontResourceRoute('int/v1/storefront/networks'));
+
+    expect($internal)->toMatchArray([
+        'id'           => 7,
+        'uuid'         => 'network_uuid',
+        'stores_count' => 3,
+    ]);
 });

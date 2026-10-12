@@ -261,7 +261,9 @@ test('order resources normalize and restrict nested storefront metadata shapes',
             ],
             'storefront_network_id' => 'network_public',
             'currency'              => 'MNT',
-            'checkout_id'           => 'excluded_from_index',
+            // Kept on the index so the console can group a multi-store checkout's orders.
+            'checkout_id'           => 'checkout_public',
+            'secret'                => 'excluded_from_index',
         ]),
     ]);
     $indexResource    = new IndexOrderResource($indexOrder);
@@ -292,6 +294,7 @@ test('order resources normalize and restrict nested storefront metadata shapes',
         ],
         'storefront_network_id' => 'network_public',
         'currency'              => 'MNT',
+        'checkout_id'           => 'checkout_public',
     ])->and($detailNormalized)->toBe(['currency' => 'USD'])
         ->and($indexNormalized)->toBe(['currency' => 'MNT']);
 });

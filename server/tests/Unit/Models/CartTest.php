@@ -20,6 +20,9 @@ class CartLifecycleStub extends Cart
 
 function createCartLifecycleSchema(): void
 {
+    // These carts belong to no company; Cart::retrieve() scopes to the session's company,
+    // which an earlier test in the run may have left set.
+    session(['company' => null]);
     $schema = Capsule::schema('mysql');
     $schema->dropIfExists('store_locations');
     $schema->dropIfExists('stores');

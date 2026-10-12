@@ -16,7 +16,10 @@ use Illuminate\Session\Store as SessionStore;
 
 function storefrontSocketEnable(bool $enabled = true): void
 {
-    config(['broadcasting.connections.socketcluster.auth_key' => $enabled ? 'storefront-socket-test-key-0123456789abcdef' : null]);
+    config([
+        'broadcasting.connections.socketcluster.auth_enabled' => $enabled,
+        'broadcasting.connections.socketcluster.auth_key'     => $enabled ? 'storefront-socket-test-key-0123456789abcdef' : null,
+    ]);
 }
 
 function storefrontSocketSchema(): void
