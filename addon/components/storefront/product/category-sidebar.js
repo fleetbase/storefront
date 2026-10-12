@@ -66,10 +66,10 @@ export default class StorefrontProductCategorySidebarComponent extends Component
         const summary = this.args.summary ?? {};
 
         return [
-            { id: 'out-of-stock', icon: 'box-open', label: this.intl.t('storefront.products.groups.out-of-stock'), count: summary.out_of_stock ?? 0 },
+            { id: 'out-of-stock', icon: 'ban', label: this.intl.t('storefront.products.groups.out-of-stock'), count: summary.out_of_stock ?? 0 },
             { id: 'drafts', icon: 'pen-ruler', label: this.intl.t('storefront.products.groups.drafts'), count: summary.draft ?? 0 },
             { id: 'recommended', icon: 'star', label: this.intl.t('storefront.products.groups.recommended'), count: summary.recommended ?? 0 },
-            { id: 'on-sale', icon: 'badge-percent', label: this.intl.t('storefront.products.groups.on-sale'), count: summary.on_sale ?? 0 },
+            { id: 'on-sale', icon: 'percent', label: this.intl.t('storefront.products.groups.on-sale'), count: summary.on_sale ?? 0 },
             { id: 'uncategorized', icon: 'folder-open', label: this.intl.t('storefront.products.groups.uncategorized'), count: summary.uncategorized ?? 0 },
         ].map((group) => ({ ...group, isActive: this.args.activeGroup === group.id }));
     }

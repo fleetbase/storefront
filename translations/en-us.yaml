@@ -1,6 +1,9 @@
 storefront:
   extension-name: Storefront
   common:
+    sku: SKU
+    updated: Updated
+    select-all: Select all
     food-truck: Truck
     promotion: Promotion
     save: Save
@@ -641,7 +644,7 @@ storefront:
       ready-for-pickup: ready for pickup
       customers-notified: customers notified
       awaiting-driver: "{count, plural, one {delivery without a driver} other {deliveries without a driver}}"
-      out-of-stock: "{count, plural, one {product out of stock} other {products out of stock}}"
+      out-of-stock: "{count, plural, one {product marked unavailable} other {products marked unavailable}}"
       still-published: still published
       trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
       network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
@@ -1206,8 +1209,11 @@ storefront:
       all-products: All products
       no-categories: No categories yet
       smart-groups: Smart groups
+    empty:
+      help: Create a category, then add products to it.
+      category-help: Create the first product in this category.
     groups:
-      out-of-stock: Out of stock
+      out-of-stock: Unavailable
       drafts: Drafts
       recommended: Recommended
       on-sale: On sale
@@ -1217,6 +1223,9 @@ storefront:
       draft: Draft
     card:
       untitled: Untitled product
+      updated: "Updated {ago} ago"
+      ago: "{ago} ago"
+      unavailable: Unavailable
       variants: "{count, plural, =0 {No variants} one {# variant} other {# variants}}"
       simple: Simple product
       in-catalogs: "{count, plural, one {in # catalog} other {in # catalogs}}"

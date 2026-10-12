@@ -7,6 +7,7 @@ const PUBLISHED_STATUSES = ['published', 'available', 'active'];
 
 export default class StorefrontProductCardComponent extends Component {
     @service modalsManager;
+    @service intl;
 
     get imageUrl() {
         return this.args.product?.primary_image_url ?? FALLBACK_IMAGE_URL;
@@ -34,6 +35,20 @@ export default class StorefrontProductCardComponent extends Component {
     get catalogsCount() {
         const count = parseInt(this.args.product?.catalogs_count, 10);
         return Number.isFinite(count) ? count : 0;
+    }
+
+    /** "1 variant · 2 add-ons · in 3 catalogs" for the list view's options column. */
+    get optionsSummary() {
+        const { product } = this.args;
+        const parts = [];
+
+        if (this.variantCount) parts.push(this.intl.t('storefront.products.card.variants', { count: this.variantCount }));
+        if (this.addonGroupCount) parts.push(this.intl.t('storefront.products.card.addons', { count: this.addonGroupCount }));
+        if (this.catalogsCount) parts.push(this.intl.t('storefront.products.card.in-catalogs', { count: this.catalogsCount }));
+        if (product?.is_service) parts.push(this.intl.t('storefront.products.card.service'));
+        if (product?.is_bookable) parts.push(this.intl.t('storefront.products.card.bookable'));
+
+        return parts.join(' · ');
     }
 
     get hasSalePrice() {
@@ -94,8 +109,7 @@ export default class StorefrontProductCardComponent extends Component {
         return this.args.product?.is_available === false && !this.isDraft;
     }
 
-    @action toggleSelect(event) {
-        event?.stopPropagation?.();
+    @action toggleSelect() {
         this.args.onToggleSelect?.(this.args.product);
     }
 

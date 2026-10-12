@@ -33,6 +33,8 @@ export default class ProductsIndexController extends BaseController {
      * @var {CategoryModel}
      */
     @tracked category;
+    /** Grid or list, kept in the URL (`?view=list`) so a reload or a link keeps the view. */
+    queryParams = [{ viewMode: 'view' }];
     @tracked viewMode = 'grid';
     @tracked summary = null;
     @tracked activeGroup = null;
