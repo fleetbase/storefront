@@ -1,7 +1,7 @@
 {{#if this.isEditing}}
     {{outlet}}
 {{else}}
-    <Storefront::PageHeader @title={{t "storefront.common.catalogs"}} @subtitle={{t "storefront.catalogs.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.catalogs.index.search"}} data-test-catalogs-header>
+    <Storefront::PageHeader @title={{t "storefront.common.catalogs"}} @borderless={{true}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.catalogs.index.search"}} data-test-catalogs-header>
         <DropdownButton @text={{this.sortLabel}} @icon="arrow-down-wide-short" @size="sm" @renderInPlace={{false}} data-test-catalogs-sort as |dd|>
             <div class="next-dd-menu mt-1 mx-0">
                 <div class="px-1">

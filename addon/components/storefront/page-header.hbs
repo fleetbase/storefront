@@ -1,6 +1,6 @@
 {{! A page header on the console's section-header metrics (57px, same gutters) with room for an
     identity (logo or icon), badges and a meta line, which Layout::Section::Header cannot show. }}
-<div class="storefront-page-header {{if @subtitle 'has-subtitle'}} {{@wrapperClass}}" data-test-page-header ...attributes>
+<div class="storefront-page-header {{if @subtitle 'has-subtitle'}} {{if @borderless 'is-borderless'}} {{@wrapperClass}}" data-test-page-header ...attributes>
     <div class="storefront-page-header__left">
         {{#if @imageUrl}}
             <Image src={{@imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@title}} class="storefront-page-header__avatar" />
