@@ -4365,8 +4365,20 @@ body[data-theme='dark'] .storefront-settings-rail__item.is-active {
 }
 
 .storefront-settings-page {
-    max-width: 64rem;
-    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 1.25rem 1.25rem 0;
+}
+
+/* The sections keep a readable width; the save bar runs the full width of the content */
+.storefront-settings-page > section {
+    width: 100%;
+    max-width: 61.5rem;
+}
+
+.storefront-settings-page > .storefront-save-bar {
+    margin: auto -1.25rem 0;
 }
 
 .storefront-settings-section {
@@ -7930,25 +7942,33 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
     padding: 0;
 }
 
-/* ContentPanel inside storefront settings, product form, customer and order panels: a quiet section
-   heading (sentence case, 13px) over the fields, instead of the console's uppercase toolbar look. */
-.storefront-settings-section .next-content-panel-header,
-.storefront-product-form .next-content-panel-header,
-.storefront-customer-overview .next-content-panel-header,
-.storefront-order-tab .next-content-panel-header {
-    padding: 0.625rem 0.875rem;
+/* ContentPanel inside storefront settings, customer and order panels: a compact heading
+   in the panel's own surface (no darker band, no rule under it) with a 14px uppercase
+   title, instead of the console's tall toolbar. */
+.storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
+.storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
+.storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header {
     min-height: 0;
+    padding: 0.75rem 1rem 0.25rem;
+    border-bottom: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
+body[data-theme='dark'] .storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
+body[data-theme='dark'] .storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header {
+    background: transparent;
+}
+
+.storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left,
+.storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left,
+.storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .storefront-settings-section
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title,
-.storefront-product-form
     .next-content-panel-wrapper
     .next-content-panel-container
     .next-content-panel
@@ -7972,19 +7992,48 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
     .next-content-panel-header-left
     > .next-content-panel-title-container
     .panel-title {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    letter-spacing: 0;
-    text-transform: none;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #374151;
 }
 
-.storefront-settings-section .next-content-panel-body,
-.storefront-product-form .next-content-panel-body {
-    padding: 0.875rem;
+body[data-theme='dark']
+    .storefront-settings-section
+    .next-content-panel-wrapper
+    .next-content-panel-container
+    .next-content-panel
+    > .next-content-panel-header
+    .next-content-panel-header-left
+    > .next-content-panel-title-container
+    .panel-title,
+body[data-theme='dark']
+    .storefront-customer-overview
+    .next-content-panel-wrapper
+    .next-content-panel-container
+    .next-content-panel
+    > .next-content-panel-header
+    .next-content-panel-header-left
+    > .next-content-panel-title-container
+    .panel-title,
+body[data-theme='dark']
+    .storefront-order-tab
+    .next-content-panel-wrapper
+    .next-content-panel-container
+    .next-content-panel
+    > .next-content-panel-header
+    .next-content-panel-header-left
+    > .next-content-panel-title-container
+    .panel-title {
+    color: #e5e7eb;
 }
 
-.storefront-settings-section .next-content-panel-wrapper.bordered-classic .next-content-panel,
-.storefront-product-form .next-content-panel-wrapper.bordered-top .next-content-panel {
+.storefront-settings-section .next-content-panel-body {
+    padding: 0.5rem 1rem 1rem;
+}
+
+.storefront-settings-section .next-content-panel-wrapper.bordered-classic .next-content-panel {
     border-radius: 0.375rem;
 }
 
