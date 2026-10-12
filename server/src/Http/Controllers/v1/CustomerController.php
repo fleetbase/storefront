@@ -470,24 +470,39 @@ class CustomerController extends Controller
     /**
      * Query for Storefront Customer resources.
      *
+     * The storefront key is public (it ships inside every app build), so it can't be what
+     * authorizes reading customers: this used to list every customer of the company to
+     * anyone holding it. Only the customer signed in with the Customer-Token is returned.
+     *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function query(Request $request)
     {
-        $results = Contact::queryWithRequestCached($request, function (&$query, $request) {
-            $query->where(['type' => 'customer', 'company_uuid' => session('company')]);
+        $customer = $this->authenticatedCustomerForRequest($request);
+        if (!$customer) {
+            return response()->apiError('Not authorized to view customers.', 401);
+        }
+
+        $results = Contact::queryWithRequestCached($request, function (&$query) use ($customer) {
+            $query->where(['type' => 'customer', 'company_uuid' => session('company'), 'uuid' => $customer->uuid]);
         });
 
         return Customer::collection($results);
     }
 
     /**
-     * Finds a single Storefront Product resources.
+     * Finds a single Storefront Customer resource: only the customer signed in with the
+     * Customer-Token. A storefront key alone used to read any customer by id.
      *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function find($id)
     {
+        $customer = $this->authenticatedCustomerForRequest(request());
+        if (!$customer) {
+            return response()->apiError('Not authorized to view customer.', 401);
+        }
+
         if (Str::startsWith($id, 'customer')) {
             $id = Str::replaceFirst('customer', 'contact', $id);
         }
@@ -497,6 +512,10 @@ class CustomerController extends Controller
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return response()->apiError('Customer resource not found.');
+        }
+
+        if ($contact->uuid !== $customer->uuid) {
+            return response()->apiError('Not authorized to view customer.', 403);
         }
 
         // response the customer resource

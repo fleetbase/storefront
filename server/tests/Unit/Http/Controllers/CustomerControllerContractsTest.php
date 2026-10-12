@@ -1987,13 +1987,19 @@ test('customer code verification rejects identities without a user account', fun
     expect($response->getData(true))->toBe(['error' => 'Unable to verify code.']);
 });
 
-test('customer query scopes records to customer type and active company', function () {
+test('customer query returns only the customer signed in with the customer token', function () {
     createCustomerControllerContactsSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('contacts')->insert([
         [
             'uuid'         => 'customer_one',
             'public_id'    => 'contact_one',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'customer_two',
+            'public_id'    => 'contact_two',
             'company_uuid' => 'company_uuid',
             'type'         => 'customer',
         ],
@@ -2013,10 +2019,61 @@ test('customer query scopes records to customer type and active company', functi
     session(['company' => 'company_uuid']);
     $request = bindUnauthenticatedCustomerRequest();
 
-    $resource = (new CustomerController())->query($request);
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'customer_one')->firstOrFail();
+    $resource                          = $controller->query($request);
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('customer_one');
+});
+
+test('customer query refuses a storefront key without a customer token', function () {
+    createCustomerControllerContactsSchema();
+    Model::getConnectionResolver()->connection('mysql')->table('contacts')->insert([
+        'uuid'         => 'customer_one',
+        'public_id'    => 'contact_one',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+    ]);
+    session(['company' => 'company_uuid']);
+
+    $response = (new AuthenticatedCustomerControllerStub())->query(bindUnauthenticatedCustomerRequest());
+
+    expect($response->getStatusCode())->toBe(401)
+        ->and($response->getData(true))->toBe(['error' => 'Not authorized to view customers.']);
+});
+
+test('customer find refuses without a customer token and for another customer', function () {
+    createCustomerControllerContactsSchema();
+    Model::getConnectionResolver()->connection('mysql')->table('contacts')->insert([
+        [
+            'uuid'         => 'customer_one',
+            'public_id'    => 'contact_one',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'customer_two',
+            'public_id'    => 'contact_two',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+    ]);
+    session(['company' => 'company_uuid']);
+    $controller = new AuthenticatedCustomerControllerStub();
+
+    $anonymous = $controller->find('customer_one');
+
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'customer_one')->firstOrFail();
+    $other                             = $controller->find('customer_two');
+    $own                               = $controller->find('customer_one');
+
+    expect($anonymous->getStatusCode())->toBe(401)
+        ->and($anonymous->getData(true))->toBe(['error' => 'Not authorized to view customer.'])
+        ->and($other->getStatusCode())->toBe(403)
+        ->and($other->getData(true))->toBe(['error' => 'Not authorized to view customer.'])
+        ->and($own)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($own->resource->uuid)->toBe('customer_one');
 });
 
 test('customer authentication seam resolves the token customer from the storefront request', function () {
