@@ -1,8 +1,15 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
+import ErrorController from '@fleetbase/storefront-engine/controllers/error';
 
 module('Unit | Route | application', function (hooks) {
     setupTest(hooks);
+
+    // The error controller lives in the engine's namespace only: an `app/` re-export would
+    // replace the console's own error controller once the engine's app tree merges into it.
+    hooks.beforeEach(function () {
+        this.owner.register('controller:error', ErrorController);
+    });
 
     test('it exists', function (assert) {
         let route = this.owner.lookup('route:application');

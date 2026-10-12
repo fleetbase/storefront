@@ -11,16 +11,22 @@ module('Unit | Route | networks/index/network/customers', function (hooks) {
 
     test('it lists the customers who ordered through the network, not the active store', async function (assert) {
         const route = this.owner.lookup('route:networks/index/network/customers');
-        const store = this.owner.lookup('service:store');
         const requests = [];
-        store.query = (modelName, params) => {
-            requests.push({ modelName, params });
-            return Promise.resolve([]);
+        route.fetch = {
+            get(url, params, options) {
+                requests.push({ url, params, options });
+                return Promise.resolve({ customers: [], meta: { total: 0 } });
+            },
         };
         route.modelFor = () => ({ id: 'network_uuid', public_id: 'network_123' });
 
-        await route.model({ page: 1 });
+        const customers = await route.model({ page: 1, query: null });
 
-        assert.deepEqual(requests, [{ modelName: 'customer', params: { page: 1, network: 'network_123' } }]);
+        assert.deepEqual(
+            requests,
+            [{ url: 'customers', params: { page: 1, network: 'network_123' }, options: { namespace: 'storefront/int/v1' } }],
+            "Storefront's endpoint, scoped to the network"
+        );
+        assert.deepEqual(customers.meta, { total: 0 });
     });
 });
