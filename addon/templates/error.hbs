@@ -1,0 +1,12 @@
+{{! Error substate: a route's model hook rejected. The sidebar stays; the page offers to try again. }}
+<div class="storefront-page storefront-error-state" role="alert" data-test-storefront-error>
+    <div class="storefront-error-state__card">
+        <span class="storefront-error-state__icon"><FaIcon @icon="triangle-exclamation" /></span>
+        <h2 class="storefront-error-state__title">{{t "storefront.common.error-state.title"}}</h2>
+        <p class="storefront-error-state__message" data-test-storefront-error-message>{{or this.message (t "storefront.common.error-state.description")}}</p>
+        <div class="storefront-error-state__actions">
+            <Button @type="primary" @size="sm" @icon="rotate-right" @text={{t "storefront.common.error-state.retry"}} @onClick={{this.retry}} data-test-storefront-error-retry />
+            <Button @size="sm" @icon="arrow-left" @text={{t "storefront.common.error-state.back"}} @onClick={{this.goToDashboard}} data-test-storefront-error-back />
+        </div>
+    </div>
+</div>

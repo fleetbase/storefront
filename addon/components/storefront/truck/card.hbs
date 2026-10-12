@@ -1,0 +1,71 @@
+<Layout::Resource::Card class="storefront-card storefront-truck-card" data-test-storefront-truck-card ...attributes as |Card|>
+    <Card.header class={{@headerClass}}>
+        <RegistryYield @registry="storefront:component:truck:card:header:start" as |RegistryComponent|>
+            <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
+        </RegistryYield>
+        {{! The title opens the truck; the vehicle opens from the menu (Open vehicle) or its summary. }}
+        <Vehicle::Pill
+            @vehicle={{this.vehicle}}
+            @titleFallback={{t "storefront.trucks.card.no-vehicle"}}
+            @subtitle={{or this.driverName (t "storefront.trucks.card.no-driver")}}
+            @showOnlineIndicator={{true}}
+            @static={{not (or this.openTruck this.vehicle.id)}}
+            @onClick={{this.openTruck}}
+            class="storefront-card__identity"
+            data-test-truck-vehicle
+        />
+        <RegistryYield @registry="storefront:component:truck:card:header:end" as |RegistryComponent|>
+            <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
+        </RegistryYield>
+    </Card.header>
+    <Card.body class="storefront-card__media-body {{@bodyClass}}">
+        <Image src={{this.photoUrl}} @fallbackSrc={{this.placeholder}} alt={{n-a this.vehicle.display_name ""}} class="storefront-card__media" data-test-truck-photo />
+    </Card.body>
+    <Card.footer class={{@footerClass}}>
+        <RegistryYield @registry="storefront:component:truck:card:footer:start" as |RegistryComponent|>
+            <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
+        </RegistryYield>
+        <div class="storefront-card__actions">
+            <Badge @status={{this.presence.status}} @text={{t this.presence.labelKey catalog=this.presence.catalog}} @disableHumanize={{true}} @size="xs" data-test-truck-presence />
+            <div class="storefront-card__buttons">
+                {{#if @onEdit}}
+                    <Button @icon="pencil" @size="xs" @helpText={{t "storefront.common.edit"}} @onClick={{fn @onEdit this.truck}} @permission="storefront update food-truck" data-test-truck-edit />
+                {{/if}}
+                <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-truck-menu as |dd|>
+                    <div class="next-dd-menu mt-1 mx-0">
+                        <div class="px-1">
+                            {{#if @onAssignCatalogs}}
+                                <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd @onAssignCatalogs this.truck)}} data-test-truck-catalogs><FaIcon @icon="book-open" class="mr-1" />{{t "storefront.trucks.card.assign-catalogs"}}</a>
+                            {{/if}}
+                            {{#if (and @onOpenVehicle this.vehicle.id)}}
+                                <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd @onOpenVehicle this.truck)}} data-test-truck-open-vehicle><FaIcon @icon="arrow-up-right-from-square" class="mr-1" />{{t "storefront.trucks.panel.open-vehicle"}}</a>
+                            {{/if}}
+                            {{#if @onDelete}}
+                                <div class="next-dd-menu-seperator"></div>
+                                <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd @onDelete this.truck)}} data-test-truck-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.trucks.panel.delete-truck"}}</a>
+                            {{/if}}
+                        </div>
+                    </div>
+                </DropdownButton>
+            </div>
+        </div>
+        <div class="storefront-card__meta">
+            <span data-test-truck-area>
+                {{#if this.serviceAreaName}}
+                    {{t "storefront.trucks.card.service-area" name=this.serviceAreaName}}{{#if this.zoneName}} · {{this.zoneName}}{{/if}}
+                {{else}}
+                    {{t "storefront.trucks.card.no-service-area"}}
+                {{/if}}
+            </span>
+            <span data-test-truck-catalogs-count>{{t "storefront.trucks.card.catalogs-count" count=this.catalogs.length}} · {{#if this.lastOnline}}{{t "storefront.trucks.card.last-online" ago=this.lastOnline}}{{else}}{{t "storefront.trucks.card.orders-today" count=this.ordersToday}}{{/if}}</span>
+            {{#if this.truck.isNetworkOwned}}
+                <span data-test-truck-store><FaIcon @icon="network-wired" @size="xs" class="mr-1" />{{t "storefront.trucks.card.owned-by" name=this.truck.network.name}}</span>
+            {{else if this.storeName}}
+                <span data-test-truck-store>{{t "storefront.trucks.card.owned-by" name=this.storeName}}</span>
+            {{/if}}
+        </div>
+        <RegistryYield @registry="storefront:component:truck:card:footer:end" as |RegistryComponent|>
+            <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
+        </RegistryYield>
+    </Card.footer>
+</Layout::Resource::Card>

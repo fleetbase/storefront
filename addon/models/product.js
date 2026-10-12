@@ -25,6 +25,7 @@ export default class ProductModel extends Model {
     @hasMany('product-addon-category', { async: false }) addon_categories;
     @hasMany('product-hour') hours;
     @hasMany('catalog-category', { inverse: 'products' }) catalogCategories;
+    @attr('number') catalogs_count;
 
     /** @attributes */
     @attr('string', { defaultValue: '' }) name;

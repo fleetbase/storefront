@@ -40,6 +40,7 @@ test('catalog synchronizes category updates removals and additions', function ()
         $table->string('owner_type')->nullable();
         $table->string('name');
         $table->string('for')->nullable();
+        $table->integer('order')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -47,6 +48,8 @@ test('catalog synchronizes category updates removals and additions', function ()
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid')->nullable();
         $table->string('product_uuid')->nullable();
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -112,6 +115,8 @@ test('catalog category synchronizes valid unique product assignments', function 
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid');
         $table->string('product_uuid');
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });

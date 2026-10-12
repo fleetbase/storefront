@@ -1,7 +1,7 @@
 import { inject as service } from '@ember/service';
 import { isBlank } from '@ember/utils';
 import BaseController from '@fleetbase/storefront-engine/controllers/base-controller';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import { timeout, task } from 'ember-concurrency';
 import { action } from '@ember/object';
 
@@ -243,15 +243,10 @@ export default class CustomersIndexController extends BaseController {
                     fn: this.viewCustomer,
                 },
                 {
+                    id: 'edit-customer',
                     label: this.intl.t('storefront.customers.index.edit-customer'),
-                    // fn: this.editVendor,
-                },
-                {
-                    separator: true,
-                },
-                {
-                    label: this.intl.t('storefront.customers.index.delete-customer'),
-                    // fn: this.deleteVendor,
+                    fn: this.editCustomer,
+                    permission: 'storefront update customer',
                 },
             ],
             sortable: false,
@@ -261,19 +256,51 @@ export default class CustomersIndexController extends BaseController {
         },
     ];
 
-    get actionButtons() {
-        return [
-            {
-                icon: 'long-arrow-up',
-                iconClass: 'rotate-icon-45',
-                text: this.intl.t('storefront.common.export'),
-                permission: 'storefront export customer',
-            },
-        ];
+    @tracked viewMode = 'table';
+
+    get isCards() {
+        return this.viewMode === 'cards';
+    }
+
+    @action setViewMode(viewMode) {
+        this.viewMode = viewMode;
+    }
+
+    @action newOrderFor(customer) {
+        return this.transitionToRoute('orders.index.new', { queryParams: { for_customer: customer.public_id ?? customer.id } });
+    }
+
+    @tracked hiddenColumns = new Set();
+
+    @action setColumns(columns) {
+        this.hiddenColumns = new Set(columns.filter((column) => column.hidden).map((column) => column.id));
+    }
+
+    @cached get registeredColumns() {
+        const hidden = this.hiddenColumns;
+
+        return this.mergeRegisteredColumns(
+            'customer',
+            this.columns.map((column) => ({ ...column, hidden: hidden.has(column.id) || Boolean(column.hidden) }))
+        );
+    }
+
+    get registeredActionButtons() {
+        return this.registeredTableActions('customer');
+    }
+
+    @action handleSort(sortString) {
+        this.sort = sortString;
+        this.page = 1;
     }
 
     @action viewCustomer(customer) {
-        return this.transitionToRoute('customers.index.view', customer);
+        return this.transitionToRoute('customers.index.view', customer, { queryParams: { editing: false } });
+    }
+
+    /** Opens the customer's panel on its details form. */
+    @action editCustomer(customer) {
+        return this.transitionToRoute('customers.index.view', customer, { queryParams: { editing: true } });
     }
 
     /**

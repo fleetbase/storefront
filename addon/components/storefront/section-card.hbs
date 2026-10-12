@@ -1,0 +1,15 @@
+{{! A titled section: a heading row (title, muted subtitle, actions on the right) over the body.
+    Boxed by default where the boards draw a card; `@plain` keeps the heading row and lays the body
+    straight on the page, as the boards do for card grids. Never a collapsible panel. }}
+<section class="storefront-section-card {{if @plain 'is-plain'}} {{@wrapperClass}}" data-test-section-card={{@id}} ...attributes>
+    {{#if (or @title (has-block "actions"))}}
+        <header class="storefront-section-card__head">
+            <h2 class="storefront-section-card__title">{{@title}}</h2>
+            {{#if @subtitle}}<span class="storefront-section-card__subtitle">{{@subtitle}}</span>{{/if}}
+            <div class="storefront-section-card__actions">{{yield to="actions"}}</div>
+        </header>
+    {{/if}}
+    <div class="storefront-section-card__body {{if @pad 'is-padded'}} {{@bodyClass}}">
+        {{yield}}
+    </div>
+</section>

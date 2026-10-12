@@ -2,23 +2,36 @@
     <div class="storefront-product-collection {{unless this.hasProducts 'is-empty'}} {{if this.isListView "is-list"}}">
         {{#if this.hasProducts}}
             {{#if this.isListView}}
-                <div class="storefront-product-table">
-                    <div class="storefront-product-row storefront-product-row--header">
-                        <span>Product</span>
-                        <span>Price</span>
-                        <span>Status</span>
-                        <span>Options</span>
-                        <span></span>
-                    </div>
-                    {{#each this.products as |product|}}
-                        <Storefront::Product::Card
-                            @product={{product}}
-                            @editRoute={{@editRoute}}
-                            @viewMode={{@viewMode}}
-                            @onDelete={{@onDeleteProduct}}
-                        />
-                    {{/each}}
-                </div>
+                <table class="storefront-products-table {{unless @onToggleSelect 'has-no-check'}}" data-test-products-table>
+                    <thead>
+                        <tr>
+                            {{#if @onToggleSelect}}
+                                <th class="storefront-products-table__check">
+                                    <Checkbox @value={{this.allSelected}} @onToggle={{this.toggleAll}} aria-label={{t "storefront.common.select-all"}} data-test-products-select-all />
+                                </th>
+                            {{/if}}
+                            <th class="storefront-products-table__col-product">{{t "storefront.orders.create.product"}}</th>
+                            <th class="storefront-products-table__col-sku">{{t "storefront.common.sku"}}</th>
+                            <th class="storefront-products-table__col-category">{{t "storefront.common.category"}}</th>
+                            <th class="storefront-products-table__col-price">{{t "storefront.orders.create.price"}}</th>
+                            <th class="storefront-products-table__col-status">{{t "storefront.common.status"}}</th>
+                            <th class="storefront-products-table__col-options">{{t "storefront.orders.create.options"}}</th>
+                            <th class="storefront-products-table__actions"><span class="sr-only">{{t "storefront.common.actions"}}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.products as |product|}}
+                            <Storefront::Product::Card
+                                @product={{product}}
+                                @editRoute={{@editRoute}}
+                                @viewMode={{@viewMode}}
+                                @onDelete={{@onDeleteProduct}}
+                                @isSelected={{this.isSelected product}}
+                                @onToggleSelect={{@onToggleSelect}}
+                            />
+                        {{/each}}
+                    </tbody>
+                </table>
             {{else}}
                 {{#each this.products as |product|}}
                     <Storefront::Product::Card
@@ -26,14 +39,16 @@
                         @editRoute={{@editRoute}}
                         @viewMode={{@viewMode}}
                         @onDelete={{@onDeleteProduct}}
+                        @isSelected={{this.isSelected product}}
+                        @onToggleSelect={{@onToggleSelect}}
                     />
                 {{/each}}
             {{/if}}
         {{else}}
             <div class="storefront-product-empty" data-test-storefront-product-empty>
                 <FaIcon @icon="box-open" />
-                <h3>No products found</h3>
-                <p>{{if @category "Create the first product in this category." "Create a category, then add products to your catalog."}}</p>
+                <h3>{{t "storefront.orders.create.no-products"}}</h3>
+                <p>{{if @category (t "storefront.products.empty.category-help") (t "storefront.products.empty.help")}}</p>
             </div>
         {{/if}}
     </div>

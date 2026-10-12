@@ -1,0 +1,8 @@
+<div class="storefront-status-tabs storefront-promotions-hub__tabs px-5 pt-4" role="tablist" data-test-promotions-hub-tabs ...attributes>
+    {{#each this.tabs as |tab|}}
+        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.openTab tab)}} data-test-promotions-tab={{tab.id}}>
+            <span>{{tab.label}}</span>
+            {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+        </button>
+    {{/each}}
+</div>

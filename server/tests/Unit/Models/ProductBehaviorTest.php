@@ -88,6 +88,7 @@ function createProductNetworkSearchSchema(): void
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->softDeletes();

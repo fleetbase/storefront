@@ -20,13 +20,21 @@ class FoodTruckController extends Controller
     {
         $limit    = $request->input('limit', false);
         $offset   = $request->input('offset', false);
-        $storeIds = static::storeUuidsForStorefront();
-        if (empty($storeIds)) {
+        $storeIds  = static::storeUuidsForStorefront();
+        $networkId = session('storefront_network');
+        if (empty($storeIds) && !$networkId) {
             return FoodTruckResource::collection([]);
         }
 
-        $results = FoodTruck::queryWithRequestCached($request, function (&$query) use ($limit, $offset, $storeIds) {
-            $query->whereIn('store_uuid', $storeIds)->with(['store', 'vehicle', 'zone', 'serviceArea', 'catalogs']);
+        $results = FoodTruck::queryWithRequestCached($request, function (&$query) use ($limit, $offset, $storeIds, $networkId) {
+            // A network app shows its member stores' trucks and the trucks the network runs itself.
+            $query->where(function ($ownership) use ($storeIds, $networkId) {
+                $ownership->whereIn('store_uuid', $storeIds);
+
+                if ($networkId) {
+                    $ownership->orWhere('network_uuid', $networkId);
+                }
+            })->with(['store', 'network', 'vehicle', 'zone', 'serviceArea', 'catalogs']);
 
             if ($limit) {
                 $query->limit($limit);
@@ -75,8 +83,9 @@ class FoodTruckController extends Controller
             return response()->error('Food Truck resource not found.');
         }
 
-        // Only a truck of this storefront (its own, or a network member store's).
-        if (!in_array($foodTruck->store_uuid, static::storeUuidsForStorefront(), true)) {
+        // Only a truck of this storefront: its own, a network member store's, or one the network runs itself.
+        $ownedByNetwork = session('storefront_network') && $foodTruck->network_uuid === session('storefront_network');
+        if (!$ownedByNetwork && !in_array($foodTruck->store_uuid, static::storeUuidsForStorefront(), true)) {
             return response()->error('Food Truck resource not found.', 404);
         }
 

@@ -4,8 +4,11 @@ import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { isArray } from '@ember/array';
 import { dasherize } from '@ember/string';
-import CustomerPanelDetailsComponent from './customer-panel/details';
+import CustomerPanelOverviewComponent from './customer-panel/overview';
 import CustomerPanelOrdersComponent from './customer-panel/orders';
+import CustomerPanelPlacesComponent from './customer-panel/places';
+import CustomerPanelActivityComponent from './customer-panel/activity';
+import { task } from 'ember-concurrency';
 import contextComponentCallback from '@fleetbase/ember-core/utils/context-component-callback';
 import applyContextComponentArguments from '@fleetbase/ember-core/utils/apply-context-component-arguments';
 
@@ -50,7 +53,13 @@ export default class CustomerPanelComponent extends Component {
      *
      * @type {Service}
      */
-    @service contextPanel;
+    @service intl;
+    @service notifications;
+    @service storefront;
+    @tracked insights = null;
+
+    /** Whether the panel shows the details form instead of the tabs. */
+    @tracked isEditing = false;
 
     /**
      * The current active tab.
@@ -80,9 +89,13 @@ export default class CustomerPanelComponent extends Component {
     constructor() {
         super(...arguments);
         this.customer = this.args.customer;
-
-        this.tab = this.getTabUsingSlug(this.args.tab);
+        // The context panel may pass the customer and tab as component arguments; apply them
+        // before anything reads `customer`, or Glimmer asserts on an update after a read.
         applyContextComponentArguments(this);
+        // Read the requested tab from the arguments, not from the tracked field the helper just wrote.
+        this.tab = this.getTabUsingSlug(this.args.tab ?? this.args.dynamicArgs?.tab);
+        this.isEditing = Boolean(this.args.startEditing);
+        this.loadInsights.perform();
     }
 
     /**
@@ -95,8 +108,22 @@ export default class CustomerPanelComponent extends Component {
         const registeredTabs = this.universe.getMenuItemsFromRegistry('component:customer-panel');
 
         const defaultTabs = [
-            this.universe._createMenuItem('Details', null, { icon: 'circle-info', component: CustomerPanelDetailsComponent }),
-            this.universe._createMenuItem('Orders', null, { icon: 'circle-info', component: CustomerPanelOrdersComponent }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.overview'), null, {
+                icon: 'circle-info',
+                component: CustomerPanelOverviewComponent,
+                componentParams: { insights: this.insights, onChange: this.reload },
+            }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.orders'), null, { icon: 'file-invoice-dollar', component: CustomerPanelOrdersComponent }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.places'), null, {
+                icon: 'map-marker-alt',
+                component: CustomerPanelPlacesComponent,
+                componentParams: { onChange: this.reload },
+            }),
+            this.universe._createMenuItem(this.intl.t('storefront.customers.panel.tabs.activity'), null, {
+                icon: 'wave-square',
+                component: CustomerPanelActivityComponent,
+                componentParams: { insights: this.insights },
+            }),
         ];
 
         if (isArray(registeredTabs)) {
@@ -109,12 +136,76 @@ export default class CustomerPanelComponent extends Component {
     get actionButtons() {
         return [
             {
+                icon: 'plus',
+                text: this.intl.t('storefront.customers.panel.new-order'),
+                size: 'sm',
+                type: 'primary',
+                onClick: this.newOrder,
+                permission: 'storefront create order',
+            },
+            {
                 icon: 'pencil',
-                helpText: 'Edit customer',
+                text: this.intl.t('common.edit'),
+                size: 'sm',
                 onClick: this.onEdit,
                 permission: 'storefront update customer',
             },
+            {
+                items: [
+                    { text: this.intl.t('storefront.customers.panel.copy-id'), icon: 'copy', fn: this.copyId },
+                    { text: this.intl.t('storefront.customers.panel.copy-email'), icon: 'at', fn: this.copyEmail, disabled: !this.customer?.email },
+                ],
+            },
         ];
+    }
+
+    @task *loadInsights() {
+        const customer = this.customer;
+
+        if (!customer?.id) {
+            return;
+        }
+
+        const scope = this.storefront.contextScope();
+
+        try {
+            this.insights = yield this.fetch.get(`customers/${customer.id}/insights`, scope, { namespace: 'storefront/int/v1' });
+        } catch {
+            this.insights = null;
+        }
+    }
+
+    @action reload() {
+        return this.loadInsights.perform();
+    }
+
+    @action newOrder() {
+        try {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.new', { queryParams: { for_customer: this.customer?.public_id } });
+        } catch {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.new');
+        }
+    }
+
+    @action async copyId() {
+        return this.copy(this.customer?.public_id);
+    }
+
+    @action async copyEmail() {
+        return this.copy(this.customer?.email);
+    }
+
+    async copy(value) {
+        if (!value) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(value);
+            this.notifications.success(this.intl.t('storefront.customers.panel.copied', { value }));
+        } catch {
+            this.notifications.info(value);
+        }
     }
     /**
      * Sets the overlay context.
@@ -149,12 +240,14 @@ export default class CustomerPanelComponent extends Component {
         const isActionOverrided = contextComponentCallback(this, 'onEdit', this.customer);
 
         if (!isActionOverrided) {
-            this.contextPanel.focus(this.customer, 'editing', {
-                onAfterSave: () => {
-                    this.contextPanel.clear();
-                },
-            });
+            this.isEditing = true;
         }
+    }
+
+    @action doneEditing() {
+        this.isEditing = false;
+        contextComponentCallback(this, 'onDoneEditing', this.customer);
+        this.loadInsights.perform();
     }
 
     /**

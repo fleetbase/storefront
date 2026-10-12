@@ -1,49 +1,41 @@
-<Layout::Section::Header @title={{t "storefront.common.food-trucks"}}>
-    <Button @type="primary" @icon="plus" @text={{t "storefront.common.new"}} @onClick={{this.createFoodTruck}} @permission="storefront create food-truck" class="mr-2" />
-    <Button @icon="long-arrow-up" @iconClass="rotate-icon-45" @text={{t "storefront.common.export"}} @permission="storefront export food-truck" />
-</Layout::Section::Header>
+<Storefront::PageHeader @title={{t "storefront.common.food-trucks"}} @subtitle={{t "storefront.trucks.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.trucks.index.search"}} data-test-trucks-header>
+    <Button @size="sm" @icon="map" @text={{t "storefront.trucks.index.map"}} class={{if this.isMapView "storefront-filter-button is-active" "storefront-filter-button"}} @onClick={{this.toggleMapView}} data-test-trucks-map />
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.trucks.index.new-truck"}} @onClick={{this.createFoodTruck}} @permission="storefront create food-truck" data-test-trucks-new />
+</Storefront::PageHeader>
 
-<Layout::Section::Body>
-    <div class="p-4">
-        <div class="grid grid-cols-3 gap-4">
-            {{#each @model as |foodTruck|}}
-                <div class="px-2 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 border-gray-200 bg-gray-100">
-                    <div class="flex flex-row mb-2">
-                        <div class="flex flex-col flex-1 min-w-0">
-                            <Vehicle::Pill @vehicle={{foodTruck.vehicle}} @titleFallback="No vehicle" @static={{not foodTruck.vehicle.id}} class="mb-1" />
-                            <div class="flex flex-row items-center space-x-1">
-                                <FaIcon @icon="draw-polygon" class="mr-1" />
-                                <div class="text-sm">{{n-a foodTruck.service_area.name}}</div>
-                                <div>•</div>
-                                <div class="text-sm">{{n-a foodTruck.zone.name}}</div>
-                            </div>
-                            {{!-- <div>{{format-point foodTruck.vehicle.location}}</div> --}}
-                            <Badge @status={{foodTruck.status}} @hideStatusDot={{true}} />
-                        </div>
-                    </div>
-                    <div class="mt-2 flex flex-row space-x-2">
-                        <Button
-                            @type="default"
-                            @icon="pencil"
-                            @text={{t "storefront.common.edit"}}
-                            @onClick={{fn this.editFoodTruck foodTruck}}
-                            @permission="storefront update food-truck"
-                            @size="xs"
-                        />
-                        <Button @type="default" @icon="square-check" @text="Catalogs" @onClick={{fn this.assignCatalogs foodTruck}} @permission="storefront update food-truck" @size="xs" />
-                        <Button
-                            @type="danger"
-                            @icon="trash"
-                            @text={{t "storefront.common.delete"}}
-                            @onClick={{fn this.deleteFoodTruck foodTruck}}
-                            @permission="storefront delete food-truck"
-                            @size="xs"
-                        />
-                    </div>
-                </div>
-            {{/each}}
-        </div>
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-status-tabs px-5 pt-4" role="tablist" data-test-truck-status-tabs>
+        {{#each this.statusTabs as |tab|}}
+            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                <span>{{tab.label}}</span>
+                <span class="storefront-status-tab__count">{{tab.count}}</span>
+            </button>
+        {{/each}}
     </div>
+    {{#if this.isMapView}}
+        <div class="storefront-page storefront-truck-map-page" data-test-trucks-map-view>
+            <Storefront::Truck::Map @trucks={{this.mappableTrucks}} @onSelect={{this.editFoodTruck}} @height="100%" class="storefront-truck-map--page" />
+            <p class="storefront-table-card__note">{{t "storefront.trucks.index.map-note" count=this.mappableTrucks.length total=this.visibleTrucks.length}}</p>
+        </div>
+    {{else}}
+        <Layout::Resource::CardsGrid
+            @resource="truck"
+            @data={{this.visibleTrucks}}
+            @columns="4"
+            @containerClass="p-5"
+            @emptyStateText={{t "storefront.trucks.index.empty-state"}}
+            @createButtonText={{t "storefront.trucks.index.new-truck"}}
+            @onCreateNew={{this.createFoodTruck}}
+            class="h-full"
+            as |Item|
+        >
+            <Storefront::Truck::Card @truck={{Item.model}} @onOpen={{this.editFoodTruck}} @onEdit={{this.editFoodTruck}} @onAssignCatalogs={{this.assignCatalogs}} @onOpenVehicle={{this.openVehicle}} @onDelete={{this.deleteFoodTruck}} />
+        </Layout::Resource::CardsGrid>
+    {{/if}}
 </Layout::Section::Body>
+
+{{#if this.activeTruck}}
+    <Storefront::Truck::Panel @truck={{this.activeTruck}} @tab={{this.panelTab}} @catalogs={{this.catalogs}} @onClose={{this.closeTruckPanel}} @onSaved={{this.onTruckSaved}} @onDelete={{this.deleteFoodTruck}} @onViewOrder={{this.viewOrder}} />
+{{/if}}
 
 {{outlet}}

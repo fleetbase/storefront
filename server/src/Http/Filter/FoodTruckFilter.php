@@ -28,6 +28,29 @@ class FoodTruckFilter extends FleetOpsOrderFilter
         );
     }
 
+    /**
+     * Trucks run by any store that is a member of the network.
+     */
+    public function network(?string $network)
+    {
+        $this->builder->where(function ($query) use ($network) {
+            $query->where('network_uuid', $network)->orWhereHas(
+                'store.networks',
+                function ($memberQuery) use ($network) {
+                    $memberQuery->where('network_uuid', $network);
+                }
+            );
+        });
+    }
+
+    /**
+     * Only the trucks a network owns itself, not its member stores'.
+     */
+    public function ownedByNetwork(?string $network)
+    {
+        $this->builder->where('network_uuid', $network);
+    }
+
     public function serviceArea(string $serviceAreaId)
     {
         $matchingServiceAreaIds = ServiceArea::on(config('fleetbase.connection.db'))

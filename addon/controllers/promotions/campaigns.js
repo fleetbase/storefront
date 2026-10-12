@@ -109,78 +109,35 @@ export default class PromotionsCampaignsController extends BaseController {
         this.page = 1;
     }
 
+    /** The campaign open in the panel, and whether the save bar drafts, schedules or sends it. */
+    @tracked panelCampaign = null;
+    @tracked panelWhen = 'draft';
+
     @action createCampaign() {
         const campaign = this.store.createRecord('campaign', {
-            owner_uuid: this.storefront.activeStore.id,
-            owner_type: 'storefront:store',
+            owner_uuid: this.storefront.getContextOwner('id'),
+            owner_type: this.storefront.contextOwnerType,
             channels: ['push', 'inbox'],
         });
 
-        return this.editCampaign(campaign, {
-            title: this.intl.t('storefront.promotions.campaigns.new-campaign'),
-            decline: (modal) => {
-                campaign.rollbackAttributes();
-                modal.done();
-            },
-        });
+        return this.openCampaign(campaign, 'draft');
     }
 
-    @action editCampaign(campaign, options = {}) {
-        this.modalsManager.show('modals/campaign-form', {
-            title: this.intl.t(campaign.isEditable ? 'storefront.promotions.campaigns.edit-campaign' : 'storefront.promotions.campaigns.view-campaign'),
-            acceptButtonText: this.intl.t(campaign.status === 'scheduled' ? 'storefront.promotions.campaigns.when-schedule' : 'storefront.promotions.campaigns.when-draft'),
-            acceptButtonIcon: campaign.status === 'scheduled' ? 'clock' : 'save',
-            acceptButtonDisabled: !campaign.isEditable,
-            hideAcceptButton: !campaign.isEditable,
-            declineButtonText: this.intl.t(campaign.isEditable ? 'storefront.promotions.common.cancel' : 'storefront.promotions.common.done'),
-            modalClass: 'modal-lg',
-            campaign,
-            when: campaign.status === 'scheduled' ? 'schedule' : 'draft',
-            decline: (modal) => {
-                campaign.rollbackAttributes();
-                modal.done();
-            },
-            confirm: async (modal) => {
-                const when = modal.getOption('when');
-                if (!campaign.isEditable) {
-                    return;
-                }
-                if (![campaign.name, campaign.title, campaign.body].every((value) => value?.trim())) {
-                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-fields'));
-                    return;
-                }
-                if (!campaign.channels?.length) {
-                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-channel'));
-                    return;
-                }
-                if (when === 'schedule' && !(new Date(campaign.send_at).getTime() > Date.now())) {
-                    this.notifications.warning(this.intl.t('storefront.promotions.campaigns.required-schedule'));
-                    return;
-                }
-                modal.startLoading();
+    @action editCampaign(campaign) {
+        return this.openCampaign(campaign, campaign.status === 'scheduled' ? 'schedule' : 'draft');
+    }
 
-                campaign.status = when === 'schedule' ? 'scheduled' : 'draft';
-                if (when !== 'schedule') {
-                    campaign.send_at = null;
-                }
+    openCampaign(campaign, when) {
+        this.panelWhen = when;
+        this.panelCampaign = campaign;
+    }
 
-                try {
-                    await campaign.save();
-                    if (when === 'now') {
-                        await this.fetch.post(`campaigns/${campaign.id}/send`, {}, { namespace: 'storefront/int/v1' });
-                        this.notifications.success(this.intl.t('storefront.promotions.campaigns.sent-success'));
-                    } else {
-                        this.notifications.success(this.intl.t('storefront.promotions.campaigns.saved-success'));
-                    }
-                    this.hostRouter.refresh();
-                    modal.done();
-                } catch (error) {
-                    this.notifications.serverError(error);
-                    modal.stopLoading();
-                }
-            },
-            ...options,
-        });
+    @action closeCampaignPanel() {
+        this.panelCampaign = null;
+    }
+
+    @action onCampaignSaved() {
+        return this.hostRouter.refresh();
     }
 
     @action sendCampaign(campaign) {

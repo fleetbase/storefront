@@ -1,0 +1,5 @@
+{{! Network trucks: status tabs, then truck cards led by the vehicle and its photo. }}
+<Skeleton::Page @hideAvatar={{true}} @actions={{2}} @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="network-trucks">
+    <Skeleton::Tabs @count={{4}} @counts={{true}} />
+    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @avatar={{true}} @status={{false}} @mediaHeight={{160}} @lines={{0}} @footerActions={{2}} @footerBadge={{true}} @footerLines={{3}} />
+</Skeleton::Page>

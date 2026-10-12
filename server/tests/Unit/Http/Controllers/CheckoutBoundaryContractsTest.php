@@ -296,6 +296,7 @@ test('marketplace checkout validates membership availability locations cart mode
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('products', function ($table) {

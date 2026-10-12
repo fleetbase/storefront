@@ -45,8 +45,57 @@ class OrderFilter extends FleetOpsOrderFilter
         ]);
     }
 
+    /**
+     * Orders placed by one customer; accepts the contact uuid or public id.
+     */
+    public function customer(string $customer)
+    {
+        // The customer relation is polymorphic, so resolve a public id to the uuid first.
+        $uuid = \Illuminate\Support\Str::isUuid($customer) ? $customer : \Fleetbase\FleetOps\Models\Contact::where('public_id', $customer)->value('uuid');
+        $this->builder->where('customer_uuid', $uuid ?? $customer);
+    }
+
+    public function customerUuid(string $customer)
+    {
+        $this->builder->where('customer_uuid', $customer);
+    }
+
+    /**
+     * Orders fulfilled from a truck (the checkout stamps `meta.food_truck_id`).
+     */
+    public function foodTruck(string $foodTruck)
+    {
+        $this->builder->where('meta->food_truck_id', $foodTruck);
+    }
+
+    /**
+     * Pickup or delivery orders. The checkout stamps `meta.is_pickup`; anything not
+     * flagged for pickup is a delivery.
+     */
+    public function fulfillment(string $fulfillment)
+    {
+        $fulfillment = strtolower(trim($fulfillment));
+
+        if ($fulfillment === 'pickup') {
+            $this->builder->where('meta->is_pickup', true);
+        } elseif ($fulfillment === 'delivery') {
+            $this->builder->where(function ($query) {
+                $query->whereNull('meta->is_pickup')->orWhere('meta->is_pickup', false);
+            });
+        }
+    }
+
     public function storefront(string $storefront)
     {
         $this->builder->where('meta->storefront_id', $storefront);
+    }
+
+    /**
+     * Orders placed through a network: the store is always `storefront_id`, the network
+     * that sold it is `storefront_network_id`.
+     */
+    public function network(string $network)
+    {
+        $this->builder->where('meta->storefront_network_id', $network);
     }
 }

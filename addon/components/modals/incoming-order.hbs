@@ -1,245 +1,128 @@
 <Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
-    <div>
-        <div>
-            <div class="flex flex-col items-center justify-center">
-                <div class="p-2 rounded-md bg-white">
-                    <Image src={{concat "data:image/png;base64," @options.order.tracking_number.qr_code}} class="w-18 h-18" alt={{@options.order.public_id}} />
-                </div>
-                <div class="mt-3 text-center">
-                    <h2 class="dark:text-gray-100 font-semibold">{{@options.order.public_id}}</h2>
-                </div>
-                <div>
-                    <Badge @status={{@options.order.status}} />
-                </div>
-            </div>
-        </div>
-        <div class="grid grid-cols-2 lg:grid-cols-1 gap-3 justify-items-stretch auto-rows-max p-4">
-            <div class="col-span-2">
-                <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2">
-                    <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.store"}}</h5>
-                    <div class="flex items-start space-x-4">
-                        <Image src={{@options.store.logo_url}} class="w-12 h-12 rounded-md shadow-sm" alt={{@options.store.name}} />
-                        <div>
-                            <h5 class="font-semibold dark:text-white text-base">{{@options.store.name}}</h5>
-                            <DisplayPlace @place={{@options.order.payload.pickup}} @type="store location" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
-                        </div>
+    <div class="storefront-incoming-order" data-test-incoming-order>
+        {{! The ticket: the store it came in at, when, and what it came to. }}
+        <header class="storefront-incoming-order__hero">
+            <div class="storefront-incoming-order__store">
+                <Image src={{this.store.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{this.store.name}} class="storefront-incoming-order__logo" />
+                <div class="min-w-0">
+                    <div class="storefront-incoming-order__store-name" data-test-incoming-order-store>{{n-a this.store.name}}</div>
+                    <div class="storefront-incoming-order__muted">
+                        {{t "storefront.component.modals.incoming-order.placed" ago=(n-a this.order.createdAgo)}}
+                        · {{t "storefront.component.modals.incoming-order.items-count" count=this.itemCount}}
                     </div>
                 </div>
             </div>
-            <div class="col-span-2">
-                <div class="flex {{if (media 'isMobile') 'flex-col space-y-3' 'flex-row space-x-3'}} items-stretch">
-                    {{#unless @options.order.meta.is_pickup}}
-                        <div class="flex-1 self-stretch">
-                            <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
-                                <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.assigned"}}</h5>
-                                <div class="flex flex-col space-y-4">
-                                    {{#if @options.order.driver_assigned.id}}
-                                        <Driver::Pill @driver={{@options.order.driver_assigned}} />
-                                    {{else}}
-                                        <div>
-                                            <h5 class="text-red-500 text-sm">{{t "storefront.component.modals.incoming-order.not-assigned"}}</h5>
-                                        </div>
-                                    {{/if}}
-                                    {{#if @options.assignDriver}}
-                                        <div>
-                                            <Button
-                                                @size="xs"
-                                                @type="default"
-                                                @icon="id-card"
-                                                @text={{if
-                                                    @options.order.has_driver_assigned
-                                                    (t "storefront.component.modals.incoming-order.change-driver")
-                                                    (t "storefront.component.modals.incoming-order.assign-driver")
-                                                }}
-                                                @onClick={{@options.assignDriver}}
-                                            />
-                                        </div>
-                                    {{/if}}
-                                </div>
-                            </div>
-                        </div>
-                    {{/unless}}
-                    <div class="flex-1 self-stretch">
-                        <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2 h-full">
-                            <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.customer"}}</h5>
-                            <div class="">
-                                <Customer::Pill @customer={{@options.order.customer}} @static={{not @options.order.customer.id}} />
-                                <div class="text-xs dark:text-gray-100 mt-1">{{n-a @options.order.customer.email}}</div>
-                                <div class="text-xs dark:text-gray-100">{{n-a @options.order.customer.phone}}</div>
-                                {{#unless @options.order.meta.is_pickup}}
-                                    <div class="mt-2">
-                                        <h5 class="dark:text-gray-100 font-semibold text-xs truncate">{{t "storefront.component.modals.incoming-order.address"}}</h5>
-                                        <div class="flex flex-row mt-1">
-                                            <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
-                                                <FaIcon @icon="map-marker-alt" class="text-white" />
-                                            </div>
-                                            <div class="truncate">
-                                                <DisplayPlace
-                                                    @place={{@options.order.payload.dropoff}}
-                                                    @type="dropoff"
-                                                    @addressClass="text-xs dark:text-gray-100"
-                                                    @noAddressClass="text-xs"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                {{/unless}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-span-2">
-                <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2">
-                    {{#if @options.order.meta.is_pickup}}
-                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.pickup"}}</h5>
+            <div class="storefront-incoming-order__amount">
+                <div class="storefront-incoming-order__total" data-test-incoming-order-total>{{format-currency this.total this.currency}}</div>
+                <div class="storefront-incoming-order__muted">
+                    {{#if this.isCash}}
+                        <FaIcon @icon="money-bill-wave" @size="xs" class="text-green-500" />
+                        {{t "storefront.common.cash"}}
                     {{else}}
-                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.common.delivery"}}</h5>
+                        <FaIcon @icon="credit-card" @size="xs" />
+                        {{n-a (titleize this.paymentLabel) (t "storefront.component.modals.incoming-order.paid-in-app")}}
                     {{/if}}
-                    <div>
-                        {{#if @options.order.meta.is_pickup}}
-                            <div class="flex-1">
-                                <InfoBlock @size="xs" class="mb-3">{{t "storefront.component.modals.incoming-order.pickup-order"}}</InfoBlock>
-                                <div class="flex flex-row">
-                                    <div class="flex items-center justify-center rounded-full bg-blue-500 w-8 h-8 mr-3">
-                                        <FaIcon @icon="store-alt" class="text-white" />
-                                    </div>
-                                    <DisplayPlace @place={{@options.order.payload.pickup}} @type="pickup" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
-                                </div>
-                            </div>
-                        {{else if @options.order.payload.hasWaypoints}}
-                            <RouteList @order={{@options.order}} />
-                        {{else}}
-                            <div class="order-route-list storefront flex-1">
-                                <div class="order-route-stop">
-                                    <div class="order-route-stop-index">
-                                        <div class="index-count">
-                                            <FaIcon @prefix="fas" @icon="store-alt" />
-                                        </div>
-                                    </div>
-                                    <div class="order-route-location dark:text-gray-100">
-                                        <DisplayPlace @place={{@options.order.payload.pickup}} @type="pickup" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
-                                    </div>
-                                </div>
-                                <div class="order-route-stop">
-                                    <div class="order-route-stop-index">
-                                        <div class="index-count">
-                                            <FaIcon @prefix="fas" @icon="map-marker-alt" />
-                                        </div>
-                                    </div>
-                                    <div class="order-route-location dark:text-gray-100">
-                                        <DisplayPlace @place={{@options.order.payload.dropoff}} @type="dropoff" @addressClass="text-xs dark:text-gray-100" @noAddressClass="text-xs" />
-                                    </div>
-                                </div>
-                            </div>
-                        {{/if}}
-                    </div>
                 </div>
             </div>
-            <div class="col-span-2">
-                <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2">
-                    <div class="flex flex-row items-center space-x-2">
-                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.tracking"}}</h5>
-                        <h5 class="dark:text-gray-100 font-semibold">({{@options.order.tracking}})</h5>
-                    </div>
-                    <div class="flex flex-row items-center justify-center space-x-4">
-                        <div class="p-2 rounded-md bg-white">
-                            <Image src={{concat "data:image/png;base64," @options.order.tracking_number.qr_code}} class="w-14 h-14" alt={{@options.order.public_id}} />
-                        </div>
-                        <div class="p-2 rounded-md bg-white">
-                            <Image src={{concat "data:image/png;base64," @options.order.tracking_number.barcode}} class="w-40 h-14" alt={{@options.order.public_id}} />
-                        </div>
-                    </div>
-                </div>
+        </header>
+
+        <div class="storefront-incoming-order__ref">
+            <div class="min-w-0">
+                <div class="storefront-incoming-order__tracking" data-test-incoming-order-tracking>{{or this.order.tracking this.order.public_id}}</div>
+                {{#if this.order.tracking}}<div class="storefront-incoming-order__muted">{{this.order.public_id}}</div>{{/if}}
             </div>
-            <div class="col-span-2">
-                <div class="bg-gray-100 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-md px-4 py-2 space-y-2">
-                    <div class="flex flex-row items-center justify-between">
-                        <h5 class="dark:text-gray-100 font-semibold">{{t "storefront.component.modals.incoming-order.summary"}}</h5>
-                        {{#if @options.order.payload.cod_amount}}
-                            <div>
-                                <FaIcon @icon="money-bill-wave" @size="sm" class="text-green-400 mr-1" />
-                                <span class="font-semibold text-green-400 text-sm">{{t "storefront.common.cash"}}</span>
-                            </div>
-                        {{/if}}
-                    </div>
-                    <div>
-                        <div class="flex flex-col space-y-4 overflow-hidden py-4">
-                            {{#each @options.order.payload.entities as |entity|}}
-                                <div class="flex flex-1">
-                                    <div class="mr-2">
-                                        <div class="flex items-center justify-center w-5 h-5 border border-gray-100 dark:border-blue-400 rounded-md">
-                                            <span class="text-blue-400 text-xs">{{entity.meta.quantity}}x</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 flex">
-                                        <div class="mr-4">
-                                            <img src={{entity.photo_url}} class="w-12 h-12 rounded-md shadow-sm" alt={{entity.name}} />
-                                        </div>
-                                        <div>
-                                            <h4 class="font-semibold dark:text-gray-100 mb-1 text-sm">{{entity.name}}</h4>
-                                            <div class="flex flex-wrap truncate w-44">
-                                                <p class="dark:text-gray-50 text-xs truncate">{{entity.description}}</p>
-                                            </div>
-                                            <div>
-                                                {{#each entity.meta.variants as |variant|}}
-                                                    <div>
-                                                        <span class="text-xs dark:text-gray-50">{{variant.name}}</span>
-                                                    </div>
-                                                {{/each}}
-                                            </div>
-                                            <div>
-                                                {{#each entity.meta.addons as |addon|}}
-                                                    <div>
-                                                        <span class="text-xs dark:text-gray-50">+ {{addon.name}}</span>
-                                                    </div>
-                                                {{/each}}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="px-6">
-                                        <span class="dark:text-gray-50 text-sm">{{format-currency entity.meta.subtotal entity.currency}}</span>
-                                    </div>
-                                </div>
-                            {{/each}}
-                        </div>
-                        <div class="px-6 py-2.5 space-y-2 border-t border-b border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.subtotal"}}</span>
-                                <span class="dark:text-gray-50 text-sm">{{format-currency @options.order.meta.subtotal @options.order.meta.currency}}</span>
-                            </div>
-                            {{#unless @options.order.meta.is_pickup}}
-                                <div class="flex items-center justify-between">
-                                    <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.fee"}}</span>
-                                    <span class="dark:text-gray-50 text-sm">{{format-currency @options.order.meta.delivery_fee @options.order.meta.currency}}</span>
-                                </div>
-                            {{/unless}}
-                            {{#if @options.order.meta.tip}}
-                                <div class="flex items-center justify-between">
-                                    <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.tip"}}</span>
-                                    <span class="dark:text-gray-50 text-sm">{{get-tip-amount @options.order.meta.tip @options.order.meta.subtotal @options.order.meta.currency}}</span>
-                                </div>
-                            {{/if}}
-                            {{#if @options.order.meta.delivery_tip}}
-                                <div class="flex items-center justify-between">
-                                    <span class="dark:text-gray-50 text-sm">{{t "storefront.component.modals.incoming-order.delivery-tip"}}</span>
-                                    <span class="dark:text-gray-50 text-sm">{{get-tip-amount
-                                            @options.order.meta.delivery_tip
-                                            @options.order.meta.subtotal
-                                            @options.order.meta.currency
-                                        }}</span>
-                                </div>
-                            {{/if}}
-                        </div>
-                        <div class="px-6 py-2">
-                            <div class="flex items-center justify-between">
-                                <span class="dark:text-gray-50 font-bold text-sm">{{t "storefront.common.total"}}</span>
-                                <span class="dark:text-gray-50 font-bold text-sm">{{format-currency @options.order.meta.total @options.order.meta.currency}}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="storefront-incoming-order__chips">
+                <Badge @status={{this.order.status}} @size="xs" />
+                <Badge @status={{if this.isPickup "info" "delivery"}} @text={{if this.isPickup (t "storefront.common.pickup") (t "storefront.common.delivery")}} @hideStatusDot={{true}} @size="xs" />
+                <span class="storefront-incoming-order__chip" data-test-incoming-order-timing>
+                    <FaIcon @icon={{if this.order.scheduled_at "calendar-day" "bolt"}} @size="xs" />
+                    {{#if this.order.scheduled_at}}
+                        {{t "storefront.component.modals.incoming-order.scheduled-for" date=(format-date-fns this.order.scheduled_at "d MMM, HH:mm")}}
+                    {{else}}
+                        {{t "storefront.order.asap"}}
+                    {{/if}}
+                </span>
             </div>
         </div>
+
+        {{! Where it goes: from the store location to the customer, or the counter it is collected from. }}
+        <section class="storefront-incoming-order__section">
+            <div class="storefront-incoming-order__label">{{if this.isPickup (t "storefront.common.pickup") (t "storefront.common.delivery")}}</div>
+            <ol class="storefront-incoming-order__route" data-test-incoming-order-route>
+                <li class="storefront-incoming-order__stop">
+                    <span class="storefront-incoming-order__stop-icon"><FaIcon @icon="store" @size="xs" /></span>
+                    <div class="min-w-0">
+                        <div class="storefront-incoming-order__stop-label">{{if this.isPickup (t "storefront.component.modals.incoming-order.collects-from") (t "storefront.component.modals.incoming-order.leaves-from")}}</div>
+                        <div class="storefront-incoming-order__line" title={{this.pickup.address}}>
+                            {{#if this.pickup.name}}<strong>{{this.pickup.name}}</strong> · {{/if}}{{n-a this.pickup.address}}
+                        </div>
+                    </div>
+                </li>
+                {{#unless this.isPickup}}
+                    <li class="storefront-incoming-order__stop">
+                        <span class="storefront-incoming-order__stop-icon storefront-incoming-order__stop-icon--dropoff"><FaIcon @icon="location-dot" @size="xs" /></span>
+                        <div class="min-w-0">
+                            <div class="storefront-incoming-order__stop-label">{{t "storefront.component.modals.incoming-order.deliver-to"}}</div>
+                            <div class="storefront-incoming-order__line" title={{this.dropoff.address}}>
+                                {{#if this.dropoff.name}}<strong>{{this.dropoff.name}}</strong> · {{/if}}{{n-a this.dropoff.address}}
+                            </div>
+                        </div>
+                    </li>
+                {{/unless}}
+            </ol>
+        </section>
+
+        {{! Who it is for, and who takes it there. }}
+        <section class="storefront-incoming-order__section storefront-incoming-order__people">
+            <div class="min-w-0">
+                <div class="storefront-incoming-order__label">{{t "storefront.common.customer"}}</div>
+                <Customer::Pill @customer={{this.customer}} @subtitle={{null}} @titleFallback={{t "storefront.networks.orders.no-customer"}} @static={{not this.customer.id}} @size="xs" />
+                {{#if this.customer.phone}}<div class="storefront-incoming-order__contact"><FaIcon @icon="phone" @size="xs" />{{this.customer.phone}}</div>{{/if}}
+                {{#if this.customer.email}}<div class="storefront-incoming-order__contact" title={{this.customer.email}}><FaIcon @icon="envelope" @size="xs" />{{this.customer.email}}</div>{{/if}}
+            </div>
+            <div class="min-w-0">
+                <div class="storefront-incoming-order__label">{{t "storefront.common.driver"}}</div>
+                {{#if this.isPickup}}
+                    <div class="storefront-incoming-order__muted">{{t "storefront.networks.orders.no-driver-needed"}}</div>
+                {{else if this.driver}}
+                    <Driver::Pill @driver={{this.driver}} @subtitle={{null}} @size="xs" />
+                {{else}}
+                    <div class="storefront-incoming-order__muted">{{t "storefront.component.modals.incoming-order.not-assigned"}}</div>
+                {{/if}}
+                {{#if (and @options.assignDriver (not this.isPickup))}}
+                    <Button
+                        @size="xs"
+                        @icon="id-card"
+                        @text={{if this.driver (t "storefront.component.modals.incoming-order.change-driver") (t "storefront.component.modals.incoming-order.assign-driver")}}
+                        @onClick={{@options.assignDriver}}
+                        @permission="storefront update order"
+                        class="mt-2"
+                        data-test-incoming-order-assign-driver
+                    />
+                {{/if}}
+            </div>
+        </section>
+
+        {{#if this.order.notes}}
+            <section class="storefront-incoming-order__section">
+                <div class="storefront-incoming-order__label">{{t "storefront.component.modals.incoming-order.note"}}</div>
+                <p class="storefront-incoming-order__note" data-test-incoming-order-note>{{this.order.notes}}</p>
+            </section>
+        {{/if}}
+
+        {{! What is in it. }}
+        <section class="storefront-incoming-order__section">
+            <div class="storefront-incoming-order__label">{{t "storefront.component.modals.incoming-order.summary"}}</div>
+            <Storefront::Order::LineItems @order={{this.order}} />
+        </section>
+
+        {{! The label codes, for printing or scanning at handover. }}
+        {{#if (or this.qrCode this.barcode)}}
+            <section class="storefront-incoming-order__section storefront-incoming-order__codes" data-test-incoming-order-codes>
+                {{#if this.qrCode}}<img src={{this.qrCode}} alt={{t "storefront.component.modals.incoming-order.tracking"}} class="storefront-incoming-order__qr" />{{/if}}
+                {{#if this.barcode}}<img src={{this.barcode}} alt={{t "storefront.component.modals.incoming-order.tracking"}} class="storefront-incoming-order__barcode" />{{/if}}
+                <div class="storefront-incoming-order__muted">{{t "storefront.component.modals.incoming-order.scan-hint"}}</div>
+            </section>
+        {{/if}}
     </div>
 </Modal::Default>

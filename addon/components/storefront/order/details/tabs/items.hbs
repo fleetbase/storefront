@@ -1,0 +1,7 @@
+<div class="storefront-order-tab" ...attributes>
+    <Storefront::Order::Details::OrderBreakdown @resource={{@resource}} @refresh={{@refresh}} />
+    <Storefront::Order::Details::Store @resource={{@resource}} @refresh={{@refresh}} />
+    {{#if @resource.meta.checkout_id}}
+        <Storefront::Order::Details::CheckoutSiblings @resource={{@resource}} />
+    {{/if}}
+</div>

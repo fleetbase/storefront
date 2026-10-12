@@ -30,6 +30,10 @@ class ContextPanelStubService extends Service {
 }
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     activeStore = { public_id: 'store_1' };
 }
 
@@ -40,6 +44,10 @@ class FetchStubService extends Service {
 }
 
 class IntlStubService extends Service {
+    onLocaleChanged() {
+        return () => {};
+    }
+
     t(key) {
         const translations = {
             'storefront.customers.customer-panel.details.web-url': 'Web URL',
@@ -89,10 +97,10 @@ module('Integration | Component | customer-panel', function (hooks) {
 
         await render(hbs`<CustomerPanel @customer={{this.customer}} />`);
 
-        assert.dom('.resource-panel-header').includesText('Ava Chen');
-        assert.dom('[role="tab"]').exists({ count: 2 });
-        assert.dom('[role="tab"]').includesText('Details');
-        assert.dom('[role="tab"]').includesText('Orders');
+        assert.dom('[data-test-customer-panel-header]').includesText('Ava Chen');
+        assert.dom('[role="tab"]').exists({ count: 4 });
+        assert.dom('[data-tab-id="overview"]').includesText('Overview');
+        assert.dom('[data-tab-id="orders"]').includesText('Orders');
         assert.dom('[role="tabpanel"]').includesText('ava.chen@example.test');
 
         await click('[data-tab-id="orders"]');

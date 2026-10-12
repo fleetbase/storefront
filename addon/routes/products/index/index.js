@@ -1,7 +1,7 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 
-export default class ProductsIndexIndexRoute extends Route {
+export default class ProductsIndexIndexRoute extends StorefrontListRoute {
     @service store;
     @service currentUser;
     @service intl;
@@ -18,6 +18,11 @@ export default class ProductsIndexIndexRoute extends Route {
         sku: { refreshModel: true },
         created_at: { refreshModel: true },
         updated_at: { refreshModel: true },
+        status: { refreshModel: true },
+        available: { refreshModel: true },
+        on_sale: { refreshModel: true },
+        recommended: { refreshModel: true },
+        uncategorized: { refreshModel: true },
     };
 
     beforeModel() {

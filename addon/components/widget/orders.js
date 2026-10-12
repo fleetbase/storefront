@@ -14,6 +14,7 @@ export default class WidgetOrdersComponent extends Component {
     @service modalsManager;
     @service storefrontOrderActions;
     @service notifications;
+    @service hostRouter;
     @tracked orders = [];
     @tracked title = this.intl.t('storefront.component.widget.orders.widget-title');
     @tracked loaded = false;
@@ -32,6 +33,24 @@ export default class WidgetOrdersComponent extends Component {
         this.storefront.on('storefront.changed', () => {
             this.loadOrders.perform();
         });
+    }
+
+    /**
+     * Rows with the order's next action from the order flow, the way the board shows a
+     * single "Next" button per recent order.
+     */
+    get rows() {
+        return (this.orders ?? []).map((order) => {
+            const items = this.storefrontOrderActions.actionItemsFor(order, this.handleOrderChange);
+            const next = items.find((item) => item.id === 'perform-workflow-action') ?? null;
+            const isPickup = Boolean(get(order, 'meta.is_pickup'));
+
+            return { order, next, isPickup, driver: get(order, 'driver_assigned'), hasDriver: Boolean(get(order, 'driver_assigned.id')) };
+        });
+    }
+
+    @action viewAllOrders() {
+        return this.hostRouter.transitionTo('console.storefront.orders.index');
     }
 
     @action toggleActiveFilter(toggled) {
@@ -102,6 +121,15 @@ export default class WidgetOrdersComponent extends Component {
                 this.loadOrders.perform();
             },
         });
+    }
+
+    /** Opens the customer's panel, as the orders page does. */
+    @action viewCustomer(customer) {
+        if (!customer?.public_id) {
+            return;
+        }
+
+        return this.hostRouter.transitionTo('console.storefront.customers.index.view', customer.public_id);
     }
 
     @action handleOrderChange() {

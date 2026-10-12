@@ -1,0 +1,7 @@
+<div class="storefront-order-status" data-test-order-status>
+    {{#if @row.isGroup}}
+        <Badge @status={{@row.status}} @size="xs" @text={{t "storefront.networks.orders.group-status" count=@row.statusSummary.count total=@row.statusSummary.total status=(smart-humanize @row.status)}} />
+    {{else}}
+        <Badge @status={{@row.status}} @size="xs" />
+    {{/if}}
+</div>

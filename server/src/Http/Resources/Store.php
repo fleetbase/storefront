@@ -52,6 +52,7 @@ class Store extends FleetbaseResource
             'is_store'            => true,
             // Closures, so relations and lookups only run when the field is requested.
             'category'            => $this->when($request->filled('network') && ($request->has('with_category') || $request->inArray('with', 'category')), fn () => new Category($this->getNetworkCategoryUsingId($request->input('network')))),
+            'network_status'      => $this->when($request->filled('network') && Http::isInternalRequest(), fn () => $this->getNetworkMembershipStatusUsingId($request->input('network'))),
             'networks'            => $this->when($request->boolean('with_networks') || $request->inArray('with', 'networks'), fn () => Network::collection($this->networks)),
             'locations'           => $this->when($request->boolean('with_locations') || $request->inArray('with', 'locations'), fn () => $this->locations->mapInto(StoreLocation::class)),
             'media'               => $this->when($request->boolean('with_media') || $request->inArray('with', 'media'), fn () => Media::collection($this->media)),

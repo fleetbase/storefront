@@ -1,0 +1,126 @@
+<Storefront::PageHeader
+    @title={{@model.name}}
+    @imageUrl={{@model.logo_url}}
+    @badgeStatus={{this.badge.status}}
+    @badgeText={{this.badge.label}}
+    @subtitle={{this.subtitle}}
+    data-test-network-store-header
+>
+    <Button @icon="arrow-left" @text={{t "storefront.networks.store-details.back"}} @size="sm" @onClick={{this.backToStores}} />
+    {{#if this.ownStore}}
+        <Button @type="primary" @icon="arrow-right-to-bracket" @text={{t "storefront.networks.overview.open-store"}} @size="sm" @onClick={{this.manageStore}} data-test-network-store-manage />
+    {{/if}}
+</Storefront::PageHeader>
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page" data-test-network-store>
+        <div class="storefront-stat-grid storefront-stat-grid--4">
+            <div class="storefront-stat-tile">
+                <div class="storefront-stat-tile__label">{{t "storefront.networks.overview.orders-7d"}}</div>
+                {{#if this.load.isRunning}}
+                    <Skeleton @variant="text" @width="4rem" @height="1.5rem" class="my-1" />
+                    <Skeleton @variant="text" @width="7rem" />
+                {{else}}
+                    <div class="storefront-stat-tile__value">{{n-a this.member.orders_7d 0}}</div>
+                    <div class="storefront-stat-tile__hint">{{t "storefront.networks.overview.share-of-network" share=(n-a this.member.share 0)}}</div>
+                {{/if}}
+            </div>
+            <div class="storefront-stat-tile">
+                <div class="storefront-stat-tile__label">{{t "storefront.networks.overview.revenue-7d"}}</div>
+                {{#if this.load.isRunning}}
+                    <Skeleton @variant="text" @width="4rem" @height="1.5rem" class="my-1" />
+                    <Skeleton @variant="text" @width="7rem" />
+                {{else}}
+                    <div class="storefront-stat-tile__value">{{format-currency (n-a this.member.revenue_7d 0) this.currency}}</div>
+                    <div class="storefront-stat-tile__hint">{{t "storefront.networks.store-details.revenue-share" share=(n-a this.member.revenue_share 0)}}</div>
+                {{/if}}
+            </div>
+            <div class="storefront-stat-tile">
+                <div class="storefront-stat-tile__label">{{t "storefront.common.orders"}}</div>
+                {{#if this.load.isRunning}}
+                    <Skeleton @variant="text" @width="4rem" @height="1.5rem" class="my-1" />
+                    <Skeleton @variant="text" @width="7rem" />
+                {{else}}
+                    <div class="storefront-stat-tile__value">{{n-a this.orders.meta.total this.orders.length}}</div>
+                    <div class="storefront-stat-tile__hint">{{t "storefront.networks.store-details.through-network"}}</div>
+                {{/if}}
+            </div>
+            <div class="storefront-stat-tile">
+                <div class="storefront-stat-tile__label">{{t "storefront.common.customers"}}</div>
+                {{#if this.load.isRunning}}
+                    <Skeleton @variant="text" @width="4rem" @height="1.5rem" class="my-1" />
+                    <Skeleton @variant="text" @width="7rem" />
+                {{else}}
+                    <div class="storefront-stat-tile__value">{{n-a this.customers.meta.total this.customers.length}}</div>
+                    <div class="storefront-stat-tile__hint">{{t "storefront.networks.store-details.through-network"}}</div>
+                {{/if}}
+            </div>
+        </div>
+
+        <div class="storefront-table-card" data-test-network-store-tables>
+            <div class="storefront-table-card__toolbar">
+                <div class="storefront-status-tabs" role="tablist">
+                    {{#each this.tabs as |tab|}}
+                        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab.id)}} data-test-network-store-tab={{tab.id}}>
+                            <span>{{tab.label}}</span>
+                            {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+                        </button>
+                    {{/each}}
+                </div>
+            </div>
+            {{#if this.load.isRunning}}
+                <Skeleton::Table @rows={{5}} @columns={{6}} @identityColumn={{1}} />
+            {{else if (eq this.tab "orders")}}
+                <table class="storefront-table storefront-table--rows" data-test-network-store-orders>
+                    <thead>
+                        <tr>
+                            <th>{{t "storefront.common.order"}}</th>
+                            <th>{{t "storefront.common.customer"}}</th>
+                            <th>{{t "storefront.networks.orders.columns.fulfillment"}}</th>
+                            <th>{{t "storefront.networks.orders.columns.placed"}}</th>
+                            <th>{{t "storefront.common.status"}}</th>
+                            <th class="is-right">{{t "storefront.common.total"}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.orders as |order|}}
+                            <tr class="is-clickable" {{on "click" (fn this.viewOrder order)}} data-test-network-store-order={{order.public_id}}>
+                                <td><a href="javascript:;" class="storefront-table__link" title={{order.public_id}}>{{or order.tracking order.public_id}}</a></td>
+                                <td><Table::Cell::Identity @row={{order}} @value={{order.customer}} @column={{hash resourceType="customer" resourcePath="customer"}} /></td>
+                                <td><Badge @status={{if order.meta.is_pickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.common.delivery")}} /></td>
+                                <td class="storefront-table__muted">{{format-date-fns order.created_at "d MMM, HH:mm"}}</td>
+                                <td><Badge @status={{order.status}} @size="xs" /></td>
+                                <td class="is-right font-semibold">{{format-currency order.meta.total order.meta.currency}}</td>
+                            </tr>
+                        {{else}}
+                            <tr><td colspan="6" class="storefront-table__muted">{{t "storefront.networks.store-details.no-orders"}}</td></tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            {{else}}
+                <table class="storefront-table storefront-table--rows" data-test-network-store-customers>
+                    <thead>
+                        <tr>
+                            <th>{{t "storefront.common.name"}}</th>
+                            <th>{{t "storefront.common.email"}}</th>
+                            <th>{{t "storefront.common.phone"}}</th>
+                            <th class="is-right">{{t "storefront.common.orders"}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.customers as |row|}}
+                            <tr class="is-clickable" {{on "click" (fn this.viewCustomer row.record)}} data-test-network-store-customer={{row.record.public_id}}>
+                                <td><Table::Cell::Identity @row={{row.record}} @column={{hash resourceType="customer"}} /></td>
+                                <td class="storefront-table__muted">{{n-a row.record.email}}</td>
+                                <td class="storefront-table__muted">{{n-a row.record.phone}}</td>
+                                <td class="is-right">{{row.orders}}</td>
+                            </tr>
+                        {{else}}
+                            <tr><td colspan="4" class="storefront-table__muted">{{t "storefront.networks.store-details.no-customers"}}</td></tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            {{/if}}
+        </div>
+    </div>
+</Layout::Section::Body>

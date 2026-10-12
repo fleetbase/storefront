@@ -8,6 +8,7 @@ use Fleetbase\Storefront\Http\Resources\PromotionCode as PromotionCodeResource;
 use Fleetbase\Storefront\Models\Campaign;
 use Fleetbase\Storefront\Models\CustomerSegment;
 use Fleetbase\Storefront\Models\Promotion;
+use Fleetbase\Storefront\Models\PromotionRedemption;
 use Fleetbase\Storefront\Models\PromotionCode;
 use Fleetbase\Storefront\Promotions\CampaignDispatcher;
 use Illuminate\Http\Request;
@@ -135,5 +136,50 @@ class PromotionController extends StorefrontController
     protected function generateCode(int $length, string $prefix): string
     {
         return PromotionCode::generate($length, $prefix);
+    }
+
+    /**
+     * Counts for the promotions hub: promotions by status, campaigns, segments and redemptions
+     * for the store or network in `owner`.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function hub(Request $request)
+    {
+        $company = session('company');
+        $owner   = $request->input('owner');
+
+        $promotions = Promotion::where('company_uuid', $company);
+        $campaigns  = \Fleetbase\Storefront\Models\Campaign::where('company_uuid', $company);
+        $segments   = \Fleetbase\Storefront\Models\CustomerSegment::where('company_uuid', $company);
+
+        if ($owner) {
+            $promotions->where('owner_uuid', $owner);
+            $campaigns->where('owner_uuid', $owner);
+            $segments->where('owner_uuid', $owner);
+        }
+
+        $promotionIds = (clone $promotions)->pluck('uuid');
+        $redeemed     = PromotionRedemption::where('company_uuid', $company)->whereIn('promotion_uuid', $promotionIds)->where('status', PromotionRedemption::STATUS_REDEEMED);
+        $byStatus     = (clone $promotions)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $now          = now();
+        $scheduled    = (clone $promotions)->where('status', 'active')->where('starts_at', '>', $now)->count();
+
+        return response()->json([
+            'promotions' => [
+                'total'     => (clone $promotions)->count(),
+                'active'    => max(0, (int) ($byStatus['active'] ?? 0) - $scheduled),
+                'scheduled' => $scheduled,
+                'paused'    => (int) ($byStatus['paused'] ?? 0),
+                'ended'     => (int) ($byStatus['ended'] ?? 0),
+                'draft'     => (int) ($byStatus['draft'] ?? 0),
+            ],
+            'campaigns'   => $campaigns->count(),
+            'segments'    => $segments->count(),
+            'redemptions' => [
+                'total'  => (clone $redeemed)->count(),
+                'amount' => (int) (clone $redeemed)->sum('amount'),
+            ],
+        ]);
     }
 }

@@ -7,6 +7,13 @@ const PUBLISHED_STATUSES = ['published', 'available', 'active'];
 
 export default class StorefrontProductCardComponent extends Component {
     @service modalsManager;
+    @service intl;
+
+    /** The API answers with its own placeholder when a product has no image; that is no image. */
+    get hasImage() {
+        const url = this.args.product?.primary_image_url;
+        return Boolean(url) && url !== FALLBACK_IMAGE_URL && !url.includes('/static/image-file-icon');
+    }
 
     get imageUrl() {
         return this.args.product?.primary_image_url ?? FALLBACK_IMAGE_URL;
@@ -23,6 +30,31 @@ export default class StorefrontProductCardComponent extends Component {
 
     get addonGroupCount() {
         return this.args.product?.addon_categories?.length ?? 0;
+    }
+
+    /** Chips only say something when there is something: a card with no variants or add-ons shows none. */
+    get hasChips() {
+        const { product } = this.args;
+        return Boolean(this.variantCount || this.addonGroupCount || this.catalogsCount || product?.is_service || product?.is_bookable);
+    }
+
+    get catalogsCount() {
+        const count = parseInt(this.args.product?.catalogs_count, 10);
+        return Number.isFinite(count) ? count : 0;
+    }
+
+    /** "1 variant · 2 add-ons · in 3 catalogs" for the list view's options column. */
+    get optionsSummary() {
+        const { product } = this.args;
+        const parts = [];
+
+        if (this.variantCount) parts.push(this.intl.t('storefront.products.card.variants', { count: this.variantCount }));
+        if (this.addonGroupCount) parts.push(this.intl.t('storefront.products.card.addons', { count: this.addonGroupCount }));
+        if (this.catalogsCount) parts.push(this.intl.t('storefront.products.card.in-catalogs', { count: this.catalogsCount }));
+        if (product?.is_service) parts.push(this.intl.t('storefront.products.card.service'));
+        if (product?.is_bookable) parts.push(this.intl.t('storefront.products.card.bookable'));
+
+        return parts.join(' · ');
     }
 
     get hasSalePrice() {
@@ -43,6 +75,48 @@ export default class StorefrontProductCardComponent extends Component {
         }
 
         return product?.is_available === false ? 'draft' : 'published';
+    }
+
+    get isDraft() {
+        return this.displayStatus === 'draft';
+    }
+
+    /**
+     * What a draft still needs before it can publish cleanly.
+     */
+    get missing() {
+        const { product } = this.args;
+        const missing = [];
+
+        if (!product) {
+            return missing;
+        }
+
+        if (!product.category_uuid && !product.category?.id) {
+            missing.push('category');
+        }
+
+        if (!this.hasImage) {
+            missing.push('image');
+        }
+
+        if (product.price === null || product.price === undefined || product.price === '' || !(parseFloat(product.price) >= 0)) {
+            missing.push('price');
+        }
+
+        return missing;
+    }
+
+    get isSelected() {
+        return Boolean(this.args.isSelected);
+    }
+
+    get isOutOfStock() {
+        return this.args.product?.is_available === false && !this.isDraft;
+    }
+
+    @action toggleSelect() {
+        this.args.onToggleSelect?.(this.args.product);
     }
 
     @action previewImage() {

@@ -1,0 +1,232 @@
+<div class="storefront-catalog-editor" data-test-catalog-editor>
+    <Storefront::PageHeader @title={{this.catalog.name}} @icon="book-open" @badgeStatus={{this.catalog.status}} @badgeText={{humanize this.catalog.status}} @hideBadgeDot={{true}} @subtitle={{this.headerMeta}} data-test-catalog-header>
+        <Button @size="sm" @icon="arrow-left" @text={{t "storefront.catalogs.editor.back"}} @onClick={{this.back}} data-test-catalog-back />
+        <Select class="form-select form-input-sm storefront-catalog-editor__status" @value={{this.catalog.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} data-test-catalog-status />
+        <Button @size="sm" @icon="clone" @text={{t "storefront.catalogs.editor.duplicate"}} @onClick={{this.duplicate}} @permission="storefront create catalog" />
+        <DropdownButton @icon="ellipsis-h" @size="sm" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-catalog-menu as |dd|>
+            <div class="next-dd-menu mt-1 mx-0">
+                <div class="px-1">
+                    <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd this.deleteCatalog)}} data-test-catalog-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.catalogs.editor.delete-catalog"}}</a>
+                </div>
+            </div>
+        </DropdownButton>
+    </Storefront::PageHeader>
+
+    <div class="storefront-catalog-editor__tabs" role="tablist">
+        {{#each (array "categories" "hours" "served-by" "details") as |section|}}
+            <button type="button" role="tab" aria-selected={{if (eq this.activeSection section) "true" "false"}} class="storefront-status-tab {{if (eq this.activeSection section) 'is-active'}}" {{on "click" (fn this.setSection section)}} data-test-catalog-section={{section}}>
+                {{t (concat "storefront.catalogs.editor.sections." section)}}
+                {{#if (eq section "served-by")}}<span class="storefront-status-tab__count">{{this.servedBy.length}}</span>{{/if}}
+            </button>
+        {{/each}}
+    </div>
+
+    <div class="storefront-catalog-editor__body">
+        {{#if (eq this.activeSection "categories")}}
+            <div class="storefront-catalog-editor__columns">
+                <div class="storefront-catalog-editor__side">
+                    <aside class="storefront-catalog-categories" aria-label={{t "storefront.catalogs.editor.sections.categories"}} data-test-catalog-categories>
+                        <div class="storefront-catalog-categories__title">{{t "storefront.catalogs.editor.sections.categories"}}</div>
+                        {{#each this.categoryRows as |row|}}
+                            <div class="storefront-catalog-category {{if row.isSelected 'is-selected'}}" data-test-catalog-category={{row.category.id}}>
+                                {{#if (eq this.renamingCategory row.category)}}
+                                    <form class="storefront-catalog-category__rename" aria-label={{t "storefront.catalogs.editor.rename-category"}} {{on "submit" this.commitRename}}>
+                                        <Input class="form-input form-input-xs w-full" @value={{this.renameValue}} {{on "input" this.setRenameValue}} {{on "blur" this.commitRename}} />
+                                    </form>
+                                {{else}}
+                                    <button type="button" class="storefront-catalog-category__select" {{on "click" (fn this.selectCategory row.category)}}>
+                                        <span class="storefront-catalog-category__name">{{row.category.name}}</span>
+                                        <span class="storefront-status-tab__count">{{row.count}}</span>
+                                    </button>
+                                    <div class="storefront-catalog-category__actions">
+                                        <Button @icon="arrow-up" @size="xs" @disabled={{row.isFirst}} @helpText={{t "storefront.catalogs.editor.move-up"}} @onClick={{fn this.moveCategory row.category -1}} />
+                                        <Button @icon="arrow-down" @size="xs" @disabled={{row.isLast}} @helpText={{t "storefront.catalogs.editor.move-down"}} @onClick={{fn this.moveCategory row.category 1}} />
+                                        <Button @icon="pencil" @size="xs" @helpText={{t "storefront.catalogs.editor.rename"}} @onClick={{fn this.startRename row.category}} />
+                                        <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "common.delete"}} @onClick={{fn this.removeCategory row.category}} />
+                                    </div>
+                                {{/if}}
+                            </div>
+                        {{else}}
+                            <div class="storefront-empty-row"><span>{{t "storefront.catalogs.card.no-categories"}}</span></div>
+                        {{/each}}
+                        <form class="storefront-catalog-categories__new" aria-label={{t "storefront.catalogs.editor.new-category"}} {{on "submit" this.addCategory}}>
+                            <Input class="form-input form-input-sm w-full" @value={{this.newCategoryName}} placeholder={{t "storefront.catalogs.editor.new-category"}} {{on "input" this.setNewCategoryName}} data-test-new-category />
+                            <Button @buttonType="submit" @icon="plus" @size="sm" @helpText={{t "storefront.catalogs.editor.new-category"}} @onClick={{this.addCategory}} />
+                        </form>
+                        <p class="storefront-invitation-list__note">{{t "storefront.catalogs.editor.categories-note"}}</p>
+                    </aside>
+                    <aside class="storefront-catalog-health" aria-label={{t "storefront.catalogs.editor.status"}} data-test-catalog-health>
+                        <div class="storefront-catalog-health__title">{{t "storefront.catalogs.editor.status"}}</div>
+                        <div class="storefront-catalog-health__row"><span>{{t "storefront.catalogs.editor.visible-in-app"}}</span><strong>{{if this.isVisibleInApp (t "storefront.catalogs.editor.visible-yes") (t "storefront.catalogs.editor.visible-no")}}</strong></div>
+                        <div class="storefront-catalog-health__row"><span>{{t "storefront.catalogs.editor.out-of-stock"}}</span><strong>{{t "storefront.catalogs.card.products-count" count=this.outOfStockCount}}</strong></div>
+                        <div class="storefront-catalog-health__row"><span>{{t "storefront.catalogs.editor.empty-categories"}}</span><strong>{{this.emptyCategoriesCount}}</strong></div>
+                        <div class="storefront-catalog-health__row"><span>{{t "storefront.catalogs.editor.sections.hours"}}</span><strong>{{this.hoursSummary}}</strong></div>
+                    </aside>
+                </div>
+
+                <section class="storefront-catalog-products" data-test-catalog-products>
+                    {{#if this.selectedCategory}}
+                        <div class="storefront-catalog-products__header">
+                            <div>
+                                <div class="storefront-catalog-products__title">{{this.selectedCategory.name}}</div>
+                                <div class="storefront-catalog-products__meta">{{t "storefront.catalogs.card.products-count" count=this.selectedProducts.length}}</div>
+                            </div>
+                            <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.catalogs.editor.add-products"}} @onClick={{fn this.openPicker this.selectedCategory}} @permission="storefront update catalog" data-test-add-products />
+                        </div>
+
+                        {{#if this.isPickerOpen}}
+                            <div class="storefront-catalog-picker" data-test-catalog-picker>
+                                <div class="storefront-catalog-picker__header">
+                                    <Input class="form-input form-input-sm w-full" @value={{this.pickerQuery}} placeholder={{t "storefront.catalogs.editor.search-products"}} {{on "input" this.setPickerQuery}} />
+                                    <span class="storefront-catalog-picker__hint">{{t "storefront.catalogs.editor.picker-hint" count=this.pickerSelection.length}}</span>
+                                </div>
+                                <div class="storefront-catalog-picker__list">
+                                    {{#each this.pickerProducts as |product|}}
+                                        <button type="button" class="storefront-catalog-picker__item {{if (in-array product this.pickerSelection) 'is-selected'}}" {{on "click" (fn this.togglePickerProduct product)}} data-test-picker-product={{product.id}}>
+                                            <Image src={{product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{product.name}} class="storefront-catalog-picker__image" />
+                                            <span class="storefront-catalog-picker__name">{{product.name}}</span>
+                                            <span class="storefront-catalog-picker__price">{{format-currency product.price product.currency}}</span>
+                                            <span class="storefront-check {{if (in-array product this.pickerSelection) 'is-checked'}}" aria-hidden="true">{{#if (in-array product this.pickerSelection)}}<FaIcon @icon="check" />{{/if}}</span>
+                                        </button>
+                                    {{else}}
+                                        <div class="storefront-empty-row"><span>{{t "storefront.catalogs.editor.no-products-to-add"}}</span></div>
+                                    {{/each}}
+                                </div>
+                                <div class="storefront-catalog-picker__footer">
+                                    <Button @text={{t "common.cancel"}} @size="sm" @onClick={{this.closePicker}} />
+                                    <Button @type="primary" @size="sm" @icon="check" @text={{t "storefront.catalogs.editor.add-count-to" count=this.pickerSelection.length category=this.selectedCategory.name}} @disabled={{not this.pickerSelection.length}} @onClick={{this.confirmPicker}} data-test-picker-confirm />
+                                </div>
+                            </div>
+                        {{/if}}
+
+                        {{#if this.selectedProducts.length}}
+                            <table class="storefront-catalog-product-table" data-test-catalog-product-table>
+                                <colgroup><col /><col class="is-price" /><col class="is-availability" /><col class="is-stock" /><col class="is-actions" /></colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>{{t "storefront.catalogs.editor.columns.product"}}</th>
+                                        <th>{{t "storefront.catalogs.editor.columns.price"}}</th>
+                                        <th>{{t "storefront.catalogs.editor.columns.availability"}}</th>
+                                        <th>{{t "storefront.catalogs.editor.columns.stock"}}</th>
+                                        <th class="is-right"><span class="sr-only">{{t "storefront.catalogs.editor.columns.actions"}}</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each this.selectedProductRows as |row|}}
+                                        <tr class="storefront-catalog-product {{if row.hiddenHere 'is-hidden-here'}}" data-test-catalog-product={{row.product.id}}>
+                                            <td>
+                                                <div class="storefront-catalog-product__cell">
+                                                    <Image src={{row.product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{row.product.name}} class="storefront-catalog-product__image" />
+                                                    <span class="storefront-catalog-product__name" title="{{row.product.name}}{{if row.product.sku (concat ' · ' row.product.sku)}}">{{row.product.name}}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {{#if row.isEditingPrice}}
+                                                    <div class="storefront-catalog-product__price-editor" data-test-catalog-price-editor>
+                                                        <MoneyInput @wrapperClass="mb-0" @value={{row.price}} @currency={{row.product.currency}} @onChange={{fn this.setCatalogPrice this.selectedCategory row.product}} class="form-input-sm" />
+                                                        <Button @size="xs" @icon="check" @helpText={{t "storefront.catalogs.editor.price-done"}} @onClick={{this.closeCatalogPrice}} data-test-catalog-price-done />
+                                                        <Button @size="xs" @icon="rotate-left" @helpText={{t "storefront.catalogs.editor.use-store-price"}} @onClick={{fn this.clearCatalogPrice this.selectedCategory row.product}} @disabled={{not row.hasPriceOverride}} data-test-catalog-price-clear />
+                                                    </div>
+                                                {{else}}
+                                                    <button type="button" class="storefront-catalog-product__price storefront-catalog-product__price--button" title={{t "storefront.catalogs.editor.set-catalog-price"}} {{on "click" (fn this.editCatalogPrice row.product)}} data-test-catalog-price>
+                                                        {{format-currency row.price row.product.currency}}
+                                                        <span class="storefront-catalog-product__price-note">{{if row.hasPriceOverride (t "storefront.catalogs.editor.catalog-price") (t "storefront.catalogs.editor.store-price")}}</span>
+                                                    </button>
+                                                {{/if}}
+                                            </td>
+                                            <td>
+                                                <Toggle @isToggled={{not row.hiddenHere}} @onToggle={{fn this.setSoldHere this.selectedCategory row.product}} @helpText={{if row.hiddenHere (t "storefront.catalogs.editor.hidden-here") (t "storefront.catalogs.editor.sold-here-help")}} data-test-catalog-sold-here />
+                                            </td>
+                                            <td><Badge @status={{if row.product.is_available "success" "warning"}} @hideStatusDot={{true}} @size="xs" @text={{if row.product.is_available (t "storefront.catalogs.editor.in-stock") (t "storefront.catalogs.editor.out-of-stock")}} /></td>
+                                            <td class="is-right"><Button @icon="times" @size="xs" @helpText={{t "storefront.catalogs.editor.remove-from-category"}} @onClick={{fn this.removeProduct this.selectedCategory row.product}} @permission="storefront update catalog" /></td>
+                                        </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                            <p class="storefront-invitation-list__note">{{t "storefront.catalogs.editor.products-note"}}</p>
+                        {{else if (not this.isPickerOpen)}}
+                            <div class="storefront-empty-row">
+                                <span>{{t "storefront.catalogs.editor.no-products-in-category"}}</span>
+                                <Button @size="xs" @icon="plus" @text={{t "storefront.catalogs.editor.add-products"}} @onClick={{fn this.openPicker this.selectedCategory}} />
+                            </div>
+                        {{/if}}
+                    {{else}}
+                        <div class="storefront-empty-row"><span>{{t "storefront.catalogs.editor.pick-a-category"}}</span></div>
+                    {{/if}}
+                </section>
+
+            </div>
+        {{else if (eq this.activeSection "hours")}}
+            <div class="storefront-catalog-editor__panel">
+                <p class="storefront-settings-section__lede">{{t "storefront.catalogs.editor.hours-lede"}}</p>
+                <Storefront::HoursStrip @hours={{this.hours}} class="mb-4" />
+                <ScheduleManager @subject={{this.catalog}} @subjectKey="catalog_uuid" @hourModelType="catalog-hour" />
+            </div>
+        {{else if (eq this.activeSection "served-by")}}
+            <div class="storefront-catalog-editor__panel">
+                <div class="storefront-catalog-products__header">
+                    <p class="storefront-settings-section__lede mb-0">{{t "storefront.catalogs.editor.served-by-lede"}}</p>
+                    <Button @type="primary" @size="sm" @icon="store" @text={{t "storefront.catalogs.editor.manage-served-by"}} @onClick={{this.manageServedBy}} @permission="storefront update catalog" data-test-manage-served-by />
+                </div>
+                {{#if this.servedBy.length}}
+                    <div class="storefront-member-list storefront-catalog-served-by">
+                        {{#each this.servedBy as |subject|}}
+                            <div class="storefront-member-row" data-test-catalog-subject={{subject.id}}>
+                                <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon={{if (eq subject.type "food-truck") "truck" "store"}} /></div>
+                                <div class="storefront-member-row__identity">
+                                    <div class="storefront-member-row__name">
+                                        <span>{{subject.name}}</span>
+                                        <FaIcon @icon="circle" @size="xs" class="storefront-card__indicator {{if subject.online 'text-green-500' 'text-gray-400'}}" />
+                                    </div>
+                                    <div class="storefront-member-row__meta">{{if (eq subject.type "food-truck") (t "storefront.common.food-trucks") (t "storefront.common.store")}}{{#if subject.plate}} · {{subject.plate}}{{/if}}</div>
+                                </div>
+                                <Badge @status={{if subject.online "online" "offline"}} @text={{if subject.online (t "storefront.catalogs.editor.serving") (t "storefront.common.offline")}} @size="xs" />
+                                <Button
+                                    @size="xs"
+                                    @icon="xmark"
+                                    @helpText={{t "storefront.catalogs.editor.stop-serving" name=subject.name}}
+                                    @onClick={{fn this.removeServedBy subject}}
+                                    @permission="storefront update catalog"
+                                    class="storefront-member-row__remove"
+                                    data-test-remove-served-by={{subject.id}}
+                                />
+                            </div>
+                        {{/each}}
+                    </div>
+                    <button type="button" class="storefront-empty-row storefront-empty-row--action" disabled={{cannot "storefront update catalog"}} {{on "click" this.manageServedBy}} data-test-assign-served-by>
+                        <FaIcon @icon="plus" @size="xs" class="mr-2" />{{t "storefront.catalogs.editor.assign-store-or-truck"}}
+                    </button>
+                {{else}}
+                    <div class="storefront-empty-row">
+                        <span>{{t "storefront.catalogs.editor.no-served-by"}}</span>
+                        <Button @size="xs" @icon="plus" @text={{t "storefront.catalogs.editor.assign-store-or-truck"}} @onClick={{this.manageServedBy}} @permission="storefront update catalog" data-test-assign-served-by />
+                    </div>
+                {{/if}}
+            </div>
+        {{else}}
+            <div class="storefront-catalog-editor__panel storefront-catalog-editor__details">
+                <InputGroup @name={{t "storefront.common.name"}} @value={{this.catalog.name}} {{on "input" this.touchField}} />
+                <InputGroup @name={{t "storefront.common.description"}} @value={{this.catalog.description}} {{on "input" this.touchField}} />
+                <InputGroup @name={{t "storefront.common.status"}}>
+                    <Select class="form-select w-full" @value={{this.catalog.status}} @options={{this.statusOptions}} @onSelect={{this.setStatus}} @humanize={{true}} />
+                </InputGroup>
+            </div>
+        {{/if}}
+    </div>
+
+    <div class="storefront-save-bar {{if this.isDirty 'is-dirty'}}" data-test-catalog-save-bar>
+        <div class="storefront-save-bar__status">
+            {{#if this.isDirty}}
+                <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />
+                {{this.dirtySummary}}
+            {{else}}
+                <FaIcon @icon="check" @size="xs" class="text-green-500 mr-2" />
+                {{t "storefront.settings.save-bar.saved"}}
+            {{/if}}
+        </div>
+        <div class="storefront-save-bar__actions">
+            <Button @text={{t "storefront.settings.save-bar.discard"}} @disabled={{not this.isDirty}} @onClick={{this.discard}} />
+            <Button @type="primary" @icon="save" @text={{t "storefront.catalogs.editor.save"}} @isLoading={{this.save.isRunning}} @disabled={{not this.isDirty}} @onClick={{perform this.save}} @permission="storefront update catalog" data-test-catalog-save />
+        </div>
+    </div>
+</div>

@@ -44,6 +44,7 @@ class Network extends FleetbaseResource
             'rating'                    => $this->rating,
             'online'                    => $this->online,
             'stores'                    => $this->when($request->boolean('with_stores') || $request->inArray('with', 'stores'), Store::collection($this->stores)),
+            'stores_count'              => $this->when(Http::isInternalRequest(), (int) ($this->stores_count ?? $this->stores()->count())),
             'categories'                => $this->when($request->boolean('with_categories') || $request->inArray('with', 'categories'), Category::collection($this->categories)),
             'gateways'                  => $this->when($request->boolean('with_gateways') || $request->inArray('with', 'gateways'), Gateway::collection($this->gateways)),
             'notification_channels'     => $this->when($request->boolean('with_notification_channels') || $request->inArray('with', 'notification_channels'), NotificationChannel::collection($this->notificationChannels)),

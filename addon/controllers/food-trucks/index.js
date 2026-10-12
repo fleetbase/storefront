@@ -1,7 +1,10 @@
 import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
+import { truckLatLng } from '@fleetbase/storefront-engine/components/storefront/truck/map';
+import { isBlank } from '@ember/utils';
+import { task, timeout } from 'ember-concurrency';
 
 export default class FoodTrucksIndexController extends Controller {
     @service store;
@@ -14,83 +17,125 @@ export default class FoodTrucksIndexController extends Controller {
     queryParams = ['query'];
 
     @tracked query;
+
+    /**
+     * Debounced search; updates the `query` param the route refreshes on.
+     */
+    @task({ restartable: true }) *search({ target: { value } }) {
+        if (isBlank(value)) {
+            this.query = null;
+            return;
+        }
+
+        yield timeout(250);
+        this.query = value;
+    }
     @tracked statusOptions = ['active', 'inactive'];
+    @tracked statusTab = 'all';
+    @tracked activeTruck = null;
+    @tracked panelTab = 'details';
+    @tracked catalogs = [];
+
+    get trucks() {
+        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+    }
+
+    /** Online by the truck's own flag, else by its vehicle (a belongsTo proxy until it resolves). */
+    isOnline(truck) {
+        return Boolean(get(truck, 'online') || get(truck, 'vehicle.online'));
+    }
+
+    get statusTabs() {
+        const trucks = this.trucks;
+        const online = trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
+        const inactive = trucks.filter((truck) => truck.status === 'inactive');
+        const offline = trucks.filter((truck) => !online.includes(truck) && !inactive.includes(truck));
+
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: trucks.length },
+            { id: 'online', label: this.intl.t('storefront.common.online'), count: online.length },
+            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: offline.length },
+            { id: 'inactive', label: this.intl.t('storefront.trucks.index.inactive'), count: inactive.length },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    get visibleTrucks() {
+        const trucks = this.trucks;
+
+        switch (this.statusTab) {
+            case 'online':
+                return trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
+            case 'offline':
+                return trucks.filter((truck) => truck.status !== 'inactive' && !this.isOnline(truck));
+            case 'inactive':
+                return trucks.filter((truck) => truck.status === 'inactive');
+            default:
+                return trucks;
+        }
+    }
+
+    /**
+     * Attributes a new truck starts with; the network trucks page overrides the owner.
+     */
+    get newTruckAttributes() {
+        return { store_uuid: this.storefront.activeStore?.id, status: 'active' };
+    }
+
+    @tracked view = 'cards';
+
+    get isMapView() {
+        return this.view === 'map';
+    }
+
+    /** Trucks whose vehicle reported a position, for the map view. */
+    get mappableTrucks() {
+        return this.visibleTrucks.filter((truck) => truckLatLng(truck));
+    }
+
+    @action toggleMapView() {
+        this.view = this.isMapView ? 'cards' : 'map';
+    }
+
+    @action openVehicle(truck) {
+        const vehicleId = get(truck, 'vehicle.public_id');
+
+        return vehicleId ? this.hostRouter.transitionTo('console.fleet-ops.management.vehicles.index.details', vehicleId) : null;
+    }
+
+    /** An order from the truck panel opens on this context's orders page. */
+    @action viewOrder(order) {
+        return this.hostRouter.transitionTo('console.storefront.orders.index', { queryParams: { query: order.public_id } });
+    }
+
+    @action selectStatusTab(tab) {
+        this.statusTab = tab.id ?? tab;
+    }
+
+    @action openTruck(truck, tab = 'details') {
+        this.panelTab = typeof tab === 'string' ? tab : 'details';
+        this.activeTruck = truck;
+    }
+
+    @action closeTruckPanel() {
+        this.activeTruck = null;
+    }
+
+    @action onTruckSaved() {
+        return this.hostRouter.refresh();
+    }
 
     @action createFoodTruck() {
-        const foodTruck = this.store.createRecord('food-truck', {
-            store_uuid: this.storefront.activeStore.id,
-            status: 'active',
-        });
+        const foodTruck = this.store.createRecord('food-truck', this.newTruckAttributes);
 
-        this.modalsManager.show('modals/create-food-truck', {
-            title: 'New Food Truck',
-            statusOptions: this.statusOptions,
-            foodTruck,
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('New food truck created.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+        return this.openTruck(foodTruck, 'details');
     }
 
     @action editFoodTruck(foodTruck) {
-        this.modalsManager.show('modals/create-food-truck', {
-            title: 'Edit Food Truck',
-            acceptButtonText: 'Save Changes',
-            acceptButtonIcon: 'save',
-            statusOptions: this.statusOptions,
-            foodTruck,
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('Changes to food truck saved.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+        return this.openTruck(foodTruck, 'details');
     }
 
-    @action async assignCatalogs(foodTruck) {
-        const allCatalogs = await this.store.query('catalog', { limit: -1 });
-        console.log('[allCatalogs]', allCatalogs);
-        this.modalsManager.show('modals/assign-food-truck-catalogs', {
-            title: "Assign Catalog's to this Food Truck",
-            acceptButtonText: 'Done',
-            acceptButtonIcon: 'save',
-            foodTruck,
-            allCatalogs,
-            updateCatalogSelections: (catalogs) => {
-                foodTruck.set('catalogs', catalogs);
-            },
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await foodTruck.save();
-                    this.hostRouter.refresh();
-                    this.notifications.success('Changes to food truck saved.');
-                } catch (error) {
-                    this.notifications.serverError(error);
-                } finally {
-                    modal.stopLoading();
-                }
-            },
-        });
+    @action assignCatalogs(foodTruck) {
+        return this.openTruck(foodTruck, 'catalogs');
     }
 
     @action deleteFoodTruck(foodTruck) {

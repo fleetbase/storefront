@@ -65,6 +65,54 @@ class AnalyticsController extends Controller
         ]);
     }
 
+    /**
+     * What a store operator acts on today: orders to confirm (and the oldest), orders ready for
+     * pickup, published products out of stock, trucks offline, pending network invitations.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function attention(Request $request)
+    {
+        $store       = $this->resolveStore($request);
+        $companyUuid = $this->companyUuid($request);
+        $orders      = $this->orders($companyUuid, null, null, $store)->whereNotIn('status', array_merge(self::CANCELED_STATUSES, self::COMPLETED_STATUSES));
+        $toConfirm   = (clone $orders)->whereIn('status', ['created', 'pending'])->orderBy('created_at')->get();
+        $readyPickup = (clone $orders)->whereIn('status', ['ready', 'pickup_ready'])->where('meta->is_pickup', true)->count();
+        $unassigned  = (clone $orders)->whereNotIn('status', ['created', 'pending'])->whereNull('driver_assigned_uuid')->where(fn ($query) => $query->whereNull('meta->is_pickup')->orWhere('meta->is_pickup', false))->count();
+
+        $products = Product::where('company_uuid', $companyUuid)->where('status', 'published')->where('is_available', false);
+        $trucks   = \Fleetbase\Storefront\Models\FoodTruck::where('company_uuid', $companyUuid)->where('status', 'active');
+        $invites  = collect();
+
+        if ($store) {
+            $products->where('store_uuid', $store->uuid);
+            $trucks->where('store_uuid', $store->uuid);
+
+            if ($store->email) {
+                $invites = \Fleetbase\Models\Invite::where(['company_uuid' => $companyUuid, 'reason' => 'join_storefront_network'])
+                    ->whereJsonContains('recipients', $store->email)
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                    ->get()
+                    ->filter(fn ($invite) => data_get($invite->meta, 'status', 'pending') === 'pending');
+            }
+        }
+
+        $offlineTrucks = $trucks->with('vehicle')->get()->filter(fn ($truck) => !$truck->vehicle || !$truck->vehicle->online);
+        $oldest        = $toConfirm->first();
+
+        return response()->json([
+            'orders_to_confirm'   => $toConfirm->count(),
+            'oldest_waiting_at'   => $oldest?->created_at,
+            'oldest_order_id'     => $oldest?->public_id,
+            'ready_for_pickup'    => $readyPickup,
+            'awaiting_driver'     => $unassigned,
+            'out_of_stock'        => $products->count(),
+            'trucks_offline'      => $offlineTrucks->count(),
+            'network_invitations' => $invites->count(),
+            'invitation_networks' => $invites->map(fn ($invite) => data_get($invite->subject, 'name'))->filter()->values(),
+        ]);
+    }
+
     public function revenueTrend(Request $request)
     {
         [$start, $end] = $this->dateRanges($request);

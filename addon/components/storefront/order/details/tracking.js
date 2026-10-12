@@ -4,6 +4,7 @@ import { debug } from '@ember/debug';
 import { task } from 'ember-concurrency';
 
 export default class OrderDetailsTrackingComponent extends Component {
+    @service intl;
     @service fetch;
     @service notifications;
 
@@ -523,12 +524,12 @@ export default class OrderDetailsTrackingComponent extends Component {
         }
 
         return [
-            { label: 'Provider', value: this.humanize(trackerData.provider) },
-            { label: 'Fallback', value: trackerData.fallback_provider ? this.humanize(trackerData.fallback_provider) : 'No' },
-            { label: 'Traffic aware', value: trackerData.options?.traffic_enabled ? 'Yes' : 'No' },
-            { label: 'Confidence', value: this.confidenceLabel },
-            { label: 'Driver signal', value: this.driverSignal },
-            { label: 'Warnings', value: String((trackerData.warnings ?? []).length) },
+            { label: this.intl.t('storefront.order.tracking.provider'), value: this.humanize(trackerData.provider) },
+            { label: this.intl.t('storefront.order.tracking.fallback'), value: trackerData.fallback_provider ? this.humanize(trackerData.fallback_provider) : 'No' },
+            { label: this.intl.t('storefront.order.tracking.traffic-aware'), value: trackerData.options?.traffic_enabled ? this.intl.t('common.yes') : this.intl.t('common.no') },
+            { label: this.intl.t('storefront.order.tracking.confidence'), value: this.confidenceLabel },
+            { label: this.intl.t('storefront.order.tracking.driver-signal'), value: this.driverSignal },
+            { label: this.intl.t('storefront.order.tracking.warnings'), value: String((trackerData.warnings ?? []).length) },
         ];
     }
 

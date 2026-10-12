@@ -1,12 +1,26 @@
 storefront:
   extension-name: Storefront
   common:
+    sku: SKU
+    updated: Updated
+    select-all: Select all
+    food-truck: Truck
+    promotion: Promotion
+    save: Save
+    filters: Filters
+    off: Off
+    on: On
+    all: All
+    active: Active
+    select: Select
+    preview: Preview
+    actions: Actions
     address: Address
     alerts: Alerts
     amount: Amount
     api: API
     back: Back
-    backdrop: backdrop
+    backdrop: Backdrop
     building: Building
     bulk-action: Bulk Action
     cash: Cash
@@ -33,10 +47,20 @@ storefront:
     import: Import
     invalid: Invalid
     loading: Loading...
-    logo: logo
+    loading-storefront: Loading storefront...
+    error-state:
+      title: This page could not be loaded
+      description: Something went wrong while loading this page. Try again, or go back to the dashboard.
+      retry: Try again
+      back: Back to dashboard
+    more: More
+    logo: Logo
     name: Name
     neighborhood: Neighborhood
     online: Online
+    offline: Offline
+    last-modified: Last modified
+    order: Order
     orders: Orders
     phone: Phone
     photos: Photos
@@ -70,21 +94,43 @@ storefront:
     facebook: Facebook
     instagram: Instagram
     twitter: Twitter
-    food-trucks: Food Trucks
+    food-trucks: Trucks
     catalog: Catalog
     catalogs: Catalogs
   sidebar:
+    all-products: All products
+    descriptions:
+      network-overview: Members, invitations, orders and revenue across the network.
+      network-stores: Stores selling through this network, their categories and invitations.
+      network-trucks: Trucks run by the stores in this network.
+      network-orders: Orders placed through this network.
+      network-customers: Customers who ordered through this network.
+      network-categories: The categories stores are grouped under in the network app.
+      network-promotions: Promotions, campaigns, segments and redemptions the network runs.
+      network-settings: Network details, gateways and notification channels.
+      dashboard: Storefront dashboard and sales overview.
+      orders: Manage incoming storefront orders.
+      products: Manage products, categories, variants and add-ons.
+      all-products: Browse and manage product inventory.
+      catalogs: Create and manage storefront catalogs.
+      customers: Review storefront customers and order history.
+      trucks: Manage trucks, where they serve and what they sell.
+      promotions: Discounts, promo codes, customer segments and campaigns.
+      settings: Store details, hours, locations, checkout rules, gateways, notifications and API keys.
+      launch-app: Open the storefront application repository.
     storefront: Storefront
     dashboard: Dashboard
     products: Products
     catalogs: Catalogs
-    food-trucks: Food Trucks
+    food-trucks: Trucks
     customers: Customers
     orders: Orders
     networks: Networks
     promotions: Promotions
     settings: Settings
     launch-app: Launch App
+    member-of: Member of
+    your-stores: Your stores in this network
   component:
     storefront-order-summary:
       order-summary-title: Storefront Order Summary
@@ -186,6 +232,15 @@ storefront:
         optionally-select-category: Optionally select a category to import products into
         select-category: Select Category
       incoming-order:
+        placed: Placed {ago}
+        items-count: "{count, plural, one {# item} other {# items}}"
+        paid-in-app: Paid in app
+        scheduled-for: For {date}
+        collects-from: Customer collects from
+        leaves-from: Leaves from
+        deliver-to: Deliver to
+        note: Note from the customer
+        scan-hint: Scan or print for handover
         assigned: Driver Assigned
         not-assigned: No driver assigned
         no-phone: No phone
@@ -238,6 +293,15 @@ storefront:
         phone: Phone
         email: Email
       orders:
+        next: Next
+        order: Order
+        refresh: Refresh orders
+        active-only: Active only
+        all-orders: All orders
+        driver-not-needed: Not needed
+        unassigned: Unassigned
+        empty: No recent orders yet.
+        recent-count: "{count, plural, =0 {No recent orders} one {# recent order} other {# recent orders}}"
         widget-title: Recent Orders
         id-column: Order ID
         cancel-order: Cancel Order
@@ -288,7 +352,8 @@ storefront:
       no-categories: No categories for this network
       create-category: Create a new category
     schedule-manager:
-      add-hours: Add Hours
+      add-hours: Add hours
+      no-hours: No hours
       add-new-hours-for-day: Add new hours for {day}
       new-hours-added-for-day: New hours added for {day}
       you-wish-to-remove-these-hour: Are you sure you wish to remove these hours?
@@ -296,10 +361,75 @@ storefront:
     store-selector:
       no-stores: No stores to select
       create-storefront: Create a new
+      store: Store
+      network: Network
+      stores: Stores
+      networks: Networks
+      no-networks: No networks yet
+      new-store: New store
+      new-network: New network
+      badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
   home:
     title: Storefront Dashboard
   customers:
+    addresses:
+      new-title: "New address for {name}"
+      save: Save address
+      street-required: Enter the street address.
+      saved: "Address saved to {name}."
+      add: Add address
+    card:
+      places-count: "{count, plural, =0 {No saved places} one {# saved place} other {# saved places}}"
+      account: App account
+      since: "Customer since {date}"
+    panel:
+      edit-details: Details
+      edit-help: Saved places are edited on the Places tab.
+      name-required: Give the customer a name.
+      saved: "{name} saved."
+      segments: Segments
+      no-segments: Not in any segment right now.
+      manage-segments: Manage segments
+      tabs:
+        overview: Overview
+        orders: Orders
+        places: Places
+        activity: Activity and notes
+      new-order: New order
+      copy-id: Copy customer ID
+      copy-email: Copy email
+      copied: "Copied {value}"
+      since: "since {date}"
+      lifetime: Lifetime
+      average: Average
+      last-order: Last order
+      first-order: First order
+      never: Never
+      prefers-delivery: Prefers delivery
+      prefers-pickup: Prefers pickup
+      preferred-fulfillment: Preferred fulfillment
+      account: Account
+      guest: Guest
+      saved-places: Saved places
+      default: Default
+      set-default: Set default
+      default-saved: "{name} is now the default place."
+      no-places: No saved addresses yet
+      no-places-help: Add one now, or the customer adds it at checkout.
+      places-lede: The customer's Fleet-Ops places. Open a place from its pill to edit it in Fleet-Ops.
+      places-note: Places belong to Fleet-Ops; the default is the one the app proposes at checkout.
+      stores-ordered-from: Stores ordered from
+      orders-count: "{count, plural, one {# order} other {# orders}}"
+      recent-orders: Recent orders
+      no-orders: No orders yet.
+      canceled-orders: Canceled orders
+      notes: Internal notes
     index:
+      subtitle: People who have ordered from this store
+      search: Search customers
+      view-cards: Cards
+      view-table: Table
+      empty: No customers yet. They appear here after their first order or sign-up.
       internal-id: Internal ID
       create-at: Created At
       update-at: Updated At
@@ -314,8 +444,480 @@ storefront:
       edit-button: Edit customer
       cancel-edit-button: Cancel edit customer
       cancel-new-button: Cancel new customer
-  networks:
+  catalogs:
+    editor:
+      rename-category: Rename category
+      back: All catalogs
+      delete-catalog: Delete catalog
+      sold-here: Sold here
+      columns:
+        product: Product
+        price: Price in catalog
+        availability: Availability
+        stock: Stock
+        actions: Actions
+      name-placeholder: Catalog name
+      categories-count: "{count, plural, =0 {no categories} one {# category} other {# categories}}"
+      served-by-count: "served by {stores, plural, =0 {no stores} one {# store} other {# stores}} and {trucks, plural, =0 {no trucks} one {# truck} other {# trucks}}"
+      duplicate: Duplicate
+      duplicated: Catalog duplicated as a draft.
+      sections:
+        categories: Categories and products
+        hours: Hours
+        served-by: Served by
+        details: Details
+      new-category: New category
+      rename: Rename
+      move-up: Move up
+      move-down: Move down
+      categories-note: The order here is the order the app shows. A category with no products is hidden in the app.
+      remove-category-title: "Remove the category {name}?"
+      remove-category-body: Its products stay in the store; they just leave this catalog.
+      add-products: Add products
+      search-products: Search the store's products
+      picker-hint: "{count, plural, =0 {Products already in this catalog are hidden.} one {# selected} other {# selected}}"
+      no-products-to-add: Every product of this store is already in the catalog.
+      add-count-to: "{count, plural, =0 {Add to {category}} one {Add # to {category}} other {Add # to {category}}}"
+      variants-count: "{count, plural, one {# variant} other {# variants}}"
+      addons-count: "{count, plural, one {# add-on} other {# add-ons}}"
+      store-price: store price
+      catalog-price: catalog price
+      set-catalog-price: Set a price for this catalog
+      price-done: Done
+      use-store-price: Use the store price
+      hidden-here: Hidden in this catalog
+      sold-here-help: Sold through this catalog. Off hides the product here without touching the store.
+      in-stock: In stock
+      out-of-stock: Out of stock
+      remove-from-category: Remove from this category
+      products-note: A product can be in several catalogs; removing it here never deletes it from the store.
+      no-products-in-category: No products in this category yet.
+      pick-a-category: Pick a category on the left, or create one.
+      status: Status
+      visible-in-app: Visible in app
+      visible-yes: Yes, during hours
+      visible-no: "No, draft"
+      empty-categories: Empty categories
+      no-hours: No hours set
+      every-day: every day
+      hours-lede: When the catalog is served. Outside these hours the app hides it.
+      served-by-lede: The stores and trucks that serve this catalog. A truck shows it only while online.
+      manage-served-by: Manage
+      served-by-title: "Who serves {name}"
+      served-by-saved: Served-by list saved.
+      serving: Serving
+      no-served-by: Nobody serves this catalog yet.
+      assign-store-or-truck: Assign a store or truck
+      stop-serving: "Stop serving from {name}"
+      served-by-removed: "{name} no longer serves this catalog."
+      stores: Stores
+      stores-help: Stores that serve this catalog at their locations.
+      trucks-help: Trucks that serve this catalog while they are online.
+      pick-trucks: Pick trucks
+      unsaved: Unsaved changes
+      unsaved-summary: "Unsaved: {added, plural, =0 {} one {# product added} other {# products added}} {removed, plural, =0 {} one {# removed} other {# removed}} {categories, plural, =0 {} other {categories changed}} {overrides, plural, =0 {} one {# price or availability change} other {# price or availability changes}}"
+      save: Save catalog
+      saved: Catalog saved.
+      created: Catalog created. Add categories and products next.
+      create-and-open: Create and open
+      create-lede: Give the catalog a name; you add categories, products, hours and who serves it next.
+      leave-title: Leave without saving?
+      leave-body: Your unsaved changes to this catalog will be lost.
+      leave: Leave
     index:
+      subtitle: "A catalog is a menu: its own categories, the products in them, the hours it is served, and the stores and trucks that serve it."
+      search: Search catalogs
+      new-catalog: New catalog
+      sort:
+        name: name
+        updated: last updated
+      empty-state: Create a catalog to group products into a menu with its own categories and hours.
+      create-catalog: Create catalog
+    card:
+      out-of-stock-count: "{count, plural, one {# out of stock} other {# out of stock}}"
+      assign: Assign to stores and trucks
+      publish: Publish
+      unpublish: Unpublish
+      published: Catalog published.
+      unpublished: Catalog unpublished; it is a draft again.
+      store-only: Store only, no trucks
+      draft-hint: Needs categories, products and hours
+      continue-setup: Continue setup
+      no-description: No description
+      no-categories: No categories yet
+      products-count: "{count, plural, =0 {No products} one {# product} other {# products}}"
+  trucks:
+    panel:
+      new-subtitle: Pick the vehicle, where it serves and what it sells.
+      tabs:
+        details: Details
+        catalogs: Catalogs
+        orders: Orders
+        location: Location
+      location-lede: Where the vehicle last reported from, as Fleet-Ops tracks it.
+      last-position: Last position
+      no-position: No position reported yet
+      last-seen: Last update
+      ago: "{value} ago"
+      open-map: Open on the Fleet-Ops map
+      open-vehicle: Open vehicle
+      no-vehicle-yet: Pick a vehicle on the Details tab to see where it is.
+      new-truck: New truck
+      delete-truck: Delete truck
+      not-assigned: not assigned
+      sections:
+        vehicle-crew: Vehicle and crew
+        catalogs: Catalogs on this truck
+        today: Today
+      today:
+        revenue: Revenue
+        avg-prep: Avg prep
+        minutes: '{value} min'
+      orders-lede: Orders fulfilled from this truck, newest first.
+      no-orders: No orders from this truck yet.
+      vehicle: Vehicle
+      vehicle-help: The Fleet-Ops vehicle; its driver and online state come from Fleet-Ops.
+      vehicle-placeholder: Select the vehicle for this truck
+      service-area: Service area
+      service-area-placeholder: Where the truck serves
+      zone: Zone
+      zone-placeholder: A zone inside the service area
+      pick-service-area-first: Pick a service area first
+      status-help: An inactive truck is hidden from the app even when its vehicle is online.
+      catalogs-lede: What the app shows is the union of the assigned catalogs that are within their hours.
+      catalogs-note: Overlapping hours are allowed. A draft catalog is never shown.
+      outside-hours: Outside hours
+      no-catalogs: No catalogs to assign yet. Create one on the Catalogs page.
+      unsaved: Unsaved changes
+      create: Create truck
+      saved: Truck saved.
+    network:
+      subtitle: Trucks run by this network and by the stores that sell through it.
+    map:
+      unavailable: The map could not be loaded in this console.
+    index:
+      subtitle: A Fleet-Ops vehicle that sells from a catalog inside a service area.
+      new-truck: New truck
+      map: Map
+      search: Search trucks
+      map-note: '{count} of {total} trucks have a reported position.'
+      inactive: Inactive
+      empty-state: Add a truck to sell from a vehicle inside a service area.
+      create-truck: Add truck
+    card:
+      no-vehicle: No vehicle assigned
+      no-driver: No driver assigned
+      service-area: '{name} service area'
+      orders-today: '{count, plural, =0 {no orders today} one {# order today} other {# orders today}}'
+      no-service-area: No service area
+      inactive: Inactive
+      offline: Offline
+      no-catalog: Online, no catalog
+      no-catalog-in-hours: Online · no catalog in hours
+      serving: "Serving · {catalog}"
+      last-online: "last online {ago} ago"
+      online: Online
+      assign-catalogs: Assign catalogs
+      catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
+      owned-by: "Owned by {name}"
+  dashboard:
+    kpi:
+      metric: Metric
+      vs-previous-period: vs previous period
+      no-previous-period: No previous period
+      load-error: Unable to load metric
+      active-orders: Active orders
+      orders: Orders
+      aov: Average order value
+      revenue: Revenue
+      cancellation-rate: Cancellation rate
+      customers: Customers
+      completed-orders: Completed orders
+      cart-conversion: Cart conversion
+    widgets:
+      recent-customers: "{count, plural, one {# recent customer} other {# recent customers}}"
+      no-recent-customers: No recent customers yet.
+      new-vs-returning: New vs returning buyers
+      repeat-rate: Repeat purchase rate
+      no-customer-activity: No customer activity yet.
+      no-order-activity: No order activity yet.
+      best-sellers: Best sellers by revenue
+      no-product-sales: No product sales yet.
+      no-revenue: No revenue data yet.
+    open-state:
+      open: "Open · closes {time}"
+      closed-until: "Closed · opens {time}"
+      closed-until-day: "Closed · opens {day} {time}"
+      closed: Closed
+      no-hours: No hours set
+      days:
+        monday: Monday
+        tuesday: Tuesday
+        wednesday: Wednesday
+        thursday: Thursday
+        friday: Friday
+        saturday: Saturday
+        sunday: Sunday
+    attention:
+      title: Needs attention
+      subtitle: What the store acts on today.
+      all-clear: Nothing waiting on you right now.
+      refresh: Refresh
+      orders-to-confirm: "{count, plural, one {order to confirm} other {orders to confirm}}"
+      oldest: "oldest {age}"
+      ready-for-pickup: ready for pickup
+      customers-notified: customers notified
+      awaiting-driver: "{count, plural, one {delivery without a driver} other {deliveries without a driver}}"
+      out-of-stock: "{count, plural, one {product marked unavailable} other {products marked unavailable}}"
+      still-published: still published
+      trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
+      network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
+  order:
+    sections:
+      details: Details
+      metadata: Metadata
+      customer-insights: Customer insights
+      order: Order
+      comments: Comments
+      no-items: No order items were found.
+      delivery-tip: Delivery tip
+      cash: Cash
+      unnamed-item: Unnamed item
+      no-description: No description
+      scheduled-at: "Scheduled {date}"
+      subtotal: Subtotal
+      discount: Discount
+      tip: Tip
+      total: Total
+      delivery-address: Delivery address
+    tracking:
+      based-on: Based on provider route and driver signal
+      reported-total: Reported total
+      between-stops: Between stops
+      provider: Provider
+      fallback: Fallback
+      traffic-aware: Traffic aware
+      confidence: Confidence
+      driver-signal: Driver signal
+      warnings: Warnings
+    workflow:
+      dispatch-provider: Dispatch provider
+      mark-as-ready: Mark as ready
+      mark-picked-up: Mark picked up
+    reload-activity: Reload activity
+    update-activity: Update order activity
+    asap: ASAP
+    incl-tip: "incl. tip {tip}"
+    other-orders-in-checkout: "{count, plural, =0 {Other orders in this checkout} one {# other order in this checkout} other {# other orders in this checkout}}"
+    no-other-orders: This is the only order in its checkout.
+    tabs:
+      items: Items
+      route: Route
+      payment: Payment
+      activity: Activity
+      customer: Customer
+      data: Data
+    flow:
+      created: Created
+      accepted: Confirmed
+      preparing: Preparing
+      ready: Ready
+      pickup_ready: Ready for pickup
+      dispatched: Dispatched
+      picked_up: Picked up
+      completed: Completed
+      canceled: Canceled
+  networks:
+    store-details:
+      back: Stores
+      revenue-share: "{share}% of network revenue"
+      through-network: Through the network
+      no-orders: No orders through the network yet.
+      no-customers: No customers through the network yet.
+    card:
+      stores-count: "{count, plural, =0 {No stores} one {# store} other {# stores}}"
+    overview:
+      members-count: "{count, plural, =0 {no members} one {# member} other {# members}}"
+      invitee: Invitee
+      sent: Sent
+      state: State
+      copy-link: Copy
+      manage-stores: Manage stores
+      no-category: No category
+      view-on-stores: View on the Stores page
+      open-store: Manage this store
+      view-store: View store details
+      online-count: "{count, plural, =0 {none online} one {# online} other {# online}}"
+      invitations-hint: "pending, {declined} declined"
+      orders-7d: Orders · 7 days
+      multi-store-count: "{count, plural, =0 {no multi-store} one {# multi-store} other {# multi-store}}"
+      revenue-7d: Revenue · 7 days
+      tips-hint: "tips {tips}, split across stores"
+      new-customers: "{count, plural, =0 {none new this month} one {# new this month} other {# new this month}}"
+      members-title: "{count, plural, =0 {Stores} one {Stores · # member} other {Stores · # members}}"
+      orders-count-7d: "{count, plural, =0 {no orders · 7d} one {# order · 7d} other {# orders · 7d}}"
+      share-of-network: "{share}% of network"
+      no-members: No stores sell through this network yet.
+      recent-orders: Recent network orders
+      all-orders: All orders
+      no-orders: No orders through this network in the last seven days.
+    orders:
+      search: Search orders
+      subtitle: Everything placed through the marketplace app, grouped by checkout
+      group-by-checkout: Group by checkout
+      flat: Flat
+      tabs:
+        all: All
+        needs-action: Needs action
+        preparing: Preparing
+        ready: Ready for pickup
+        dispatched: Out for delivery
+        completed: Completed
+        canceled: Canceled
+        custom: Filtered
+      columns:
+        next: Next
+        reference: Checkout / order
+        fulfillment: Fulfillment
+        total: Total
+        placed: Placed
+      group-summary: "{orders, plural, one {# order} other {# orders}} · {items, plural, one {# item} other {# items}}"
+      part-of: "part of {checkout}"
+      items-count: "{count, plural, one {# item} other {# items}}"
+      no-customer: No customer
+      no-store: No store
+      delivery: Delivery
+      tip-split: "tip {tip} split {count} ways"
+      tip-shared: "+ tip {tip} shared"
+      tip-to-store: "tip {tip} to store"
+      driver-shared: "shared across {count} orders"
+      no-driver-needed: No driver needed
+      drivers-count: "{count} drivers"
+      assign-driver: Assign driver
+      unassigned: Unassigned
+      group-status: "{count} of {total} {status}"
+      expand-hint: Expand for each store's order
+      group-note: Group status is the least-advanced child; a group leaves "Needs action" when every child has a driver or is ready for pickup.
+    join:
+      eyebrow: You are invited to join
+      sent-by: "sent by {name}"
+      expires: "expires {when}"
+      what-happens: What happens
+      what-happens-body: Your store joins with its own catalog, prices and hours; the network's app lists it.
+      category-later: The network chooses after you join
+      approval: Approval
+      approval-body: The network reviews your store before it appears in the app.
+      which-store: Which store joins
+      which-store-help: Stores you administer. The network sees the store's name, catalog and hours.
+      accept: Review and accept
+      decline: Decline
+      accepted: "{store} joined {network}."
+      declined: Invitation declined.
+      joined: "{store} is now a member of {network}."
+      awaiting-approval: "{network} will review your store before it appears in the app."
+      go-to-dashboard: Go to the dashboard
+      closed:
+        accepted: This invitation was already accepted.
+        awaiting_approval: This invitation was accepted and is awaiting the network's approval.
+        declined: This invitation was declined.
+        expired: This invitation has expired. Ask the network to invite you again.
+        revoked: This invitation was withdrawn.
+      banner-title: "{network} invited this store to join"
+      review: Review
+      badge-title: "{count, plural, one {# network invitation} other {# network invitations}}"
+    customers:
+      subtitle: Customers who have ordered through the network app
+      search: Search customers
+      note: A customer belongs to the store that first served them; the network sees everyone who ordered through it.
+    share:
+      lede: Share with people and organizations
+    categories:
+      icon: Category icon
+      upload-icon: Upload category icon
+      subtitle: "{count, plural, =0 {No categories yet} one {# category} other {# categories}} customers browse in the network app"
+      title: Categories
+      new-category: New category
+      parent: Parent
+      add-subcategory: Add subcategory
+      saved: Category changes saved.
+      deleted: Category deleted; its stores moved to the top level.
+      empty: No categories yet. Categories group the stores customers browse in the network app.
+      note: A store sits in one category; removing a category moves its stores to the top level.
+    invitations:
+      title: Invitations
+      invite-stores: Invite stores
+      invited: Invited
+      pending-count: "{count, plural, =0 {no invitations pending} one {# invitation pending} other {# invitations pending}}"
+      none: No open invitations.
+      sent-ago: "Sent {ago}"
+      resend: Resend
+      revoke: Revoke
+      invite-again: Invite again
+      resent: "Invitation re-sent to {email}."
+      revoke-title: "Revoke the invitation to {email}?"
+      revoke-body: The link in the email stops working immediately. You can invite this address again later.
+      shareable-link: Shareable link
+      manage-link: Manage link
+      link: Link
+      link-hint: Anyone with the link can request to join. Turning the link off invalidates it immediately.
+      regenerate: Regenerate
+      regenerate-hint: Regenerating invalidates the old link immediately.
+      link-expires: Link expires
+      link-expires-on: "Expires {date}"
+      link-joins: "{count, plural, =0 {No store has joined with it yet} one {# store joined with it} other {# stores joined with it}}"
+      approve-automatically: Approve automatically (no review step)
+      approve-automatically-help: Off keeps approval with you; a store that joins by link waits on the Stores page until you approve it.
+      link-updated: Join link updated.
+      via-link: Joined by link
+      status:
+        pending: Pending
+        declined: Declined
+        expired: Expired
+        accepted: Accepted
+        revoked: Revoked
+        awaiting_approval: Awaiting approval
+        rejected: Rejected
+      stores-subtitle: "{members, plural, =0 {No members} one {# member} other {# members}} · {pending, plural, =0 {no invitations pending} one {# invitation pending} other {# invitations pending}}"
+      add-existing-store: Add existing store
+      edit-category: Edit category
+      delete-category: Delete category
+      selected-count: "{count, plural, one {# selected} other {# selected}}"
+      clear: Clear
+      rows-note: Invited rows are invitations, not members; they leave the list when accepted or revoked.
+      assign-category-count: "Assign a category to {count, plural, one {# store} other {# stores}}"
+      pick-a-category: Pick a category first.
+      remove-count-title: "Remove {count, plural, one {# store} other {# stores}} from {networkName}?"
+      remove-body: The store keeps its own catalog and orders. Open network orders that include this store stay open; new multi-store carts will no longer offer its products.
+      panel-title: "Invite stores to {network}"
+      panel-lede: A store that accepts joins with its own catalog, prices and hours. You choose its category.
+      tab-email: By email
+      tab-link: Shareable link
+      tab-own: Add a store you manage
+      email-addresses: Email addresses
+      email-help: Paste a list; one invitation per address. Members and pending invitees are flagged before sending.
+      already-flagged: "{count, plural, one {# address is already a member or already invited and will be skipped.} other {# addresses are already members or already invited and will be skipped.}}"
+      invalid-flagged: "{count, plural, one {# address is not a valid email.} other {# addresses are not valid emails.}}"
+      category-on-joining: Category on joining
+      let-store-choose: Let the store choose
+      expires: Invitation expires
+      expires-14: In 14 days
+      expires-7: In 7 days
+      expires-30: In 30 days
+      expires-never: Never
+      message: Message (optional)
+      message-placeholder: "Hi, we would like your store on {network}. Accept to list your catalog in the app."
+      require-approval: Require my approval after the store accepts
+      require-approval-help: You review the store before it appears in the app.
+      send-count: "{count, plural, =0 {Send invitations} one {Send # invitation} other {Send # invitations}}"
+      sent: "{count, plural, one {# invitation sent.} other {# invitations sent.}}"
+      own-stores: Stores in your organisation
+      own-stores-help: Stores you administer join immediately; no invitation is sent.
+      pick-stores: Pick stores
+      add-to-network: Add to network
+      own-stores-added: "{count, plural, one {# store added to the network.} other {# stores added to the network.}}"
+    index:
+      empty-state: Create a network to sell from several stores through one app.
+      create-network: Create network
       network-option: Network Options
       manage-network: Manage Network
       send-invite: Send Invites
@@ -324,13 +926,20 @@ storefront:
       success-message: Yout new storefront network has been created!
       delete-this-network-all-assigned-stores-customer-order: Are you sure you wish to delete this network ({networkName})? All assigned stores, customers, orders will no longer be reachable.
       network:
+        unsaved-title: Unsaved network changes
+        unsaved-body: Going back will roll back every unsaved change to this network.
         manage-network: Manage Network
+        all-networks: All networks
+        overview: Overview
         settings: Settings
         customers: Customers
         orders: Orders
+        trucks:
+          empty-state: No trucks yet. Trucks are created from a store and appear here for every store in the network.
         Network-changes-not-save: Network changes not saved!
         going-back-will-rollback-all-unsaved-changes: Going back will rollback all unsaved changes, are you sure you wish to continue?
         index:
+          placeholder-tax: Tax percentage
           change-network-saved: Changes to network saved.
           create-new-payment-gateway: Create a new payment gateway
           save-gateway: Save Gateway
@@ -352,7 +961,7 @@ storefront:
             description-help-text: Give your store a brief description to let users know what your network is about.
             currency: Currency
             contact-social-panel:
-              panel-title: Contact & Social
+              panel-title: Contact and social
               phone: Phone
               email: Email
               email-help-text: Your business email.
@@ -425,14 +1034,38 @@ storefront:
             new-channel-button-text: Create new channel
         stores:
           store: Stores
+          suspended: Suspended
+          suspend-short: Suspend
+          remove-short: Remove from network
+          approve-short: Approve
+          search: Search stores
+          no-categories: No categories yet
+          showing: "Showing {from} to {to} of {total}"
+          awaiting-approval: Awaiting approval
+          approve: Approve membership
+          reject: Reject membership
+          reject-title: "Reject {name}?"
+          reject-body: "The store will not join {networkName}. Its invitation is closed as rejected; you can invite it again later."
+          approve-done: "{count, plural, one {Store approved.} other {# stores approved.}}"
+          reject-done: "{count, plural, one {Membership rejected.} other {# memberships rejected.}}"
+          suspend: Suspend from network
+          reinstate: Reinstate in network
+          suspend-title: "{count, plural, one {Suspend {names}?} other {Suspend # stores?}}"
+          suspend-body: "Suspended stores stay members of {networkName} but disappear from its app and carts until reinstated. Their category and order history are kept."
+          suspend-done: "{count, plural, one {Store suspended.} other {# stores suspended.}}"
+          reinstate-done: "{count, plural, one {Store reinstated.} other {# stores reinstated.}}"
+          orders-7d: Orders · 7d
+          share: Share of orders
+          joined: Joined
+          empty: No stores in this network yet. Add an existing store or invite one.
           add-stores-button-text: Add Stores
           invite-stores-button-text: Invite Stores
           created-at: Created At
-          view-store-details: View Store Details
-          edit-store: Edit Store
-          assign-category: Assign Category
-          remove-category: Remove Category
-          remove-store-from-network: Remove Store from Network
+          view-store-details: View store
+          edit-store: Open store
+          assign-category: Change category
+          remove-category: Remove category
+          remove-store-from-network: Remove from network
           delete-network-category: Delete network category?
           deleting-category-move-all-stores-inside-on-top-level: Deleting this category will move all stores inside to the top level, are you sure you want to delete this category?
           add-store-to-category: Add store to category
@@ -455,7 +1088,90 @@ storefront:
           remove-store-category: Remove store category
           remove-store-category-body: You are about to remove {storeName} from the category {categoryName}, do you wish to proceed?
   orders:
+    create:
+      add-product-from-storefront: Add product from storefront
+      select-store: Select store
+      select-category: Select product category
+      filter-by-category: Filter by product category
+      select-product-title: Select a product to add to the order
+      title: New order
+      fulfillment-help: Pickup hides the dropoff and the delivery fee; Schedule adds a time within store hours.
+      store-location: Store location
+      no-locations: This store has no locations yet; add one under Settings.
+      add-products: Add products
+      options: Options
+      qty: Qty
+      decrease: Decrease quantity
+      increase: Increase quantity
+      promotion: Promotion
+      method: Method
+      product: Product
+      price: Price
+      fulfillment: Fulfillment
+      subtitle: a console order follows the same flow as an app order
+      change-customer: Change customer
+      customer-placeholder: Search customers by name, phone or email
+      customer-help: Picking a customer fills the places below.
+      schedule: Schedule
+      pickup-from: Pickup from
+      change-address: Change address
+      leaves-from: Leaves from
+      location-help: A store location; its hours decide what the catalog offers.
+      deliver-to: Deliver to
+      no-places: No saved places yet; pick another address or add a new one.
+      other-address: Another address
+      pick-customer-first: Pick a customer to see their saved places.
+      dropoff-help: A saved place of the customer, another address, or a new one saved to them.
+      new-address: New address
+      street-placeholder: Street address
+      unit-placeholder: Unit, floor or building
+      address-name-placeholder: Label, e.g. Home
+      save-address: Save address
+      address-saved: "Address saved to {name}."
+      items-hint: from the store's published products
+      store-hint: the member store this order is placed with
+      each: each
+      choose-options: Choose the options, then add it to the order.
+      add-to-order: Add to order
+      max: "(up to {max})"
+      max-addons: "Up to {max} from {category}."
+      variant-required: "Choose a {variant}."
+      picker-hint: Click a product to add it; products with options ask first.
+      no-products: No published products match.
+      notes: Order notes
+      notes-placeholder: Anything the store or driver should know
+      summary: Summary
+      promo-placeholder: Promotion code
+      apply: Apply
+      promo-applied: "{name} applied"
+      promo-rejected: "{code} cannot be applied ({reason})."
+      payment-cash: Cash on delivery
+      payment-paid: Mark as paid (phone order)
+      payment-help: Card payments are collected in the app; a console order is cash or already paid.
+      tip: Tip
+      tip-none: None
+      tip-custom: Custom
+      subtotal: "Subtotal · {count, plural, one {# item} other {# items}}"
+      discount: Promotion
+      delivery-fee: Delivery fee
+      pricing: Pricing through the API…
+      minimum-met: "Minimum order {amount} met"
+      ready: Ready to place
+      place: "Place order · {total}"
+      placed: "Order {id} placed."
+      issues:
+        store: Pick the store the order is placed with.
+        customer: Pick a customer.
+        items: Add at least one product.
+        dropoff: Pick where the order is delivered to.
+        location: Pick the store location.
+        minimum: "Minimum order {amount} not met."
     index:
+      subtitle: Orders placed through the app and the console, newest first
+      search: Search orders
+      empty-title: No orders yet
+      empty-help: Orders placed in the app and from the console show up here.
+      items: Items
       internal-id: Internal ID
       customer: Customer
       select-order-customer: Select order customer
@@ -526,8 +1242,197 @@ storefront:
         save-order-note: Save Order Note
         order-notes-updated: Order notes updated.
   products:
+    sidebar:
+      categories: Categories
+      categories-help: Organise products for browsing. Click a caret to fold a category.
+      new-category: New category
+      all-products: All products
+      no-categories: No categories yet
+      smart-groups: Smart groups
+    empty:
+      help: Create a category, then add products to it.
+      category-help: Create the first product in this category.
+    groups:
+      out-of-stock: Unavailable
+      drafts: Drafts
+      recommended: Recommended
+      on-sale: On sale
+      uncategorized: Uncategorised
+    statuses:
+      published: Published
+      draft: Draft
+    card:
+      untitled: Untitled product
+      updated: "Updated {ago} ago"
+      ago: "{ago} ago"
+      unavailable: Unavailable
+      variants: "{count, plural, =0 {No variants} one {# variant} other {# variants}}"
+      simple: Simple product
+      in-catalogs: "{count, plural, one {in # catalog} other {in # catalogs}}"
+      addons: "{count, plural, =0 {No add-ons} one {# add-on} other {# add-ons}}"
+      service: Service
+      bookable: Bookable
+      missing: "Missing: {items}"
+      restock-hint: Out of stock and still published. Restock or unpublish.
+    sort:
+      label: "Sort: {sort}"
+      recently-updated: recently updated
+      newest: newest first
+      name: name
+      price-low: price, low to high
+      price-high: price, high to low
+    bulk:
+      publish: Publish
+      unpublish: Unpublish
+      move: Move to category
+      mark-on-sale: Mark on sale
+      add-to-catalog: Add to catalog
+      add-to-catalog-title: "Add {count, plural, one {# product} other {# products}} to a catalog"
+      pick-catalog: Pick a catalog
+      pick-category: Pick a category
+      pick-catalog-first: Pick a catalog and a category first.
+      catalog-help: One of this store's catalogs.
+      category-help: The catalog category the products are listed under.
+      no-categories: This catalog has no categories yet. Add one in the catalog editor first.
+      added-to-catalog: "{count, plural, one {# product added} other {# products added}} to {category} in {catalog}."
+      published: "{count, plural, one {# product published.} other {# products published.}}"
+      unpublished: "{count, plural, one {# product unpublished.} other {# products unpublished.}}"
+      on-sale: "{count, plural, one {# product marked on sale.} other {# products marked on sale.}}"
+      move-title: "Move {count, plural, one {# product} other {# products}} to a category"
+      moved: "{count, plural, one {# product moved} other {# products moved}} to {category}."
+      delete-title: "Delete {count, plural, one {# product} other {# products}}?"
+    addons:
+      title: Add-ons
+      subtitle: Reusable groups customers pick from at checkout, such as toppings or sides.
+      groups: Groups
+      new-group: New group
+      untitled-group: Untitled group
+      group-name: Group name
+      delete-group: Delete group
+      delete-group-title: "Delete {name}?"
+      delete-group-body: Its add-ons are removed from every product that uses this group.
+      name: Name
+      description: Description
+      add-addon: Add an add-on
+      no-addons: No add-ons in this group yet.
+      no-groups: No groups yet.
+      pick-group: Create a group to start adding add-ons.
+      saved: Add-ons saved.
+    form:
+      add-metafield: Add metafield
+      actions:
+        make-primary: Make primary
+        new-variant: New variant
+        remove-variant: Remove variant
+        edit-variant: Edit variant
+        select-addon-categories: Select add-on categories
+      tabs:
+        details: Details
+        variants: Variants and add-ons
+        availability: Availability
+        media: Media
+      sections:
+        organization: Organization
+        product: Product
+        pricing: Pricing
+        flags: Visibility
+        videos: YouTube videos
+        media: Images and videos
+        variants: Variants
+        addons: Add-ons
+        translations: Translations
+      fields:
+        name: Name
+        name-placeholder: What the product is called in the app, for example Margherita pizza
+        description: Description
+        description-placeholder: What the customer reads in the app
+        category: Category
+        category-placeholder: Select a category
+        sku: SKU
+        sku-placeholder: For example PIZ-MARG-12
+        sku-help: Optional; shown on order lines and exports.
+        tags: Tags
+        tags-placeholder: Add tags
+        price: Price
+        price-help: What the customer pays for one unit.
+        sale-price: Sale price
+        sale-price-help: Charged instead of the price while the product is on sale.
+        video-placeholder: https://www.youtube.com/watch?v=...
+        video-urls: YouTube video URLs
+        video-urls-help: Videos shown on the product in the app.
+        no-options: No options in this variant.
+        checkout-modifiers: Checkout modifiers
+      flags:
+        service: This is a service (booked, not delivered)
+        bookable: This service is bookable
+        on-sale: On sale, shows the sale price
+        recommended: Recommended, pinned at the top of its category
+        available: Available to order
+      status-help: Drafts stay hidden from the app until they are published.
+      hours-hint: When the product can be ordered.
+      hours-empty: No hours set, so the product can be ordered whenever the store is open.
+      variants:
+        hint: Required or optional choices such as size, each option adding to the price.
+        new-option: "New {name} option"
+        add-option: Add option
+        required: Required
+        multiple: Pick several
+        none: No variants. Add one for choices like size or flavour.
+        option-name: Option name
+        option-description: Option description
+        option: Option
+        extra-cost: Extra cost
+        optional: Optional
+        pick-one: Pick one
+        options-count: "{count, plural, =0 {no options} one {# option} other {# options}}"
+        edit: Edit variant
+        remove: Remove variant
+      videos:
+        add: Add video
+        invalid: Not a YouTube link; paste a watch, share or shorts link.
+      addons:
+        hint: Reusable add-on groups; untick an add-on to hide it for this product.
+        no-description: No description
+        group-empty: No add-ons in this group yet.
+        none: No add-on groups attached.
+        offered: "{offered} of {total} offered"
+        hidden: Hidden
+        remove-group: Remove group
+      more: More
+      more-subtitle: "translations ({translations}), metadata ({metadata} keys)"
+      metadata: Metadata
+      metadata-subtitle: "{count, plural, =0 {no keys} one {# key} other {# keys}} for integrations"
+      translations:
+        hint: The name and description in other languages; the app shows the customer's language when it exists.
+        add-language: Add language
+        remove-language: "Remove {language}"
+        placeholder: Same as the original
+        custom-fields: Custom fields
+        new-field: New field key, for example ingredients
+        add-field: Add field
+        help: An empty field shows the original text in the app.
+        none: Not translated yet. Add a language to translate the name and description.
+      needs-attention: "{count, plural, one {# field needs attention} other {# fields need attention}}"
+      create: Create product
+      creating: Creating the product...
+      save: Save changes
+      issues:
+        name: Give the product a name.
+        price: Set a price.
+        sale-price: Sale price must be lower than the price.
+        sale-price-missing: The product is on sale but has no sale price.
+        category: A published product needs a category.
+        media: A published product should have at least one image.
     index:
-      manage-addons: Manage Addons
+      summary: "{products, plural, =0 {No products} one {# product} other {# products}} · {categories, plural, =0 {no categories} one {# category} other {# categories}}"
+      summary-categories: "{categories, plural, =0 {No categories} one {# category} other {# categories}}"
+      search: Search products
+      new-product: New product
+      edit-category: Edit this category…
+      delete-category: Delete this category…
+      manage-addons: Manage add-ons
+      view-grid: Grid
+      view-list: List
       manage-addons-dialog:
         manage-addons-title: Manage Product Addon Categories & Options
         manage-addons-accept-button: Save Changes
@@ -569,12 +1474,91 @@ storefront:
         delete-product: Are you sure you wish to delete this product?
         body-warning: Warning! Once this product is deleted it will no longer be accessible.
   settings:
+    hours:
+      lede: When each location is open. The app only offers what is inside these hours; edit them on the location.
+      edit: Edit hours
+      open-days: "{count, plural, =0 {closed every day} one {open # day a week} other {open # days a week}}"
+      empty: No locations yet. Hours belong to a location, so add one first.
+    danger:
+      lede: Actions here cannot be undone.
+      delete-title: Delete {name}
+      delete-description: Removes the store, its products, catalogs, locations and settings. Orders already placed stay on record.
+      delete-button: Delete store
+      confirm-title: Delete {name}?
+      confirm-body: This permanently deletes the store and everything it owns. Orders already placed stay on record. This cannot be undone.
+      deleted: "{name} was deleted."
+    shell:
+      copy-store-key: Copy store key
+      store-key-copied: Store key copied.
+    sections:
+      select-gateway-type: Select gateway type
+      hours: Hours
+      locations: Locations
+      payment-gateways: Payment gateways
+      notification-channels: Notification channels
+      danger: Danger zone
+      general: General
+      branding: Branding and media
+      checkout-rules: Checkout rules
+      checkout-rules-lede: What the app allows in the cart and at checkout.
+      alerts: Alerts
+      api-keys: API keys
+      store-key: Store key
+      timezone: Timezone
+      timezone-help: Hours and scheduled orders are read in this timezone.
+      store-key-help: Used by the app and the API; it cannot change.
+      default-order-config: Default order config
+      default-order-config-help: Applies to every order created for this store.
+      default-order-config-placeholder: Select default order config
+      network-key: Network key
+      network-key-help: Used by the app and the API; it cannot change.
+      gateways: Payment gateways
+      notifications: Notification channels
+      contact-social: Contact and social
+      network-rules-lede: What the app allows across the stores in this network.
+      copy-network-key: Copy network key
+      network-key-copied: Network key copied.
+    rules:
+      online: Customers can see and order from this store in the app.
+      pickup-label: Pickup orders
+      pickup: Customers may collect from a store location instead of delivery.
+      tips-label: Store tips
+      tips: Customers can add a tip for the store at checkout.
+      delivery-tips-label: Delivery tips
+      delivery-tips: Customers can add a tip for the driver at checkout.
+      minimum-label: Minimum order amount
+      minimum: Carts below this amount cannot check out.
+      cod-label: Cash on delivery
+      cod: Customers can pay the driver in cash when the order arrives.
+      tax-label: Tax
+      tax: Add tax to every order at the percentage below.
+      auto-accept-label: Auto-accept incoming orders
+      auto-accept: New orders skip the confirmation step and start preparing.
+      auto-dispatch-label: Auto-dispatch orders
+      auto-dispatch: Orders are dispatched to Fleet-Ops as soon as they are ready.
+      pod-label: Proof of delivery
+      pod: The driver must capture proof before the order completes.
+      network-note: Network-level rules (multi-cart checkout, tip splitting) live in the network's settings.
+      online-network: Customers can browse and order from this network in the app.
+      multi-cart-label: Multi-cart checkout
+      multi-cart: Customers can check out items from several stores in one order.
+      split-tips-label: Split store tips across stores
+      split-tips: A multi-store order's store tip is divided by each store's share; off, the network keeps it.
+      reviews-label: Customer reviews
+      reviews: Customers can review products and stores after a completed order.
+    save-bar:
+      unsaved: "{count, plural, one {# unsaved change} other {# unsaved changes}}"
+      saved: All changes saved
+      saved-toast: Changes saved.
+      discard: Discard
+      save: Save settings
     api:
       api-settings: API Settings
       access-key-for-storefront-api-integrations: Access key for Storefront API & Integrations.
       store-key: Store Key
       store-key-help-text: This is your store key, use this to enable apps and integrations for your storefront.
     gateways:
+      empty: No payment gateways yet. Add one so customers can pay in the app.
       geteway-settings: Gateway Settings
       add-or-manage-your-paymeny-gateway-settings-here: Add or manage your payment gateway settings here.
       create-new-gateway: Create new gateway
@@ -602,7 +1586,7 @@ storefront:
       description-placeholder: Storefront Description
       description-help-text: Give your store a brief description to let users know what you sell.
       tags-placeholder: Add tags
-      contact-social: Contact & Social
+      contact-social: Contact and social
       website-help-text: Your business website URL.
       facebook-placeholder: Facebook ID
       facebook-help-text: Your business Facebook page ID.
@@ -615,6 +1599,13 @@ storefront:
       upload-new-logo: Upload new logo
       backdrop-help-text: Optional banner or background image for your store.
       upload-new-backdrop: Upload new backdrop
+      map-marker: Map marker
+      map-marker-help-text: How this store shows on the app map.
+      map-marker-network-help-text: How the network's stores show on the app map.
+      map-marker-store: Store icon
+      map-marker-warehouse: Warehouse icon
+      map-marker-factory: Factory icon
+      map-marker-logo: Store logo
       images-videos: Images & Videos
       drop-to-upload: Drop to upload
       ready-to-upload: ready for upload.
@@ -641,6 +1632,7 @@ storefront:
       enable-integrated-vendors: Enable integrated vendors
       save-changes: Save Changes
     locations:
+      empty: No locations yet. Add one so customers can pick up and so hours can be set.
       new-store-location: New store location
       add-new-location: Add new Location
       edit-store-location: Edit store location
@@ -657,6 +1649,7 @@ storefront:
       text-location: Create new location
       store-hour: Manage store hours
     notification:
+      empty: No notification channels yet. Add one to reach customers by push.
       create-new-notification-channel: Create a new notification channel
       create-notification-channel: Create Notification Channel
       edit-notification-channel: Edit notification channel
@@ -684,6 +1677,78 @@ storefront:
   application:
     launch-app: Launch App
   promotions:
+    hub:
+      title: Promotions
+      subtitle: One place for offers, the campaigns that announce them, the segments they target, and the pushes that go out.
+      active: Active
+      scheduled: Scheduled
+      discount-given: Discount given
+      cards: Cards
+      table: Table
+    redemptions:
+      tab-title: Redemptions
+      header: Redemptions
+      subtitle: Every time a promotion was used, with the order and the discount it gave.
+      search-placeholder: Search by promotion or code
+      discount: Discount
+      redeemed-at: Redeemed
+      empty-title: No redemptions yet
+      empty-help: Redemptions appear here as soon as a customer uses a promotion at checkout.
+    card:
+      bogo-summary: "Buy {buy}, get {get}"
+      first-order: First order
+      with-code: With a code
+      cart-total-above: "Cart total above {amount}"
+      starts: "Starts {date}"
+      ends: "Ends {date}"
+      always: Always
+      products-count: "{count, plural, one {# product} other {# products}}"
+      categories-count: "{count, plural, one {# category} other {# categories}}"
+      whole-store: Whole store
+      redemptions-summary: "{count, plural, =0 {No redemptions} one {# redemption} other {# redemptions}} · {amount}"
+    builder:
+      step-of: "Step {step} of {total}"
+      steps:
+        what: What
+        when: When it applies
+        targets: Targets
+        schedule: Schedule and limits
+        review: Review and announce
+      type-hints:
+        percentage: A percentage off the eligible items
+        fixed_amount: A fixed amount off the cart
+        free_delivery: Delivery fee waived
+        bogo: Buy some, get some free or discounted
+      trigger:
+        code: At checkout with a code
+        code-hint: The customer enters a code
+        automatic: Automatically
+        automatic-hint: Applies when the conditions match
+      min-subtotal-help: Threshold in the store currency; leave empty for none.
+      codes-after-save: Save the promotion first, then generate its codes here.
+      segment: Customer segment
+      stores: Stores
+      stores-help: Leave empty to apply at every member store.
+      stores-placeholder: Select member stores
+      segment-help: Only customers in this segment get the promotion.
+      segment-placeholder: Everyone
+      summary:
+        percentage: "{value}% off"
+        fixed: "{amount} off"
+        with-code: At checkout with a code
+        automatic: Automatically
+        excluded: "{count, plural, one {# excluded} other {# excluded}}"
+        limit: "{count} uses"
+      issues:
+        name: Give the promotion a name.
+        value: Set the discount value.
+        percent: A percentage cannot exceed 100.
+        window: The end must be after the start.
+      announce: Announce after saving
+      announce-help: Opens the campaign composer so customers hear about it.
+      save-draft: Save draft
+      back: Back
+      next: "Next: {step}"
     title: Promotions
     push-notifications:
       tab-title: Push Notifications
@@ -722,6 +1787,7 @@ storefront:
       no-results-help: Try another search or return to the full list.
       reset-filters: Show all
     statuses:
+      all: All
       draft: Draft
       active: Active
       paused: Paused
@@ -731,8 +1797,12 @@ storefront:
       sent: Sent
       canceled: Canceled
     list:
+      none-with-status: "No {status} promotions."
+      bulk-updated: "{count, plural, one {# promotion updated.} other {# promotions updated.}}"
       tab-title: Promotions
       header: Promotions
+      duplicate: Duplicate
+      view-redemptions: View redemptions
       new-promotion: New promotion
       edit-promotion: Edit promotion
       type: Type
@@ -771,9 +1841,9 @@ storefront:
       trigger-help: Automatic promotions apply to every eligible cart; code promotions need a promo code.
       percent-off: Percent off
       amount-off: Amount off
-      buy-quantity: Buy quantity
-      get-quantity: Get quantity
-      get-discount-percent: Discount on the get items (%)
+      buy-quantity: Buy (items)
+      get-quantity: Get (items)
+      get-discount-percent: Discount on get (%)
       bogo-help: For every group of "buy" + "get" eligible items, the cheapest "get" items are discounted.
       schedule: Schedule
       starts-at: Starts at
@@ -894,6 +1964,7 @@ storefront:
       header: Customer segments
       new-segment: New segment
       edit-segment: Edit segment
+      required-name: Enter a segment name.
       search-placeholder: Search segments...
       empty-title: No customer segments yet
       empty-help: Group customers by their order history and activity to target campaigns.

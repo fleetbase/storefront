@@ -1,39 +1,75 @@
-<Layout::Section::Header @title={{t "storefront.networks.index.network.stores.store"}} @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}}>
-    <Button
-        @type="primary"
-        @icon="plus"
-        @text={{t "storefront.networks.index.network.stores.add-stores-button-text"}}
-        @textClass="truncate"
-        @size="sm"
-        @onClick={{this.addStores}}
-        @wrapperClass="mr-2"
-    />
-    <Button
-        @type="primary"
-        @icon="envelope-open-text"
-        @textClass="truncate"
-        @size="sm"
-        @text={{t "storefront.networks.index.network.stores.invite-stores-button-text"}}
-        @onClick={{this.invite}}
-    />
+<Storefront::PageHeader @title={{t "storefront.networks.index.network.stores.store"}} @subtitle={{this.headerMeta}} @searchQuery={{this.storeQuery}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.networks.index.network.stores.search"}} data-test-network-stores-header>
+    <DropdownButton @text={{t "storefront.common.filters"}} @icon="filter" @size="sm" @buttonClass={{if this.hasActiveFilters "storefront-filter-button is-active" "storefront-filter-button"}} @renderInPlace={{false}} data-test-store-filters as |dd|>
+        <div class="next-dd-menu mt-1 mx-0 storefront-filter-menu">
+            <div class="storefront-filter-menu__group">
+                <div class="storefront-filter-menu__label">{{t "storefront.common.status"}}</div>
+                {{#each this.statusTabs as |tab|}}
+                    <a href="javascript:;" class="next-dd-item {{if tab.isActive 'is-active'}}" {{on "click" (dropdown-fn dd this.selectStatusTab tab)}}>{{#if tab.isActive}}<FaIcon @icon="check" class="mr-2" />{{/if}}{{tab.label}} <span class="storefront-filter-menu__count">{{tab.count}}</span></a>
+                {{/each}}
+            </div>
+            <div class="storefront-filter-menu__group">
+                <div class="storefront-filter-menu__label">{{t "storefront.common.category"}}</div>
+                <a href="javascript:;" class="next-dd-item {{unless this.category 'is-active'}}" {{on "click" (dropdown-fn dd this.setCategoryFilter null)}}>{{t "storefront.common.all"}}</a>
+                {{#each this.categories as |category|}}
+                    <a href="javascript:;" class="next-dd-item {{if (eq category.id this.category) 'is-active'}}" {{on "click" (dropdown-fn dd this.setCategoryFilter category.id)}}>{{category.name}}</a>
+                {{/each}}
+            </div>
+            {{#if this.hasActiveFilters}}
+                <div class="storefront-filter-menu__group">
+                    <a href="javascript:;" class="next-dd-item text-red-500" {{on "click" (dropdown-fn dd this.clearFilters)}}>{{t "storefront.promotions.common.reset-filters"}}</a>
+                </div>
+            {{/if}}
+        </div>
+    </DropdownButton>
+    <Button @icon="plus" @text={{t "storefront.networks.invitations.add-existing-store"}} @size="sm" @onClick={{fn this.invite this.network "own"}} @permission="storefront update network" />
+    <Button @type="primary" @icon="envelope-open-text" @size="sm" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} @permission="storefront update network" />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
-<Layout::Section::Body>
-    <div class="flex flex-row items-center space-x-2">
-        <NetworkCategoryPicker
-            @network={{this.network}}
-            @category={{this.category}}
-            @onCreateNewCategory={{this.createNewCategory}}
-            @onSelect={{this.selectCategory}}
-            @onReady={{this.setCategoryPickerContext}}
-            @wrapperClass="w-64 my-4 ml-9"
-        />
-        {{#if this.categoryModel}}
-            <Button @icon="arrow-left" @size="xs" @onClick={{this.categoryPicker.loadParentCategories}} />
-            <Button @icon="cog" @text="Edit Category" @size="xs" @onClick={{fn this.editCategory this.categoryModel}} />
-            <Button @icon="trash" @text="Delete Category" @size="xs" @type="danger" @onClick={{fn this.deleteCategory this.categoryModel}} />
-        {{/if}}
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page">
+        <div class="storefront-table-card" data-test-network-stores-card>
+            <div class="storefront-table-card__toolbar">
+                <div class="storefront-status-tabs" role="tablist" data-test-network-store-tabs>
+                    {{#each this.statusTabs as |tab|}}
+                        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                            <span>{{tab.label}}</span>
+                            <span class="storefront-status-tab__count">{{tab.count}}</span>
+                        </button>
+                    {{/each}}
+                </div>
+            </div>
+
+            {{#if this.hasSelection}}
+                <div class="storefront-table-card__bulk" data-test-network-store-bulk-bar>
+                    <strong>{{t "storefront.networks.invitations.selected-count" count=this.selectedStores.length}}</strong>
+                    <Button @size="xs" @text={{t "storefront.networks.index.network.stores.assign-category"}} @onClick={{this.assignCategoryToSelected}} @permission="storefront update network" />
+                    {{#if this.hasPendingSelection}}
+                        <Button @size="xs" @type="primary" @text={{t "storefront.networks.index.network.stores.approve-short"}} @onClick={{this.approveSelected}} @permission="storefront update network" data-test-approve-selected />
+                    {{/if}}
+                    <Button @size="xs" @text={{t "storefront.networks.index.network.stores.suspend-short"}} @onClick={{this.suspendSelected}} @permission="storefront update network" data-test-suspend-selected />
+                    <Button @size="xs" @text={{t "storefront.networks.index.network.stores.remove-short"}} @onClick={{this.removeSelected}} @permission="storefront update network" />
+                    <a href="javascript:;" class="storefront-table-card__bulk-clear" {{on "click" this.clearSelection}}>{{t "storefront.networks.invitations.clear"}}</a>
+                </div>
+            {{/if}}
+
+            {{#if this.visibleStores.length}}
+                <Table @wrapperClass="storefront-table-card__table" @rows={{this.visibleStores}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
+            {{else}}
+                <div class="storefront-empty-row mx-4 my-4">
+                    <span>{{if (eq this.statusTab "invited") (t "storefront.networks.invitations.none") (t "storefront.networks.index.network.stores.empty")}}</span>
+                    <Button @size="xs" @icon="envelope-open-text" @text={{t "storefront.networks.invitations.invite-stores"}} @onClick={{fn this.invite this.network "email"}} @permission="storefront update network" />
+                </div>
+            {{/if}}
+
+            <div class="storefront-table-card__footer">
+                <span>{{this.showingLabel}}</span>
+                <span class="storefront-table-card__note">{{t "storefront.networks.invitations.rows-note"}}</span>
+            </div>
+        </div>
     </div>
-    <Table @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} @selectAllColumnWidth={{20}} />
 </Layout::Section::Body>
+
+{{#if this.isInvitePanelOpen}}
+    <Storefront::Network::InvitePanel @network={{this.network}} @activeTab={{this.invitePanelTab}} @onClose={{this.closeInvitePanel}} @onSent={{this.afterInvitationsSent}} />
+{{/if}}

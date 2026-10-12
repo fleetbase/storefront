@@ -1,0 +1,83 @@
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{false}} @width="min(880px, calc(100vw - 8rem))" @minResizeWidth={{640}} @fullHeight={{true}} @isOpen={{true}}>
+    <Overlay::Header @onPressCancel={{this.close}} class="storefront-create-order__header">
+        <:default>
+            <div class="min-w-0">
+                <div class="storefront-create-order__title">{{t "storefront.products.addons.title"}}</div>
+                <div class="storefront-create-order__store">{{t "storefront.products.addons.subtitle"}}</div>
+            </div>
+        </:default>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-addons-panel" data-test-addons-panel>
+        <div class="storefront-addons-panel__layout">
+            <nav class="storefront-addons-panel__groups" aria-label={{t "storefront.products.addons.groups"}}>
+                <div class="storefront-addons-panel__groups-head">
+                    <span class="storefront-create-order__sec-title">{{t "storefront.products.addons.groups"}}</span>
+                    <Button @size="xs" @icon="plus" @helpText={{t "storefront.products.addons.new-group"}} @isLoading={{this.createGroup.isRunning}} @onClick={{perform this.createGroup}} @permission="storefront create product-addon" data-test-addons-new-group />
+                </div>
+                {{#if this.load.isRunning}}
+                    <div class="p-3"><Skeleton::Text @lines={{4}} /></div>
+                {{else}}
+                    {{#each this.groupRows as |row|}}
+                        <button type="button" class="storefront-addons-panel__group {{if row.isActive 'is-active'}}" aria-current={{if row.isActive "true"}} {{on "click" (fn this.selectGroup row.group)}} data-test-addons-group={{row.group.id}}>
+                            <span class="storefront-addons-panel__group-name">{{n-a row.group.name}}</span>
+                            <span class="storefront-status-tab__count">{{row.count}}</span>
+                        </button>
+                    {{else}}
+                        <div class="storefront-addons-panel__hint">{{t "storefront.products.addons.no-groups"}}</div>
+                    {{/each}}
+                {{/if}}
+            </nav>
+
+            <section class="storefront-addons-panel__editor">
+                {{#if this.activeGroup}}
+                    <div class="storefront-addons-panel__editor-head">
+                        <div class="storefront-create-order__field flex-1">
+                            <label class="storefront-create-order__label" for="addon-group-name">{{t "storefront.products.addons.group-name"}}</label>
+                            <Input id="addon-group-name" class="form-input w-full" @value={{this.activeGroup.name}} {{on "input" this.changed}} data-test-addons-group-name />
+                        </div>
+                        <Button @size="sm" @type="danger" @icon="trash" @text={{t "storefront.products.addons.delete-group"}} @onClick={{fn this.deleteGroup this.activeGroup}} @permission="storefront delete product-addon" />
+                    </div>
+                    <div class="storefront-addons-panel__table">
+                        <div class="storefront-addons-panel__row storefront-addons-panel__row--head">
+                            <span>{{t "storefront.products.addons.name"}}</span>
+                            <span>{{t "storefront.products.addons.description"}}</span>
+                            <span>{{t "storefront.orders.create.price"}}</span>
+                            <span>{{t "storefront.products.form.fields.sale-price"}}</span>
+                            <span></span>
+                        </div>
+                        {{#each this.addons as |addon|}}
+                            <div class="storefront-addons-panel__row" data-test-addon-row>
+                                <Input class="form-input form-input-sm w-full" @value={{addon.name}} placeholder={{t "storefront.products.addons.name"}} aria-label={{t "storefront.products.addons.name"}} {{on "input" this.changed}} />
+                                <Input class="form-input form-input-sm w-full" @value={{addon.description}} placeholder={{t "storefront.products.addons.description"}} aria-label={{t "storefront.products.addons.description"}} {{on "input" this.changed}} />
+                                <MoneyInput class="w-full" @currency={{this.currency}} @canSelectCurrency={{false}} @value={{addon.price}} @onChange={{this.changed}} />
+                                <MoneyInput class="w-full" @currency={{this.currency}} @canSelectCurrency={{false}} @value={{addon.sale_price}} @onChange={{this.changed}} />
+                                <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} @onClick={{perform this.removeAddon addon}} @permission="storefront delete product-addon" />
+                            </div>
+                        {{else}}
+                            <div class="storefront-addons-panel__hint">{{t "storefront.products.addons.no-addons"}}</div>
+                        {{/each}}
+                    </div>
+                    <button type="button" class="storefront-empty-row storefront-empty-row--action" disabled={{cannot "storefront create product-addon"}} {{on "click" this.addAddon}} data-test-addons-add>
+                        <FaIcon @icon="plus" @size="xs" class="mr-2" />{{t "storefront.products.addons.add-addon"}}
+                    </button>
+                {{else if this.load.isIdle}}
+                    <div class="storefront-product-editor__empty">{{t "storefront.products.addons.pick-group"}}</div>
+                {{/if}}
+            </section>
+        </div>
+
+        <div class="storefront-save-bar storefront-form-panel__save-bar {{if this.isDirty 'is-dirty'}}" data-test-addons-save-bar>
+            <div class="storefront-save-bar__status">
+                {{#if this.isDirty}}
+                    <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />{{t "storefront.trucks.panel.unsaved"}}
+                {{else}}
+                    <FaIcon @icon="check" @size="xs" class="text-green-500 mr-2" />{{t "storefront.settings.save-bar.saved"}}
+                {{/if}}
+            </div>
+            <div class="storefront-save-bar__actions">
+                <Button @text={{t "storefront.settings.save-bar.discard"}} @disabled={{not this.isDirty}} @onClick={{this.discard}} />
+                <Button @type="primary" @icon="save" @text={{t "storefront.common.save"}} @isLoading={{this.save.isRunning}} @disabled={{not this.isDirty}} @onClick={{perform this.save}} @permission="storefront update product-addon" data-test-addons-save />
+            </div>
+        </div>
+    </Overlay::Body>
+</Overlay>

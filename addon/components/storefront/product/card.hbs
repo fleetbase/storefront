@@ -1,117 +1,126 @@
 {{#if (eq @viewMode "list")}}
-    <div class="storefront-product-row" data-test-storefront-product-card>
-        <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-row__product">
-            <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-row__image" />
-            <span class="storefront-product-row__copy">
-                <strong>{{n-a @product.name "Untitled product"}}</strong>
-                <small>{{n-a @product.description "No description"}}</small>
-                <span class="storefront-product-row__sku">{{n-a @product.sku "No SKU"}}</span>
-            </span>
-        </LinkTo>
-        <span class="storefront-product-row__price">
+    <tr class="storefront-products-table__row {{if this.isSelected 'is-selected'}}" data-test-storefront-product-card>
+        {{#if @onToggleSelect}}
+            <td class="storefront-products-table__check">
+                <Checkbox @value={{this.isSelected}} @onToggle={{this.toggleSelect}} aria-label={{t "storefront.common.select"}} data-test-product-select />
+            </td>
+        {{/if}}
+        <td class="storefront-products-table__product">
+            <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-products-table__identity" title={{@product.name}} data-test-product-name>
+                <Image src={{this.imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@product.name}} class="storefront-products-table__thumb" />
+                <span class="storefront-products-table__name">{{n-a @product.name (t "storefront.products.card.untitled")}}</span>
+            </LinkTo>
+        </td>
+        <td class="storefront-products-table__muted" title={{@product.sku}}>{{n-a @product.sku}}</td>
+        <td class="storefront-products-table__muted">{{n-a this.categoryName (t "storefront.products.groups.uncategorized")}}</td>
+        <td class="storefront-products-table__price" data-test-product-price>
             {{#if this.hasSalePrice}}
                 {{format-currency @product.sale_price @product.currency}}
+                <s class="storefront-product-card__compare">{{format-currency @product.price @product.currency}}</s>
             {{else}}
                 {{format-currency @product.price @product.currency}}
             {{/if}}
-        </span>
-        <span><Badge @status={{this.displayStatus}} /></span>
-        <span class="storefront-product-row__muted">{{this.variantCount}} variants · {{this.addonGroupCount}} add-ons</span>
-        <span class="storefront-product-row__actions">
-            <LinkTo
-                @route={{@editRoute}}
-                @model={{@product}}
-                disabled={{cannot "storefront update product"}}
-                class="btn btn-xs btn-default"
-                aria-label={{concat "Edit " @product.name}}
-            >
-                <FaIcon @icon="pencil" />
-            </LinkTo>
-            <Button
-                @type="danger"
-                @size="xs"
-                @icon="trash"
-                @onClick={{fn @onDelete @product}}
-                @permission="storefront delete product"
-            />
-        </span>
-    </div>
-{{else}}
-    <div class="storefront-product-card" data-test-storefront-product-card>
-        <div class="storefront-product-card__media">
-            <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__image-link" aria-label={{concat "Edit " @product.name}}>
-                <Image src={{this.imageUrl}} @fallbackSrc="https://flb-assets.s3.ap-southeast-1.amazonaws.com/static/image-file-icon.png" alt={{@product.name}} class="storefront-product-card__image" />
-            </LinkTo>
-            <div class="storefront-product-card__status">
-                <Badge @status={{this.displayStatus}} />
-            </div>
-            <button type="button" class="storefront-product-card__image-action" aria-label={{concat "Preview image for " @product.name}} {{on "click" this.previewImage}}>
-                <FaIcon @icon="expand" />
-            </button>
-        </div>
-
-        <div class="storefront-product-card__body">
-            <div class="storefront-product-card__headline">
-                <div class="storefront-product-card__identity">
-                    <div class="storefront-product-card__category">{{n-a this.categoryName "Uncategorized"}}</div>
-                    <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__title">
-                        {{n-a @product.name "Untitled product"}}
-                    </LinkTo>
-                </div>
-                <div class="storefront-product-card__price">
-                    {{#if this.hasSalePrice}}
-                        <span class="storefront-product-card__sale">{{format-currency @product.sale_price @product.currency}}</span>
-                        <span class="storefront-product-card__compare">{{format-currency @product.price @product.currency}}</span>
-                    {{else}}
-                        <span>{{format-currency @product.price @product.currency}}</span>
-                    {{/if}}
-                </div>
-            </div>
-
-            <p class="storefront-product-card__description">{{n-a @product.description "No description"}}</p>
-            <div class="storefront-product-card__sku">{{n-a @product.sku "No SKU"}}</div>
-
-            <div class="storefront-product-card__meta">
-                <span><FaIcon @icon="layer-group" /> {{this.variantCount}} variants</span>
-                <span><FaIcon @icon="tags" /> {{this.addonGroupCount}} add-ons</span>
-            </div>
-
-            <div class="storefront-product-card__flags">
-                {{#if @product.is_service}}
-                    <span><FaIcon @icon="house-leave" /> Service</span>
-                {{/if}}
-                {{#if @product.is_bookable}}
-                    <span><FaIcon @icon="calendar-star" /> Bookable</span>
-                {{/if}}
-                {{#if @product.is_recommended}}
-                    <span><FaIcon @icon="star" /> Recommended</span>
-                {{/if}}
-                {{#if @product.is_on_sale}}
-                    <span><FaIcon @icon="badge-percent" /> On sale</span>
-                {{/if}}
-            </div>
-        </div>
-
-        <div class="storefront-product-card__footer">
-            <span>{{n-a @product.updatedAgo "Not updated"}}</span>
-            <div class="storefront-product-card__quick-actions">
-                <LinkTo
-                    @route={{@editRoute}}
-                    @model={{@product}}
-                    disabled={{cannot "storefront update product"}}
-                    class="btn btn-xs btn-default"
-                    aria-label={{concat "Edit " @product.name}}
-                >
+        </td>
+        <td><Badge @status={{this.displayStatus}} @size="xs" data-test-product-status /></td>
+        <td class="storefront-products-table__muted" title={{this.optionsSummary}} data-test-product-chips>
+            {{#if this.hasChips}}{{this.optionsSummary}}{{else}}{{t "storefront.products.card.simple"}}{{/if}}
+        </td>
+        <td class="storefront-products-table__actions">
+            <div class="storefront-card__buttons">
+                <LinkTo @route={{@editRoute}} @model={{@product}} disabled={{cannot "storefront update product"}} class="btn btn-xs btn-default" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
                     <FaIcon @icon="pencil" />
                 </LinkTo>
-                <Button
-                    @type="danger"
-                    @size="xs"
-                    @icon="trash"
-                    @onClick={{fn @onDelete @product}}
-                    @permission="storefront delete product"
-                />
+                <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-product-menu as |dd|>
+                    <div class="next-dd-menu mt-1 mx-0">
+                        <div class="px-1">
+                            <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.previewImage)}}><FaIcon @icon="expand" class="mr-1" />{{t "storefront.common.preview"}}</a>
+                            <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd @onDelete @product)}} data-test-product-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.common.delete"}}</a>
+                        </div>
+                    </div>
+                </DropdownButton>
             </div>
-        </div>
-    </div>
+        </td>
+    </tr>
+{{else}}
+    <Layout::Resource::Card class="storefront-product-card {{if this.isSelected 'is-selected'}} {{if this.isDraft 'is-draft'}}" data-test-storefront-product-card ...attributes as |Card|>
+        <Card.body class="storefront-product-card__body {{@bodyClass}}">
+            <div class="storefront-product-card__media">
+                <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__media-link" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
+                    {{#if this.hasImage}}
+                        <Image src={{this.imageUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{@product.name}} class="storefront-product-card__image" data-test-product-image />
+                    {{else}}
+                        <span class="storefront-product-card__no-image" data-test-product-image><FaIcon @icon="image" @size="2x" /></span>
+                    {{/if}}
+                </LinkTo>
+                <div class="storefront-product-card__flags">
+                    <Badge @status={{this.displayStatus}} @size="xs" @hideStatusDot={{true}} data-test-product-status />
+                    {{#if @product.is_on_sale}}<Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.on-sale"}} />{{/if}}
+                    {{#if @product.is_recommended}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.recommended"}} />{{/if}}
+                    {{#if this.isOutOfStock}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.card.unavailable"}} />{{/if}}
+                </div>
+                {{#if @onToggleSelect}}
+                    <span class="storefront-product-card__select {{if this.isSelected 'is-selected'}}">
+                        <Checkbox @value={{this.isSelected}} @onToggle={{this.toggleSelect}} aria-label={{t "storefront.common.select"}} data-test-product-select />
+                    </span>
+                {{/if}}
+                <button type="button" class="storefront-product-card__preview" aria-label={{concat (t "storefront.common.preview") " " @product.name}} {{on "click" this.previewImage}}>
+                    <FaIcon @icon="expand" @size="xs" />
+                </button>
+            </div>
+            <div class="storefront-product-card__info">
+                <RegistryYield @registry="storefront:component:product:card:header:start" as |RegistryComponent|>
+                    <RegistryComponent @product={{@product}} @resource={{@product}} />
+                </RegistryYield>
+                <div class="storefront-product-card__eyebrow">{{n-a this.categoryName (t "storefront.products.groups.uncategorized")}}{{#if @product.sku}} · {{@product.sku}}{{/if}}</div>
+                <LinkTo @route={{@editRoute}} @model={{@product}} class="storefront-product-card__title" title={{@product.name}} data-test-product-name>{{n-a @product.name (t "storefront.products.card.untitled")}}</LinkTo>
+                <div class="storefront-product-card__price" data-test-product-price>
+                    {{#if this.hasSalePrice}}
+                        <strong>{{format-currency @product.sale_price @product.currency}}</strong>
+                        <s class="storefront-product-card__compare">{{format-currency @product.price @product.currency}}</s>
+                    {{else}}
+                        <strong>{{format-currency @product.price @product.currency}}</strong>
+                    {{/if}}
+                </div>
+                {{#if this.hasChips}}
+                    <div class="storefront-product-card__meta" data-test-product-chips>
+                        {{#if this.variantCount}}<span><FaIcon @icon="layer-group" @size="xs" />{{t "storefront.products.card.variants" count=this.variantCount}}</span>{{/if}}
+                        {{#if this.addonGroupCount}}<span><FaIcon @icon="tags" @size="xs" />{{t "storefront.products.card.addons" count=this.addonGroupCount}}</span>{{/if}}
+                        {{#if this.catalogsCount}}<span data-test-product-catalogs><FaIcon @icon="book-open" @size="xs" />{{t "storefront.products.card.in-catalogs" count=this.catalogsCount}}</span>{{/if}}
+                        {{#if @product.is_service}}<span><FaIcon @icon="concierge-bell" @size="xs" />{{t "storefront.products.card.service"}}</span>{{/if}}
+                        {{#if @product.is_bookable}}<span><FaIcon @icon="calendar-check" @size="xs" />{{t "storefront.products.card.bookable"}}</span>{{/if}}
+                    </div>
+                {{/if}}
+                {{#if (and this.isDraft this.missing.length)}}
+                    <div class="storefront-product-card__note" data-test-product-missing>
+                        <FaIcon @icon="triangle-exclamation" @size="xs" />{{t "storefront.products.card.missing" items=(join ", " this.missing)}}
+                    </div>
+                {{/if}}
+                <RegistryYield @registry="storefront:component:product:card:header:end" as |RegistryComponent|>
+                    <RegistryComponent @product={{@product}} @resource={{@product}} />
+                </RegistryYield>
+            </div>
+        </Card.body>
+        <Card.footer class="storefront-product-card__footer {{@footerClass}}">
+            <RegistryYield @registry="storefront:component:product:card:footer:start" as |RegistryComponent|>
+                <RegistryComponent @product={{@product}} @resource={{@product}} />
+            </RegistryYield>
+            <span class="storefront-product-card__updated" title={{t "storefront.products.card.updated" ago=(n-a @product.updatedAgo)}}><FaIcon @icon="clock" @size="xs" />{{t "storefront.products.card.ago" ago=(n-a @product.updatedAgo)}}</span>
+            <div class="storefront-card__buttons">
+                <LinkTo @route={{@editRoute}} @model={{@product}} disabled={{cannot "storefront update product"}} class="btn btn-xs btn-default" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
+                    <FaIcon @icon="pencil" />
+                </LinkTo>
+                <DropdownButton @icon="ellipsis-h" @size="xs" @iconPrefix="fas" @renderInPlace={{false}} @helpText={{t "storefront.common.more"}} data-test-product-menu as |dd|>
+                    <div class="next-dd-menu mt-1 mx-0">
+                        <div class="px-1">
+                            <a href="javascript:;" class="next-dd-item" {{on "click" (dropdown-fn dd this.previewImage)}}><FaIcon @icon="expand" class="mr-1" />{{t "storefront.common.preview"}}</a>
+                            <a href="javascript:;" class="next-dd-item text-danger" {{on "click" (dropdown-fn dd @onDelete @product)}} data-test-product-delete><FaIcon @icon="trash" class="mr-1" />{{t "storefront.common.delete"}}</a>
+                        </div>
+                    </div>
+                </DropdownButton>
+            </div>
+            <RegistryYield @registry="storefront:component:product:card:footer:end" as |RegistryComponent|>
+                <RegistryComponent @product={{@product}} @resource={{@product}} />
+            </RegistryYield>
+        </Card.footer>
+    </Layout::Resource::Card>
 {{/if}}

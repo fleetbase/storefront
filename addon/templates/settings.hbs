@@ -1,8 +1,11 @@
-<TabNavigation @tabs={{this.tabs}} @contentClass="scrollable" @tablistClass="px-4 flex-row-reverse">
-    <:actions>
-        <h3 class="uppercase text-xs tracking-wide text-gray-700 dark:text-gray-400 font-semibold">{{t "storefront.common.settings"}}</h3>
-    </:actions>
-    <:default>
-        {{outlet}}
-    </:default>
-</TabNavigation>
+<div class="storefront-settings-shell" data-test-settings-shell>
+    <Storefront::PageHeader @title={{t "storefront.common.settings"}} @subtitle={{this.headerMeta}} data-test-settings-header>
+        <Button @size="sm" @icon="key" @text={{t "storefront.settings.shell.copy-store-key"}} @onClick={{this.copyStoreKey}} data-test-copy-store-key />
+    </Storefront::PageHeader>
+    <div class="storefront-settings-shell__body">
+        <Storefront::SettingsRail @items={{this.railItems}} @onSelect={{this.openItem}} />
+        <div class="storefront-settings-content">
+            {{outlet}}
+        </div>
+    </div>
+</div>

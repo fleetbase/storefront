@@ -209,12 +209,15 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             ['prefix' => 'analytics'],
                             function ($router) {
                                 $router->get('overview', 'AnalyticsController@overview');
+                                $router->get('attention', 'AnalyticsController@attention');
                                 $router->get('revenue-trend', 'AnalyticsController@revenueTrend');
                                 $router->get('orders-by-status', 'AnalyticsController@ordersByStatus');
                                 $router->get('top-products', 'AnalyticsController@topProducts');
                                 $router->get('customer-insights', 'AnalyticsController@customerInsights');
                             }
                         );
+                        $router->post('orders/console/quote', 'ConsoleOrderController@quote');
+                        $router->post('orders/console/place', 'ConsoleOrderController@place');
                         $router->fleetbaseRoutes(
                             'orders',
                             function ($router, $controller) {
@@ -236,10 +239,28 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('{id}/remove-store-category', $controller('removeStoreCategory'));
                                 $router->post('{id}/add-stores', $controller('addStores'));
                                 $router->post('{id}/remove-stores', $controller('removeStores'));
+                                $router->post('{id}/suspend-stores', $controller('suspendStores'));
+                                $router->post('{id}/reinstate-stores', $controller('reinstateStores'));
+                                $router->post('{id}/approve-stores', $controller('approveStores'));
+                                $router->post('{id}/reject-stores', $controller('rejectStores'));
+                                $router->post('{id}/shareable-link', $controller('updateShareableLink'));
                                 $router->post('{id}/invite', $controller('sendInvites'));
+                                $router->get('{id}/invitations', $controller('invitations'));
+                                $router->post('{id}/invitations/{invitationId}/resend', $controller('resendInvitation'));
+                                $router->delete('{id}/invitations/{invitationId}', $controller('revokeInvitation'));
+                                $router->get('{id}/overview', $controller('overview'));
+                                $router->get('invitations/pending', $controller('pendingInvitationsForStore'));
+                                $router->get('join/{uri}', $controller('lookupInvitation'));
+                                $router->post('join/{uri}/accept', $controller('acceptInvitation'));
+                                $router->post('join/{uri}/decline', $controller('declineInvitation'));
                             }
                         );
-                        $router->fleetbaseRoutes('customers');
+                        $router->fleetbaseRoutes(
+                            'customers',
+                            function ($router, $controller) {
+                                $router->get('{id}/insights', $controller('insights'));
+                            }
+                        );
                         $router->fleetbaseRoutes('stores');
                         $router->fleetbaseRoutes('store-hours');
                         $router->fleetbaseRoutes('store-locations');
@@ -248,6 +269,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('process-imports', $controller('processImports'));
                                 $router->post('create-entities', $controller('createEntities'));
+                                $router->get('summary', $controller('summary'));
                             }
                         );
                         $router->fleetbaseRoutes('product-hours');
@@ -268,9 +290,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('{id}/generate-codes', $controller('generateCodes'));
                                 $router->post('{id}/announce', $controller('announce'));
+                                $router->get('hub', $controller('hub'));
                             }
                         );
                         $router->fleetbaseRoutes('promotion-codes');
+                        $router->fleetbaseRoutes('promotion-redemptions');
                         $router->fleetbaseRoutes(
                             'customer-segments',
                             function ($router, $controller) {
@@ -289,7 +313,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');
-                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes(
+                            'catalogs',
+                            function ($router, $controller) {
+                                $router->put('{id}/subjects', $controller('assignSubjects'));
+                            }
+                        );
                         $router->fleetbaseRoutes('catalog-categories');
                         $router->fleetbaseRoutes('catalog-hours');
                         $router->group(

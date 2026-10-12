@@ -37,6 +37,7 @@ export default class NetworkModel extends Model {
     @attr('string') timezone;
     @attr('boolean') online;
     @attr('number') stores_count;
+    @attr('raw') invitations;
     @attr('object') options;
     @attr('string') logo_url;
     @attr('string') backdrop_url;
@@ -154,13 +155,49 @@ export default class NetworkModel extends Model {
         return fetch.post(`networks/${this.id}/remove-stores`, { stores }, { namespace: 'storefront/int/v1' });
     }
 
-    sendInvites(recipients = []) {
+    /**
+     * Send invitations. Accepts a list of emails, or `{ recipients, category_uuid, expires_in_days, message, require_approval }`.
+     */
+    sendInvites(payload = []) {
+        const owner = getOwner(this);
+        const fetch = owner.lookup(`service:fetch`);
+        const options = Array.isArray(payload) ? { recipients: payload } : { ...payload };
+
+        // only send to valid recipients
+        options.recipients = (options.recipients ?? []).filter((email) => isEmail(email));
+
+        return fetch.post(`networks/${this.id}/invite`, options, { namespace: 'storefront/int/v1' });
+    }
+
+    loadInvitations() {
         const owner = getOwner(this);
         const fetch = owner.lookup(`service:fetch`);
 
-        // only send to valid recipients
-        recipients = recipients.filter((email) => isEmail(email));
+        return fetch.get(`networks/${this.id}/invitations`, {}, { namespace: 'storefront/int/v1' }).then((invitations) => {
+            this.invitations = Array.isArray(invitations) ? invitations : [];
 
-        return fetch.post(`networks/${this.id}/invite`, { recipients }, { namespace: 'storefront/int/v1' });
+            return this.invitations;
+        });
+    }
+
+    resendInvitation(invitation, options = {}) {
+        const owner = getOwner(this);
+        const fetch = owner.lookup(`service:fetch`);
+
+        return fetch.post(`networks/${this.id}/invitations/${invitation.id ?? invitation}/resend`, options, { namespace: 'storefront/int/v1' });
+    }
+
+    revokeInvitation(invitation) {
+        const owner = getOwner(this);
+        const fetch = owner.lookup(`service:fetch`);
+
+        return fetch.delete(`networks/${this.id}/invitations/${invitation.id ?? invitation}`, {}, { namespace: 'storefront/int/v1' });
+    }
+
+    loadOverview() {
+        const owner = getOwner(this);
+        const fetch = owner.lookup(`service:fetch`);
+
+        return fetch.get(`networks/${this.id}/overview`, {}, { namespace: 'storefront/int/v1' });
     }
 }

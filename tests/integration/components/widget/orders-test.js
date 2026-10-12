@@ -5,6 +5,10 @@ import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     activeStore = { public_id: 'store_1', currency: 'USD' };
     on() {}
 }
@@ -16,6 +20,10 @@ class FetchStubService extends Service {
 }
 
 class IntlStubService extends Service {
+    onLocaleChanged() {
+        return () => {};
+    }
+
     t(key) {
         if (key === 'storefront.component.widget.orders.widget-title') {
             return 'Recent Orders';

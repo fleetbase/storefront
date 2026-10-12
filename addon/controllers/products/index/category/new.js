@@ -28,6 +28,7 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         meta_array: [],
         category: this.category,
         status: 'published',
+        is_available: true,
     });
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
@@ -50,14 +51,14 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     }
 
     /** overlay options */
-    @tracked overlayTitle = 'New Product';
-    @tracked overlayActionButtonTitle = 'Create Product';
+    @tracked overlayTitle = this.intl.t('storefront.products.index.new-product');
+    @tracked overlayActionButtonTitle = this.intl.t('storefront.products.form.create');
     @tracked overlayActionButtonIcon = 'check'; // box-check
-    @tracked overlayExitButtonTitle = 'Cancel';
+    @tracked overlayExitButtonTitle = this.intl.t('common.cancel');
     @tracked metadataButtons = [
         {
             type: 'default',
-            text: 'Add Metafield',
+            text: this.intl.t('storefront.products.form.add-metafield'),
             icon: 'plus',
             iconPrefix: 'fas',
             onClick: this.addMetaField,
@@ -67,13 +68,21 @@ export default class ProductsIndexCategoryNewController extends BaseController {
     @tracked acceptedFileTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-flv', 'video/x-ms-wmv'];
 
     @action reset() {
-        this.product = this.store.createRecord('product', { store_uuid: this.activeStore.id, category: this.category, currency: this.activeStore.currency });
+        this.product = this.store.createRecord('product', {
+            store_uuid: this.activeStore.id,
+            category: this.category,
+            currency: this.activeStore.currency,
+            tags: [],
+            meta_array: [],
+            status: 'published',
+            is_available: true,
+        });
         this.uploadQueue = [];
         this.uploadedFiles = [];
     }
 
     @task *saveProduct() {
-        const loader = this.loader.showLoader('body', { loadingMessage: 'Creating new product...' });
+        const loader = this.loader.showLoader('body', { loadingMessage: this.intl.t('storefront.products.form.creating') });
         const { category } = this.productsIndexCategoryController;
         if (category) {
             this.product.set('category_uuid', category.id);
@@ -96,6 +105,20 @@ export default class ProductsIndexCategoryNewController extends BaseController {
         }
 
         this.reset();
+    }
+
+    /**
+     * A new product starts over; an existing one rolls back to what was loaded.
+     */
+    @action discardChanges() {
+        if (this.product?.isNew) {
+            return this.reset();
+        }
+
+        this.product.rollbackAttributes();
+        (this.product.variants?.toArray?.() ?? []).forEach((variant) => (variant.isNew ? this.product.variants.removeObject(variant) : variant.rollbackAttributes()));
+        (this.product.addon_categories?.toArray?.() ?? []).forEach((category) => (category.isNew ? this.product.addon_categories.removeObject(category) : category.rollbackAttributes()));
+        this.uploadQueue = [];
     }
 
     @action addTag(tag) {

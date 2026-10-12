@@ -1,0 +1,41 @@
+<div class="storefront-form-panel" data-test-customer-edit-form>
+    <div class="storefront-form-panel__body">
+        <div class="storefront-create-order__sec-title mb-3">{{t "storefront.customers.panel.edit-details"}}</div>
+        <div class="storefront-product-editor__grid-3 storefront-customer-edit__grid">
+            <div class="storefront-create-order__field">
+                <label class="storefront-create-order__label" for="customer-name">{{t "storefront.common.name"}} <span class="text-red-500">*</span></label>
+                <Input id="customer-name" class="form-input w-full" @value={{this.customer.name}} data-test-customer-edit-name />
+            </div>
+            <div class="storefront-create-order__field">
+                <label class="storefront-create-order__label" for="customer-title">{{t "storefront.common.title"}}</label>
+                <Input id="customer-title" class="form-input w-full" @value={{this.customer.title}} />
+            </div>
+            <div class="storefront-create-order__field">
+                <label class="storefront-create-order__label" for="customer-email">{{t "storefront.common.email"}}</label>
+                <Input id="customer-email" @type="email" class="form-input w-full" @value={{this.customer.email}} />
+            </div>
+            <div class="storefront-create-order__field">
+                <span class="storefront-create-order__label">{{t "storefront.common.phone"}}</span>
+                <PhoneInput @value={{this.customer.phone}} @onInput={{fn (mut this.customer.phone)}} class="form-input w-full" />
+            </div>
+            <div class="storefront-create-order__field">
+                <label class="storefront-create-order__label" for="customer-internal-id">{{t "storefront.common.internal-id"}}</label>
+                <Input id="customer-internal-id" class="form-input w-full" @value={{this.customer.internal_id}} />
+            </div>
+        </div>
+        <p class="storefront-create-order__help mt-3">{{t "storefront.customers.panel.edit-help"}}</p>
+    </div>
+    <div class="storefront-save-bar storefront-form-panel__save-bar {{if this.isDirty 'is-dirty'}}" data-test-customer-edit-save-bar>
+        <div class="storefront-save-bar__status">
+            {{#if this.isDirty}}
+                <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />{{t "storefront.trucks.panel.unsaved"}}
+            {{else}}
+                <FaIcon @icon="check" @size="xs" class="text-green-500 mr-2" />{{t "storefront.settings.save-bar.saved"}}
+            {{/if}}
+        </div>
+        <div class="storefront-save-bar__actions">
+            <Button @text={{t "common.cancel"}} @onClick={{this.cancel}} data-test-customer-edit-cancel />
+            <Button @type="primary" @icon="save" @text={{t "storefront.common.save"}} @isLoading={{this.save.isRunning}} @onClick={{perform this.save}} @permission="storefront update customer" data-test-customer-edit-save />
+        </div>
+    </div>
+</div>

@@ -2,7 +2,7 @@
     <div class="storefront-widget-header">
         <div>
             <div class="storefront-widget-title">Customer Insights</div>
-            <div class="storefront-widget-subtitle">New vs returning buyers</div>
+            <div class="storefront-widget-subtitle">{{t "storefront.dashboard.widgets.new-vs-returning"}}</div>
         </div>
         <Button @icon="refresh" @size="xs" @onClick={{perform this.load}} />
     </div>
@@ -26,7 +26,7 @@
 
             <div class="storefront-repeat-rate">
                 <div class="mb-2 flex items-center justify-between text-xs">
-                    <span class="font-semibold text-gray-600 dark:text-gray-300">Repeat purchase rate</span>
+                    <span class="font-semibold text-gray-600 dark:text-gray-300">{{t "storefront.dashboard.widgets.repeat-rate"}}</span>
                     <span class="font-bold text-gray-900 dark:text-white">{{this.data.repeat_rate}}%</span>
                 </div>
                 <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
@@ -38,7 +38,7 @@
                 {{this.data.total_customers}} buyers ordered during this period.
             </div>
         {{else}}
-            <div class="storefront-widget-empty">No customer activity yet.</div>
+            <div class="storefront-widget-empty">{{t "storefront.dashboard.widgets.no-customer-activity"}}</div>
         {{/if}}
     </div>
 </div>

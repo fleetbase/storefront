@@ -1,7 +1,7 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 
-export default class PromotionsCampaignsRoute extends Route {
+export default class PromotionsCampaignsRoute extends StorefrontListRoute {
     @service store;
     @service storefront;
     @service intl;
@@ -23,6 +23,6 @@ export default class PromotionsCampaignsRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('campaign', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        return this.store.query('campaign', { ...params, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

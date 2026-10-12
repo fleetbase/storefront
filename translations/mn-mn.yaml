@@ -659,6 +659,13 @@ storefront:
       upload-new-logo: Шинэ лого оруулах
       backdrop-help-text: Таны дэлгүүрийн нэмэлт баннер эсвэл арын зураг.
       upload-new-backdrop: Шинэ арын зураг оруулах
+      map-marker: Газрын зургийн тэмдэг
+      map-marker-help-text: Энэ дэлгүүр аппын газрын зураг дээр хэрхэн харагдах.
+      map-marker-network-help-text: Сүлжээний дэлгүүрүүд аппын газрын зураг дээр хэрхэн харагдах.
+      map-marker-store: Дэлгүүрийн дүрс
+      map-marker-warehouse: Агуулахын дүрс
+      map-marker-factory: Үйлдвэрийн дүрс
+      map-marker-logo: Дэлгүүрийн лого
       images-videos: Зураг & Видео
       drop-to-upload: Оруулахын тулд унагаана уу
       ready-to-upload: оруулхад бэлэн.

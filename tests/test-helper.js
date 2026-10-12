@@ -5,6 +5,46 @@ import { setApplication } from '@ember/test-helpers';
 import { setup } from 'qunit-dom';
 import { start } from 'ember-qunit';
 
+// The universe extension manager imports a module the console host generates at build
+// time. The engine's dummy app has no host, so provide an inert stand-in before boot.
+if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetbase/console/extensions']) {
+    window.define('@fleetbase/console/extensions', ['exports'], function (exports) {
+        exports.getExtensionLoader = function () {
+            return null;
+        };
+        exports.default = {};
+    });
+}
+
+// The addon-category model extends the console's category model; the dummy app has no console.
+if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetbase/console/models/category']) {
+    window.define('@fleetbase/console/models/category', ['exports', '@ember-data/model'], function (exports, model) {
+        exports.default = class CategoryModel extends model.default {};
+    });
+}
+
+// Console utilities the engine imports by module path; the dummy app has no console.
+if (typeof window.define === 'function') {
+    if (!window.requirejs?.entries?.['@fleetbase/console/utils/get-pod-methods']) {
+        window.define('@fleetbase/console/utils/get-pod-methods', ['exports'], function (exports) {
+            exports.default = function getPodMethods() {
+                return [
+                    { name: 'Scan', value: 'scan' },
+                    { name: 'Signature', value: 'signature' },
+                    { name: 'Photo', value: 'photo' },
+                ];
+            };
+        });
+    }
+    if (!window.requirejs?.entries?.['@fleetbase/console/utils/is-email']) {
+        window.define('@fleetbase/console/utils/is-email', ['exports'], function (exports) {
+            exports.default = function isEmail(value) {
+                return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            };
+        });
+    }
+}
+
 setApplication(Application.create(config.APP));
 
 setup(QUnit.assert);

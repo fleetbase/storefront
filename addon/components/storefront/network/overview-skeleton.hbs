@@ -1,0 +1,23 @@
+{{! The network overview while it loads: header, five KPI tiles, member cards four to a row, invitations and recent orders. }}
+<Skeleton::Page @hideSearch={{true}} @actions={{2}} @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading={{or @name "network"}}>
+    <Skeleton::StatTiles @count={{5}} />
+    <div class="storefront-skeleton-section__head">
+        <Skeleton @variant="text" @width="6rem" />
+        <Skeleton @variant="text" @width="5rem" />
+    </div>
+    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @avatar={{true}} @status={{false}} @mediaHeight={{120}} @lines={{0}} @footerActions={{1}} @footerBadge={{true}} @footerLines={{2}} />
+    <div class="ui-skeleton-table-card">
+        <div class="ui-skeleton-table-card-toolbar">
+            <Skeleton @variant="text" @width="6rem" />
+            <Skeleton @variant="text" @width="5rem" />
+        </div>
+        <Skeleton::Table @rows={{2}} @columns={{3}} @identityColumn={{false}} />
+    </div>
+    <div class="ui-skeleton-table-card">
+        <div class="ui-skeleton-table-card-toolbar">
+            <Skeleton @variant="text" @width="9rem" />
+            <Skeleton @variant="text" @width="4rem" />
+        </div>
+        <Skeleton::Table @rows={{5}} @columns={{6}} @identityColumn={{1}} />
+    </div>
+</Skeleton::Page>

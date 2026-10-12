@@ -1,18 +1,11 @@
-<SettingsContainer>
-    <form>
-        <div class="space-y-6">
-            <div>
-                <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                    {{t "storefront.settings.api.api-settings"}}
-                </h1>
-                <p class="mt-1 text-sm text-gray-500">
-                    {{t "storefront.settings.api.access-key-for-storefront-api-integrations"}}
-                </p>
-            </div>
-
-            <InputGroup @name={{t "storefront.settings.api.store-key"}} @helpText={{t "storefront.settings.api.store-key-help-text"}}>
+<div class="storefront-settings-page" data-test-settings-api>
+    <section class="storefront-settings-section">
+        <ContentPanel @title={{t "storefront.settings.sections.api-keys"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <p class="storefront-settings-section__lede">{{t "storefront.settings.api.access-key-for-storefront-api-integrations"}}</p>
+            <InputGroup @name={{t "storefront.settings.api.store-key"}} @helpText={{t "storefront.settings.api.store-key-help-text"}} @wrapperClass="mb-0">
                 <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
             </InputGroup>
-        </div>
-    </form>
-</SettingsContainer>
+        </ContentPanel>
+    </section>
+    <Spacer @height="120px" />
+</div>

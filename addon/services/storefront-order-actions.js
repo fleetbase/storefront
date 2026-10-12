@@ -2,6 +2,7 @@ import Service, { inject as service } from '@ember/service';
 import { isArray } from '@ember/array';
 
 export default class StorefrontOrderActionsService extends Service {
+    @service hostRouter;
     @service intl;
     @service notifications;
     @service fetch;
@@ -32,7 +33,7 @@ export default class StorefrontOrderActionsService extends Service {
             tabs: this.tabsFor(hydratedOrder),
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
             registry: 'storefront:order:details',
-            width: '560px',
+            width: '600px',
             size: 'sm',
             dismissible: false,
             bodyClass: 'scrollable',
@@ -47,12 +48,12 @@ export default class StorefrontOrderActionsService extends Service {
         const registeredTabs = this.menuService.getMenuItems('storefront:component:order:details');
 
         return [
-            {
-                label: 'Overview',
-                key: 'overview',
-                icon: 'folder-open',
-                component: 'storefront/order/details',
-            },
+            { label: this.intl.t('storefront.order.tabs.items'), key: 'items', icon: 'basket-shopping', component: 'storefront/order/details/tabs/items' },
+            { label: this.intl.t('storefront.order.tabs.route'), key: 'route', icon: 'route', component: 'storefront/order/details/tabs/route' },
+            { label: this.intl.t('storefront.order.tabs.payment'), key: 'payment', icon: 'credit-card', component: 'storefront/order/details/tabs/payment' },
+            { label: this.intl.t('storefront.order.tabs.activity'), key: 'activity', icon: 'wave-square', component: 'storefront/order/details/tabs/activity' },
+            { label: this.intl.t('storefront.order.tabs.customer'), key: 'customer', icon: 'user', component: 'storefront/order/details/tabs/customer' },
+            { label: this.intl.t('storefront.order.tabs.data'), key: 'data', icon: 'database', component: 'storefront/order/details/tabs/data' },
             ...(isArray(registeredTabs)
                 ? registeredTabs.map((tab) => ({
                       label: tab.label ?? tab.title,
@@ -65,12 +66,42 @@ export default class StorefrontOrderActionsService extends Service {
         ];
     }
 
+    /**
+     * Header actions: the next workflow action promoted to a button, Edit, then everything else behind a menu.
+     */
     actionButtonsFor(order, callback) {
-        return [
-            {
-                items: this.actionItemsFor(order, callback),
-            },
-        ];
+        const items = this.actionItemsFor(order, callback);
+        const primary = items.find((item) => item.id === 'perform-workflow-action');
+        const rest = items.filter((item) => item !== primary);
+        const buttons = [];
+
+        if (primary) {
+            buttons.push({ text: primary.text, icon: primary.icon, type: primary.type ?? 'primary', size: 'sm', fn: primary.fn, permission: 'storefront update order' });
+        }
+
+        buttons.push({
+            text: this.intl.t('common.edit'),
+            icon: 'pencil',
+            size: 'sm',
+            permission: 'storefront update order',
+            fn: () => this.editOrder(order),
+        });
+
+        buttons.push({ items: rest });
+
+        return buttons;
+    }
+
+    editOrder(order) {
+        if (!order?.public_id) {
+            return;
+        }
+
+        try {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.edit', order.public_id);
+        } catch {
+            return null;
+        }
     }
 
     actionItemsFor(order, callback) {
@@ -86,7 +117,9 @@ export default class StorefrontOrderActionsService extends Service {
         return [
             ...workflowItems,
             {
-                text: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'Unassign Driver' : 'Assign Driver',
+                text: this.storefrontOrderWorkflow.hasAssignedDriver(order)
+                    ? this.intl.t('storefront.orders.index.view.unassign-driver')
+                    : this.intl.t('storefront.orders.index.view.assign-driver'),
                 icon: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'user-minus' : 'id-card',
                 disabled: isTerminal,
                 fn: () => (this.storefrontOrderWorkflow.hasAssignedDriver(order) ? this.unassignDriver(order, callback) : this.assignDriver(order, callback)),
@@ -96,7 +129,7 @@ export default class StorefrontOrderActionsService extends Service {
             },
             {
                 id: 'cancel-order',
-                text: 'Cancel order',
+                text: this.intl.t('storefront.orders.index.view.cancel-order'),
                 icon: 'ban',
                 class: 'text-danger',
                 disabled: isTerminal,
@@ -360,7 +393,7 @@ export default class StorefrontOrderActionsService extends Service {
             acceptButtonText: this.intl.t('storefront.component.widget.orders.accept-order'),
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
-            modalClass: 'scrollable-height-dialog',
+            modalClass: 'scrollable-height-dialog storefront-incoming-order-modal',
             order,
             store,
             assignDriver: async () => {
@@ -550,7 +583,7 @@ export default class StorefrontOrderActionsService extends Service {
         }
 
         this.modalsManager.confirm({
-            title: 'Update Order Activity',
+            title: this.intl.t('storefront.order.update-activity'),
             body: `Update this order to ${activity._resolved_status ?? activity.status ?? activity.code}?`,
             acceptButtonText: 'Update Activity',
             acceptButtonIcon: 'signal',

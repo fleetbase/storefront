@@ -1,0 +1,14 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container space-y-4">
+        <InputGroup @name={{t "storefront.catalogs.editor.stores"}} @helpText={{t "storefront.catalogs.editor.stores-help"}}>
+            <PowerSelectMultiple @options={{@options.stores}} @selected={{@options.selectedStores}} @searchEnabled={{true}} @searchField="name" @placeholder={{t "storefront.networks.invitations.pick-stores"}} @onChange={{@options.setStores}} @triggerClass="form-select form-input" @renderInPlace={{true}} as |store|>
+                <SelectOption::Store @model={{store}} />
+            </PowerSelectMultiple>
+        </InputGroup>
+        <InputGroup @name={{t "storefront.common.food-trucks"}} @helpText={{t "storefront.catalogs.editor.trucks-help"}}>
+            <PowerSelectMultiple @options={{@options.trucks}} @selected={{@options.selectedTrucks}} @searchEnabled={{true}} @searchField="vehicle.display_name" @placeholder={{t "storefront.catalogs.editor.pick-trucks"}} @onChange={{@options.setTrucks}} @triggerClass="form-select form-input" @renderInPlace={{true}} as |truck|>
+                <span>{{or truck.vehicle.display_name truck.vehicle.plate_number truck.id}}</span>
+            </PowerSelectMultiple>
+        </InputGroup>
+    </div>
+</Modal::Default>

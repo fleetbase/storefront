@@ -35,6 +35,7 @@ class Order extends FleetOpsOrderIndexResource
             'storefront_id',
             'storefront_network',
             'storefront_network_id',
+            'checkout_id',
             'subtotal',
             'delivery_fee',
             'tip',

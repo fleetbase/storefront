@@ -1,8 +1,10 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
+import { setupIntl } from 'ember-intl/test-support';
 
 module('Unit | Controller | customers/index', function (hooks) {
     setupTest(hooks);
+    setupIntl(hooks, 'en-us');
 
     test('it exists', function (assert) {
         let controller = this.owner.lookup('controller:customers/index');

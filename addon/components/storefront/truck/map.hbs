@@ -1,0 +1,6 @@
+{{! A Leaflet map of the trucks that have a reported position; Leaflet is initialized by the console. }}
+<div class="storefront-truck-map {{@class}}" style={{this.style}} {{did-insert this.setup}} {{did-update this.refresh @trucks}} {{will-destroy this.teardown}} data-test-truck-map ...attributes>
+    {{#unless this.hasLeaflet}}
+        <div class="storefront-empty-row"><span>{{t "storefront.trucks.map.unavailable"}}</span></div>
+    {{/unless}}
+</div>

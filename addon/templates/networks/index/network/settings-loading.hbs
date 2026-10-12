@@ -1,0 +1,23 @@
+{{! Network settings: the header with its copy action, the section rail, then sections of fields in two columns. }}
+<Skeleton::Page @hideAvatar={{true}} @hideSearch={{true}} @actions={{1}} @bodyClass="storefront-skeleton-settings" @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="network-settings">
+    <div class="storefront-skeleton-settings__rail">
+        {{#each (array 0 1 2 3 4 5 6)}}
+            <div class="storefront-skeleton-row">
+                <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                <Skeleton @variant="text" @width="60%" />
+            </div>
+        {{/each}}
+    </div>
+    <div class="storefront-skeleton-settings__content">
+        {{#each (array 6 4) as |fields|}}
+            <div class="ui-skeleton-table-card storefront-skeleton-section">
+                <div class="storefront-skeleton-section__head">
+                    <Skeleton @variant="text" @width="6rem" />
+                    <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                </div>
+                <Skeleton @variant="text" @width="40%" @height="0.625rem" />
+                <Skeleton::Form @fields={{fields}} @columns={{2}} />
+            </div>
+        {{/each}}
+    </div>
+</Skeleton::Page>

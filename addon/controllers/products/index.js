@@ -33,7 +33,296 @@ export default class ProductsIndexController extends BaseController {
      * @var {CategoryModel}
      */
     @tracked category;
+    /** Grid or list, kept in the URL (`?view=list`) so a reload or a link keeps the view. */
+    queryParams = [{ viewMode: 'view' }];
     @tracked viewMode = 'grid';
+    @tracked summary = null;
+    @tracked activeGroup = null;
+    @tracked selected = [];
+
+    groupFilters = {
+        'out-of-stock': { available: false },
+        drafts: { status: 'draft' },
+        recommended: { recommended: true },
+        'on-sale': { on_sale: true },
+        uncategorized: { uncategorized: true },
+    };
+
+    filterKeys = ['status', 'available', 'on_sale', 'recommended', 'uncategorized'];
+
+    get categoryCounts() {
+        return this.summary?.by_category ?? {};
+    }
+
+    /** The header's meta line: products and categories in this store. */
+    get headerMeta() {
+        const categories = this.model?.length ?? Object.keys(this.categoryCounts).length;
+
+        // Before the first list response there is no product count to claim, only the categories.
+        if (!this.summary) {
+            return this.intl.t('storefront.products.index.summary-categories', { categories });
+        }
+
+        return this.intl.t('storefront.products.index.summary', { products: this.summary.total ?? 0, categories });
+    }
+
+    get statusTab() {
+        const controller = this.activeProductsController;
+
+        if (this.activeGroup) {
+            return null;
+        }
+
+        if (controller?.status === 'published') return 'published';
+        if (controller?.status === 'draft') return 'draft';
+        if (controller?.on_sale) return 'on-sale';
+
+        return 'all';
+    }
+
+    get statusTabs() {
+        const summary = this.summary ?? {};
+
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: summary.total },
+            { id: 'published', label: this.intl.t('storefront.products.statuses.published'), count: summary.published },
+            { id: 'draft', label: this.intl.t('storefront.products.statuses.draft'), count: summary.draft },
+            { id: 'on-sale', label: this.intl.t('storefront.products.groups.on-sale'), count: summary.on_sale },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    sortChoices = [
+        { value: '-updated_at', key: 'storefront.products.sort.recently-updated' },
+        { value: '-created_at', key: 'storefront.products.sort.newest' },
+        { value: 'name', key: 'storefront.products.sort.name' },
+        { value: 'price', key: 'storefront.products.sort.price-low' },
+        { value: '-price', key: 'storefront.products.sort.price-high' },
+    ];
+
+    get sortOptions() {
+        const current = this.activeProductsController?.sort || '-updated_at';
+
+        return this.sortChoices.map((choice) => ({ ...choice, label: this.intl.t(choice.key), isActive: choice.value === current }));
+    }
+
+    get sortLabel() {
+        const active = this.sortOptions.find((option) => option.isActive) ?? this.sortOptions[0];
+
+        return this.intl.t('storefront.products.sort.label', { sort: active.label });
+    }
+
+    @action setSort(value) {
+        const controller = this.activeProductsController;
+
+        if (controller) {
+            controller.sort = value;
+            controller.page = 1;
+        }
+    }
+
+    /**
+     * Adds the selected products to a category of one of the store's catalogs; the
+     * catalog is saved the way the editor saves it.
+     */
+    @action bulkAddToCatalog() {
+        const products = [...this.selected];
+
+        if (!products.length) {
+            return;
+        }
+
+        this.modalsManager.show('modals/add-products-to-catalog', {
+            title: this.intl.t('storefront.products.bulk.add-to-catalog-title', { count: products.length }),
+            acceptButtonText: this.intl.t('storefront.products.bulk.add-to-catalog'),
+            acceptButtonIcon: 'book-open',
+            storeId: this.storefront.activeStore?.id,
+            catalog: null,
+            category: null,
+            confirm: async (modal) => {
+                const catalog = modal.getOption('catalog');
+                const category = modal.getOption('category');
+
+                if (!catalog || !category) {
+                    return this.notifications.warning(this.intl.t('storefront.products.bulk.pick-catalog-first'));
+                }
+
+                modal.startLoading();
+
+                try {
+                    products.forEach((product) => {
+                        if (!category.products.includes(product)) {
+                            category.products.pushObject(product);
+                        }
+                    });
+                    await catalog.save();
+                    this.notifications.success(this.intl.t('storefront.products.bulk.added-to-catalog', { count: products.length, catalog: catalog.name, category: category.name }));
+                    this.clearSelection();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    get selectedIds() {
+        return new Set(this.selected.map((product) => product.id));
+    }
+
+    get hasSelection() {
+        return this.selected.length > 0;
+    }
+
+    applyFilters(filters = {}) {
+        const controller = this.activeProductsController;
+
+        if (!controller) {
+            return;
+        }
+
+        this.filterKeys.forEach((key) => {
+            controller[key] = filters[key] ?? null;
+        });
+        controller.page = 1;
+    }
+
+    @action selectStatusTab(tab) {
+        const id = tab.id ?? tab;
+        this.activeGroup = null;
+
+        switch (id) {
+            case 'published':
+                return this.applyFilters({ status: 'published' });
+            case 'draft':
+                return this.applyFilters({ status: 'draft' });
+            case 'on-sale':
+                return this.applyFilters({ on_sale: true });
+            default:
+                return this.applyFilters({});
+        }
+    }
+
+    @action selectGroup(group) {
+        const id = group.id ?? group;
+
+        if (this.category) {
+            this.category = null;
+            this.transitionToRoute('products.index');
+        }
+
+        this.activeGroup = id;
+        this.applyFilters(this.groupFilters[id] ?? {});
+    }
+
+    @action toggleSelect(product) {
+        if (this.selectedIds.has(product.id)) {
+            this.selected = this.selected.filter((item) => item.id !== product.id);
+        } else {
+            this.selected = [...this.selected, product];
+        }
+    }
+
+    @action clearSelection() {
+        this.selected = [];
+    }
+
+    async bulkUpdate(changes, successKey) {
+        const products = this.selected;
+
+        if (!products.length) {
+            return;
+        }
+
+        try {
+            await Promise.all(
+                products.map((product) => {
+                    product.setProperties(changes);
+                    return product.save();
+                })
+            );
+            this.notifications.success(this.intl.t(successKey, { count: products.length }));
+            this.clearSelection();
+            return this.hostRouter.refresh();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action bulkPublish() {
+        return this.bulkUpdate({ status: 'published' }, 'storefront.products.bulk.published');
+    }
+
+    @action bulkUnpublish() {
+        return this.bulkUpdate({ status: 'draft' }, 'storefront.products.bulk.unpublished');
+    }
+
+    @action bulkMarkOnSale() {
+        return this.bulkUpdate({ is_on_sale: true }, 'storefront.products.bulk.on-sale');
+    }
+
+    @action bulkMoveToCategory() {
+        const products = this.selected;
+        const categories = this.model?.toArray?.() ?? Array.from(this.model ?? []);
+
+        this.modalsManager.show('modals/add-store-to-category', {
+            title: this.intl.t('storefront.products.bulk.move-title', { count: products.length }),
+            acceptButtonText: this.intl.t('storefront.products.bulk.move'),
+            acceptButtonIcon: 'folder-tree',
+            categories,
+            category: null,
+            setCategory: (category) => this.modalsManager.setOption('category', category),
+            confirm: async (modal) => {
+                const category = modal.getOption('category');
+
+                if (!category) {
+                    return this.notifications.warning(this.intl.t('storefront.networks.invitations.pick-a-category'));
+                }
+
+                modal.startLoading();
+
+                try {
+                    await Promise.all(
+                        products.map((product) => {
+                            product.setProperties({ category, category_uuid: category.id });
+                            return product.save();
+                        })
+                    );
+                    this.notifications.success(this.intl.t('storefront.products.bulk.moved', { count: products.length, category: category.name }));
+                    this.clearSelection();
+                    modal.done();
+                    return this.hostRouter.refresh();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    @action bulkDelete() {
+        const products = this.selected;
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.products.bulk.delete-title', { count: products.length }),
+            body: this.intl.t('storefront.products.index.body-warning'),
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'trash',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await Promise.all(products.map((product) => product.destroyRecord()));
+                    this.clearSelection();
+                    modal.done();
+                    return this.hostRouter.refresh();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
 
     get activeProductsController() {
         return this.category ? this.productsIndexCategoryController : this.productsIndexIndexController;
@@ -69,7 +358,12 @@ export default class ProductsIndexController extends BaseController {
     }
 
     @action createNewProduct() {
-        return this.transitionToRoute('products.index.category.new');
+        // Inside a category the product starts in it; from "All products" the form's category select decides.
+        if (this.category?.slug) {
+            return this.transitionToRoute('products.index.category.new', this.category.slug);
+        }
+
+        return this.transitionToRoute('products.index.index.new');
     }
 
     /**
@@ -77,23 +371,27 @@ export default class ProductsIndexController extends BaseController {
      *
      * @memberof ProductsIndexController
      */
+    /** Whether the add-ons panel is open. */
+    @tracked addonsPanelOpen = false;
+
     @action manageAddons() {
-        this.modalsManager.show('modals/manage-addons', {
-            title: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-title'),
-            acceptButtonText: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-accept-button'),
-            acceptButtonIcon: 'save',
-            modalClass: 'modal-lg',
-            store: this.activeStore,
-        });
+        this.addonsPanelOpen = true;
+    }
+
+    @action closeAddons() {
+        this.addonsPanelOpen = false;
     }
 
     @action viewAllProducts() {
         this.category = null;
+        this.activeGroup = null;
+        this.applyFilters({});
         this.transitionToRoute('products.index');
     }
 
     @action switchCategory(category) {
         this.category = category;
+        this.activeGroup = null;
         this.transitionToRoute('products.index.category', category.slug);
     }
 

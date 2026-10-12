@@ -29,6 +29,37 @@ class ProductController extends StorefrontController
      *
      * @return \Illuminate\Http\Response
      */
+    /**
+     * Counts the products page sidebar and tabs show for one store: per category, per status,
+     * and the smart groups (out of stock, drafts, recommended, on sale, uncategorised).
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function summary(Request $request)
+    {
+        $storeUuid = $request->input('store_uuid') ?? $request->input('store');
+        $products  = Product::where('company_uuid', session('company'));
+
+        if ($storeUuid) {
+            $products->where('store_uuid', $storeUuid);
+        }
+
+        $byCategory = (clone $products)->selectRaw('category_uuid, count(*) as total')->groupBy('category_uuid')->pluck('total', 'category_uuid');
+        $byStatus   = (clone $products)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        return response()->json([
+            'total'         => (clone $products)->count(),
+            'by_category'   => collect($byCategory)->filter(fn ($count, $key) => !empty($key))->all(),
+            'uncategorized' => (int) ($byCategory[''] ?? $byCategory[null] ?? (clone $products)->whereNull('category_uuid')->count()),
+            'by_status'     => $byStatus,
+            'published'     => (int) ($byStatus['published'] ?? 0),
+            'draft'         => (int) ($byStatus['draft'] ?? 0),
+            'out_of_stock'  => (clone $products)->where('is_available', false)->count(),
+            'on_sale'       => (clone $products)->where('is_on_sale', true)->count(),
+            'recommended'   => (clone $products)->where('is_recommended', true)->count(),
+        ]);
+    }
+
     public function processImports(Request $request)
     {
         $disk           = $request->input('disk', config('filesystems.default'));

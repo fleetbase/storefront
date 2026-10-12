@@ -5,6 +5,10 @@ import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     activeStore = { public_id: 'store_1' };
     on() {}
 }
@@ -41,6 +45,29 @@ module('Integration | Component | widget/storefront-kpi-tile', function (hooks) 
         assert.dom('.storefront-kpi-tile').exists();
         assert.dom('.storefront-kpi-tile').includesText('Revenue');
         assert.dom('.storefront-kpi-delta').hasText('+25%');
+        assert.dom('[data-test-kpi-period]').hasText('vs previous period');
+    });
+
+    test('it says there is no previous period instead of claiming +100%', async function (assert) {
+        class FetchStubService extends Service {
+            get() {
+                return {
+                    currency: 'USD',
+                    metrics: {
+                        orders: { value: 12, previous: 0, delta_percent: 100, format: 'number' },
+                    },
+                };
+            }
+        }
+
+        this.owner.register('service:fetch', FetchStubService);
+
+        await render(hbs`<Widget::StorefrontKpiTile @metric="orders" @title="Orders" @icon="bag-shopping" />`);
+
+        assert.dom('.storefront-kpi-value').hasText('12');
+        assert.dom('.storefront-kpi-delta').doesNotExist('no trend pill without a previous period');
+        assert.dom('[data-test-kpi-period]').hasText('No previous period');
+        assert.dom('.storefront-kpi-tile').hasClass('storefront-kpi-trend-neutral');
     });
 
     test('it renders an error state', async function (assert) {
