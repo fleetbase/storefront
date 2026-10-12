@@ -5518,46 +5518,93 @@ body[data-theme='dark'] .storefront-product-sidebar__groups {
     outline-offset: -2px;
 }
 
-/* Dashboard: needs-attention strip */
+/* Dashboard: needs-attention strip. Fits the KPI tiles' 4-row cell: one compact heading
+   row, then the items as cells of one strip divided by hairlines, not tiles in a tile. */
+.storefront-attention-strip {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+
+body[data-theme='dark'] .storefront-attention-strip {
+    border-color: #374151;
+    background-color: #1f2937;
+}
+
+.storefront-attention-strip__head {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.375rem 0.5rem 0.375rem 0.875rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+body[data-theme='dark'] .storefront-attention-strip__head {
+    border-color: var(--sf-hairline);
+}
+
+.storefront-attention-strip__heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.storefront-attention-strip__heading .storefront-widget-subtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .storefront-attention-strip__items {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: 0.5rem;
-    padding: 0 0.75rem 0.75rem;
+    flex: 1 1 auto;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    min-height: 0;
 }
 
 .storefront-attention-item {
     display: flex;
     align-items: center;
     gap: 0.625rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
+    min-width: 0;
+    padding: 0.5rem 0.875rem;
     text-align: left;
-    background-color: #fff;
+    background-color: transparent;
+}
+
+.storefront-attention-item + .storefront-attention-item {
+    border-left: 1px solid #e5e7eb;
 }
 
 .storefront-attention-item:hover {
     background-color: #f9fafb;
 }
 
-body[data-theme='dark'] .storefront-attention-item {
-    border-color: #374151;
-    background-color: #1f2937;
+body[data-theme='dark'] .storefront-attention-item + .storefront-attention-item {
+    border-color: var(--sf-hairline);
 }
 
 body[data-theme='dark'] .storefront-attention-item:hover {
-    background-color: #374151;
+    background-color: var(--sf-raised);
 }
 
 .storefront-attention-item__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     flex-shrink: 0;
     border-radius: 0.375rem;
+    font-size: 0.8125rem;
     color: #6b7280;
     background-color: #f3f4f6;
 }
@@ -5582,11 +5629,27 @@ body[data-theme='dark'] .storefront-attention-item__icon {
     background-color: #dbeafe;
 }
 
+body[data-theme='dark'] .storefront-attention-item--warn.has-count .storefront-attention-item__icon {
+    color: #fcd34d;
+    background-color: rgb(180 83 9 / 25%);
+}
+
+body[data-theme='dark'] .storefront-attention-item--danger.has-count .storefront-attention-item__icon {
+    color: #fca5a5;
+    background-color: rgb(185 28 28 / 25%);
+}
+
+body[data-theme='dark'] .storefront-attention-item--info.has-count .storefront-attention-item__icon {
+    color: #93c5fd;
+    background-color: rgb(29 78 216 / 25%);
+}
+
 .storefront-attention-item__count {
-    font-size: 1.25rem;
+    min-width: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 600;
+    line-height: 1;
     color: #111827;
-    min-width: 1.5rem;
 }
 
 body[data-theme='dark'] .storefront-attention-item__count {
@@ -5595,13 +5658,17 @@ body[data-theme='dark'] .storefront-attention-item__count {
 
 .storefront-attention-item__body {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     min-width: 0;
-    flex: 1 1 auto;
 }
 
 .storefront-attention-item__label {
+    overflow: hidden;
     font-size: 0.8125rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: #111827;
 }
 
@@ -5610,15 +5677,21 @@ body[data-theme='dark'] .storefront-attention-item__label {
 }
 
 .storefront-attention-item__hint {
-    font-size: 0.6875rem;
-    color: #6b7280;
     overflow: hidden;
+    font-size: 0.6875rem;
+    line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-attention-item__hint {
+    color: #9ca3af;
 }
 
 .storefront-attention-item__chevron {
-    color: #6b7280;
+    flex-shrink: 0;
+    color: #9ca3af;
 }
 
 /* Network join landing and store-side invitation banner */

@@ -1,8 +1,8 @@
-<div class="storefront-dashboard-widget storefront-attention-strip flex h-full flex-col rounded-md border bg-white shadow-sm dark:bg-gray-800 {{@options.wrapperClass}}" data-test-attention-strip ...attributes>
-    <div class="storefront-orders-header">
-        <div class="min-w-0">
-            <div class="storefront-widget-title">{{or @options.title (t "storefront.dashboard.attention.title")}}</div>
-            <div class="storefront-widget-subtitle">
+<div class="storefront-dashboard-widget storefront-attention-strip {{@options.wrapperClass}}" data-test-attention-strip ...attributes>
+    <div class="storefront-attention-strip__head">
+        <div class="storefront-attention-strip__heading">
+            <span class="storefront-widget-title">{{or @options.title (t "storefront.dashboard.attention.title")}}</span>
+            <span class="storefront-widget-subtitle" data-test-attention-subtitle>
                 {{#if this.load.isRunning}}
                     {{t "common.loading"}}
                 {{else if this.allClear}}
@@ -10,7 +10,7 @@
                 {{else}}
                     {{t "storefront.dashboard.attention.subtitle"}}
                 {{/if}}
-            </div>
+            </span>
         </div>
         <Button @icon="refresh" @size="xs" @helpText={{t "storefront.dashboard.attention.refresh"}} @onClick={{perform this.load}} />
     </div>
