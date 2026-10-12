@@ -128,7 +128,7 @@ export default class OrdersIndexController extends BaseController {
             valuePath: 'public_id',
             width: '135px',
             cellComponent: 'click-to-copy',
-            cellClassNames: 'storefront-table-muted',
+            cellClassNames: 'storefront-table-cell-muted',
             resizable: true,
             sortable: true,
             filterable: true,

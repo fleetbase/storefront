@@ -45,10 +45,18 @@ body[data-theme='dark'] .storefront-products-page {
 }
 
 .storefront-products-viewport {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     min-height: 0;
     height: 100%;
     overflow: hidden;
+}
+
+/* The toolbar keeps its height; the list takes what is left of the viewport, so its last row
+   scrolls into view instead of running under the window's edge */
+.storefront-products-viewport > .storefront-products-toolbar {
+    flex: 0 0 auto;
 }
 
 .storefront-product-sidebar {
@@ -230,8 +238,8 @@ body[data-theme='dark'] .storefront-product-addon-empty {
 
 .storefront-product-workspace {
     display: flex;
+    flex: 1 1 auto;
     min-height: 0;
-    height: 100%;
     flex-direction: column;
     overflow: hidden;
 }
@@ -283,7 +291,7 @@ body[data-theme='dark'] .storefront-product-addon-empty {
     align-content: start;
     gap: 0.85rem;
     overflow: auto;
-    padding: 0.75rem;
+    padding: 0.75rem 0.75rem 5.5rem;
 }
 
 .storefront-product-collection.is-empty {
@@ -1615,6 +1623,15 @@ body[data-theme='dark'] .storefront-table-muted {
     color: #9ca3af;
 }
 
+/* A muted table cell: colour only, so the cell keeps its table layout and vertical centring */
+.storefront-table-cell-muted {
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-table-cell-muted {
+    color: #9ca3af;
+}
+
 .storefront-table-actions {
     display: flex;
     align-items: center;
@@ -2792,6 +2809,18 @@ body[data-theme='dark'] .storefront-order-empty-state {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    height: 100%;
+}
+
+/* Cards in a row stretch to the tallest; the body takes the slack so every footer sits on the
+   card's bottom edge */
+.storefront-card > .resource-card-body {
+    flex: 1 1 auto;
+}
+
+.storefront-card > .resource-card-footer {
+    flex: 0 0 auto;
+    margin-top: auto;
 }
 
 .storefront-card__title {
@@ -2918,6 +2947,13 @@ body[data-theme='dark'] .storefront-card__chip-count {
     flex: 0 0 auto;
     align-items: center;
     gap: 0.25rem;
+}
+
+/* Each button, wrapper or dropdown trigger centres on the same line */
+.storefront-card__buttons > *,
+.storefront-card__buttons .ember-basic-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
 }
 
 /* A long status badge gives way (ellipsis) before the buttons do */
@@ -8574,7 +8610,7 @@ body[data-theme='dark'] .storefront-empty-row--action:hover:not(:disabled) {
 
 /* The customer's name and phone get the widest cell */
 .storefront-order-panel-heading .storefront-identity-strip {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.8fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
 }
 
 /* Header actions: one 28px height for every button, the ellipsis padded like a button, tight gaps */
