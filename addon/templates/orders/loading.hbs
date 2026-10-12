@@ -1,1 +1,12 @@
-<Skeleton::Page @view="table" @columns={{8}} @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="orders" />
+{{! Orders: search, filters, columns and new order; a selectable table without a toolbar. }}
+<Skeleton::Page
+    @hideAvatar={{true}}
+    @actions={{3}}
+    @toolbar={{false}}
+    @columns={{9}}
+    @rows={{12}}
+    @identityColumn={{1}}
+    @label={{t "storefront.common.loading"}}
+    class="storefront-loading"
+    data-test-storefront-loading="orders"
+/>

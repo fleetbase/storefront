@@ -1,0 +1,13 @@
+{{! Network categories: no search, a new-category action, a table that is not selectable. }}
+<Skeleton::Page
+    @hideAvatar={{true}}
+    @hideSearch={{true}}
+    @actions={{1}}
+    @toolbar={{false}}
+    @checkbox={{false}}
+    @columns={{5}}
+    @rows={{4}}
+    @label={{t "storefront.common.loading"}}
+    class="storefront-loading"
+    data-test-storefront-loading="network-categories"
+/>

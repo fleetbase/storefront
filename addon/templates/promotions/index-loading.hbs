@@ -1,0 +1,21 @@
+{{! Promotions in the view the page is in: cards three to a row, or the selectable table; status tabs in both. }}
+<Storefront::ViewLoading @controller="promotions/index" @property="view" @value="table" as |isTable|>
+    <Skeleton::Page @actions={{3}} @label={{t "storefront.common.loading"}} class="storefront-loading storefront-loading--hub" data-test-storefront-loading="promotions" data-test-loading-view={{if isTable "table" "cards"}}>
+        <Skeleton::Tabs @count={{4}} @counts={{true}} />
+        {{#if isTable}}
+            <div class="ui-skeleton-table-card">
+                <div class="ui-skeleton-table-card-toolbar">
+                    <Skeleton::Tabs @count={{6}} @counts={{true}} class="storefront-skeleton-inline-tabs" />
+                </div>
+                <Skeleton::Table @rows={{6}} @columns={{8}} @checkbox={{true}} @identityColumn={{false}} />
+                <div class="ui-skeleton-table-card-footer">
+                    <Skeleton @variant="text" @width="8rem" />
+                    <Skeleton @variant="button" @width="9rem" />
+                </div>
+            </div>
+        {{else}}
+            <Skeleton::Tabs @count={{6}} @counts={{true}} class="storefront-skeleton-inline-tabs" />
+            <Skeleton::CardsGrid @count={{6}} @columns={{3}} @hideMedia={{true}} @subtitle={{true}} @status="badge" @lines={{4}} @footerActions={{2}} />
+        {{/if}}
+    </Skeleton::Page>
+</Storefront::ViewLoading>

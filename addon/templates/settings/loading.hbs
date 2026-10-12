@@ -1,2 +1,13 @@
-{{! Renders in the settings content area beside the rail; the shell header stays. }}
-<Skeleton::Page @view="form" @count={{6}} @hideHeader={{true}} @label={{t "storefront.common.loading"}} class="storefront-loading storefront-loading--body" data-test-storefront-loading="settings" />
+{{! Renders in the settings content area beside the rail; the shell header stays. Two sections of two-column fields. }}
+<Skeleton::Page @hideHeader={{true}} @label={{t "storefront.common.loading"}} class="storefront-loading storefront-loading--body storefront-loading--settings" data-test-storefront-loading="settings">
+    {{#each (array 6 4) as |fields|}}
+        <div class="ui-skeleton-table-card storefront-skeleton-section">
+            <div class="storefront-skeleton-section__head">
+                <Skeleton @variant="text" @width="6rem" />
+                <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+            </div>
+            <Skeleton @variant="text" @width="40%" @height="0.625rem" />
+            <Skeleton::Form @fields={{fields}} @columns={{2}} />
+        </div>
+    {{/each}}
+</Skeleton::Page>
