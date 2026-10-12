@@ -1477,7 +1477,7 @@ body[data-theme='dark'] .storefront-customers-header {
     font-weight: 600;
     letter-spacing: 0;
     line-height: 1;
-    padding: 0.75rem 1rem;
+    padding: 0.625rem 0.75rem;
     text-align: left;
     text-transform: uppercase;
 }
@@ -1490,11 +1490,11 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(1) {
-    width: 18%;
+    width: 15%;
 }
 
 .storefront-orders-table th:nth-child(2) {
-    width: 18%;
+    width: 16%;
 }
 
 .storefront-orders-table th:nth-child(3) {
@@ -1502,7 +1502,7 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(4) {
-    width: 16%;
+    width: 14%;
 }
 
 .storefront-orders-table th:nth-child(5) {
@@ -1510,11 +1510,15 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(6) {
-    width: 10%;
+    width: 11%;
 }
 
 .storefront-orders-table th:nth-child(7) {
-    width: 18%;
+    width: 12%;
+}
+
+.storefront-orders-table th:nth-child(8) {
+    width: 12%;
 }
 
 .storefront-customers-table th:nth-child(1) {
@@ -1544,7 +1548,7 @@ body[data-theme='dark'] .storefront-customers-table th {
     color: #111827;
     font-size: 0.76rem;
     font-weight: 400;
-    padding: 0.72rem 1rem;
+    padding: 0.375rem 0.75rem;
     vertical-align: middle;
 }
 

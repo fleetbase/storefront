@@ -618,6 +618,7 @@ storefront:
       completed-orders: Completed orders
       cart-conversion: Cart conversion
     widgets:
+      recent-customers: "{count, plural, one {# recent customer} other {# recent customers}}"
       no-recent-customers: No recent customers yet.
       new-vs-returning: New vs returning buyers
       repeat-rate: Repeat purchase rate

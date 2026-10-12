@@ -55,6 +55,7 @@
                         <th>{{t "storefront.common.driver"}}</th>
                         <th>{{t "storefront.common.total"}}</th>
                         <th>{{t "storefront.common.status"}}</th>
+                        <th>{{t "storefront.networks.orders.columns.placed"}}</th>
                         <th>{{t "storefront.component.widget.orders.next"}}</th>
                     </tr>
                 </thead>
@@ -62,12 +63,9 @@
                     {{#each this.rows as |row|}}
                         <tr class="storefront-animate-row" data-test-orders-widget-row={{row.order.public_id}}>
                             <td>
-                                <a href="javascript:;" {{on "click" (fn this.viewOrder row.order)}} class="storefront-order-id">
-                                    <div>{{row.order.public_id}}</div>
-                                    <span class="storefront-table-muted">{{row.order.createdAgo}}</span>
-                                </a>
+                                <a href="javascript:;" {{on "click" (fn this.viewOrder row.order)}} class="storefront-order-id">{{row.order.public_id}}</a>
                             </td>
-                            <td><Customer::Pill @customer={{row.order.customer}} @static={{not row.order.customer.id}} /></td>
+                            <td><Customer::Pill @customer={{row.order.customer}} @subtitle={{null}} @static={{not row.order.customer.id}} /></td>
                             <td>
                                 {{#if row.isPickup}}
                                     <Badge @hideStatusDot={{true}} @status="info" @text={{t "storefront.common.pickup"}} />
@@ -77,7 +75,7 @@
                             </td>
                             <td>
                                 {{#if row.hasDriver}}
-                                    <Driver::Pill @driver={{row.driver}} @showOnlineIndicator={{true}} />
+                                    <Driver::Pill @driver={{row.driver}} @subtitle={{null}} @showOnlineIndicator={{true}} />
                                 {{else if row.isPickup}}
                                     <span class="storefront-table-muted">{{t "storefront.component.widget.orders.driver-not-needed"}}</span>
                                 {{else}}
@@ -86,6 +84,7 @@
                             </td>
                             <td><span class="storefront-order-total">{{format-currency row.order.meta.total row.order.meta.currency}}</span></td>
                             <td><Badge @status={{row.order.status}} /></td>
+                            <td><span class="storefront-table-muted">{{format-date-fns row.order.created_at "d MMM, HH:mm"}}</span></td>
                             <td>
                                 <div class="storefront-table-actions">
                                     {{#if row.next}}
@@ -97,7 +96,7 @@
                         </tr>
                     {{else}}
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="storefront-widget-empty">{{t "storefront.component.widget.orders.empty"}}</div>
                             </td>
                         </tr>
