@@ -100,7 +100,7 @@
             <RegistryYield @registry="storefront:component:product:card:footer:start" as |RegistryComponent|>
                 <RegistryComponent @product={{@product}} @resource={{@product}} />
             </RegistryYield>
-            <span class="storefront-product-card__updated" title={{t "storefront.products.card.updated" ago=(n-a @product.updatedAgo)}}><FaIcon @icon="clock" @prefix="far" @size="xs" />{{t "storefront.products.card.ago" ago=(n-a @product.updatedAgo)}}</span>
+            <span class="storefront-product-card__updated" title={{t "storefront.products.card.updated" ago=(n-a @product.updatedAgo)}}><FaIcon @icon="clock" @size="xs" />{{t "storefront.products.card.ago" ago=(n-a @product.updatedAgo)}}</span>
             <div class="storefront-card__buttons">
                 <LinkTo @route={{@editRoute}} @model={{@product}} disabled={{cannot "storefront update product"}} class="btn btn-xs btn-default" aria-label={{concat (t "storefront.common.edit") " " @product.name}}>
                     <FaIcon @icon="pencil" />

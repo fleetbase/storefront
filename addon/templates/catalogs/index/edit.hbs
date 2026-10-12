@@ -86,7 +86,7 @@
                                             <Image src={{product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{product.name}} class="storefront-catalog-picker__image" />
                                             <span class="storefront-catalog-picker__name">{{product.name}}</span>
                                             <span class="storefront-catalog-picker__price">{{format-currency product.price product.currency}}</span>
-                                            <FaIcon @icon={{if (in-array product this.pickerSelection) "check-square" "square"}} @prefix="far" />
+                                            <span class="storefront-check {{if (in-array product this.pickerSelection) 'is-checked'}}" aria-hidden="true">{{#if (in-array product this.pickerSelection)}}<FaIcon @icon="check" />{{/if}}</span>
                                         </button>
                                     {{else}}
                                         <div class="storefront-empty-row"><span>{{t "storefront.catalogs.editor.no-products-to-add"}}</span></div>

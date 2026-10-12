@@ -120,9 +120,11 @@ export default class StorefrontTruckPanelComponent extends Component {
     get subtitle() {
         const parts = [];
 
-        if (!this.truck?.isNew) {
-            parts.push(this.truck?.public_id);
+        if (this.truck?.isNew) {
+            return this.intl.t('storefront.trucks.panel.new-subtitle');
         }
+
+        parts.push(this.truck?.public_id);
 
         if (this.truck?.ownerName) {
             parts.push(this.intl.t('storefront.trucks.card.owned-by', { name: this.truck.ownerName }));

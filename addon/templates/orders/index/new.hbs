@@ -206,7 +206,7 @@
                                         <div class="storefront-create-order__option-list">
                                             {{#each row.options as |item|}}
                                                 <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleVariantOption row.variant item.option)}}>
-                                                    <FaIcon @icon={{if item.isSelected (if row.variant.is_multiselect "check-square" "dot-circle") (if row.variant.is_multiselect "square" "circle")}} @prefix="far" class="mr-1" />
+                                                    <span class="storefront-check {{unless row.variant.is_multiselect 'is-radio'}} {{if item.isSelected 'is-checked'}} mr-1" aria-hidden="true">{{#if item.isSelected}}{{#if row.variant.is_multiselect}}<FaIcon @icon="check" />{{/if}}{{/if}}</span>
                                                     {{item.option.name}}{{#if item.option.additional_cost}} <span class="text-gray-500">+{{format-currency item.option.additional_cost this.currency}}</span>{{/if}}
                                                 </button>
                                             {{/each}}
@@ -219,7 +219,7 @@
                                         <div class="storefront-create-order__option-list">
                                             {{#each row.addons as |item|}}
                                                 <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleAddon row.category item.addon)}}>
-                                                    <FaIcon @icon={{if item.isSelected "check-square" "square"}} @prefix="far" class="mr-1" />
+                                                    <span class="storefront-check {{if item.isSelected 'is-checked'}} mr-1" aria-hidden="true">{{#if item.isSelected}}<FaIcon @icon="check" />{{/if}}</span>
                                                     {{item.addon.name}} <span class="text-gray-500">+{{format-currency (if item.addon.is_on_sale item.addon.sale_price item.addon.price) this.currency}}</span>
                                                 </button>
                                             {{/each}}

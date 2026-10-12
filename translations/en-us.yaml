@@ -530,6 +530,7 @@ storefront:
       products-count: "{count, plural, =0 {No products} one {# product} other {# products}}"
   trucks:
     panel:
+      new-subtitle: Pick the vehicle, where it serves and what it sells.
       tabs:
         details: Details
         catalogs: Catalogs
