@@ -1835,13 +1835,6 @@ body[data-theme='dark'] .storefront-order-panel-header {
     white-space: nowrap;
 }
 
-.storefront-order-panel-heading__badges {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-}
-
 .storefront-order-panel-heading__fulfillment-badge .status-badge-inner-wrap {
     min-width: 4.5rem;
     justify-content: center;
@@ -1900,6 +1893,17 @@ body[data-theme='dark'] .storefront-order-totals span {
 
 body[data-theme='dark'] .storefront-order-panel-heading__title {
     color: #f9fafb;
+}
+
+/* The status and the network or store badge, on one line under the tracking number */
+.storefront-order-panel-heading__badges {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+    margin-top: 0.25rem;
+    overflow: hidden;
 }
 
 .storefront-order-panel-heading__meta {

@@ -7,7 +7,21 @@
             <div class="min-w-0">
                 <div class="storefront-order-panel-heading__title">
                     <span data-test-order-panel-title>{{or @resource.tracking_number.tracking_number @resource.tracking @resource.public_id}}</span>
-                    <Badge @status={{@resource.status}} @size="xs" />
+                </div>
+                {{! Under the tracking number: the status, then the network (or store) the order came through. }}
+                <div class="storefront-order-panel-heading__badges" data-test-order-panel-badges>
+                    <Badge @status={{@resource.status}} @size="xs" data-test-order-panel-status />
+                    {{#if @resource.meta.storefront_network}}
+                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
+                            <FaIcon @icon="network-wired" class="mr-1" />
+                            {{@resource.meta.storefront_network}}
+                        </Badge>
+                    {{else if @resource.meta.storefront}}
+                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
+                            <FaIcon @icon="store" class="mr-1" />
+                            {{@resource.meta.storefront}}
+                        </Badge>
+                    {{/if}}
                 </div>
             </div>
         </div>
@@ -16,17 +30,6 @@
         </div>
     </div>
     <div class="storefront-order-panel-heading__meta" data-test-order-panel-meta>
-        {{#if @resource.meta.storefront_network}}
-            <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
-                <FaIcon @icon="network-wired" class="mr-1" />
-                {{@resource.meta.storefront_network}}
-            </Badge>
-        {{else if @resource.meta.storefront}}
-            <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
-                <FaIcon @icon="store" class="mr-1" />
-                {{@resource.meta.storefront}}
-            </Badge>
-        {{/if}}
         {{#if (or @resource.tracking_number.tracking_number @resource.tracking)}}
             <span><ClickToCopy @value={{@resource.public_id}} class="storefront-order-panel-heading__id" data-test-order-panel-id>{{@resource.public_id}}</ClickToCopy></span>
         {{/if}}
