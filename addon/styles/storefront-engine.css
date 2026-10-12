@@ -2915,8 +2915,25 @@ body[data-theme='dark'] .storefront-card__chip-count {
 
 .storefront-card__buttons {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 0.25rem;
+}
+
+/* A long status badge gives way (ellipsis) before the buttons do */
+.storefront-card__actions > .status-badge {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Side-by-side card buttons share one 26px height, the menu included */
+.storefront-card__buttons .btn,
+.storefront-card__buttons .btn-wrapper > .btn,
+.storefront-card__buttons .ember-basic-dropdown-trigger .btn-wrapper > .btn {
+    height: 1.625rem;
+    min-height: 0;
+    padding: 0 0.5rem;
 }
 
 .storefront-card__count {
@@ -7893,7 +7910,7 @@ body[data-theme='dark'] .storefront-catalog-product-table td {
 /* Card footers: a long status badge truncates instead of wrapping to a second line */
 .storefront-card__actions .status-badge-inner-wrap {
     display: inline-block;
-    max-width: 13rem;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
