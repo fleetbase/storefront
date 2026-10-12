@@ -53,11 +53,13 @@ export default class CustomerPanelComponent extends Component {
      *
      * @type {Service}
      */
-    @service contextPanel;
     @service intl;
     @service notifications;
     @service storefront;
     @tracked insights = null;
+
+    /** Whether the panel shows the details form instead of the tabs. */
+    @tracked isEditing = false;
 
     /**
      * The current active tab.
@@ -237,12 +239,13 @@ export default class CustomerPanelComponent extends Component {
         const isActionOverrided = contextComponentCallback(this, 'onEdit', this.customer);
 
         if (!isActionOverrided) {
-            this.contextPanel.focus(this.customer, 'editing', {
-                onAfterSave: () => {
-                    this.contextPanel.clear();
-                },
-            });
+            this.isEditing = true;
         }
+    }
+
+    @action doneEditing() {
+        this.isEditing = false;
+        this.loadInsights.perform();
     }
 
     /**

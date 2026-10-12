@@ -367,6 +367,10 @@ storefront:
       account: App account
       since: "Customer since {date}"
     panel:
+      edit-details: Details
+      edit-help: Saved places are edited on the Places tab.
+      name-required: Give the customer a name.
+      saved: "{name} saved."
       segments: Segments
       no-segments: Not in any segment right now.
       manage-segments: Manage segments

@@ -1,4 +1,4 @@
-<div class="storefront-customer-overview p-4 space-y-4" data-test-customer-overview>
+<div class="storefront-customer-overview storefront-panel-sections" data-test-customer-overview>
     <div class="storefront-customer-facts">
         <div class="field-info-container">
             <div class="field-name">{{t "storefront.common.email"}}</div>
@@ -31,7 +31,7 @@
             <div class="storefront-member-list">
                 {{#each this.placeRows as |row|}}
                     <div class="storefront-member-row" data-test-customer-place={{row.place.id}}>
-                        <Place::Pill @place={{row.place}} @size="xs" />
+                        <Place::Pill @place={{row.place}} @size="xs" @subtitle={{null}} />
                         <div class="storefront-member-row__identity">
                             <div class="storefront-member-row__meta">{{n-a row.place.address}}</div>
                         </div>
@@ -40,12 +40,15 @@
                 {{/each}}
             </div>
         {{else}}
-            <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-places"}}</span></div>
+            <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-places"}}</div>
         {{/if}}
     </ContentPanel>
 
-    <ContentPanel @title={{t "storefront.customers.panel.segments"}} @open={{true}} @pad={{true}} @wrapperClass="bordered-top">
-        <div class="storefront-settings-section__toolbar">
+    <ContentPanel @title={{t "storefront.customers.panel.segments"}} @open={{true}} @wrapperClass="bordered-top">
+        <:actions>
+            <Button @size="xs" @icon="users" @text={{t "storefront.customers.panel.manage-segments"}} @onClick={{this.manageSegments}} @permission="storefront view customer-segment" />
+        </:actions>
+        <:default>
             {{#if this.segments.length}}
                 <div class="storefront-card__chips" data-test-customer-segments>
                     {{#each this.segments as |segment|}}
@@ -53,10 +56,9 @@
                     {{/each}}
                 </div>
             {{else}}
-                <div class="storefront-settings-section__note mt-0">{{t "storefront.customers.panel.no-segments"}}</div>
+                <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-segments"}}</div>
             {{/if}}
-            <Button @size="xs" @icon="users" @text={{t "storefront.customers.panel.manage-segments"}} @onClick={{this.manageSegments}} @permission="storefront view customer-segment" />
-        </div>
+        </:default>
     </ContentPanel>
 
     {{#if this.showStores}}
@@ -72,7 +74,7 @@
                     {{/each}}
                 </div>
             {{else}}
-                <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-orders"}}</span></div>
+                <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-orders"}}</div>
             {{/if}}
         </ContentPanel>
     {{/if}}
@@ -81,18 +83,19 @@
         {{#if this.orders.length}}
             <div class="storefront-member-list">
                 {{#each this.orders as |order|}}
-                    <div class="storefront-member-row" data-test-customer-order={{order.public_id}}>
+                    <button type="button" class="storefront-member-row storefront-member-row--link storefront-customer-order-row" {{on "click" (fn this.viewOrder order)}} data-test-customer-order={{order.public_id}}>
                         <div class="storefront-member-row__identity">
-                            <a href="javascript:;" class="storefront-member-row__name storefront-order-ref__id--link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a>
-                            <div class="storefront-member-row__meta">{{order.createdAgo}} · {{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}{{#if order.meta.storefront}} · {{order.meta.storefront}}{{/if}}</div>
+                            <span class="storefront-member-row__name">{{order.public_id}}</span>
+                            <span class="storefront-member-row__meta">{{order.createdAgo}} · {{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}{{#if order.meta.storefront}} · {{order.meta.storefront}}{{/if}}</span>
                         </div>
-                        <div class="storefront-member-row__amount">{{format-currency (or order.meta.total order.transaction_amount 0) order.meta.currency}}</div>
+                        <span class="storefront-member-row__amount">{{format-currency (or order.meta.total order.transaction_amount 0) order.meta.currency}}</span>
                         <Badge @status={{order.status}} @size="xs" />
-                    </div>
+                        <FaIcon @icon="chevron-right" @size="xs" class="storefront-customer-order-row__chevron" />
+                    </button>
                 {{/each}}
             </div>
         {{else if (not this.loadOrders.isRunning)}}
-            <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-orders"}}</span></div>
+            <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-orders"}}</div>
         {{/if}}
     </ContentPanel>
 </div>

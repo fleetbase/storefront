@@ -2,22 +2,11 @@
     <div class="storefront-customer-header__row">
         <div class="storefront-customer-header__identity">
             <Image src={{@resource.photo_url}} @fallbackSrc={{config "defaultValues.customerImage"}} alt={{@resource.name}} class="storefront-customer-header__photo" />
-            <div class="min-w-0">
-                <div class="storefront-customer-header__name">
-                    <span>{{n-a @resource.name}}</span>
-                    {{#if @resource.type}}<Badge @status={{@resource.type}} @size="xs" @hideStatusDot={{true}} />{{/if}}
-                    {{#if @insights.preferred_fulfillment}}
-                        <Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t (concat "storefront.customers.panel.prefers-" @insights.preferred_fulfillment)}} />
-                    {{/if}}
-                </div>
-                <div class="storefront-customer-header__meta">
-                    <ClickToCopy @value={{@resource.public_id}} class="storefront-customer-header__id">{{@resource.public_id}}</ClickToCopy>
-                    {{#if @insights.since}}<span>{{t "storefront.customers.panel.since" date=(format-date-fns @insights.since "MMM yyyy")}}</span>{{/if}}
-                    {{#if @resource.email}}<span>{{@resource.email}}</span>{{/if}}
-                </div>
+            <div class="storefront-customer-header__text">
+                <div class="storefront-customer-header__name" data-test-customer-name>{{n-a @resource.name}}</div>
             </div>
         </div>
-        <div class="next-view-header-right">
+        <div class="storefront-customer-header__actions">
             <Layout::Resource::Panel::HeaderActions
                 @resource={{@resource}}
                 @saveTask={{@saveTask}}
@@ -31,6 +20,11 @@
                 {{yield}}
             </Layout::Resource::Panel::HeaderActions>
         </div>
+    </div>
+    <div class="storefront-customer-header__meta" data-test-customer-meta>
+        <ClickToCopy @value={{@resource.public_id}} class="storefront-customer-header__id">{{@resource.public_id}}</ClickToCopy>
+        {{#if @insights.since}}<span>{{t "storefront.customers.panel.since" date=(format-date-fns @insights.since "MMM yyyy")}}</span>{{/if}}
+        {{#if @resource.email}}<span class="storefront-customer-header__email">{{@resource.email}}</span>{{/if}}
     </div>
     <div class="storefront-identity-strip storefront-customer-header__strip" data-test-customer-lifetime>
         <div class="storefront-identity-strip__cell">

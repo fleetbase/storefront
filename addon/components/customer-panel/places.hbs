@@ -1,10 +1,10 @@
-<div class="p-4 space-y-3" data-test-customer-places>
-    <p class="storefront-settings-section__lede">{{t "storefront.customers.panel.places-lede"}}</p>
+<div class="storefront-panel-sections" data-test-customer-places>
+    <p class="storefront-panel-sections__lede">{{t "storefront.customers.panel.places-lede"}}</p>
     {{#if this.rows.length}}
-        <div class="storefront-member-list storefront-catalog-served-by">
+        <div class="storefront-member-list">
             {{#each this.rows as |row|}}
                 <div class="storefront-member-row" data-test-customer-place={{row.place.id}}>
-                    <Place::Pill @place={{row.place}} @size="xs" />
+                    <Place::Pill @place={{row.place}} @size="xs" @subtitle={{null}} />
                     <div class="storefront-member-row__identity">
                         <div class="storefront-member-row__meta">{{n-a row.place.address}}</div>
                     </div>
@@ -17,7 +17,7 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-empty-row"><span>{{t "storefront.customers.panel.no-places"}}</span></div>
+        <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-places"}}</div>
     {{/if}}
-    <p class="storefront-invitation-list__note">{{t "storefront.customers.panel.places-note"}}</p>
+    <p class="storefront-panel-sections__note">{{t "storefront.customers.panel.places-note"}}</p>
 </div>

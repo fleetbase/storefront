@@ -1,6 +1,6 @@
 {{#if @asMenu}}
     {{#if this.items.length}}
-        <DropdownButton @icon="ellipsis-h" @size={{this.buttonSize}} @iconPrefix="fas" @renderInPlace={{true}} @helpText={{t "storefront.common.actions"}} ...attributes as |dd|>
+        <DropdownButton @icon="ellipsis-h" @size={{this.buttonSize}} @iconPrefix="fas" @renderInPlace={{if (eq @renderInPlace false) false true}} @helpText={{t "storefront.common.actions"}} ...attributes as |dd|>
             <div class="next-dd-menu mt-1 mx-0">
                 <div class="px-1">
                     {{#each this.items as |item|}}

@@ -12,7 +12,11 @@
     @width={{or this.width @width "600px"}}
     @isResizable={{or this.isResizable @isResizable}}
 >
-    <TabNavigation @tabs={{this.tabs}} @activeTabId={{this.tab.id}} @onTabChange={{this.onTabChanged}} @contentClass="scrollable" @tablistClass="pl-2" as |activeTab|>
-        {{component activeTab.component customer=this.customer tabOptions=activeTab options=activeTab.componentParams insights=this.insights onChange=this.reload}}
-    </TabNavigation>
+    {{#if this.isEditing}}
+        <CustomerPanel::EditForm @customer={{this.customer}} @onDone={{this.doneEditing}} />
+    {{else}}
+        <TabNavigation @tabs={{this.tabs}} @activeTabId={{this.tab.id}} @onTabChange={{this.onTabChanged}} @contentClass="scrollable" @tablistClass="pl-2" as |activeTab|>
+            {{component activeTab.component customer=this.customer tabOptions=activeTab options=activeTab.componentParams insights=this.insights onChange=this.reload}}
+        </TabNavigation>
+    {{/if}}
 </Layout::Resource::Panel>
