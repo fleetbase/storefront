@@ -74,7 +74,8 @@ class OrderActivityFlow
         foreach ($flow as $key => $activity) {
             if (is_array($activity)) {
                 $code              = static::code($activity['code'] ?? $key);
-                $activities[$code] = $activity;
+                // A flow keyed by code may leave `code` out of the activity itself.
+                $activities[$code] = $activity + ['code' => $code];
             }
         }
 
@@ -83,19 +84,20 @@ class OrderActivityFlow
         $reached = [];
         foreach ($history as $entry) {
             $code = static::code($entry['code'] ?? null);
-            if ($code === '' || isset($reached[$code])) {
+            // Reached activities may have no timestamp, so check for the key, not a value.
+            if ($code === '' || array_key_exists($code, $reached)) {
                 continue;
             }
             $reached[$code] = $entry['at'] ?? null;
             $path[]         = ['code' => $code, 'label' => $entry['label'] ?? null];
         }
-        if (isset($activities['created']) && !isset($reached['created'])) {
+        if (isset($activities['created']) && !array_key_exists('created', $reached)) {
             array_unshift($path, ['code' => 'created', 'label' => null]);
             $reached['created'] = $createdAt;
         }
 
         $current = static::code($status);
-        if ($current !== '' && !isset($reached[$current])) {
+        if ($current !== '' && !array_key_exists($current, $reached)) {
             $path[]            = ['code' => $current, 'label' => null];
             $reached[$current] = null;
         }

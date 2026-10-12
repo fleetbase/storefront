@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Filter;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Http\Filter\Filter;
 use Fleetbase\Models\Category;
+use Fleetbase\Support\Http;
 
 class ProductFilter extends Filter
 {
@@ -39,6 +40,12 @@ class ProductFilter extends Filter
 
     public function category(?string $category)
     {
+        // The console filters by category uuid; the public API's `category` is a public id,
+        // which the v1 ProductController resolves itself.
+        if (!Http::isInternalRequest($this->request)) {
+            return;
+        }
+
         $this->builder->where('category_uuid', $category);
     }
 
