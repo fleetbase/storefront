@@ -8,6 +8,14 @@ import { timeout, task } from 'ember-concurrency';
 
 export default class NetworksIndexController extends BaseController {
     /**
+     * Whether the networks list itself is on screen. A network page (and its loading state) only
+     * renders the outlet, so the list never flashes in while a network loads.
+     */
+    get isListRoute() {
+        return this.hostRouter.currentRouteName === 'console.storefront.networks.index.index';
+    }
+
+    /**
      * Inject the `NetworksIndexNetworkStoresController` controller
      *
      * @memberof NetworksIndexController

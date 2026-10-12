@@ -14,6 +14,7 @@ export default class CustomerPanelOverviewComponent extends Component {
     @service storefrontOrderActions;
     @service notifications;
     @service hostRouter;
+    @service contextPanel;
     @tracked orders = [];
 
     constructor() {
@@ -43,8 +44,11 @@ export default class CustomerPanelOverviewComponent extends Component {
         return this.places.map((place) => ({ place, isDefault: place.id === this.defaultPlaceId }));
     }
 
+    /** Where the customer ordered; in a network, each member store opens its details (an order placed on the network itself does not). */
     get stores() {
-        return this.insights?.stores ?? [];
+        const canOpen = this.storefront.isNetworkContext;
+
+        return (this.insights?.stores ?? []).map((store) => ({ ...store, canOpen: canOpen && String(store.public_id ?? '').startsWith('store_') }));
     }
 
     /** The segments whose rules this customer matches, from the insights endpoint. */
@@ -58,6 +62,18 @@ export default class CustomerPanelOverviewComponent extends Component {
 
     @action manageSegments() {
         return this.hostRouter.transitionTo('console.storefront.promotions.segments');
+    }
+
+    /** In a network, a store the customer ordered from opens that store's details. */
+    @action openStore(store) {
+        const network = this.storefront.activeNetwork;
+
+        if (!network || !store?.public_id) {
+            return;
+        }
+
+        this.contextPanel.clear();
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.store', network.public_id, store.public_id);
     }
 
     get showStores() {

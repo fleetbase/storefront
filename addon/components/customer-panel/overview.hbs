@@ -66,11 +66,20 @@
             {{#if this.stores.length}}
                 <div class="storefront-member-list">
                     {{#each this.stores as |store|}}
-                        <div class="storefront-member-row">
-                            <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="store" /></div>
-                            <div class="storefront-member-row__identity"><div class="storefront-member-row__name">{{n-a store.name store.public_id}}</div></div>
-                            <span class="storefront-member-row__meta">{{t "storefront.customers.panel.orders-count" count=store.orders}}</span>
-                        </div>
+                        {{#if store.canOpen}}
+                            <button type="button" class="storefront-member-row storefront-member-row--link" {{on "click" (fn this.openStore store)}} data-test-customer-store={{store.public_id}}>
+                                <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="store" /></div>
+                                <div class="storefront-member-row__identity"><div class="storefront-member-row__name">{{n-a store.name store.public_id}}</div></div>
+                                <span class="storefront-member-row__meta">{{t "storefront.customers.panel.orders-count" count=store.orders}}</span>
+                                <FaIcon @icon="chevron-right" @size="xs" class="storefront-member-row__chevron" />
+                            </button>
+                        {{else}}
+                            <div class="storefront-member-row" data-test-customer-store={{store.public_id}}>
+                                <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="store" /></div>
+                                <div class="storefront-member-row__identity"><div class="storefront-member-row__name">{{n-a store.name store.public_id}}</div></div>
+                                <span class="storefront-member-row__meta">{{t "storefront.customers.panel.orders-count" count=store.orders}}</span>
+                            </div>
+                        {{/if}}
                     {{/each}}
                 </div>
             {{else}}

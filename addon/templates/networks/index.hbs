@@ -1,6 +1,4 @@
-{{#if this.storefront.isNetworkContext}}
-    {{outlet}}
-{{else}}
+{{#if this.isListRoute}}
     <Layout::Section::Header @title={{t "storefront.common.network"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
         <Button @type="primary" @icon="plus" @iconPrefix="fas" @text={{t "storefront.common.new"}} class="mr-2" @onClick={{this.createNetwork}} @permission="storefront create network" />
     </Layout::Section::Header>
@@ -25,5 +23,7 @@
         </Layout::Resource::CardsGrid>
     </Layout::Section::Body>
 
+    {{outlet}}
+{{else}}
     {{outlet}}
 {{/if}}

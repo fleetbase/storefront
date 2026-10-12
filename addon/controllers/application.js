@@ -36,14 +36,14 @@ export default class ApplicationController extends Controller {
 
     get networkNavigationItems() {
         const publicId = this.activeNetwork.public_id;
-        const networkItem = (key, item) => {
+        const networkItem = (key, { alsoActiveOn = [], ...item }) => {
             const route = `console.storefront.networks.index.network.${key}`;
 
             return {
                 id: `network:${publicId}:${key}`,
                 ...item,
                 // These routes share one dynamic segment, so route-name matching alone cannot tell networks apart.
-                activeWhen: () => this.hostRouter.isActive(route, publicId),
+                activeWhen: () => [route, ...alsoActiveOn.map((name) => `console.storefront.networks.index.network.${name}`)].some((name) => this.hostRouter.isActive(name, publicId)),
                 onClick: () => this.hostRouter.transitionTo(route, publicId),
             };
         };
@@ -63,6 +63,8 @@ export default class ApplicationController extends Controller {
                 badge: this.networkPendingCount || null,
                 permission: 'storefront view network',
                 keywords: ['stores', 'members', 'invite', 'categories'],
+                // A store's details page sits under Stores.
+                alsoActiveOn: ['store'],
             }),
             networkItem('trucks', {
                 label: this.intl.t('storefront.common.food-trucks'),
@@ -282,8 +284,8 @@ export default class ApplicationController extends Controller {
     }
 
     @action switchActiveNetwork(network) {
-        // Entering the network route is what sets the network context.
-        return this.hostRouter.transitionTo('console.storefront.networks.index.network.stores', network.public_id);
+        // Entering the network route is what sets the network context; a switch lands on the overview.
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.index', network.public_id);
     }
 
     @action

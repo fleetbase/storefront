@@ -228,6 +228,15 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      *
      * @var {Array}
      */
+    /** A member's name opens its details inside the network; invitations have no store yet. */
+    @action viewStoreDetails(row) {
+        if (!row || row.isInvitation || !row.public_id) {
+            return;
+        }
+
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.store', this.network.public_id, row.public_id);
+    }
+
     get columns() {
         return [
             {
@@ -238,6 +247,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                 resourceType: 'store',
                 resourcePath: (row) => (row.isInvitation ? buildIdentityStub(row, { type: 'store', nameKey: 'email', icon: 'at' }) : row),
                 popover: true,
+                action: this.viewStoreDetails,
                 width: '160px',
                 resizable: true,
                 sortable: true,
@@ -789,24 +799,6 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                     this.notifications.serverError(error);
                 }
             },
-        });
-    }
-
-    /**
-     * Displays a modal to view the details of a specified store.
-     * The modal includes the store's name and a "Done" button.
-     *
-     * @action
-     * @param {StoreModel} store - The store object whose details are to be viewed.
-     * @param {Object} [options={}] - Additional options for the modal.
-     */
-    @action viewStoreDetails(store, options = {}) {
-        this.modalsManager.show('modals/store-details', {
-            title: this.intl.t('storefront.networks.index.network.stores.viewing-storefront', { storeName: store.name }),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.done'),
-            hideDeclineButton: true,
-            store,
-            ...options,
         });
     }
 

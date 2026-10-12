@@ -55,6 +55,10 @@ export default class NetworksIndexNetworkIndexController extends Controller {
         return this.hostRouter.transitionTo('console.storefront.networks.index.network.stores', this.network.public_id, { queryParams: { storeQuery: member.name } });
     }
 
+    @action viewStoreDetails(member) {
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.store', this.network.public_id, member.public_id);
+    }
+
     @action openMemberStore(store) {
         const application = getOwner(this).lookup('controller:application');
 

@@ -432,6 +432,7 @@ class NetworkController extends StorefrontController
                 'public_id'         => $store->public_id,
                 'name'              => $store->name,
                 'logo_url'          => $store->logo_url,
+                'backdrop_url'      => $store->backdrop_url,
                 'online'            => (bool) $store->online,
                 'currency'          => $store->currency,
                 'category_uuid'     => $store->pivot->category_uuid ?? null,

@@ -292,17 +292,21 @@ module('Unit | Controller | application', function (hooks) {
         assert.true(items[2].activeWhen(), 'the trucks section is active on the network trucks route');
         assert.false(items[1].activeWhen(), 'the stores section is not');
 
+        hostRouter.isActive = (route, publicId) => route === 'console.storefront.networks.index.network.store' && publicId === 'network_123';
+        assert.true(items[1].activeWhen(), "a member store's details page keeps the stores section active");
+        assert.false('alsoActiveOn' in items[1], 'the extra routes stay out of the sidebar item');
+
         items[3].onClick();
         assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.orders', 'network_123']], 'sections transition with the network id');
     });
 
-    test('switching to a network enters its stores page', function (assert) {
+    test('switching to a network enters its overview', function (assert) {
         const controller = this.owner.lookup('controller:application');
         const hostRouter = this.owner.lookup('service:host-router');
 
         controller.switchActiveNetwork({ id: 'network_uuid', public_id: 'network_123' });
 
-        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.stores', 'network_123']]);
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.index', 'network_123']]);
     });
 
     test('switching to a store from a network lands on the store dashboard', async function (assert) {
@@ -327,6 +331,6 @@ module('Unit | Controller | application', function (hooks) {
         assert.strictEqual(storefront.createNetworkCalls.length, 1, 'delegates to the storefront service');
 
         storefront.createNetworkCalls[0].onSuccess({ id: 'network_uuid', public_id: 'network_123' });
-        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.stores', 'network_123']]);
+        assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.index', 'network_123']]);
     });
 });
