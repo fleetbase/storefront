@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,6 +11,7 @@ class CatalogProduct extends Pivot
 {
     use SoftDeletes;
     use HasUuid;
+    use HasApiModelBehavior;
 
     protected $connection = 'storefront';
     protected $table      = 'catalog_category_products';

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/ApiCacheTestHelpers.php';
+
 use Fleetbase\Storefront\Http\Resources\CatalogProduct as CatalogProductResource;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Catalog;
@@ -137,6 +139,28 @@ test('a category keeps per-catalog price and availability overrides on its produ
 
     $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002'], []);
     expect(CatalogProduct::where('product_uuid', '90000000-0000-4000-8000-000000000001')->value('price'))->toBeNull();
+});
+
+test('catalog product removals and override edits invalidate the cached lists embedding them', function () {
+    createCatalogOverrideSchema();
+    $category = CatalogCategory::where('uuid', '80000000-0000-4000-8000-000000000001')->first();
+    $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002']);
+    $version = apiQueryCacheVersion('catalog_category_products', 'company_uuid');
+
+    // Unchanged products and overrides write nothing
+    $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002']);
+    expect(apiQueryCacheVersion('catalog_category_products', 'company_uuid'))->toBe($version);
+
+    // An override edit is a query builder update
+    $category->setProducts(['90000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002'], [
+        '90000000-0000-4000-8000-000000000002' => ['price' => 1000],
+    ]);
+    expect(apiQueryCacheVersion('catalog_category_products', 'company_uuid'))->toBe($version + 1);
+
+    // A removal is a query builder delete
+    $category->setProducts(['90000000-0000-4000-8000-000000000001']);
+    expect(CatalogProduct::where('catalog_category_uuid', $category->uuid)->count())->toBe(1)
+        ->and(apiQueryCacheVersion('catalog_category_products', 'company_uuid'))->toBe($version + 2);
 });
 
 test('the catalog product resource serves the catalog price and availability instead of the store ones', function () {

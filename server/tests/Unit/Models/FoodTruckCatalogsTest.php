@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/ApiCacheTestHelpers.php';
+
 use Fleetbase\Storefront\Models\FoodTruck;
 use Illuminate\Database\Eloquent\Model;
 
@@ -53,4 +55,20 @@ test('syncing a truck\'s catalogs answers with the catalogs it now has, not the 
 
     $truck->setCatalogs(['70000000-0000-4000-8000-000000000002']);
     expect($truck->catalogs->pluck('name')->all())->toBe(['Lunch']);
+});
+
+test('removing a truck\'s catalogs invalidates the cached lists embedding the assignments', function () {
+    createFoodTruckCatalogSchema();
+
+    $truck = new FoodTruck();
+    $truck->forceFill(['uuid' => '60000000-0000-4000-8000-000000000001', 'company_uuid' => 'company_uuid']);
+    $truck->exists = true;
+
+    $truck->setCatalogs(['70000000-0000-4000-8000-000000000001', '70000000-0000-4000-8000-000000000002']);
+    $version = apiQueryCacheVersion('catalog_subjects', 'company_uuid');
+
+    $truck->setCatalogs(['70000000-0000-4000-8000-000000000002']);
+
+    expect($truck->catalogs->pluck('name')->all())->toBe(['Lunch'])
+        ->and(apiQueryCacheVersion('catalog_subjects', 'company_uuid'))->toBe($version + 1);
 });

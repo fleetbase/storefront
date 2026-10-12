@@ -8,6 +8,7 @@ use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
+use Fleetbase\Support\ApiModelCache;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasMetaAttributes;
@@ -364,6 +365,7 @@ class Product extends StorefrontModel
      */
     public function setAddonCategories(array $addonCategories = []): Product
     {
+        $updatedQuietly = false;
         foreach ($addonCategories as $addonCategory) {
             // get uuid if set
             $id = data_get($addonCategory, 'uuid');
@@ -379,11 +381,17 @@ class Product extends StorefrontModel
             // update product addon category
             if (Str::isUuid($id)) {
                 ProductAddonCategory::where('uuid', $id)->update($upsertableAddonCategory);
+                $updatedQuietly = true;
                 continue;
             }
 
             // create new product addon category
             ProductAddonCategory::create($upsertableAddonCategory);
+        }
+
+        // Builder updates raise no model events, so the cached product lists are invalidated here
+        if ($updatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductAddonCategory(), $this->company_uuid);
         }
 
         return $this;
@@ -404,6 +412,8 @@ class Product extends StorefrontModel
      */
     public function setProductVariants(array $variants = []): Product
     {
+        $variantsUpdatedQuietly = false;
+        $optionsUpdatedQuietly  = false;
         foreach ($variants as $variant) {
             $id = data_get($variant, 'uuid');
 
@@ -419,6 +429,7 @@ class Product extends StorefrontModel
                     'min'            => data_get($variant, 'min') ?? 0,
                     'max'            => data_get($variant, 'max') ?? 100,
                 ]);
+                $variantsUpdatedQuietly = true;
 
                 // Update product variant options if applicable
                 if (is_array($variant['options'])) {
@@ -438,6 +449,7 @@ class Product extends StorefrontModel
 
                             $productVariantOptionInput = Arr::except($option, ['uuid', 'created_at', 'updated_at']);
                             ProductVariantOption::where('uuid', $option['uuid'])->update($productVariantOptionInput);
+                            $optionsUpdatedQuietly = true;
                             continue;
                         }
 
@@ -462,6 +474,14 @@ class Product extends StorefrontModel
                     ProductVariantOption::create($option);
                 }
             }
+        }
+
+        // Builder updates raise no model events, so the cached product lists are invalidated here
+        if ($variantsUpdatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductVariant(), $this->company_uuid);
+        }
+        if ($optionsUpdatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductVariantOption(), $this->company_uuid);
         }
 
         return $this;

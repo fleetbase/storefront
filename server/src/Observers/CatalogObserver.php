@@ -36,5 +36,10 @@ class CatalogObserver
             // Delete the category itself
             $category->delete();
         }
+
+        // The pivot rows were deleted without model events
+        if ($categories->isNotEmpty()) {
+            CatalogCategory::invalidateCatalogProductCache($catalog->company_uuid);
+        }
     }
 }

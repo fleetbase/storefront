@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/ApiCacheTestHelpers.php';
+
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\ProductAddonCategory;
@@ -347,6 +349,35 @@ test('product variants normalize null option costs while updating and creating n
 
     ProductVariant::unsetEventDispatcher();
     ProductVariant::clearBootedModels();
+});
+
+test('product addon category variant and option updates invalidate the cached product lists', function () {
+    createProductMutationSchema();
+    $addonCategoryUuid = '8a4cbb7e-56c3-4a5f-9d43-5b2d1f0f6a01';
+    $variantUuid       = '8a4cbb7e-56c3-4a5f-9d43-5b2d1f0f6a02';
+    $optionUuid        = '8a4cbb7e-56c3-4a5f-9d43-5b2d1f0f6a03';
+    $connection        = Capsule::connection('mysql');
+    $connection->table('product_addon_categories')->insert(['uuid' => $addonCategoryUuid, 'product_uuid' => 'product_uuid', 'category_uuid' => 'addon_category']);
+    $connection->table('product_variants')->insert(['uuid' => $variantUuid, 'product_uuid' => 'product_uuid', 'name' => 'Size']);
+    $connection->table('product_variant_options')->insert(['uuid' => $optionUuid, 'product_variant_uuid' => $variantUuid, 'name' => 'Small', 'additional_cost' => 0]);
+
+    $product = new Product();
+    $product->forceFill(['uuid' => 'product_uuid', 'company_uuid' => 'company_products']);
+    $addonCategories = apiQueryCacheVersion('product_addon_categories', 'company_products');
+    $variants        = apiQueryCacheVersion('product_variants', 'company_products');
+    $options         = apiQueryCacheVersion('product_variant_options', 'company_products');
+
+    $product->setAddonCategories([['uuid' => $addonCategoryUuid, 'category_uuid' => 'addon_category', 'max_selectable' => 2]]);
+    $product->setProductVariants([[
+        'uuid'    => $variantUuid,
+        'name'    => 'Portion',
+        'options' => [['uuid' => $optionUuid, 'name' => 'Half', 'additional_cost' => 100]],
+    ]]);
+
+    expect($connection->table('product_variant_options')->where('uuid', $optionUuid)->value('name'))->toBe('Half')
+        ->and(apiQueryCacheVersion('product_addon_categories', 'company_products'))->toBe($addonCategories + 1)
+        ->and(apiQueryCacheVersion('product_variants', 'company_products'))->toBe($variants + 1)
+        ->and(apiQueryCacheVersion('product_variant_options', 'company_products'))->toBe($options + 1);
 });
 
 test('product network search enforces network store availability status and limit filters', function () {

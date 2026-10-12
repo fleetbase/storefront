@@ -36,6 +36,7 @@ use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Storefront\Support\StripeUtils;
+use Fleetbase\Support\ApiModelCache;
 use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -2147,6 +2148,8 @@ class CheckoutController extends Controller
             }
             if ($transaction) {
                 TransactionItem::where('transaction_uuid', $transaction->uuid)->delete();
+                // The builder delete raises no model events; clear the cached lists embedding the items
+                ApiModelCache::invalidateModelCache(new TransactionItem(), $transaction->company_uuid);
                 $transaction->delete();
             }
         } catch (\Throwable $cleanup) {

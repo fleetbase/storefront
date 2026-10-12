@@ -766,12 +766,15 @@ class NetworkController extends StorefrontController
     /**
      * Membership rows change through the query builder, which raises no model events,
      * so the cached store listings (which carry category and membership status) are
-     * invalidated here the way a store update would.
+     * invalidated here the way a store update would, and so are the lists that embed
+     * `network_stores` (stores, products and food trucks, by their declared cache
+     * dependencies), the way a membership's own model events would.
      */
     protected function forgetCachedResponses(): void
     {
         if (class_exists(ApiModelCache::class)) {
             ApiModelCache::invalidateModelCache(new Store(), session('company'));
+            ApiModelCache::invalidateModelCache(new NetworkStore(), session('company'));
         }
     }
 
@@ -845,6 +848,10 @@ class NetworkController extends StorefrontController
 
         // delete the category
         Category::where(['owner_uuid' => $id, 'uuid' => $category])->delete();
+
+        // Both writes went through the query builder without model events
+        $this->forgetCachedResponses();
+        Category::invalidateApiCacheManually(session('company'));
 
         return response()->json(['status' => 'ok']);
     }
