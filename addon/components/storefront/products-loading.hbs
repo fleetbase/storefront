@@ -1,0 +1,9 @@
+{{#if this.isList}}
+    <Skeleton::Page @hideHeader={{@hideHeader}} @label={{t "storefront.common.loading"}} class="storefront-loading {{@class}}" data-test-storefront-loading="products-list" data-test-products-loading-view="list">
+        <div class="ui-skeleton-table-card">
+            <Skeleton::Table @rows={{8}} @columns={{6}} @checkbox={{true}} />
+        </div>
+    </Skeleton::Page>
+{{else}}
+    <Skeleton::Page @view="cards" @count={{8}} @hideHeader={{@hideHeader}} @mediaHeight={{140}} @label={{t "storefront.common.loading"}} class="storefront-loading {{@class}}" data-test-storefront-loading="products-grid" data-test-products-loading-view="grid" />
+{{/if}}

@@ -1,8 +1,8 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 import { set } from '@ember/object';
 
-export default class NetworksIndexNetworkStoresRoute extends Route {
+export default class NetworksIndexNetworkStoresRoute extends StorefrontListRoute {
     @service store;
     @service hostRouter;
     @service fetch;

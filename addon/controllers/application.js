@@ -1,7 +1,6 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { tracked } from '@glimmer/tracking';
 
 export default class ApplicationController extends Controller {
     @service storefront;
@@ -22,8 +21,6 @@ export default class ApplicationController extends Controller {
     get activeNetwork() {
         return this.storefront.activeNetwork;
     }
-    @tracked productCategories = [];
-    categoryLoadStoreUuid;
 
     get isNetworkContext() {
         return Boolean(this.activeNetwork?.id);
@@ -146,16 +143,9 @@ export default class ApplicationController extends Controller {
                 permission: 'storefront list product',
                 visible: this.can('storefront see product'),
                 disabled: !hasActiveStore,
-                children: [
-                    {
-                        label: this.intl.t('storefront.sidebar.all-products'),
-                        description: this.intl.t('storefront.sidebar.descriptions.all-products'),
-                        icon: 'box',
-                        route: 'console.storefront.products.index.index',
-                        keywords: ['inventory', 'items', 'sku', 'create product', 'add product'],
-                    },
-                    ...this.productCategoryItems,
-                ],
+                // One entry: the products page carries its own category sidebar.
+                route: 'console.storefront.products',
+                keywords: ['inventory', 'items', 'sku', 'categories', 'create product', 'add product'],
             },
             {
                 label: this.intl.t('storefront.sidebar.catalogs'),
@@ -252,63 +242,11 @@ export default class ApplicationController extends Controller {
         return this.activeStore?.id;
     }
 
-    get productCategoryItems() {
-        return this.productCategories
-            .filter((category) => category?.slug)
-            .map((category) => {
-                const description = category.description || category.slug;
-                const route = 'console.storefront.products.index.category';
-
-                return {
-                    id: `product-category:${category.id ?? category.slug}`,
-                    label: category.name,
-                    description,
-                    icon: 'folder',
-                    // Route-only matching cannot distinguish categories sharing a dynamic route.
-                    activeWhen: () => this.hostRouter.isActive(route, category.slug),
-                    onClick: () => this.hostRouter.transitionTo(route, category.slug),
-                    keywords: ['category', 'collection', category.slug, category.name, description].filter(Boolean),
-                };
-            });
-    }
-
     can(permission) {
         try {
             return this.abilities.can(permission);
         } catch (_) {
             return true;
-        }
-    }
-
-    async loadProductCategories(storeUuid = this.activeStoreUuid) {
-        const ownerUuid = storeUuid;
-        this.categoryLoadStoreUuid = ownerUuid;
-
-        if (!ownerUuid) {
-            this.productCategories = [];
-            return [];
-        }
-
-        try {
-            const categories = await this.store.query('category', {
-                for: 'storefront_product',
-                owner_uuid: ownerUuid,
-                limit: -1,
-            });
-
-            if (this.categoryLoadStoreUuid !== ownerUuid) {
-                return this.productCategories;
-            }
-
-            this.productCategories = categories?.toArray?.() ?? Array.from(categories ?? []);
-            return this.productCategories;
-        } catch (_) {
-            if (this.categoryLoadStoreUuid !== ownerUuid) {
-                return this.productCategories;
-            }
-
-            this.productCategories = [];
-            return [];
         }
     }
 
@@ -318,7 +256,6 @@ export default class ApplicationController extends Controller {
                 const loader = this.loader.show({ loadingMessage: 'Switching to newly created store...' });
 
                 this.hostRouter.refresh().then(() => {
-                    this.loadProductCategories(this.activeStoreUuid);
                     this.loader.removeLoader(loader);
                 });
             },
@@ -335,18 +272,13 @@ export default class ApplicationController extends Controller {
         const loader = this.loader.show({ loadingMessage: `Switching Storefront to ${store.name}...` });
         const leavingNetwork = this.isNetworkContext;
         this.storefront.setActiveStorefront(store);
-        this.productCategories = [];
         // A page inside a network has no meaning for a store, so the switch lands on the store dashboard;
         // leaving the network route is what clears the network context.
         const transition = leavingNetwork ? this.hostRouter.transitionTo('console.storefront.home') : this.hostRouter.refresh();
 
-        return Promise.resolve(transition)
-            .then(() => {
-                return this.loadProductCategories(store.id);
-            })
-            .finally(() => {
-                this.loader.removeLoader(loader);
-            });
+        return Promise.resolve(transition).finally(() => {
+            this.loader.removeLoader(loader);
+        });
     }
 
     @action switchActiveNetwork(network) {

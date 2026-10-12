@@ -1,9 +1,9 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
-export default class ProductsIndexCategoryRoute extends Route {
+export default class ProductsIndexCategoryRoute extends StorefrontListRoute {
     @service store;
     @service currentUser;
     @service intl;

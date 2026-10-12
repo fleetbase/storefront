@@ -77,11 +77,6 @@ export default class ApplicationRoute extends Route {
         });
     }
 
-    setupController(controller) {
-        super.setupController(...arguments);
-        controller.loadProductCategories();
-    }
-
     afterModel({ stores }) {
         this.storefront.synchronizeActiveStore(stores);
         this.storefront.listenForIncomingOrders();

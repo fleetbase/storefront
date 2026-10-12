@@ -1,7 +1,7 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 
-export default class CustomersIndexRoute extends Route {
+export default class CustomersIndexRoute extends StorefrontListRoute {
     @service store;
     @service storefront;
     @service intl;

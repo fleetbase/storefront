@@ -171,7 +171,6 @@ module('Unit | Controller | application', function (hooks) {
 
     test('it builds Storefront sidebar navigator items', async function (assert) {
         const controller = this.owner.lookup('controller:application');
-        await controller.loadProductCategories();
         const items = controller.navigationItems;
 
         assert.deepEqual(
@@ -188,127 +187,10 @@ module('Unit | Controller | application', function (hooks) {
         assert.strictEqual(items[2].permission, 'storefront list product');
         assert.true(items[2].visible, 'product visibility uses the abilities service');
         assert.false(items[2].disabled, 'resource items are enabled when an active store exists');
-        assert.deepEqual(
-            items[2].children.map((item) => item.label),
-            ['All products', 'Pizza'],
-            'products includes all products plus active store product categories'
-        );
-        assert.strictEqual(items[2].children[0].route, 'console.storefront.products.index.index', 'all products does not match category routes');
-        const categoryItem = items[2].children[1];
-        assert.strictEqual(categoryItem.id, 'product-category:category_uuid', 'category navigation has a stable unique identifier');
-        assert.strictEqual(categoryItem.route, undefined, 'categories do not fall back to shared route-name matching');
-        const hostRouter = this.owner.lookup('service:host-router');
-        hostRouter.isActive = (route, slug) => {
-            assert.strictEqual(route, 'console.storefront.products.index.category');
-            assert.strictEqual(slug, 'pizza', 'category activation includes its slug');
-            return true;
-        };
-        assert.true(categoryItem.activeWhen(), 'the selected category is active');
-        hostRouter.isActive = () => false;
-        assert.false(categoryItem.activeWhen(), 'an unselected category stays inactive');
-        hostRouter.transitionTo = (route, slug) => {
-            assert.strictEqual(route, 'console.storefront.products.index.category');
-            assert.strictEqual(slug, 'pizza', 'category navigation includes its slug');
-        };
-        categoryItem.onClick();
+        assert.strictEqual(items[2].route, 'console.storefront.products', 'products is one entry; its page carries the categories');
+        assert.strictEqual(items[2].children, undefined, 'no category submenu');
         assert.strictEqual(items[7].route, 'console.storefront.settings', 'settings is one entry; its page carries the section rail');
         assert.strictEqual(items[8].url, 'https://github.com/fleetbase/storefront-app', 'launch app remains an external URL item');
-    });
-
-    test('it loads active store product categories for the sidebar navigator', async function (assert) {
-        const controller = this.owner.lookup('controller:application');
-        const store = this.owner.lookup('service:store');
-
-        await controller.loadProductCategories();
-
-        assert.deepEqual(
-            store.requests[0],
-            {
-                modelName: 'category',
-                params: {
-                    for: 'storefront_product',
-                    owner_uuid: 'store_uuid',
-                    limit: -1,
-                },
-            },
-            'loads active store product categories'
-        );
-        assert.deepEqual(
-            controller.productCategoryItems.map((item) => item.label),
-            ['Pizza'],
-            'category items are navigator-ready'
-        );
-    });
-
-    test('it reloads product categories after switching active stores', async function (assert) {
-        const controller = this.owner.lookup('controller:application');
-        const store = this.owner.lookup('service:store');
-
-        await controller.loadProductCategories();
-        await controller.switchActiveStore({ id: 'next_store_uuid', public_id: 'store_456', name: 'Next Store' });
-
-        assert.strictEqual(store.requests.length, 2, 'reloads categories after active store switch');
-        assert.strictEqual(store.requests[1].params.owner_uuid, 'next_store_uuid', 'uses the new active store id');
-        assert.deepEqual(
-            controller.productCategoryItems.map((item) => item.label),
-            ['Burgers'],
-            'navigation category items update to the selected store'
-        );
-    });
-
-    test('it clears stale categories immediately when switching stores', async function (assert) {
-        const controller = this.owner.lookup('controller:application');
-
-        await controller.loadProductCategories();
-
-        assert.deepEqual(
-            controller.productCategoryItems.map((item) => item.label),
-            ['Pizza'],
-            'starts with the first store categories'
-        );
-
-        const switchPromise = controller.switchActiveStore({ id: 'next_store_uuid', public_id: 'store_456', name: 'Next Store' });
-
-        assert.deepEqual(controller.productCategoryItems, [], 'old category items are cleared during the switch');
-
-        await switchPromise;
-    });
-
-    test('it ignores stale category responses after a store switch', async function (assert) {
-        const controller = this.owner.lookup('controller:application');
-        const store = this.owner.lookup('service:store');
-        const firstStoreDeferred = store.deferStore('store_uuid');
-
-        const firstLoadPromise = controller.loadProductCategories('store_uuid');
-        const secondLoadPromise = controller.loadProductCategories('next_store_uuid');
-
-        firstStoreDeferred.resolve({
-            toArray: () => store.categoriesByStore.store_uuid,
-        });
-
-        await Promise.all([firstLoadPromise, secondLoadPromise]);
-
-        assert.deepEqual(
-            controller.productCategoryItems.map((item) => item.label),
-            ['Burgers'],
-            'newer store categories win over stale responses'
-        );
-    });
-
-    test('it clears categories and skips query without an active store', async function (assert) {
-        const controller = this.owner.lookup('controller:application');
-        const store = this.owner.lookup('service:store');
-        const storefront = this.owner.lookup('service:storefront');
-
-        await controller.loadProductCategories();
-        const requestCount = store.requests.length;
-
-        storefront.activeStore = null;
-        const categories = await controller.loadProductCategories();
-
-        assert.deepEqual(categories, [], 'returns an empty category list');
-        assert.deepEqual(controller.productCategoryItems, [], 'clears category navigation items');
-        assert.strictEqual(store.requests.length, requestCount, 'does not query without a store id');
     });
 
     test('it disables Storefront resource sidebar items without an active store', function (assert) {
@@ -426,7 +308,6 @@ module('Unit | Controller | application', function (hooks) {
     test('switching to a store from a network lands on the store dashboard', async function (assert) {
         const storefront = this.owner.lookup('service:storefront');
         const hostRouter = this.owner.lookup('service:host-router');
-        const store = this.owner.lookup('service:store');
         storefront.activeNetwork = { id: 'network_uuid', public_id: 'network_123', name: 'Downtown Market' };
 
         const controller = this.owner.lookup('controller:application');
@@ -435,7 +316,6 @@ module('Unit | Controller | application', function (hooks) {
         assert.deepEqual(hostRouter.transitions, [['console.storefront.home']], 'leaves the network page instead of refreshing it');
         assert.strictEqual(hostRouter.refreshCount, 0);
         assert.strictEqual(storefront.activeStore.id, 'next_store_uuid', 'the selected store becomes active');
-        assert.strictEqual(store.requests[store.requests.length - 1].params.owner_uuid, 'next_store_uuid', 'categories load for the selected store');
     });
 
     test('creating a network switches into it once it is saved', function (assert) {
