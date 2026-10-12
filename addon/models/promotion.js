@@ -1,5 +1,6 @@
 import Model, { attr } from '@ember-data/model';
 import { format, formatDistanceToNow, isValid } from 'date-fns';
+import promotionLifecycle from '@fleetbase/storefront-engine/utils/promotion-lifecycle';
 
 export default class PromotionModel extends Model {
     /** @ids */
@@ -45,6 +46,11 @@ export default class PromotionModel extends Model {
     /** @computed */
     get isCodeBased() {
         return this.trigger === 'code';
+    }
+
+    /** Draft, scheduled, active, paused or ended, reading the dates the way the server does. */
+    get lifecycleStatus() {
+        return promotionLifecycle(this);
     }
 
     get redemptionsCount() {

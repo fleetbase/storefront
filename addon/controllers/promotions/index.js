@@ -4,6 +4,7 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { getOwner } from '@ember/application';
 import { debounce } from '@ember/runloop';
+import promotionLifecycle from '@fleetbase/storefront-engine/utils/promotion-lifecycle';
 
 export default class PromotionsIndexController extends BaseController {
     @service store;
@@ -30,13 +31,7 @@ export default class PromotionsIndexController extends BaseController {
 
     /** Which tab a promotion falls under; scheduled is an active promotion that has not started. */
     tabOf(promotion) {
-        const status = promotion?.status;
-
-        if (status === 'active' && promotion.starts_at && new Date(promotion.starts_at) > new Date()) {
-            return 'scheduled';
-        }
-
-        return status;
+        return promotionLifecycle(promotion);
     }
 
     get allRows() {
@@ -114,7 +109,7 @@ export default class PromotionsIndexController extends BaseController {
             {
                 id: 'status',
                 label: this.intl.t('storefront.promotions.common.status'),
-                valuePath: 'status',
+                valuePath: 'lifecycleStatus',
                 width: '10%',
                 cellComponent: 'table/cell/status',
                 resizable: true,

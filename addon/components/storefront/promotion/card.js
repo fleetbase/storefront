@@ -1,5 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
+import promotionLifecycle from '@fleetbase/storefront-engine/utils/promotion-lifecycle';
 
 /**
  * A promotion on the shared card anatomy: what it gives, when it applies, how it is doing.
@@ -20,14 +21,8 @@ export default class StorefrontPromotionCardComponent extends Component {
         return items.filter((item) => item.separator || typeof item.isVisible !== 'function' || item.isVisible(this.promotion));
     }
 
-    get isScheduled() {
-        const promotion = this.promotion;
-
-        return promotion?.status === 'active' && promotion.starts_at && new Date(promotion.starts_at) > new Date();
-    }
-
     get displayStatus() {
-        return this.isScheduled ? 'scheduled' : (this.promotion?.status ?? 'draft');
+        return promotionLifecycle(this.promotion);
     }
 
     get valueLabel() {
