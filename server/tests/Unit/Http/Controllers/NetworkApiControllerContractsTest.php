@@ -720,3 +720,29 @@ test('network stores endpoint lists only active memberships (suspended and pendi
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('active_uuid');
 });
+
+test('network tags come only from active members', function () {
+    createNetworkApiControllerSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        ['uuid' => 'active_uuid', 'tags' => json_encode(['food'])],
+        ['uuid' => 'suspended_uuid', 'tags' => json_encode(['suspended-only'])],
+        ['uuid' => 'pending_uuid', 'tags' => json_encode(['pending-only'])],
+    ]);
+    $connection->table('store_locations')->insert([
+        ['uuid' => 'active_location', 'store_uuid' => 'active_uuid'],
+        ['uuid' => 'suspended_location', 'store_uuid' => 'suspended_uuid'],
+        ['uuid' => 'pending_location', 'store_uuid' => 'pending_uuid'],
+    ]);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'active_uuid', 'status' => 'active'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'suspended_uuid', 'status' => 'suspended'],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'pending_uuid', 'status' => 'pending'],
+    ]);
+    session(['storefront_network' => 'network_uuid', 'storefront_store' => null]);
+
+    $response = (new NetworkController())->tags(Request::create('/network/tags'));
+
+    expect($response->getData(true))->toBe(['food']);
+});

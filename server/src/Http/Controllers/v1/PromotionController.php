@@ -65,7 +65,7 @@ class PromotionController extends Controller
         $owners = [$about?->uuid];
 
         if ($about?->is_network) {
-            $stores = Store::whereHas('networks', fn ($query) => $query->where('network_uuid', $about->uuid))
+            $stores = Store::activeInNetwork($about->uuid)
                 ->when($storeId, fn ($query) => $query->where('public_id', $storeId))
                 ->pluck('uuid')
                 ->all();

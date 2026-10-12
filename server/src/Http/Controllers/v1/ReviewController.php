@@ -25,7 +25,7 @@ class ReviewController extends Controller
         return Store::where('public_id', $id)
             ->when(session('storefront_store'), fn ($query) => $query->where('uuid', session('storefront_store')))
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->activeInNetwork(session('storefront_network'));
             })
             ->first();
     }
@@ -43,8 +43,7 @@ class ReviewController extends Controller
                 });
             })
             ->when(session('storefront_network'), function ($query) {
-                $memberStoreUuids = Store::select('uuid')
-                    ->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $memberStoreUuids = Store::select('uuid')->activeInNetwork(session('storefront_network'));
                 $memberProductUuids = Product::select('uuid')->whereIn('store_uuid', clone $memberStoreUuids);
                 $query->where(function ($subjectQuery) use ($memberStoreUuids, $memberProductUuids) {
                     $subjectQuery->whereIn('subject_uuid', $memberStoreUuids)
@@ -64,7 +63,7 @@ class ReviewController extends Controller
             return Product::where('uuid', $subject->uuid)
                 ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
                 ->when(session('storefront_network'), function ($query) {
-                    $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                    $query->whereHas('store', fn ($storeQuery) => $storeQuery->activeInNetwork(session('storefront_network')));
                 })
                 ->exists();
         }

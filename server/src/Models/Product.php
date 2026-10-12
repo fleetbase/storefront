@@ -486,9 +486,7 @@ class Product extends StorefrontModel
                 $query->where('public_id', $store);
             }
 
-            $query->whereHas('networks', function ($networksQuery) use ($network) {
-                $networksQuery->where('network_uuid', $network);
-            });
+            $query->activeInNetwork($network);
         })
             ->search($search)
             ->whereIsAvailable(1)

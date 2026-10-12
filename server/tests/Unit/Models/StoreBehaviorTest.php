@@ -487,3 +487,29 @@ test('store resolves each network id once', function () {
 
     Store::flushResolvedNetworkIds();
 });
+
+test('active in network scope keeps only active members of that network', function () {
+    createStoreBehaviorSchema();
+    $connection = Capsule::connection('mysql');
+    $connection->table('stores')->insert([
+        ['uuid' => 'active_uuid', 'name' => 'Active'],
+        ['uuid' => 'suspended_uuid', 'name' => 'Suspended'],
+        ['uuid' => 'pending_uuid', 'name' => 'Pending'],
+        ['uuid' => 'elsewhere_uuid', 'name' => 'Other network'],
+        ['uuid' => 'removed_uuid', 'name' => 'Removed'],
+    ]);
+    $connection->table('networks')->insert([
+        ['uuid' => 'network_uuid', 'name' => 'Network'],
+        ['uuid' => 'other_network_uuid', 'name' => 'Other'],
+    ]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'active_uuid', 'status' => 'active', 'deleted_at' => null],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'suspended_uuid', 'status' => 'suspended', 'deleted_at' => null],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'pending_uuid', 'status' => 'pending', 'deleted_at' => null],
+        ['network_uuid' => 'other_network_uuid', 'store_uuid' => 'elsewhere_uuid', 'status' => 'active', 'deleted_at' => null],
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'removed_uuid', 'status' => 'active', 'deleted_at' => now()],
+    ]);
+
+    expect(Store::activeInNetwork('network_uuid')->pluck('uuid')->all())->toBe(['active_uuid'])
+        ->and(Store::activeInNetwork(null)->count())->toBe(0);
+});

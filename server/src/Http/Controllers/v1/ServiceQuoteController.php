@@ -229,7 +229,7 @@ class ServiceQuoteController extends Controller
             ->unique()
             ->values();
         $defaultLocationIds = Store::whereIn('public_id', $defaultStoreIds)
-            ->whereHas('networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+            ->activeInNetwork(session('storefront_network'))
             ->with(['locations' => fn ($query) => $query->orderBy('id')])
             ->get()
             ->mapWithKeys(fn ($store) => [$store->public_id => data_get($store, 'locations.0.public_id')]);
@@ -252,7 +252,7 @@ class ServiceQuoteController extends Controller
         }
 
         $storeLocations = StoreLocation::whereIn('public_id', $storeLocationIds)
-            ->whereHas('store.networks', fn ($query) => $query->where('network_uuid', session('storefront_network')))
+            ->whereHas('store', fn ($query) => $query->activeInNetwork(session('storefront_network')))
             ->with(['store', 'place'])
             ->get()
             ->sortBy(fn ($storeLocation) => $storeLocationIds->search($storeLocation->public_id))

@@ -246,7 +246,7 @@ class NetworkController extends Controller
                 if ($storeUuid) {
                     $q->where('uuid', $storeUuid);
                 } else {
-                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                    $q->activeInNetwork($networkUuid);
                 }
 
                 if (!empty($tagged)) {
@@ -317,7 +317,7 @@ class NetworkController extends Controller
             ->whereHas('locations')
             ->when($storeUuid, fn ($query) => $query->where('uuid', $storeUuid))
             ->when($networkUuid, function ($query) use ($networkUuid) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                $query->activeInNetwork($networkUuid);
             })
             ->get();
 

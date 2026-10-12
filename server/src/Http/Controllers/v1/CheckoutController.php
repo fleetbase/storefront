@@ -150,8 +150,9 @@ class CheckoutController extends Controller
             return response()->apiError('Every marketplace cart item must identify its store.', 422);
         }
 
+        // Active members only: a suspended or pending store can't take orders through the network.
         $stores = Store::whereIn('public_id', $storeIds)
-            ->whereHas('networks', fn ($query) => $query->where('network_uuid', $networkUuid))
+            ->activeInNetwork($networkUuid)
             ->get()
             ->keyBy('public_id');
 

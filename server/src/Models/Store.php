@@ -309,6 +309,16 @@ class Store extends StorefrontModel
         );
     }
 
+    /**
+     * Stores that sell through the network: active members only. Suspended and pending
+     * (not yet approved) members stay in the console but are hidden from every storefront
+     * API, the same way `Network::activeStores()` hides them from the app and carts.
+     */
+    public function scopeActiveInNetwork($query, ?string $networkUuid)
+    {
+        return $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid)->where('network_stores.status', NetworkStore::STATUS_ACTIVE));
+    }
+
     public function networks()
     {
         return $this->belongsToMany(Network::class, 'network_stores', 'store_uuid', 'network_uuid')

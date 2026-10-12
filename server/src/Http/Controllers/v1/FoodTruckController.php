@@ -63,7 +63,7 @@ class FoodTruckController extends Controller
         if (session('storefront_network')) {
             $network = Network::where('uuid', session('storefront_network'))->first();
 
-            return $network ? $network->stores()->pluck('stores.uuid')->all() : [];
+            return $network ? $network->activeStores()->pluck('stores.uuid')->all() : [];
         }
 
         return [];
