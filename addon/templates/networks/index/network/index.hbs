@@ -133,27 +133,29 @@
         <Storefront::SectionCard @id="recent-orders" @title={{t "storefront.networks.overview.recent-orders"}}>
             <:actions><a href="javascript:;" class="storefront-section-card__link" {{on "click" this.viewOrders}}>{{t "storefront.networks.overview.all-orders"}}</a></:actions>
             <:default>
-            <table class="storefront-table" data-test-recent-orders-table>
+            <table class="storefront-table storefront-table--rows" data-test-recent-orders-table>
                 <thead>
                     <tr>
-                        <th>{{t "storefront.networks.orders.columns.reference"}}</th>
+                        <th>{{t "storefront.common.order"}}</th>
                         <th>{{t "storefront.common.customer"}}</th>
-                        <th>{{t "storefront.networks.index.network.stores.store"}}</th>
-                        <th class="text-right">{{t "storefront.common.total"}}</th>
+                        <th>{{t "storefront.common.store"}}</th>
+                        <th>{{t "storefront.networks.orders.columns.placed"}}</th>
                         <th>{{t "storefront.common.status"}}</th>
+                        <th class="is-right">{{t "storefront.common.total"}}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{#each this.recentOrders as |order|}}
-                        <tr data-test-recent-order={{order.public_id}}>
-                            <td><a href="javascript:;" class="storefront-table__link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
-                            <td>{{n-a order.customer_name}}</td>
-                            <td class="storefront-table__muted">{{n-a order.store_name}}</td>
-                            <td class="text-right font-semibold">{{format-currency order.total order.currency}}</td>
+                        <tr class="is-clickable" {{on "click" (fn this.viewOrder order)}} data-test-recent-order={{order.public_id}}>
+                            <td><a href="javascript:;" class="storefront-table__link">{{order.public_id}}</a></td>
+                            <td><Customer::Pill @customer={{hash id=order.customer_id public_id=order.customer_id name=order.customer_name photo_url=order.customer_photo_url}} @title={{order.customer_name}} @subtitle={{null}} @static={{true}} @noTooltip={{true}} /></td>
+                            <td><Store::Pill @store={{hash id=order.store_id public_id=order.store_id name=order.store_name logo_url=order.store_logo_url}} @title={{order.store_name}} @subtitle={{null}} @static={{true}} @noTooltip={{true}} /></td>
+                            <td class="storefront-table__muted">{{format-date-fns order.created_at "d MMM, HH:mm"}}</td>
                             <td><Badge @status={{order.status}} @size="xs" /></td>
+                            <td class="is-right font-semibold">{{format-currency order.total order.currency}}</td>
                         </tr>
                     {{else}}
-                        <tr><td colspan="5" class="storefront-table__muted">{{t "storefront.networks.overview.no-orders"}}</td></tr>
+                        <tr><td colspan="6" class="storefront-table__muted">{{t "storefront.networks.overview.no-orders"}}</td></tr>
                     {{/each}}
                 </tbody>
             </table>
