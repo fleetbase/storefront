@@ -7398,15 +7398,11 @@ body[data-theme='dark'] .storefront-table-card__bulk {
     text-decoration: underline;
 }
 
-.storefront-table-card__table .next-table-wrapper,
 .storefront-table-card__table {
+    overflow-x: auto;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-}
-
-.storefront-table-card__table {
-    overflow-x: auto;
 }
 
 .storefront-table-card__table table {
@@ -7418,7 +7414,8 @@ body[data-theme='dark'] .storefront-table-card__bulk {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.5rem 0.875rem;
+    min-height: 2.3125rem;
+    padding: 0.25rem 0.5rem;
     border-top: 1px solid #e5e7eb;
     font-size: 0.75rem;
     color: #6b7280;
@@ -7431,6 +7428,35 @@ body[data-theme='dark'] .storefront-table-card__footer {
 
 .storefront-table-card__note {
     text-align: right;
+}
+
+/* The footer keeps the rows' rhythm: no second band of padding from the pagination, compact page controls. */
+.storefront-table-card__footer .fleetbase-pagination {
+    flex: 0 1 auto;
+    gap: 0.75rem;
+    padding: 0;
+}
+
+.storefront-table-card__footer .fleetbase-pagination-meta-info-wrapper {
+    gap: 0.75rem;
+}
+
+.storefront-table-card__footer .fleetbase-pagination-meta-info-content {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.storefront-table-card__footer .fleetbase-pagination .page-item,
+.storefront-table-card__footer .fleetbase-pagination .page-item-arrow {
+    min-height: 1.625rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 0.75rem;
+}
+
+.storefront-table-card__footer .fleetbase-pagination .page-item-arrow svg {
+    width: 1rem;
+    height: 1rem;
 }
 
 /* Filters dropdown */
@@ -8152,16 +8178,25 @@ body[data-theme='dark'] .storefront-error-state__message {
 }
 
 /* Rows inside a table card sit on the card's surface, not the page, so the card keeps its tier */
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table,
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table thead tr th,
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody,
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr,
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr td {
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table thead tr th,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table thead tr th.is-sticky,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody tr,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody tr td,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody tr td.is-sticky {
     background-color: var(--sf-surface);
     border-color: var(--sf-hairline);
 }
 
-body[data-theme='dark'] .storefront-table-card__table .next-table-wrapper table tbody tr:hover td {
+/* Row hover reaches the sticky ID and action cells, which otherwise keep their own background. */
+.storefront-table-card__table.next-table-wrapper table tbody tr:hover td,
+.storefront-table-card__table.next-table-wrapper table tbody tr:hover td.is-sticky {
+    background-color: #f9fafb;
+}
+
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody tr:hover td,
+body[data-theme='dark'] .storefront-table-card__table.next-table-wrapper table tbody tr:hover td.is-sticky {
     background-color: var(--sf-raised);
 }
 
