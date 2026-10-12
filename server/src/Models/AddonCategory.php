@@ -17,6 +17,14 @@ class AddonCategory extends Category
     protected $with = ['addons'];
 
     /**
+     * Tables the cached addon category lists embed: the addons loaded with every category
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on).
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['addons'];
+
+    /**
      * The key to use in the payload responses.
      */
     protected string $payloadKey = 'addon_category';

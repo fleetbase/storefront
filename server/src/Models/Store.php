@@ -50,6 +50,18 @@ class Store extends StorefrontModel
     protected $table = 'stores';
 
     /**
+     * Tables the cached store lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): the rating average
+     * over `reviews`, and `networks` (membership, status and category in `network_stores`),
+     * which the console list loads and filters by. Logo and backdrop are left out: a new
+     * one changes `logo_uuid`/`backdrop_uuid` on the store row itself, and file rows are
+     * not edited, so depending on the busy `files` table would only cost cache hits.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['reviews', 'networks'];
+
+    /**
      * These attributes that can be queried.
      *
      * @var array

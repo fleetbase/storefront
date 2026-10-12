@@ -53,6 +53,16 @@ class FoodTruck extends StorefrontModel
     protected $table = 'food_trucks';
 
     /**
+     * Tables the cached food truck lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): the relations the
+     * console and storefront lists eager load (a service area loads its zones), and the
+     * store's networks, which decide the trucks a network lists.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['store', 'store.networks', 'network', 'vehicle', 'vehicle.driver', 'serviceArea', 'serviceArea.zones', 'zone', 'catalogs'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array

@@ -35,6 +35,16 @@ class Catalog extends StorefrontModel
     protected $table = 'catalogs';
 
     /**
+     * Tables the cached catalog lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on). The console list
+     * eager loads `categories.products`, `hours` and `assignments.subject`; the subject
+     * is a morphTo, so its tables are named.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['categories', 'categories.products', 'hours', 'assignments', 'stores', 'food_trucks'];
+
+    /**
      * Searchable columns.
      *
      * @var array

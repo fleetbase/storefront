@@ -53,6 +53,17 @@ class Product extends StorefrontModel
     protected $table = 'products';
 
     /**
+     * Tables the cached product lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): what the storefront
+     * list eager loads (addon categories with their addons, variants with their options,
+     * files for the images, the store and its logo), the store's networks a network
+     * storefront filters by, and the catalog categories `catalogs_count` counts.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'files', 'store', 'store.networks', 'catalogCategories'];
+
+    /**
      * The default database connection to use.
      *
      * @var string
