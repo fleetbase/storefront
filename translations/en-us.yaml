@@ -1777,9 +1777,9 @@ storefront:
       trigger-help: Automatic promotions apply to every eligible cart; code promotions need a promo code.
       percent-off: Percent off
       amount-off: Amount off
-      buy-quantity: Buy quantity
-      get-quantity: Get quantity
-      get-discount-percent: Discount on the get items (%)
+      buy-quantity: Buy (items)
+      get-quantity: Get (items)
+      get-discount-percent: Discount on get (%)
       bogo-help: For every group of "buy" + "get" eligible items, the cheapest "get" items are discounted.
       schedule: Schedule
       starts-at: Starts at
