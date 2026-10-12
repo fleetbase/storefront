@@ -4,12 +4,13 @@ import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 
 /**
- * The customer's saved places: set the default, open one in Fleet-Ops. Places are
+ * The customer's saved places: add one, set the default, open one in Fleet-Ops. Places are
  * Fleet-Ops places, so the pill opens the Fleet-Ops place panel on demand.
  */
 export default class CustomerPanelPlacesComponent extends Component {
     @service notifications;
     @service intl;
+    @service storefront;
 
     get customer() {
         return this.args.customer;
@@ -40,5 +41,8 @@ export default class CustomerPanelPlacesComponent extends Component {
         }
     }
 
-    @action noop() {}
+    /** Opens the address form; the saved place joins the list and the panel refreshes. */
+    @action addAddress() {
+        return this.storefront.addCustomerAddress(this.customer, { onSaved: () => this.args.onChange?.() });
+    }
 }

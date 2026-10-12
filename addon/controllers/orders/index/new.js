@@ -34,7 +34,8 @@ export default class OrdersIndexNewController extends Controller {
     returnModel = null;
     @tracked selectedCustomer = null;
     /** The address being typed for the customer, or null while the New address form is closed. */
-    @tracked newAddress = null;
+    /** Whether the picker for a non-saved address is open again after one was chosen. */
+    @tracked changingDropoff = false;
     @tracked isPickup = false;
     @tracked isScheduled = false;
     @tracked scheduledAt = null;
@@ -56,11 +57,11 @@ export default class OrdersIndexNewController extends Controller {
     @tracked configQuantity = 1;
     @tracked showPicker = false;
 
-    tipModes = ['none', 'fixed', 'percent', 'custom'];
+    tipModes = ['none', 'fixed', 'percent-10', 'percent-20', 'percent-30', 'custom'];
 
     reset() {
         this.selectedCustomer = null;
-        this.newAddress = null;
+        this.changingDropoff = false;
         this.loadedPlaces = null;
         this.isPickup = false;
         this.isScheduled = false;
@@ -233,7 +234,12 @@ export default class OrdersIndexNewController extends Controller {
             case 'fixed':
                 return 350;
             case 'percent':
+            case 'percent-10':
                 return Math.round(this.linesSubtotal * 0.1);
+            case 'percent-20':
+                return Math.round(this.linesSubtotal * 0.2);
+            case 'percent-30':
+                return Math.round(this.linesSubtotal * 0.3);
             case 'custom':
                 return cents(this.tipCustom);
             default:
@@ -382,7 +388,7 @@ export default class OrdersIndexNewController extends Controller {
 
     @action selectCustomer(customer) {
         this.selectedCustomer = customer;
-        this.newAddress = null;
+        this.changingDropoff = false;
         this.loadedPlaces = null;
         if (customer) {
             this.loadCustomerPlaces.perform(customer);
@@ -416,72 +422,21 @@ export default class OrdersIndexNewController extends Controller {
         }
     }
 
-    get canSaveNewAddress() {
-        return Boolean(this.selectedCustomer && this.newAddress?.street1?.trim());
-    }
-
-    @action openNewAddress() {
-        this.newAddress = { name: '', street1: '', street2: '' };
-    }
-
-    @action cancelNewAddress() {
-        this.newAddress = null;
-    }
-
-    @action setNewAddressField(field, { target }) {
-        this.setNewAddressValue(field, target.value);
-    }
-
-    @action setNewAddressValue(field, value) {
-        this.newAddress = { ...this.newAddress, [field]: value };
-    }
-
-    /** A lookup result fills the street, city, postal code, country and coordinates. */
-    @action fillNewAddress(result = {}) {
-        this.newAddress = { ...this.newAddress, ...result, name: this.newAddress?.name || result.name || '' };
-    }
-
     /**
-     * Saves the address as a Fleet-Ops place owned by the customer, so it is one of their
-     * saved places from now on, and makes it this order's dropoff.
+     * Opens the address form; the saved address becomes one of the customer's places and this
+     * order's dropoff.
      */
-    @task *saveNewAddress() {
-        const customer = this.selectedCustomer;
-        if (!this.canSaveNewAddress) {
-            return;
-        }
+    @action openNewAddress() {
+        return this.storefront.addCustomerAddress(this.selectedCustomer, {
+            onSaved: (place) => {
+                this.loadedPlaces = [...this.customerPlaces.filter((item) => item.id !== place.id), place];
+                this.selectDropoff(place);
+            },
+        });
+    }
 
-        const { name, street1, street2, city, province, postal_code, neighborhood, district, building, country, location } = this.newAddress;
-
-        try {
-            const response = yield this.fetch.post('places', {
-                place: {
-                    name: name || null,
-                    street1,
-                    street2,
-                    city,
-                    province,
-                    postal_code,
-                    neighborhood,
-                    district,
-                    building,
-                    country,
-                    location,
-                    owner_uuid: customer.id,
-                    owner_type: 'fleet-ops:contact',
-                },
-            });
-            const payload = response?.place ?? response;
-            const place = this.store.push(this.store.normalize('place', payload));
-
-            customer.places?.pushObject?.(place);
-            this.loadedPlaces = [...this.customerPlaces.filter((item) => item.id !== place.id), place];
-            this.newAddress = null;
-            this.selectDropoff(place);
-            this.notifications.success(this.intl.t('storefront.orders.create.address-saved', { name: customer.name }));
-        } catch (error) {
-            this.notifications.serverError(error);
-        }
+    @action changeDropoff() {
+        this.changingDropoff = true;
     }
 
     @action setFulfillment(id) {
@@ -519,6 +474,7 @@ export default class OrdersIndexNewController extends Controller {
 
     @action selectDropoff(place) {
         this.dropoff = place;
+        this.changingDropoff = false;
         this.requote.perform();
     }
 

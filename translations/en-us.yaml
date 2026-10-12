@@ -362,6 +362,12 @@ storefront:
   home:
     title: Storefront Dashboard
   customers:
+    addresses:
+      new-title: "New address for {name}"
+      save: Save address
+      street-required: Enter the street address.
+      saved: "Address saved to {name}."
+      add: Add address
     card:
       places-count: "{count, plural, =0 {No saved places} one {# saved place} other {# saved places}}"
       account: App account
@@ -398,7 +404,8 @@ storefront:
       default: Default
       set-default: Set default
       default-saved: "{name} is now the default place."
-      no-places: No saved places yet. Places are added when the customer checks out.
+      no-places: No saved addresses yet
+      no-places-help: Add one now, or the customer adds it at checkout.
       places-lede: The customer's Fleet-Ops places. Open a place from its pill to edit it in Fleet-Ops.
       places-note: Places belong to Fleet-Ops; the default is the one the app proposes at checkout.
       stores-ordered-from: Stores ordered from
@@ -1090,6 +1097,7 @@ storefront:
       customer-help: Picking a customer fills the places below.
       schedule: Schedule
       pickup-from: Pickup from
+      change-address: Change address
       leaves-from: Leaves from
       location-help: A store location; its hours decide what the catalog offers.
       deliver-to: Deliver to

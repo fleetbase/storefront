@@ -92,36 +92,34 @@
                                         {{/each}}
                                     </div>
                                 {{/if}}
-                                {{#if this.newAddress}}
-                                    <div class="storefront-create-order__new-address" data-test-new-address-form>
-                                        <AutocompleteInput
-                                            @value={{this.newAddress.street1}}
-                                            @fetchUrl="places/lookup"
-                                            @onTextChange={{fn this.setNewAddressValue "street1"}}
-                                            @onSelect={{this.fillNewAddress}}
-                                            placeholder={{t "storefront.orders.create.street-placeholder"}}
-                                            aria-label={{t "storefront.orders.create.street-placeholder"}}
-                                            class="w-full"
-                                            data-test-new-address-street
-                                            as |result|
-                                        >
-                                            {{result.address}}
-                                        </AutocompleteInput>
-                                        <div class="storefront-create-order__new-address-row">
-                                            <Input class="form-input w-full" @value={{this.newAddress.street2}} placeholder={{t "storefront.orders.create.unit-placeholder"}} aria-label={{t "storefront.orders.create.unit-placeholder"}} {{on "input" (fn this.setNewAddressField "street2")}} />
-                                            <Input class="form-input w-full" @value={{this.newAddress.name}} placeholder={{t "storefront.orders.create.address-name-placeholder"}} aria-label={{t "storefront.orders.create.address-name-placeholder"}} {{on "input" (fn this.setNewAddressField "name")}} data-test-new-address-name />
-                                        </div>
-                                        <div class="storefront-create-order__new-address-actions">
-                                            <Button @size="sm" @text={{t "common.cancel"}} @onClick={{this.cancelNewAddress}} />
-                                            <Button @size="sm" @type="primary" @icon="check" @text={{t "storefront.orders.create.save-address"}} @isLoading={{this.saveNewAddress.isRunning}} @disabled={{not this.canSaveNewAddress}} @onClick={{perform this.saveNewAddress}} @permission="fleet-ops create place" data-test-new-address-save />
+                                {{#if (and this.otherDropoff (not this.changingDropoff))}}
+                                    <div class="storefront-create-order__places">
+                                        <div class="storefront-create-order__place is-selected is-static" data-test-other-dropoff>
+                                            <span class="storefront-create-order__tile"><FaIcon @icon="map-marker-alt" @size="xs" /></span>
+                                            <span class="storefront-create-order__place-text">
+                                                <span class="storefront-create-order__place-name">{{n-a this.otherDropoff.name (t "storefront.common.address")}}</span>
+                                                <span class="storefront-create-order__place-address">{{n-a this.otherDropoff.address}}</span>
+                                            </span>
                                         </div>
                                     </div>
+                                    <button type="button" class="storefront-create-order__text-action" {{on "click" this.changeDropoff}} data-test-change-dropoff>
+                                        <FaIcon @icon="pen" @size="xs" />
+                                        {{t "storefront.orders.create.change-address"}}
+                                    </button>
                                 {{else}}
                                     <div class="storefront-create-order__dropoff-row">
                                         <ModelSelect @modelName="place" @selectedModel={{this.otherDropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
                                             <SelectOption::Place @option={{model}} />
                                         </ModelSelect>
-                                        <Button @size="sm" @icon="plus" @text={{t "storefront.orders.create.new-address"}} @onClick={{this.openNewAddress}} @permission="fleet-ops create place" data-test-new-address />
+                                        <Button
+                                            @size="sm"
+                                            @icon="plus"
+                                            @helpText={{t "storefront.orders.create.new-address"}}
+                                            @onClick={{this.openNewAddress}}
+                                            @permission="fleet-ops create place"
+                                            aria-label={{t "storefront.orders.create.new-address"}}
+                                            data-test-new-address
+                                        />
                                     </div>
                                 {{/if}}
                                 <p class="storefront-create-order__help">{{if this.placeRows.length (t "storefront.orders.create.dropoff-help") (t "storefront.orders.create.no-places")}}</p>
@@ -260,8 +258,9 @@
 
                 <div class="storefront-create-order__field storefront-create-order__notes">
                     <label class="storefront-create-order__label" for="create-order-notes">{{t "storefront.orders.create.notes"}}</label>
-                    <Textarea id="create-order-notes" class="form-input w-full" rows="2" @value={{this.notes}} placeholder={{t "storefront.orders.create.notes-placeholder"}} {{on "input" this.setNotes}} />
+                    <Textarea id="create-order-notes" class="form-input w-full" rows="3" @value={{this.notes}} placeholder={{t "storefront.orders.create.notes-placeholder"}} {{on "input" this.setNotes}} />
                 </div>
+                <Spacer @height="60px" />
             </section>
         </div>
 
@@ -290,7 +289,7 @@
                 </div>
                 <div class="storefront-create-order__field">
                     <div class="storefront-create-order__label">{{t "storefront.orders.create.tip"}}</div>
-                    <Storefront::ViewToggle @options={{array (hash id="none" label=(t "storefront.orders.create.tip-none")) (hash id="fixed" label=(format-currency 350 this.currency)) (hash id="percent" label="10%") (hash id="custom" label=(t "storefront.orders.create.tip-custom"))}} @value={{this.tipMode}} @onChange={{this.setTipMode}} @label={{t "storefront.orders.create.tip"}} data-test-tip-toggle />
+                    <Storefront::ViewToggle @options={{array (hash id="none" label=(t "storefront.orders.create.tip-none")) (hash id="fixed" label=(format-currency 350 this.currency)) (hash id="percent-10" label="10%") (hash id="percent-20" label="20%") (hash id="percent-30" label="30%") (hash id="custom" label=(t "storefront.orders.create.tip-custom"))}} @value={{this.tipMode}} @onChange={{this.setTipMode}} @label={{t "storefront.orders.create.tip"}} data-test-tip-toggle />
                     {{#if (eq this.tipMode "custom")}}
                         <MoneyInput class="w-full mt-2" @currency={{this.currency}} @value={{this.tipCustom}} @canSelectCurrency={{false}} @onChange={{this.setTipCustom}} />
                     {{/if}}

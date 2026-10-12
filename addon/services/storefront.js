@@ -4,6 +4,7 @@ import { inject as service } from '@ember/service';
 import { get } from '@ember/object';
 import { getOwner } from '@ember/application';
 import { tracked } from '@glimmer/tracking';
+import Point from '@fleetbase/fleetops-data/utils/geojson/point';
 
 /**
  * Service to manage storefront operations.
@@ -450,5 +451,76 @@ export default class StorefrontService extends Service.extend(Evented) {
         } catch (error) {
             // do nothing with error
         }
+    }
+
+    /**
+     * Opens the address form for a customer and saves the address as a Fleet-Ops place they own,
+     * so it is one of their saved places from then on. `onSaved` receives the new place.
+     */
+    addCustomerAddress(customer, { onSaved } = {}) {
+        if (!customer?.id) {
+            return;
+        }
+
+        const place = this.store.createRecord('place', {});
+        const discard = () => {
+            if (place.isNew && !place.isDestroyed) {
+                place.unloadRecord();
+            }
+        };
+
+        this.modalsManager.show('modals/store-location-form', {
+            title: this.intl.t('storefront.customers.addresses.new-title', { name: customer.name }),
+            acceptButtonText: this.intl.t('storefront.customers.addresses.save'),
+            acceptButtonIcon: 'check',
+            keepOpen: true,
+            place,
+            autocomplete: (selected = {}) => {
+                const name = place.name;
+                place.setProperties({ ...selected, name: name || selected.name });
+
+                const coordinatesInput = this.modalsManager.getOption('coordinatesInputComponent');
+                const coordinates = selected.location?.coordinates;
+                if (coordinatesInput && Array.isArray(coordinates)) {
+                    const [longitude, latitude] = coordinates;
+                    coordinatesInput.updateCoordinates(latitude, longitude);
+                }
+            },
+            setCoordinatesInput: (coordinatesInput) => {
+                this.modalsManager.setOption('coordinatesInputComponent', coordinatesInput);
+            },
+            updatePlaceCoordinates: ({ latitude, longitude }) => {
+                place.setProperties({ location: new Point(longitude, latitude) });
+            },
+            decline: (modal) => {
+                discard();
+                modal.done();
+            },
+            confirm: async (modal) => {
+                if (!String(place.street1 ?? '').trim()) {
+                    this.notifications.warning(this.intl.t('storefront.customers.addresses.street-required'));
+                    return;
+                }
+
+                modal.startLoading();
+
+                try {
+                    const attributes = place.serialize();
+                    const response = await this.fetch.post('places', {
+                        place: { ...attributes, owner_uuid: customer.id, owner_type: 'fleet-ops:contact' },
+                    });
+                    const saved = this.store.push(this.store.normalize('place', response?.place ?? response));
+
+                    discard();
+                    customer.places?.pushObject?.(saved);
+                    this.notifications.success(this.intl.t('storefront.customers.addresses.saved', { name: customer.name }));
+                    await onSaved?.(saved);
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
     }
 }

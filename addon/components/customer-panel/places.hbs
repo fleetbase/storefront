@@ -1,6 +1,9 @@
 <div class="storefront-panel-sections" data-test-customer-places>
-    <p class="storefront-panel-sections__lede">{{t "storefront.customers.panel.places-lede"}}</p>
     {{#if this.rows.length}}
+        <div class="storefront-panel-sections__toolbar">
+            <span class="storefront-panel-sections__lede">{{t "storefront.customers.card.places-count" count=this.rows.length}}</span>
+            <Button @size="xs" @icon="plus" @text={{t "storefront.customers.addresses.add"}} @onClick={{this.addAddress}} @permission="fleet-ops create place" class="ml-auto" data-test-customer-add-address />
+        </div>
         <div class="storefront-member-list">
             {{#each this.rows as |row|}}
                 <div class="storefront-member-row" data-test-customer-place={{row.place.id}}>
@@ -17,7 +20,11 @@
             {{/each}}
         </div>
     {{else}}
-        <div class="storefront-panel-sections__empty">{{t "storefront.customers.panel.no-places"}}</div>
+        <div class="storefront-panel-empty" data-test-customer-places-empty>
+            <span class="storefront-panel-empty__icon"><FaIcon @icon="map-marker-alt" /></span>
+            <div class="storefront-panel-empty__title">{{t "storefront.customers.panel.no-places"}}</div>
+            <div class="storefront-panel-empty__help">{{t "storefront.customers.panel.no-places-help"}}</div>
+            <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.customers.addresses.add"}} @onClick={{this.addAddress}} @permission="fleet-ops create place" data-test-customer-add-address />
+        </div>
     {{/if}}
-    <p class="storefront-panel-sections__note">{{t "storefront.customers.panel.places-note"}}</p>
 </div>
