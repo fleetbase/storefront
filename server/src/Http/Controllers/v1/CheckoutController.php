@@ -1386,6 +1386,15 @@ class CheckoutController extends Controller
         $currency = $checkout->currency ?? $cart->getCurrency();
         $store    = $about;
 
+        // QPay: an order only for a payment QPay has confirmed. paidQPayPayment() records one
+        // on the checkout (options.qpay_payment) when QPay's /v2/payment/check returns a PAID
+        // row covering the invoice amount; the QPay callback and the status check both record
+        // it before they capture. A capture request carrying only the checkout token, which
+        // the customer's app holds, must not create an unpaid order.
+        if ($gateway && $gateway->isQPayGateway && !$checkout->getOption('qpay_payment')) {
+            return response()->apiError('QPay payment has not been completed.', 402);
+        }
+
         if ($gateway && $gateway->isStripeGateway) {
             $stripeVerification = $this->verifyStripePaymentForCheckout($checkout, $gateway, $customer, (int) $amount, (string) $currency);
             if ($stripeVerification instanceof JsonResponse) {

@@ -1942,6 +1942,92 @@ test('stripe capture verifies the server linked payment intent before order crea
     }
 });
 
+test('qpay capture creates no order until a verified qpay payment is recorded on the checkout', function () {
+    createCheckoutBoundarySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('stores')->insert([
+        'uuid'         => 'store_uuid',
+        'public_id'    => 'store_public',
+        'company_uuid' => 'company_uuid',
+        'key'          => 'store_key',
+        'name'         => 'Test store',
+        'currency'     => 'MNT',
+    ]);
+    $connection->table('gateways')->insert([
+        'uuid'       => 'qpay_gateway_uuid',
+        'owner_uuid' => 'store_uuid',
+        'code'       => 'qpay',
+        'type'       => 'qpay',
+        'sandbox'    => true,
+        'config'     => json_encode(['username' => 'TEST_MERCHANT', 'password' => 'secret', 'invoice_code' => 'TEST_INVOICE']),
+    ]);
+    $connection->table('contacts')->insert([
+        'uuid'         => 'customer_uuid',
+        'public_id'    => 'contact_public',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+    ]);
+    $connection->table('carts')->insert([
+        'uuid'              => 'cart_uuid',
+        'public_id'         => 'cart_public',
+        'company_uuid'      => 'company_uuid',
+        'unique_identifier' => 'qpay-cart',
+        'currency'          => 'MNT',
+        'items'             => json_encode([
+            ['id' => 'line_one', 'quantity' => 1, 'subtotal' => 25000],
+        ]),
+        'events'            => '[]',
+        'expires_at'        => now()->addHour(),
+    ]);
+    $connection->table('checkouts')->insert([
+        'uuid'         => 'checkout_uuid',
+        'public_id'    => 'checkout_public',
+        'token'        => 'checkout_token',
+        'cart_uuid'    => 'cart_uuid',
+        'gateway_uuid' => 'qpay_gateway_uuid',
+        'owner_uuid'   => 'customer_uuid',
+        'owner_type'   => Contact::class,
+        'amount'       => 25000,
+        'currency'     => 'MNT',
+        'is_pickup'    => true,
+        'options'      => json_encode(['is_pickup' => true]),
+    ]);
+    session([
+        'company'          => 'company_uuid',
+        'storefront_key'   => 'store_key',
+        'storefront_store' => 'store_uuid',
+    ]);
+    $controller = new CheckoutController();
+    $request    = fn () => CaptureOrderRequest::create('/checkout/capture', 'POST', [
+        'token'              => 'checkout_token',
+        'transactionDetails' => ['transaction_id' => 'untrusted_client_id', 'payment_status' => 'PAID'],
+    ]);
+
+    // Only the checkout token, as the customer's app holds it: no payment recorded.
+    $unpaid = $controller->captureOrder($request());
+
+    // Recorded by the callback or status check once QPay confirmed the payment.
+    Checkout::where('uuid', 'checkout_uuid')->firstOrFail()->updateOption('qpay_payment', [
+        'payment_id'     => 'qpay_payment_1',
+        'payment_status' => 'PAID',
+        'payment_amount' => '25000.00',
+    ]);
+    // Past the guard, capture goes on to build the order, which this schema doesn't fully
+    // support; anything after the guard (a response or an exception) shows it let the
+    // paid checkout through.
+    try {
+        $paid = $controller->captureOrder($request());
+    } catch (Throwable $afterGuard) {
+        $paid = null;
+    }
+    session(['storefront_key' => null, 'storefront_store' => null]);
+
+    expect($unpaid->getStatusCode())->toBe(402)
+        ->and($unpaid->getData(true))->toBe(['error' => 'QPay payment has not been completed.'])
+        ->and(Checkout::where('uuid', 'checkout_uuid')->firstOrFail()->order_uuid)->toBeNull()
+        ->and($paid instanceof Illuminate\Http\JsonResponse && $paid->getStatusCode() === 402)->toBeFalse();
+});
+
 test('stripe checkout retries missing customers and contains ephemeral-key and intent failures', function () {
     createCheckoutBoundarySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
