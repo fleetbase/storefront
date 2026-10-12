@@ -1106,3 +1106,36 @@ test('network controller add stores removes requested stale assignments in the s
         ->and($connection->table('network_stores')->where('store_uuid', 'store_new')->whereNull('deleted_at')->exists())->toBeTrue()
         ->and($connection->table('network_stores')->where('store_uuid', 'store_old')->whereNotNull('deleted_at')->exists())->toBeTrue();
 });
+
+test('network controller add stores removes a store from this network only', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('networks');
+    $schema->dropIfExists('network_stores');
+    $schema->create('networks', function ($table) {
+        $table->string('uuid')->primary();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('network_uuid');
+        $table->string('store_uuid');
+        $table->string('status')->default('active');
+        $table->string('category_uuid')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('networks')->insert([['uuid' => 'network_uuid'], ['uuid' => 'other_network_uuid']]);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'shared_store', 'created_at' => now(), 'updated_at' => now()],
+        ['network_uuid' => 'other_network_uuid', 'store_uuid' => 'shared_store', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $request  = NetworkActionRequest::create('/network', 'POST', ['remove' => ['shared_store']]);
+    $response = (new NetworkController())->addStores('network_uuid', $request);
+
+    expect($response->getData(true))->toBe(['status' => 'ok'])
+        ->and($connection->table('network_stores')->where('network_uuid', 'network_uuid')->value('deleted_at'))->not->toBeNull()
+        ->and($connection->table('network_stores')->where('network_uuid', 'other_network_uuid')->value('deleted_at'))->toBeNull();
+});
