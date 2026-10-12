@@ -664,6 +664,14 @@ storefront:
       comments: Comments
       no-items: No order items were found.
       delivery-tip: Delivery tip
+      cash: Cash
+      unnamed-item: Unnamed item
+      no-description: No description
+      scheduled-at: "Scheduled {date}"
+      subtotal: Subtotal
+      discount: Discount
+      tip: Tip
+      total: Total
       delivery-address: Delivery address
     tracking:
       based-on: Based on provider route and driver signal

@@ -20,7 +20,7 @@
                     <tr class="storefront-panel-table__row" data-test-customer-orders-row={{order.public_id}}>
                         <td><a href="javascript:;" class="storefront-table__link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
                         <td class="is-muted">{{order.createdAgo}}</td>
-                        <td><Badge @status={{if order.meta.is_pickup "info" "default"}} @hideStatusDot={{true}} @size="xs" @text={{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} /></td>
+                        <td><Badge @status={{if order.meta.is_pickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} /></td>
                         <td><Badge @status={{order.status}} @size="xs" /></td>
                         <td class="is-right">{{format-currency (or order.meta.total order.transaction_amount 0) order.meta.currency}}</td>
                         <td class="storefront-panel-table__actions"><Storefront::Order::Actions @order={{order}} @onChange={{this.handleOrderChange}} @asMenu={{true}} @renderInPlace={{false}} /></td>

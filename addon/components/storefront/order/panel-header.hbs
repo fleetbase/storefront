@@ -6,7 +6,7 @@
             </div>
             <div class="min-w-0">
                 <div class="storefront-order-panel-heading__title">
-                    <span>{{n-a @resource.public_id (t "storefront.common.order")}}</span>
+                    <span data-test-order-panel-title>{{or @resource.tracking_number.tracking_number @resource.tracking @resource.public_id}}</span>
                     <Badge @status={{@resource.status}} @size="xs" />
                 </div>
             </div>
@@ -27,7 +27,9 @@
                 {{@resource.meta.storefront}}
             </Badge>
         {{/if}}
-        <span>{{n-a (or @resource.tracking_number.tracking_number @resource.tracking) "—"}}</span>
+        {{#if (or @resource.tracking_number.tracking_number @resource.tracking)}}
+            <span><ClickToCopy @value={{@resource.public_id}} class="storefront-order-panel-heading__id" data-test-order-panel-id>{{@resource.public_id}}</ClickToCopy></span>
+        {{/if}}
         {{#if @resource.meta.checkout_id}}
             <span>{{t "storefront.networks.orders.part-of" checkout=@resource.meta.checkout_id}}</span>
         {{/if}}

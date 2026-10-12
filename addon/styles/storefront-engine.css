@@ -1792,10 +1792,14 @@ body[data-theme='dark'] .storefront-order-panel-header {
     gap: 0.375rem;
 }
 
-/* Four actions share a 600px panel with the id and status: tighter buttons, same hit height */
+/* Four actions share a 600px panel with the title and status: one 28px height for every
+   button, the ellipsis padded like the others */
 .storefront-order-panel-heading__actions .btn {
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
+    height: 1.75rem;
+    min-height: 0;
+    padding: 0 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1;
     white-space: nowrap;
 }
 
@@ -1976,12 +1980,6 @@ body[data-theme='dark'] .storefront-order-totals strong {
     gap: 0.75rem;
 }
 
-.storefront-order-store {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.9rem;
-}
-
 .storefront-order-person__name {
     overflow: hidden;
     color: #111827;
@@ -2159,76 +2157,6 @@ body[data-theme='dark'] .storefront-order-empty-state {
     .storefront-order-item__price {
         display: none;
     }
-}
-
-.storefront-order-store .storefront-order-store__image {
-    width: 4rem;
-    height: 4rem;
-    border-radius: 0.5rem;
-    object-fit: cover;
-}
-
-.storefront-order-store__content {
-    min-width: 0;
-    flex: 1 1 auto;
-}
-
-.storefront-order-store__rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    margin-top: 0.55rem;
-}
-
-.storefront-order-store__row {
-    display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr);
-    gap: 0.75rem;
-    align-items: start;
-}
-
-.storefront-order-store__row-label {
-    color: #6b7280;
-    font-size: 0.6875rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    text-transform: uppercase;
-}
-
-body[data-theme='dark'] .storefront-order-store__row-label {
-    color: #9ca3af;
-}
-
-.storefront-order-store__row-value {
-    min-width: 0;
-    color: #111827;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.35;
-}
-
-.storefront-order-store__row-value a {
-    color: #2563eb;
-}
-
-.storefront-order-store__row-value a:hover {
-    color: #1d4ed8;
-}
-
-body[data-theme='dark'] .storefront-order-store__row-value {
-    color: #e5e7eb;
-}
-
-body[data-theme='dark'] .storefront-order-store__row-value a {
-    color: #60a5fa;
-}
-
-body[data-theme='dark'] .storefront-order-store__row-value a:hover {
-    color: #93c5fd;
-}
-
-.storefront-order-store__address address {
-    font-style: normal;
 }
 
 .tracking-intelligence {
@@ -7984,120 +7912,241 @@ body[data-theme='dark'] .storefront-section-card.is-plain {
     padding: 0;
 }
 
-/* ContentPanel inside storefront settings, customer and order panels: a compact heading
-   in the panel's own surface (no darker band, no rule under it) with a 14px uppercase
-   title, instead of the console's tall toolbar. */
-.storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
-.storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
-.storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header {
-    min-height: 0;
-    padding: 0.75rem 1rem 0.25rem;
-    border-bottom: 0;
+/* ContentPanel inside Storefront settings, the customer overview and the order tabs: one
+   compact heading (40px, title and content on the same left edge, no band, no rule) instead
+   of the console's toolbar. Settings sections are single cards: the card carries the surface,
+   border and radius, so the heading and body never show different backgrounds. A panel nested
+   in a section body is the same card, one level in. Order and customer sections stay flush,
+   separated by the panel's own top rule. */
+:is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab) .next-content-panel > .next-content-panel-header {
+    display: flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border-top-width: 0;
+    border-bottom-width: 0;
     box-shadow: none;
     background: transparent;
 }
 
-body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
-body[data-theme='dark'] .storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header,
-body[data-theme='dark'] .storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header {
+body[data-theme='dark'] :is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab) .next-content-panel > .next-content-panel-header {
     background: transparent;
 }
 
-.storefront-settings-section .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left,
-.storefront-customer-overview .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left,
-.storefront-order-tab .next-content-panel-wrapper .next-content-panel-container .next-content-panel > .next-content-panel-header .next-content-panel-header-left {
+:is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab)
+    .next-content-panel
+    > .next-content-panel-header
+    :is(.next-content-panel-header-left, .next-content-panel-header-right) {
     padding-top: 0;
     padding-bottom: 0;
 }
 
-.storefront-settings-section
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title,
-.storefront-customer-overview
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title,
-.storefront-order-tab
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title {
-    font-size: 0.875rem;
+:is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab) .next-content-panel > .next-content-panel-header .panel-title {
+    font-size: 0.8125rem;
     font-weight: 600;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
+    line-height: 1.25rem;
     text-transform: uppercase;
     color: #374151;
 }
 
-body[data-theme='dark']
-    .storefront-settings-section
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title,
-body[data-theme='dark']
-    .storefront-customer-overview
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title,
-body[data-theme='dark']
-    .storefront-order-tab
-    .next-content-panel-wrapper
-    .next-content-panel-container
-    .next-content-panel
-    > .next-content-panel-header
-    .next-content-panel-header-left
-    > .next-content-panel-title-container
-    .panel-title {
+body[data-theme='dark'] :is(.storefront-settings-section, .storefront-customer-overview, .storefront-order-tab) .next-content-panel > .next-content-panel-header .panel-title {
     color: #e5e7eb;
 }
 
-.storefront-settings-section .next-content-panel-body {
-    padding: 0.5rem 1rem 1rem;
+/* Order and customer sections: flush, a rule between them, the heading on the content's edge */
+:is(.storefront-customer-overview, .storefront-order-tab)
+    .next-content-panel-wrapper.bordered-top
+    + .next-content-panel-wrapper.bordered-top
+    .next-content-panel
+    > .next-content-panel-header {
+    border-top-width: 1px;
 }
 
-.storefront-settings-section .next-content-panel-wrapper.bordered-classic .next-content-panel {
+/* Settings: each section is one card */
+.storefront-settings-section .next-content-panel-wrapper .next-content-panel {
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
     border-radius: 0.375rem;
+    background-color: #fff;
 }
 
-/* Order panel: the store as a pill with its contact facts under it */
-.storefront-order-store__facts {
+body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper .next-content-panel {
+    border-color: #374151;
+    background-color: var(--sf-surface);
+}
+
+.storefront-settings-section .next-content-panel-wrapper .next-content-panel > .next-content-panel-body {
+    padding: 0 0.75rem 0.75rem;
+    border-width: 0;
+    background: transparent;
+}
+
+body[data-theme='dark'] .storefront-settings-section .next-content-panel-wrapper .next-content-panel > .next-content-panel-body {
+    background: transparent;
+}
+
+/* A panel inside a section (Contact and social): the same card one level in, on the raised tier */
+.storefront-settings-section .next-content-panel-body .next-content-panel-wrapper {
+    margin-top: 0.75rem;
+}
+
+body[data-theme='dark'] .storefront-settings-section .next-content-panel-body .next-content-panel-wrapper .next-content-panel {
+    border-color: var(--sf-hairline);
+    background-color: var(--sf-raised);
+}
+
+.storefront-settings-section .next-content-panel-body .next-content-panel-wrapper .next-content-panel {
+    background-color: #f9fafb;
+}
+
+/* Order panel: the store as a profile: backdrop banner, logo, name and state, then stacked facts */
+.storefront-store-profile {
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #fff;
+}
+
+body[data-theme='dark'] .storefront-store-profile {
+    border-color: var(--sf-hairline);
+    background-color: var(--sf-raised);
+}
+
+.storefront-store-profile__banner {
+    height: 4.5rem;
+    background-color: #e5e7eb;
+    background-image: linear-gradient(135deg, #dbeafe, #ede9fe);
+    background-position: center;
+    background-size: cover;
+}
+
+body[data-theme='dark'] .storefront-store-profile__banner {
+    background-image: linear-gradient(135deg, #1e3a8a, #312e81);
+}
+
+.storefront-store-profile__identity {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-top: -1.5rem;
+    padding: 0 0.875rem;
+}
+
+.storefront-store-profile__logo {
+    flex: 0 0 auto;
+    width: 3.5rem;
+    height: 3.5rem;
+    border: 3px solid #fff;
+    border-radius: 0.625rem;
+    background-color: #fff;
+    object-fit: cover;
+}
+
+body[data-theme='dark'] .storefront-store-profile__logo {
+    border-color: var(--sf-raised);
+    background-color: var(--sf-surface);
+}
+
+.storefront-store-profile__name {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    padding-bottom: 0.125rem;
+}
+
+.storefront-store-profile__title {
+    overflow: hidden;
+    color: #111827;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme='dark'] .storefront-store-profile__title {
+    color: #f3f4f6;
+}
+
+.storefront-store-profile__subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
+body[data-theme='dark'] .storefront-store-profile__subtitle {
+    color: #9ca3af;
+}
+
+.storefront-store-profile__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: #9ca3af;
+}
+
+.storefront-store-profile__dot.is-online {
+    background-color: #22c55e;
+}
+
+.storefront-store-profile__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+    margin: 0;
+    padding: 0.875rem;
+}
+
+.storefront-store-profile__fact {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    margin: 0.75rem 0 0;
-}
-
-.storefront-order-store__facts .storefront-order-store__row {
-    display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    gap: 0.5rem;
-    align-items: center;
-    font-size: 0.8125rem;
-}
-
-.storefront-order-store__facts dd {
-    margin: 0;
+    gap: 0.125rem;
     min-width: 0;
+}
+
+.storefront-store-profile__fact.is-wide {
+    grid-column: 1 / -1;
+}
+
+.storefront-store-profile__fact dt {
+    color: #6b7280;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+body[data-theme='dark'] .storefront-store-profile__fact dt {
+    color: #9ca3af;
+}
+
+.storefront-store-profile__fact dd {
+    overflow: hidden;
+    margin: 0;
+    color: #111827;
+    font-size: 0.8125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body[data-theme='dark'] .storefront-store-profile__fact dd {
+    color: #e5e7eb;
+}
+
+.storefront-store-profile__fact dd a {
+    color: #2563eb;
+}
+
+body[data-theme='dark'] .storefront-store-profile__fact dd a {
+    color: #93c5fd;
+}
+
+.storefront-store-profile__fact.is-wide dd {
+    white-space: normal;
 }
 
 /* Loading substates: the skeleton page fills the section like the page it stands in for */
@@ -8447,6 +8496,32 @@ body[data-theme='dark'] .storefront-empty-row--action:hover:not(:disabled) {
 .storefront-order-panel-heading .storefront-flow-steps,
 .storefront-order-panel-heading .storefront-identity-strip {
     margin-top: 0;
+}
+
+/* The status steps get room above and below so the header reads in three rows */
+.storefront-order-panel-heading .storefront-flow-steps {
+    margin: 0.5rem 0;
+}
+
+/* The customer's name and phone get the widest cell */
+.storefront-order-panel-heading .storefront-identity-strip {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.8fr);
+}
+
+/* Header actions: one 28px height for every button, the ellipsis padded like a button, tight gaps */
+.storefront-order-panel-heading__actions > * {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.storefront-order-panel-heading__actions > * > * {
+    margin-left: 0 !important;
+}
+
+.storefront-order-panel-heading__id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
 }
 
 /* Push notifications page: one section card, form width capped like the settings sections */

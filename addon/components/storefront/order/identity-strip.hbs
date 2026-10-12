@@ -1,7 +1,14 @@
 <div class="storefront-identity-strip" data-test-order-identity-strip ...attributes>
     <div class="storefront-identity-strip__cell">
         <div class="storefront-identity-strip__label">{{t "storefront.common.customer"}}</div>
-        <Customer::Pill @customer={{this.order.customer}} @titleFallback={{t "storefront.networks.orders.no-customer"}} @static={{not this.order.customer.id}} @size="xs" data-test-order-customer-pill />
+        <Customer::Pill
+            @customer={{this.order.customer}}
+            @subtitle={{or this.order.customer.phone this.order.customer.email}}
+            @titleFallback={{t "storefront.networks.orders.no-customer"}}
+            @static={{not this.order.customer.id}}
+            @size="xs"
+            data-test-order-customer-pill
+        />
     </div>
     <div class="storefront-identity-strip__cell">
         <div class="storefront-identity-strip__label">{{t "storefront.common.driver"}}</div>

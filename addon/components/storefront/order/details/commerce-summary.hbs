@@ -1,6 +1,6 @@
 <ContentPanel
     @title={{t "storefront.order.sections.order"}}
-    @prefixTitleRight={{if @resource.payload.cod_amount "Cash" (n-a (titleize @resource.meta.gateway))}}
+    @prefixTitleRight={{if @resource.payload.cod_amount (t "storefront.order.sections.cash") (n-a (titleize @resource.meta.gateway))}}
     @prefixTitleRightClass={{if @resource.payload.cod_amount "text-green-400" "text-blue-400"}}
     @open={{true}}
     @isLoading={{@isLoading}}
@@ -16,11 +16,11 @@
                         <div class="storefront-order-item__qty">{{n-a entity.meta.quantity 1}}x</div>
                         <Image src={{or entity.photo_url entity.image_url entity.meta.photo_url entity.meta.image_url entity.meta.product_image_url}} @fallbackSrc={{config "defaultValues.entityImage"}} class="storefront-order-item__image" alt={{entity.name}} />
                         <div class="storefront-order-item__body">
-                            <div class="storefront-order-item__name">{{n-a entity.name "Unnamed item"}}</div>
-                            <div class="storefront-order-item__description">{{n-a entity.description "No description"}}</div>
+                            <div class="storefront-order-item__name">{{n-a entity.name (t "storefront.order.sections.unnamed-item")}}</div>
+                            <div class="storefront-order-item__description">{{n-a entity.description (t "storefront.order.sections.no-description")}}</div>
                             {{#if entity.meta.scheduled_at}}
                                 <div class="storefront-order-item__options">
-                                    <span>Scheduled {{format-date-fns entity.meta.scheduled_at "d MMM yyyy HH:mm"}}</span>
+                                    <span>{{t "storefront.order.sections.scheduled-at" date=(format-date-fns entity.meta.scheduled_at "d MMM yyyy HH:mm")}}</span>
                                 </div>
                             {{/if}}
                             {{#if entity.meta.variants}}
@@ -52,7 +52,7 @@
         {{/if}}
 
         <div class="storefront-order-totals mt-1">
-            <div><span>Subtotal</span><strong>{{format-currency @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+            <div><span>{{t "storefront.order.sections.subtotal"}}</span><strong>{{format-currency @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{#unless @resource.meta.is_pickup}}
                 <div><span>{{t "storefront.orders.create.delivery-fee"}}</span><strong>{{format-currency @resource.meta.delivery_fee @resource.meta.currency}}</strong></div>
             {{/unless}}
@@ -65,16 +65,16 @@
                 </div>
             {{/each}}
             {{#if this.unattributedDiscount}}
-                <div class="text-green-600 dark:text-green-400"><span>Discount</span><strong>-{{format-currency this.unattributedDiscount @resource.meta.currency}}</strong></div>
+                <div class="text-green-600 dark:text-green-400"><span>{{t "storefront.order.sections.discount"}}</span><strong>-{{format-currency this.unattributedDiscount @resource.meta.currency}}</strong></div>
             {{/if}}
             {{#if @resource.meta.tip}}
-                <div><span>Tip</span><strong>{{get-tip-amount @resource.meta.tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
+                <div><span>{{t "storefront.order.sections.tip"}}</span><strong>{{get-tip-amount @resource.meta.tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{/if}}
             {{#if @resource.meta.delivery_tip}}
                 <div><span>{{t "storefront.order.sections.delivery-tip"}}</span><strong>{{get-tip-amount @resource.meta.delivery_tip @resource.meta.subtotal @resource.meta.currency}}</strong></div>
             {{/if}}
             <div class="storefront-order-totals__total">
-                <span>Total</span>
+                <span>{{t "storefront.order.sections.total"}}</span>
                 <strong>{{format-currency (or @resource.meta.total @resource.transaction_amount 0) @resource.meta.currency}}</strong>
             </div>
         </div>

@@ -1,5 +1,5 @@
 import Component from '@glimmer/component';
-import { action } from '@ember/object';
+import { action, get } from '@ember/object';
 import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 
@@ -42,6 +42,13 @@ export default class StorefrontOrderDetailsStoreComponent extends Component {
         const meta = this.args.resource?.meta ?? {};
 
         return meta.storefront_category ?? meta.store_category ?? this.storefrontDisplay.currency ?? null;
+    }
+
+    /** The pickup place as one line, read through the proxy the payload hands back. */
+    get pickupAddress() {
+        const pickup = get(this.args.resource ?? {}, 'payload.pickup');
+
+        return pickup ? (get(pickup, 'address') ?? get(pickup, 'name') ?? null) : null;
     }
 
     get storePhone() {

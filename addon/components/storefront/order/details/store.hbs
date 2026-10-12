@@ -1,28 +1,42 @@
 <ContentPanel @title={{t "storefront.common.store"}} @open={{true}} @isLoading={{or @isLoading this.isLoadingStorefront}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
-    <div class="storefront-order-store" data-test-order-store>
-        <Store::Pill @store={{this.storefrontRecord}} @title={{this.storeName}} @subtitle={{this.storeSubtitle}} @showOnlineIndicator={{true}} @static={{not this.storefrontRecord.id}} data-test-order-store-pill />
-        <dl class="storefront-order-store__facts">
-            <div class="storefront-order-store__row">
-                <dt class="storefront-order-store__row-label">{{t "storefront.common.phone"}}</dt>
-                <dd class="storefront-order-store__row-value">{{#if this.storePhone}}<a href="tel:{{this.storePhone}}">{{this.storePhone}}</a>{{else}}{{n-a null}}{{/if}}</dd>
-            </div>
-            <div class="storefront-order-store__row">
-                <dt class="storefront-order-store__row-label">{{t "storefront.common.email"}}</dt>
-                <dd class="storefront-order-store__row-value">{{#if this.storeEmail}}<a href="mailto:{{this.storeEmail}}">{{this.storeEmail}}</a>{{else}}{{n-a null}}{{/if}}</dd>
-            </div>
-            <div class="storefront-order-store__row">
-                <dt class="storefront-order-store__row-label">{{t "storefront.common.website"}}</dt>
-                <dd class="storefront-order-store__row-value">{{#if this.storeWebsite}}<a href={{this.storeWebsite}} target="_blank" rel="noopener noreferrer">{{this.storeWebsite}}</a>{{else}}{{n-a null}}{{/if}}</dd>
-            </div>
-            <div class="storefront-order-store__row">
-                <dt class="storefront-order-store__row-label">{{t "storefront.common.address"}}</dt>
-                <dd class="storefront-order-store__row-value storefront-order-store__address">
-                    {{#if @resource.payload.pickup}}
-                        <Place::Pill @place={{@resource.payload.pickup}} @size="xs" @static={{not @resource.payload.pickup.id}} />
-                    {{else}}
-                        {{n-a null}}
+    <div class="storefront-store-profile" data-test-order-store>
+        <div class="storefront-store-profile__banner" {{background-url this.storefrontDisplay.backdrop_url}}></div>
+        <div class="storefront-store-profile__identity">
+            <Image src={{this.storeLogoUrl}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{this.storeName}} class="storefront-store-profile__logo" />
+            <div class="storefront-store-profile__name">
+                <div class="storefront-store-profile__title" data-test-order-store-name>{{this.storeName}}</div>
+                <div class="storefront-store-profile__subtitle">
+                    {{#if this.storefrontRecord}}
+                        <span class="storefront-store-profile__dot {{if this.storefrontRecord.online 'is-online'}}"></span>
+                        <span>{{if this.storefrontRecord.online (t "storefront.common.online") (t "storefront.common.offline")}}</span>
                     {{/if}}
-                </dd>
+                    {{#if this.storeSubtitle}}
+                        {{#if this.storefrontRecord}}<span>·</span>{{/if}}
+                        <span>{{this.storeSubtitle}}</span>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        <dl class="storefront-store-profile__facts">
+            <div class="storefront-store-profile__fact">
+                <dt>{{t "storefront.common.phone"}}</dt>
+                <dd>{{#if this.storePhone}}<a href="tel:{{this.storePhone}}">{{this.storePhone}}</a>{{else}}{{n-a null}}{{/if}}</dd>
+            </div>
+            <div class="storefront-store-profile__fact">
+                <dt>{{t "storefront.common.email"}}</dt>
+                <dd>{{#if this.storeEmail}}<a href="mailto:{{this.storeEmail}}">{{this.storeEmail}}</a>{{else}}{{n-a null}}{{/if}}</dd>
+            </div>
+            <div class="storefront-store-profile__fact">
+                <dt>{{t "storefront.common.website"}}</dt>
+                <dd>{{#if this.storeWebsite}}<a href={{this.storeWebsite}} target="_blank" rel="noopener noreferrer">{{this.storeWebsite}}</a>{{else}}{{n-a null}}{{/if}}</dd>
+            </div>
+            <div class="storefront-store-profile__fact">
+                <dt>{{t "storefront.common.currency"}}</dt>
+                <dd>{{n-a this.storefrontRecord.currency}}</dd>
+            </div>
+            <div class="storefront-store-profile__fact is-wide">
+                <dt>{{if @resource.meta.is_pickup (t "storefront.orders.create.pickup-from") (t "storefront.orders.create.leaves-from")}}</dt>
+                <dd>{{n-a this.pickupAddress}}</dd>
             </div>
         </dl>
     </div>
