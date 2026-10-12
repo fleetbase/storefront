@@ -1,4 +1,5 @@
-<div class="storefront-order-ref {{if @row.isChild 'is-child'}}" data-test-order-reference>
+{{#let (if @column.isChild (@column.isChild @row) false) as |isChild|}}
+<div class="storefront-order-ref {{if isChild 'is-child'}}" data-test-order-reference>
     {{#if @row.isGroup}}
         <button type="button" class="storefront-order-ref__toggle" aria-expanded={{if @row.expanded "true" "false"}} aria-label={{t "storefront.networks.orders.expand-hint"}} {{on "click" (fn @column.onToggle @row)}} data-test-order-group-toggle>
             <FaIcon @icon={{if @row.expanded "chevron-down" "chevron-right"}} @size="xs" />
@@ -8,12 +9,9 @@
             <span class="storefront-order-ref__meta">{{t "storefront.networks.orders.group-summary" orders=@row.orderCount items=@row.itemCount}}</span>
         </span>
     {{else}}
-        {{#if @row.isChild}}<span class="storefront-order-ref__branch" aria-hidden="true"></span>{{/if}}
-        <span class="storefront-order-ref__text">
-            <a href="javascript:;" class="storefront-order-ref__id storefront-order-ref__id--link" {{on "click" (fn @column.onView @row)}}>{{@row.public_id}}</a>
-            <span class="storefront-order-ref__meta">
-                {{t "storefront.networks.orders.items-count" count=(or @row.payload.entities_count @row.item_count 0)}}
-            </span>
-        </span>
+        {{#if isChild}}<span class="storefront-order-ref__branch" aria-hidden="true"></span>{{/if}}
+        {{! One line: the tracking number, the order id on hover. }}
+        <a href="javascript:;" class="storefront-order-ref__id storefront-order-ref__id--link" title={{@row.public_id}} {{on "click" (fn @column.onView @row)}} data-test-order-tracking>{{or @row.tracking @row.public_id}}</a>
     {{/if}}
 </div>
+{{/let}}

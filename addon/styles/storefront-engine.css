@@ -3926,67 +3926,57 @@ body[data-theme='dark'] .storefront-order-driver__muted {
 .storefront-identity-stack {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.25rem;
+    min-width: 0;
 }
 
 .storefront-identity-stack--avatars {
     flex-wrap: nowrap;
-    gap: 0;
+    gap: 0.25rem;
 }
 
-/* A multi-store row: overlapping round logos, the pill's text kept for screen readers only. */
-.storefront-identity-stack--avatars > * + * {
-    margin-left: -0.375rem;
-}
-
-.storefront-identity-stack__avatar.fleetbase-pill,
+/* A multi-store row: one 20px round logo per store, the size of an identity cell's image, evenly spaced. */
 .storefront-identity-stack__avatar {
+    display: inline-flex;
     flex: 0 0 auto;
-    gap: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: default;
 }
 
-.storefront-identity-stack__avatar .fleetbase-pill-body {
-    gap: 0;
-}
-
-.storefront-identity-stack__avatar img {
-    width: 1.5rem;
-    height: 1.5rem;
-    object-fit: cover;
+.storefront-identity-stack__logo {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1px solid #e5e7eb;
     border-radius: 9999px;
-    box-shadow: 0 0 0 2px #fff;
-}
-
-.storefront-identity-stack__avatar:hover {
-    position: relative;
-    z-index: 1;
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
 }
 
 .storefront-identity-stack__initial {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1px solid #e5e7eb;
     border-radius: 9999px;
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 600;
-    background-color: #e5e7eb;
+    background-color: #f3f4f6;
     color: #374151;
-    box-shadow: 0 0 0 2px #fff;
 }
 
-body[data-theme='dark'] .storefront-identity-stack__avatar img,
+body[data-theme='dark'] .storefront-identity-stack__logo,
 body[data-theme='dark'] .storefront-identity-stack__initial {
-    box-shadow: 0 0 0 2px #111827;
+    border-color: #374151;
 }
 
 body[data-theme='dark'] .storefront-identity-stack__initial {
-    background-color: #374151;
+    background-color: #1f2937;
     color: #e5e7eb;
 }
 
@@ -3998,7 +3988,6 @@ body[data-theme='dark'] .storefront-identity-stack__initial {
 }
 
 .storefront-identity-stack__overflow {
-    margin-left: 0.25rem;
     padding: 0 0.375rem;
     border-radius: 9999px;
     font-size: 0.6875rem;
@@ -4038,8 +4027,8 @@ body[data-theme='dark'] .storefront-order-total__amount {
 
 .storefront-order-driver {
     display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
+    align-items: center;
+    min-width: 0;
 }
 
 .storefront-order-actions {
@@ -7734,8 +7723,11 @@ body[data-theme='dark'] .storefront-order-ref__toggle:hover {
 }
 
 .storefront-network-orders-table .storefront-order-total__tip {
+    overflow: hidden;
     font-size: 0.6875rem;
-    white-space: normal;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: 1.2;
 }
 

@@ -1,33 +1,24 @@
 <div class="storefront-identity-stack {{if this.isStack 'storefront-identity-stack--avatars'}}" data-test-order-stores>
-    {{#each this.visible as |entry|}}
-        {{#if entry.store}}
-            {{#if this.isStack}}
-                {{! A checkout across stores: one round logo per store, the name and summary on hover. }}
-                <Resource::Pill
-                    @resourceType="store"
-                    @resource={{entry.store}}
-                    @size="xs"
-                    @class="storefront-identity-stack__avatar"
-                    @contentWrapperClass="sr-only"
-                    @showOnlineIndicator={{false}}
-                    @popoverPlacement="top"
-                    aria-label={{entry.name}}
-                    data-test-order-store-avatar
-                >
-                    <span class="sr-only">{{entry.name}}</span>
-                </Resource::Pill>
-            {{else}}
-                <Resource::Pill @resourceType="store" @resource={{entry.store}} @subtitle={{null}} @size="xs" @class="storefront-identity-stack__pill" />
-            {{/if}}
-        {{else if this.isStack}}
-            <span class="storefront-identity-stack__initial" title={{entry.name}} aria-label={{entry.name}}>{{entry.initial}}</span>
-        {{else}}
-            <span class="storefront-identity-stack__text" title={{entry.name}}>{{entry.name}}</span>
+    {{#if this.isStack}}
+        {{! A checkout across stores: one round logo per store, its summary on hover. }}
+        {{#each this.visible as |entry|}}
+            <span class="storefront-identity-stack__avatar" aria-label={{entry.name}} data-test-order-store-avatar>
+                {{#if entry.store}}
+                    <Image src={{entry.logo}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{entry.name}} class="storefront-identity-stack__logo" />
+                    <Resource::HoverCard @resource={{entry.store}} @resourceType={{entry.type}} @placement="top" />
+                {{else}}
+                    <span class="storefront-identity-stack__initial" title={{entry.name}}>{{entry.initial}}</span>
+                {{/if}}
+            </span>
+        {{/each}}
+        {{#if this.overflow}}
+            <span class="storefront-identity-stack__overflow" title={{this.overflowTitle}}>+{{this.overflow}}</span>
         {{/if}}
+    {{else if this.single.store}}
+        <Table::Cell::Identity @row={{this.single.store}} @column={{hash resourceType=this.single.type hideBadges=true showStatusDot=false wrapperClass="min-w-0 max-w-full"}} data-test-order-store-identity />
+    {{else if this.single}}
+        <span class="storefront-identity-stack__text" title={{this.single.name}}>{{this.single.name}}</span>
     {{else}}
         <span class="text-gray-400">{{t "storefront.networks.orders.no-store"}}</span>
-    {{/each}}
-    {{#if this.overflow}}
-        <span class="storefront-identity-stack__overflow" title={{this.overflowTitle}}>+{{this.overflow}}</span>
     {{/if}}
 </div>

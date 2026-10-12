@@ -6,7 +6,7 @@ import { tracked, cached } from '@glimmer/tracking';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
 import { action, get } from '@ember/object';
-import { groupOrdersByCheckout, STATUS_TABS } from '../../../../utils/order-groups';
+import { groupOrdersByCheckout, groupKeyOf, STATUS_TABS } from '../../../../utils/order-groups';
 
 /**
  * Everything placed through the network, grouped by checkout: a multi-store purchase is one
@@ -117,9 +117,15 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
             const expanded = this.expandedGroups.has(row.id);
             row.expanded = expanded;
 
-            return expanded ? [row, ...row.orders.map((order) => Object.assign(order, { isChild: true, parentGroup: row.id }))] : [row];
+            return expanded ? [row, ...row.orders] : [row];
         });
     }
+
+    /**
+     * An order sits under its checkout only while grouped and expanded. Read from tracked state
+     * at render, so switching to Flat redraws the row without the branch.
+     */
+    isChildRow = (row) => Boolean(row && !row.isGroup && this.isGrouped && this.expandedGroups.has(groupKeyOf(row)));
 
     @action toggleGroup(group) {
         const next = new Set(this.expandedGroups);
@@ -170,6 +176,7 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
                 cellComponent: 'storefront/network/orders/cell/reference',
                 onView: this.viewOrder,
                 onToggle: this.toggleGroup,
+                isChild: this.isChildRow,
                 width: '175px',
                 resizable: true,
                 sortable: false,
