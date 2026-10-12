@@ -19,8 +19,9 @@ export default class OrdersIndexNewController extends Controller {
     @service storefrontOrderActions;
     @service modalsManager;
     @service store;
-    queryParams = [{ customer: 'for_customer' }];
-    @tracked customer = null;
+    // Not `customer`: the orders list behind the panel filters on that key.
+    queryParams = [{ forCustomer: 'for_customer' }];
+    @tracked forCustomer = null;
 
     @tracked activeStore = null;
     @tracked locations = [];
@@ -32,6 +33,8 @@ export default class OrdersIndexNewController extends Controller {
     returnRoute = 'console.storefront.orders.index';
     returnModel = null;
     @tracked selectedCustomer = null;
+    /** The address being typed for the customer, or null while the New address form is closed. */
+    @tracked newAddress = null;
     @tracked isPickup = false;
     @tracked isScheduled = false;
     @tracked scheduledAt = null;
@@ -57,6 +60,7 @@ export default class OrdersIndexNewController extends Controller {
 
     reset() {
         this.selectedCustomer = null;
+        this.newAddress = null;
         this.isPickup = false;
         this.isScheduled = false;
         this.scheduledAt = null;
@@ -368,8 +372,76 @@ export default class OrdersIndexNewController extends Controller {
 
     @action selectCustomer(customer) {
         this.selectedCustomer = customer;
+        this.newAddress = null;
         this.dropoff = this.customerPlaces.find((place) => place.id === this.defaultPlaceId) ?? this.customerPlaces[0] ?? null;
         this.requote.perform();
+    }
+
+    get canSaveNewAddress() {
+        return Boolean(this.selectedCustomer && this.newAddress?.street1?.trim());
+    }
+
+    @action openNewAddress() {
+        this.newAddress = { name: '', street1: '', street2: '' };
+    }
+
+    @action cancelNewAddress() {
+        this.newAddress = null;
+    }
+
+    @action setNewAddressField(field, { target }) {
+        this.setNewAddressValue(field, target.value);
+    }
+
+    @action setNewAddressValue(field, value) {
+        this.newAddress = { ...this.newAddress, [field]: value };
+    }
+
+    /** A lookup result fills the street, city, postal code, country and coordinates. */
+    @action fillNewAddress(result = {}) {
+        this.newAddress = { ...this.newAddress, ...result, name: this.newAddress?.name || result.name || '' };
+    }
+
+    /**
+     * Saves the address as a Fleet-Ops place owned by the customer, so it is one of their
+     * saved places from now on, and makes it this order's dropoff.
+     */
+    @task *saveNewAddress() {
+        const customer = this.selectedCustomer;
+        if (!this.canSaveNewAddress) {
+            return;
+        }
+
+        const { name, street1, street2, city, province, postal_code, neighborhood, district, building, country, location } = this.newAddress;
+
+        try {
+            const response = yield this.fetch.post('places', {
+                place: {
+                    name: name || null,
+                    street1,
+                    street2,
+                    city,
+                    province,
+                    postal_code,
+                    neighborhood,
+                    district,
+                    building,
+                    country,
+                    location,
+                    owner_uuid: customer.id,
+                    owner_type: 'fleet-ops:contact',
+                },
+            });
+            const payload = response?.place ?? response;
+            const place = this.store.push(this.store.normalize('place', payload));
+
+            customer.places?.pushObject?.(place);
+            this.newAddress = null;
+            this.selectDropoff(place);
+            this.notifications.success(this.intl.t('storefront.orders.create.address-saved', { name: customer.name }));
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
     }
 
     @action setFulfillment(id) {

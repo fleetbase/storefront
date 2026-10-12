@@ -8204,3 +8204,47 @@ body[data-theme='dark'] .storefront-form-panel__note {
     background-color: var(--sf-raised);
     color: #d1d5db;
 }
+
+/* Create order: the product picker sits on the section's padding like the other fields */
+.storefront-create-order__sec .storefront-catalog-picker {
+    margin: 0;
+}
+
+/* Create order: deliver-to controls and the inline New address form */
+.storefront-create-order__dropoff-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.storefront-create-order__dropoff-row > :first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.storefront-create-order__new-address {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.625rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background-color: #f9fafb;
+}
+
+body[data-theme='dark'] .storefront-create-order__new-address {
+    border-color: #374151;
+    background-color: var(--sf-raised);
+}
+
+.storefront-create-order__new-address-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.5rem;
+}
+
+.storefront-create-order__new-address-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}

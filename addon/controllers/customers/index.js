@@ -272,7 +272,7 @@ export default class CustomersIndexController extends BaseController {
     }
 
     @action newOrderFor(customer) {
-        return this.transitionToRoute('orders.index.new', { queryParams: { for_customer: customer.id } });
+        return this.transitionToRoute('orders.index.new', { queryParams: { for_customer: customer.public_id ?? customer.id } });
     }
 
     @tracked hiddenColumns = new Set();

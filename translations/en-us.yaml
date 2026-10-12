@@ -1075,9 +1075,16 @@ storefront:
       leaves-from: Leaves from
       location-help: A store location; its hours decide what the catalog offers.
       deliver-to: Deliver to
-      no-places: This customer has no saved places yet; pick any place below.
+      no-places: No saved places yet; pick another address or add a new one.
       other-address: Another address
       pick-customer-first: Pick a customer to see their saved places.
+      dropoff-help: A saved place of the customer, another address, or a new one saved to them.
+      new-address: New address
+      street-placeholder: Street address
+      unit-placeholder: Unit, floor or building
+      address-name-placeholder: Label, e.g. Home
+      save-address: Save address
+      address-saved: "Address saved to {name}."
       items-hint: from the store's published products
       store-hint: the member store this order is placed with
       each: each

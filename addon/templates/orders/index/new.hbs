@@ -75,7 +75,7 @@
                         <p class="storefront-create-order__help">{{t "storefront.orders.create.location-help"}}</p>
                     </div>
                     {{#unless this.isPickup}}
-                        <div class="storefront-create-order__field">
+                        <div class="storefront-create-order__field" data-test-create-order-dropoff>
                             <div class="storefront-create-order__label">{{t "storefront.orders.create.deliver-to"}}</div>
                             {{#if this.selectedCustomer}}
                                 {{#if this.placeRows.length}}
@@ -91,15 +91,42 @@
                                             </button>
                                         {{/each}}
                                     </div>
-                                {{else}}
-                                    <p class="storefront-create-order__help">{{t "storefront.orders.create.no-places"}}</p>
                                 {{/if}}
-                                <div class="mt-2">
-                                    <ModelSelect @modelName="place" @selectedModel={{this.dropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
-                                        <SelectOption::Place @option={{model}} />
-                                    </ModelSelect>
-                                </div>
+                                {{#if this.newAddress}}
+                                    <div class="storefront-create-order__new-address" data-test-new-address-form>
+                                        <AutocompleteInput
+                                            @value={{this.newAddress.street1}}
+                                            @fetchUrl="places/lookup"
+                                            @onTextChange={{fn this.setNewAddressValue "street1"}}
+                                            @onSelect={{this.fillNewAddress}}
+                                            placeholder={{t "storefront.orders.create.street-placeholder"}}
+                                            aria-label={{t "storefront.orders.create.street-placeholder"}}
+                                            class="w-full"
+                                            data-test-new-address-street
+                                            as |result|
+                                        >
+                                            {{result.address}}
+                                        </AutocompleteInput>
+                                        <div class="storefront-create-order__new-address-row">
+                                            <Input class="form-input w-full" @value={{this.newAddress.street2}} placeholder={{t "storefront.orders.create.unit-placeholder"}} aria-label={{t "storefront.orders.create.unit-placeholder"}} {{on "input" (fn this.setNewAddressField "street2")}} />
+                                            <Input class="form-input w-full" @value={{this.newAddress.name}} placeholder={{t "storefront.orders.create.address-name-placeholder"}} aria-label={{t "storefront.orders.create.address-name-placeholder"}} {{on "input" (fn this.setNewAddressField "name")}} data-test-new-address-name />
+                                        </div>
+                                        <div class="storefront-create-order__new-address-actions">
+                                            <Button @size="sm" @text={{t "common.cancel"}} @onClick={{this.cancelNewAddress}} />
+                                            <Button @size="sm" @type="primary" @icon="check" @text={{t "storefront.orders.create.save-address"}} @isLoading={{this.saveNewAddress.isRunning}} @disabled={{not this.canSaveNewAddress}} @onClick={{perform this.saveNewAddress}} @permission="fleet-ops create place" data-test-new-address-save />
+                                        </div>
+                                    </div>
+                                {{else}}
+                                    <div class="storefront-create-order__dropoff-row">
+                                        <ModelSelect @modelName="place" @selectedModel={{this.dropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
+                                            <SelectOption::Place @option={{model}} />
+                                        </ModelSelect>
+                                        <Button @size="sm" @icon="plus" @text={{t "storefront.orders.create.new-address"}} @onClick={{this.openNewAddress}} @permission="fleet-ops create place" data-test-new-address />
+                                    </div>
+                                {{/if}}
+                                <p class="storefront-create-order__help">{{if this.placeRows.length (t "storefront.orders.create.dropoff-help") (t "storefront.orders.create.no-places")}}</p>
                             {{else}}
+                                <input type="text" class="form-input w-full" disabled placeholder={{t "storefront.orders.create.other-address"}} aria-label={{t "storefront.orders.create.deliver-to"}} />
                                 <p class="storefront-create-order__help">{{t "storefront.orders.create.pick-customer-first"}}</p>
                             {{/if}}
                         </div>

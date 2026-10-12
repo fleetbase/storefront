@@ -15,8 +15,8 @@ export default class OrdersIndexNewRoute extends Route {
     @service storefront;
 
     queryParams = {
-        // The orders list already owns the `customer` URL key.
-        customer: { refreshModel: false, as: 'for_customer' },
+        // Preselects the customer (`?for_customer=<public id or uuid>`); the list owns `customer`.
+        forCustomer: { refreshModel: false },
     };
 
     beforeModel() {
@@ -45,14 +45,33 @@ export default class OrdersIndexNewRoute extends Route {
         controller.products = model.products?.toArray?.() ?? Array.from(model.products ?? []);
         controller.pickupLocation = controller.locations[0] ?? null;
 
-        const customerId = transition?.to?.queryParams?.for_customer ?? transition?.to?.queryParams?.customer ?? controller.customer;
+        const customerId = transition?.to?.queryParams?.for_customer ?? controller.forCustomer;
+        const customer = await this.findCustomer(customerId);
+        if (customer) {
+            // Through the action so the customer's default place becomes the dropoff and a quote runs.
+            controller.selectCustomer(customer);
+        }
+    }
 
-        if (typeof customerId === 'string' && customerId) {
-            try {
-                controller.selectedCustomer = await this.store.findRecord('customer', customerId);
-            } catch {
-                controller.selectedCustomer = null;
-            }
+    /**
+     * The customer endpoint has no single-record route, so a customer is resolved from the
+     * store when already loaded, otherwise through the list endpoint by public id or uuid.
+     */
+    async findCustomer(id) {
+        if (typeof id !== 'string' || !id) {
+            return null;
+        }
+
+        const loaded = this.store.peekRecord('customer', id) ?? this.store.peekAll('customer').find((customer) => customer.public_id === id);
+        if (loaded) {
+            return loaded;
+        }
+
+        try {
+            const results = await this.store.query('customer', { [id.includes('_') ? 'public_id' : 'uuid']: id, limit: 1 });
+            return results.firstObject ?? results[0] ?? null;
+        } catch {
+            return null;
         }
     }
 }
