@@ -3,7 +3,17 @@
         <RegistryYield @registry="storefront:component:truck:card:header:start" as |RegistryComponent|>
             <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
         </RegistryYield>
-        <Vehicle::Pill @vehicle={{this.vehicle}} @titleFallback={{t "storefront.trucks.card.no-vehicle"}} @subtitle={{or this.driverName (t "storefront.trucks.card.no-driver")}} @showOnlineIndicator={{true}} @static={{not this.vehicle.id}} class="storefront-card__identity" data-test-truck-vehicle />
+        {{! The title opens the truck; the vehicle opens from the menu (Open vehicle) or its summary. }}
+        <Vehicle::Pill
+            @vehicle={{this.vehicle}}
+            @titleFallback={{t "storefront.trucks.card.no-vehicle"}}
+            @subtitle={{or this.driverName (t "storefront.trucks.card.no-driver")}}
+            @showOnlineIndicator={{true}}
+            @static={{not (or @onOpen this.vehicle.id)}}
+            @onClick={{if @onOpen (fn @onOpen this.truck)}}
+            class="storefront-card__identity"
+            data-test-truck-vehicle
+        />
         <RegistryYield @registry="storefront:component:truck:card:header:end" as |RegistryComponent|>
             <RegistryComponent @truck={{this.truck}} @resource={{this.truck}} />
         </RegistryYield>

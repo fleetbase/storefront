@@ -182,19 +182,19 @@ class FoodTruck extends StorefrontModel
         ->values();
 
         // Remove pivot rows for catalogs not in incoming list
-        $existingCatalogs
-            ->whereNotIn('uuid', $incomingUuids)
-            ->each(function (Catalog $catalog) {
-                CatalogSubject::where([
-                    'catalog_uuid' => $catalog->uuid,
-                    'subject_uuid' => $this->uuid,
-                    'subject_type' => get_class($this),
-                ])->delete();
-            });
+        $removed = $existingCatalogs->whereNotIn('uuid', $incomingUuids);
+        $removed->each(function (Catalog $catalog) {
+            CatalogSubject::where([
+                'catalog_uuid' => $catalog->uuid,
+                'subject_uuid' => $this->uuid,
+                'subject_type' => get_class($this),
+            ])->delete();
+        });
 
         // Create or restore pivot rows for each incoming
+        $added = 0;
         foreach ($incomingUuids as $catalogUuid) {
-            CatalogSubject::firstOrCreate(
+            $subject = CatalogSubject::firstOrCreate(
                 [
                     'catalog_uuid'  => $catalogUuid,
                     'subject_uuid'  => $this->uuid,
@@ -205,6 +205,15 @@ class FoodTruck extends StorefrontModel
                     'created_by_uuid' => session('user'),
                 ]
             );
+            $added += $subject->wasRecentlyCreated ? 1 : 0;
+        }
+
+        // The relation was loaded before the sync; reload it so the saved truck answers with its new catalogs.
+        $this->load('catalogs');
+
+        // Only the pivot changed, so the truck fires no `updated` event; clear the cached truck lists here.
+        if (($removed->isNotEmpty() || $added > 0) && method_exists($this, 'invalidateApiCache')) {
+            $this->invalidateApiCache();
         }
 
         return $this;

@@ -29,7 +29,7 @@
             class="h-full"
             as |Item|
         >
-            <Storefront::Truck::Card @truck={{Item.model}} @onEdit={{this.editFoodTruck}} @onAssignCatalogs={{this.assignCatalogs}} @onOpenVehicle={{this.openVehicle}} @onDelete={{this.deleteFoodTruck}} />
+            <Storefront::Truck::Card @truck={{Item.model}} @onOpen={{this.editFoodTruck}} @onEdit={{this.editFoodTruck}} @onAssignCatalogs={{this.assignCatalogs}} @onOpenVehicle={{this.openVehicle}} @onDelete={{this.deleteFoodTruck}} />
         </Layout::Resource::CardsGrid>
     {{/if}}
 </Layout::Section::Body>
