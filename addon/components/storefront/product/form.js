@@ -3,7 +3,8 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 
-const TABS = ['details', 'variants', 'availability', 'media'];
+/** Which section of the page holds each field an issue can point at. */
+const SECTION_FOR_FIELD = { name: 'product', price: 'pricing', sale_price: 'pricing', category: 'organization', media: 'media' };
 
 function number(value) {
     const parsed = parseFloat(value);
@@ -12,13 +13,16 @@ function number(value) {
 }
 
 /**
- * The product editor: ten stacked panels become four tabs. Validation is inline and
- * the tab that holds an invalid field carries a badge; the save bar counts changes.
+ * The product editor as one page, like the create order form: a main column of sections
+ * (product, media, pricing, variants, add-ons, hours, more) and a rail with status,
+ * organization and flags. Validation is inline; the save bar counts changes and jumps to
+ * the first section that needs attention.
  */
 export default class StorefrontProductFormComponent extends Component {
     @service intl;
-    @tracked activeTab = this.args.activeTab ?? 'details';
     @tracked moreOpen = false;
+    /** A new product shows its inline issues once a save has been tried, not on an empty form. */
+    @tracked saveAttempted = false;
 
     get product() {
         return this.args.product;
@@ -89,33 +93,9 @@ export default class StorefrontProductFormComponent extends Component {
         return issues;
     }
 
-    get issuesByTab() {
-        return this.issues.reduce((map, issue) => {
-            map[issue.tab] = (map[issue.tab] ?? 0) + 1;
-            return map;
-        }, {});
-    }
-
-    get detailIssueMessages() {
-        return this.issues.filter((issue) => issue.tab === 'details').map((issue) => issue.message);
-    }
-
-    get tabs() {
-        const counts = {
-            details: null,
-            variants: this.variantsCount + this.addonCategoriesCount || null,
-            availability: this.product?.hours?.length || null,
-            media: this.mediaCount || null,
-        };
-
-        return TABS.map((id) => ({
-            id,
-            label: this.intl.t(`storefront.products.form.tabs.${id}`),
-            count: counts[id],
-            issues: this.issuesByTab[id] ?? 0,
-            isActive: id === this.activeTab,
-        }));
-    }
+    /** Issue messages for one section, shown at its top. */
+    issuesFor = (section) =>
+        (this.product?.isNew && !this.saveAttempted ? [] : this.issues).filter((issue) => (SECTION_FOR_FIELD[issue.field] ?? 'product') === section).map((issue) => issue.message);
 
     get dirtyCount() {
         const product = this.product;
@@ -140,8 +120,9 @@ export default class StorefrontProductFormComponent extends Component {
         return this.dirtyCount > 0;
     }
 
-    @action selectTab(tab) {
-        this.activeTab = tab.id ?? tab;
+    @action save(...args) {
+        this.saveAttempted = true;
+        return this.args.onSave?.(...args);
     }
 
     @action toggleMore() {
@@ -149,6 +130,7 @@ export default class StorefrontProductFormComponent extends Component {
     }
 
     @action jumpToIssue(issue) {
-        this.activeTab = issue.tab;
+        const section = SECTION_FOR_FIELD[issue?.field] ?? 'product';
+        document.getElementById(`product-section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }

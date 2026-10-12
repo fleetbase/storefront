@@ -1261,6 +1261,23 @@ storefront:
       move-title: "Move {count, plural, one {# product} other {# products}} to a category"
       moved: "{count, plural, one {# product moved} other {# products moved}} to {category}."
       delete-title: "Delete {count, plural, one {# product} other {# products}}?"
+    addons:
+      title: Add-ons
+      subtitle: Reusable groups customers pick from at checkout, such as toppings or sides.
+      groups: Groups
+      new-group: New group
+      untitled-group: Untitled group
+      group-name: Group name
+      delete-group: Delete group
+      delete-group-title: "Delete {name}?"
+      delete-group-body: Its add-ons are removed from every product that uses this group.
+      name: Name
+      description: Description
+      add-addon: Add an add-on
+      no-addons: No add-ons in this group yet.
+      no-groups: No groups yet.
+      pick-group: Create a group to start adding add-ons.
+      saved: Add-ons saved.
     form:
       add-metafield: Add metafield
       actions:
@@ -1275,9 +1292,10 @@ storefront:
         availability: Availability
         media: Media
       sections:
+        organization: Organization
         product: Product
         pricing: Pricing
-        flags: Storefront flags
+        flags: Visibility
         videos: YouTube videos
         media: Images and videos
         variants: Variants
@@ -1307,9 +1325,27 @@ storefront:
         on-sale: On sale, shows the sale price
         recommended: Recommended, pinned at the top of its category
         available: Available to order
+      status-help: Drafts stay hidden from the app until they are published.
+      hours-hint: When the product can be ordered; empty means whenever the store is open.
+      variants:
+        hint: Required or optional choices such as size, each option adding to the price.
+        new-option: "New {name} option"
+        add-option: Add option
+        required: Required
+        multiple: Pick several
+        none: No variants. Add one for choices like size or flavour.
+        option-name: Option name
+        option-description: Option description
+      addons:
+        hint: Reusable add-on groups; untick an add-on to hide it for this product.
+        no-description: No description
+        group-empty: No add-ons in this group yet.
+        none: No add-on groups attached.
       more: More
       more-subtitle: "translations ({translations}), metadata ({metadata} keys)"
       needs-attention: "{count, plural, one {# field needs attention} other {# fields need attention}}"
+      create: Create product
+      creating: Creating the product...
       save: Save changes
       issues:
         name: Give the product a name.

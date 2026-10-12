@@ -1,4 +1,4 @@
-<Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="640px" @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+<Overlay @position="right" @noBackdrop={{true}} @isResizable={{true}} @width="min(1040px, calc(100vw - 8rem))" @minResizeWidth={{760}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
     <Overlay::Header @onPressCancel={{this.transitionBack}} class="storefront-product-form__header" @actionsWrapperClass="storefront-product-form__header-actions">
         <:default>
             <div class="min-w-0">
@@ -8,12 +8,9 @@
                 {{/unless}}
             </div>
         </:default>
-        <:actions>
-            <Select class="form-select form-input-sm storefront-product-form__status" @value={{this.product.status}} @placeholder={{t "storefront.common.status"}} @options={{this.statusOptions}} @onSelect={{fn (mut this.product.status)}} @humanize={{true}} data-test-product-status />
-        </:actions>
     </Overlay::Header>
 
-    <Overlay::Body class="storefront-overlay-body">
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-product-editor-shell">
         <Storefront::Product::Form
             @product={{this.product}}
             @activeStore={{this.activeStore}}
@@ -41,6 +38,5 @@
             @saveText={{this.overlayActionButtonTitle}}
             @saveIcon={{this.overlayActionButtonIcon}}
         />
-        <Spacer @height="120px" />
     </Overlay::Body>
 </Overlay>

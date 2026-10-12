@@ -1,8 +1,5 @@
-<ContentPanel @title={{t "storefront.products.form.sections.videos"}} @open={{true}} @wrapperClass="bordered-top">
-    <p class="text-sm">Add YouTube video urls to associate with this product or service.</p>
-    <div class="input-group">
-        <ArrayInput @data={{@product.youtube_urls}} @placeholder={{t "storefront.products.form.fields.video-placeholder"}} @onDataChanged={{fn (mut @product.youtube_urls)}} @disabled={{@disabled}}>
-            <InputLabel @labelText={{t "storefront.products.form.fields.video-urls"}} @helpText={{t "storefront.products.form.fields.video-urls-help"}} />
-        </ArrayInput>
-    </div>
-</ContentPanel>
+<div class="input-group">
+    <ArrayInput @data={{@product.youtube_urls}} @placeholder={{t "storefront.products.form.fields.video-placeholder"}} @onDataChanged={{fn (mut @product.youtube_urls)}} @disabled={{@disabled}}>
+        <InputLabel @labelText={{t "storefront.products.form.fields.video-urls"}} @helpText={{t "storefront.products.form.fields.video-urls-help"}} />
+    </ArrayInput>
+</div>

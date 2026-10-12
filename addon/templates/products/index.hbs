@@ -65,3 +65,7 @@
         {{outlet}}
     </div>
 </Layout::Section::Body>
+
+{{#if this.addonsPanelOpen}}
+    <Storefront::Product::AddonsPanel @store={{this.activeStore}} @onClose={{this.closeAddons}} />
+{{/if}}

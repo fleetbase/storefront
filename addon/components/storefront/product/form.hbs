@@ -1,74 +1,160 @@
-<div class="storefront-product-form" data-test-storefront-product-form>
+<div class="storefront-product-editor" data-test-storefront-product-form>
     {{#let (cannot @permission) as |unauthorized|}}
-        <div class="storefront-status-tabs storefront-product-form__tabs" role="tablist" data-test-product-form-tabs>
-            {{#each this.tabs as |tab|}}
-                <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectTab tab)}} data-test-product-form-tab={{tab.id}}>
-                    <span>{{tab.label}}</span>
-                    {{#if tab.issues}}
-                        <span class="storefront-status-tab__count storefront-status-tab__count--issue" title={{t "storefront.products.form.needs-attention" count=tab.issues}}>{{tab.issues}}</span>
-                    {{else if tab.count}}
-                        <span class="storefront-status-tab__count">{{tab.count}}</span>
-                    {{/if}}
+        <div class="storefront-product-editor__main">
+            <section class="storefront-create-order__sec" id="product-section-product" data-test-product-section="product">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.sections.product"}}</h3>
+                {{#each (this.issuesFor "product") as |message|}}
+                    <div class="storefront-product-editor__issue" role="alert"><FaIcon @icon="triangle-exclamation" @size="xs" />{{message}}</div>
+                {{/each}}
+                <div class="storefront-create-order__field">
+                    <label class="storefront-create-order__label" for="product-name">{{t "storefront.products.form.fields.name"}} <span class="text-red-500">*</span></label>
+                    <Input id="product-name" class="form-input w-full" @value={{@product.name}} disabled={{unauthorized}} data-test-product-name-input />
+                </div>
+                <div class="storefront-create-order__field">
+                    <label class="storefront-create-order__label" for="product-description">{{t "storefront.products.form.fields.description"}}</label>
+                    <Textarea id="product-description" class="form-input w-full" rows="4" @value={{@product.description}} placeholder={{t "storefront.products.form.fields.description-placeholder"}} disabled={{unauthorized}} />
+                </div>
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-media" data-test-product-section="media">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.sections.media"}}{{#if this.mediaCount}}<span class="storefront-status-tab__count">{{this.mediaCount}}</span>{{/if}}</h3>
+                {{#each (this.issuesFor "media") as |message|}}
+                    <div class="storefront-product-editor__issue" role="alert"><FaIcon @icon="triangle-exclamation" @size="xs" />{{message}}</div>
+                {{/each}}
+                <Storefront::Product::Form::Media
+                    @product={{@product}}
+                    @acceptedFileTypes={{@acceptedFileTypes}}
+                    @uploadQueue={{@uploadQueue}}
+                    @queueFile={{@queueFile}}
+                    @removeFile={{@removeFile}}
+                    @makePrimaryFile={{@makePrimaryFile}}
+                    @disabled={{unauthorized}}
+                />
+                <Storefront::Product::Form::Videos @product={{@product}} @disabled={{unauthorized}} />
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-pricing" data-test-product-section="pricing">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.sections.pricing"}}</h3>
+                {{#each (this.issuesFor "pricing") as |message|}}
+                    <div class="storefront-product-editor__issue" role="alert"><FaIcon @icon="triangle-exclamation" @size="xs" />{{message}}</div>
+                {{/each}}
+                <div class="storefront-product-editor__grid-3">
+                    <div class="storefront-create-order__field">
+                        <span class="storefront-create-order__label">{{t "storefront.products.form.fields.price"}} <span class="text-red-500">*</span></span>
+                        <MoneyInput class="w-full" @currency={{or @product.currency @activeStore.currency}} @value={{@product.price}} @canSelectCurrency={{false}} @onCurrencyChange={{fn (mut @product.currency)}} @disabled={{unauthorized}} />
+                        <p class="storefront-create-order__help">{{t "storefront.products.form.fields.price-help"}}</p>
+                    </div>
+                    <div class="storefront-create-order__field">
+                        <span class="storefront-create-order__label">{{t "storefront.products.form.fields.sale-price"}}</span>
+                        <MoneyInput class="w-full" @currency={{or @product.currency @activeStore.currency}} @value={{@product.sale_price}} @canSelectCurrency={{false}} @onCurrencyChange={{fn (mut @product.currency)}} @disabled={{unauthorized}} />
+                        <p class="storefront-create-order__help">{{t "storefront.products.form.fields.sale-price-help"}}</p>
+                    </div>
+                    <div class="storefront-create-order__field">
+                        <label class="storefront-create-order__label" for="product-sku">{{t "storefront.products.form.fields.sku"}}</label>
+                        <Input id="product-sku" class="form-input w-full" @value={{@product.sku}} disabled={{unauthorized}} />
+                        <p class="storefront-create-order__help">{{t "storefront.products.form.fields.sku-help"}}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-variants" data-test-product-section="variants">
+                <h3 class="storefront-create-order__sec-title">
+                    {{t "storefront.products.form.sections.variants"}}{{#if this.variantsCount}}<span class="storefront-status-tab__count">{{this.variantsCount}}</span>{{/if}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.form.variants.hint"}}</span>
+                    <Button @text={{t "storefront.products.form.actions.new-variant"}} @icon="plus" @size="xs" @onClick={{@createProductVariant}} @permission="storefront create product-variant" @wrapperClass="ml-auto" data-test-new-variant />
+                </h3>
+                <Storefront::Product::Form::Variants
+                    @product={{@product}}
+                    @activeStore={{@activeStore}}
+                    @variantTabs={{@variantTabs}}
+                    @createProductVariant={{@createProductVariant}}
+                    @removeProductVariant={{@removeProductVariant}}
+                    @editProductVariant={{@editProductVariant}}
+                    @addVariantOption={{@addVariantOption}}
+                    @removeVariantOption={{@removeVariantOption}}
+                />
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-addons" data-test-product-section="addons">
+                <h3 class="storefront-create-order__sec-title">
+                    {{t "storefront.products.form.sections.addons"}}{{#if this.addonCategoriesCount}}<span class="storefront-status-tab__count">{{this.addonCategoriesCount}}</span>{{/if}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.form.addons.hint"}}</span>
+                    <Button @text={{t "storefront.products.form.actions.select-addon-categories"}} @icon="plus" @size="xs" @onClick={{perform @promptSelectAddonCategories}} @permission="storefront list product-addon" @wrapperClass="ml-auto" />
+                </h3>
+                <Storefront::Product::Form::Addons @product={{@product}} @promptSelectAddonCategories={{@promptSelectAddonCategories}} @removeAddonCategory={{@removeAddonCategory}} @excludeAddon={{@excludeAddon}} />
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-hours" data-test-product-section="hours">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.tabs.availability"}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.form.hours-hint"}}</span></h3>
+                <ScheduleManager @subject={{@product}} @subjectKey="product_uuid" @hourModelType="product-hour" @disabled={{unauthorized}} class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2" />
+            </section>
+
+            <section class="storefront-create-order__sec storefront-create-order__sec--last" id="product-section-more" data-test-product-section="more">
+                <button type="button" class="storefront-product-editor__more" aria-expanded={{if this.moreOpen "true" "false"}} {{on "click" this.toggleMore}} data-test-product-more>
+                    <FaIcon @icon={{if this.moreOpen "chevron-down" "chevron-right"}} @size="xs" />
+                    <span class="storefront-create-order__sec-title">{{t "storefront.products.form.more"}}</span>
+                    <span class="storefront-create-order__sec-hint">{{t "storefront.products.form.more-subtitle" translations=this.translationsCount metadata=this.metadataCount}}</span>
                 </button>
-            {{/each}}
+                {{#if this.moreOpen}}
+                    <Storefront::Product::Form::Translations @product={{@product}} @disabled={{unauthorized}} />
+                    <Storefront::Product::Form::Metadata @product={{@product}} />
+                {{/if}}
+            </section>
         </div>
 
-        {{#if (eq this.activeTab "details")}}
-            {{#if this.detailIssueMessages.length}}
-                <div class="storefront-product-form__issues" role="alert" data-test-product-form-issues>
-                    {{#each this.detailIssueMessages as |message|}}
-                        <div><FaIcon @icon="triangle-exclamation" @size="xs" class="mr-1" />{{message}}</div>
-                    {{/each}}
+        <aside class="storefront-create-order__summary storefront-product-editor__rail">
+            <section class="storefront-create-order__sec">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.common.status"}}</h3>
+                <Select class="form-select w-full" @value={{@product.status}} @placeholder={{t "storefront.common.status"}} @options={{@statusOptions}} @onSelect={{fn (mut @product.status)}} @humanize={{true}} @disabled={{unauthorized}} data-test-product-status />
+                <p class="storefront-create-order__help mt-0">{{t "storefront.products.form.status-help"}}</p>
+            </section>
+
+            <section class="storefront-create-order__sec" id="product-section-organization">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.sections.organization"}}</h3>
+                {{#each (this.issuesFor "organization") as |message|}}
+                    <div class="storefront-product-editor__issue" role="alert"><FaIcon @icon="triangle-exclamation" @size="xs" />{{message}}</div>
+                {{/each}}
+                <div class="storefront-create-order__field">
+                    <span class="storefront-create-order__label">{{t "storefront.products.form.fields.category"}}</span>
+                    <ModelSelect
+                        @modelName="category"
+                        @selectedModel={{@product.category}}
+                        @query={{hash for="storefront_product" owner_uuid=@activeStore.id}}
+                        @placeholder={{t "storefront.products.form.fields.category-placeholder"}}
+                        @triggerClass="form-select form-input"
+                        @infiniteScroll={{false}}
+                        @renderInPlace={{true}}
+                        @allowClear={{true}}
+                        @disabled={{unauthorized}}
+                        @onChange={{fn (mut @product.category)}}
+                        @onChangeId={{fn (mut @product.category_uuid)}}
+                        as |model|
+                    >
+                        {{model.name}}
+                    </ModelSelect>
                 </div>
-            {{/if}}
-            <Storefront::Product::Form::Basics
-                @product={{@product}}
-                @activeStore={{@activeStore}}
-                @statusOptions={{@statusOptions}}
-                @addTag={{@addTag}}
-                @removeTag={{@removeTag}}
-                @disabled={{unauthorized}}
-            />
-            <Storefront::Product::Form::Pricing @product={{@product}} @activeStore={{@activeStore}} @disabled={{unauthorized}} />
-            <Storefront::Product::Form::Flags @product={{@product}} @disabled={{unauthorized}} />
-            <ContentPanel @title={{t "storefront.products.form.more"}} @subtitle={{t "storefront.products.form.more-subtitle" translations=this.translationsCount metadata=this.metadataCount}} @open={{this.moreOpen}} @onClick={{this.toggleMore}} @wrapperClass="bordered-top" @pad={{false}}>
-                <Storefront::Product::Form::Translations @product={{@product}} @disabled={{unauthorized}} />
-                <Storefront::Product::Form::Metadata @product={{@product}} />
-            </ContentPanel>
-        {{else if (eq this.activeTab "variants")}}
-            <Storefront::Product::Form::Variants
-                @product={{@product}}
-                @activeStore={{@activeStore}}
-                @variantTabs={{@variantTabs}}
-                @createProductVariant={{@createProductVariant}}
-                @removeProductVariant={{@removeProductVariant}}
-                @editProductVariant={{@editProductVariant}}
-                @addVariantOption={{@addVariantOption}}
-                @removeVariantOption={{@removeVariantOption}}
-            />
-            <Storefront::Product::Form::Addons
-                @product={{@product}}
-                @promptSelectAddonCategories={{@promptSelectAddonCategories}}
-                @removeAddonCategory={{@removeAddonCategory}}
-                @excludeAddon={{@excludeAddon}}
-            />
-        {{else if (eq this.activeTab "availability")}}
-            <Storefront::Product::Form::Availability @product={{@product}} @disabled={{unauthorized}} />
-        {{else}}
-            <Storefront::Product::Form::Media
-                @product={{@product}}
-                @acceptedFileTypes={{@acceptedFileTypes}}
-                @uploadQueue={{@uploadQueue}}
-                @queueFile={{@queueFile}}
-                @removeFile={{@removeFile}}
-                @makePrimaryFile={{@makePrimaryFile}}
-                @disabled={{unauthorized}}
-            />
-            <Storefront::Product::Form::Videos @product={{@product}} @disabled={{unauthorized}} />
-        {{/if}}
+                <div class="storefront-create-order__field">
+                    <span class="storefront-create-order__label">{{t "storefront.products.form.fields.tags"}}</span>
+                    <TagInput class="form-input" @placeholder={{t "storefront.products.form.fields.tags-placeholder"}} @allowSpacesInTags={{true}} @tags={{@product.tags}} @addTag={{@addTag}} @removeTagAtIndex={{@removeTag}} @disabled={{unauthorized}} as |tag|>
+                        {{tag}}
+                    </TagInput>
+                </div>
+            </section>
+
+            <section class="storefront-create-order__sec storefront-create-order__sec--grow">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.form.sections.flags"}}</h3>
+                <div class="storefront-product-editor__toggles">
+                    <Toggle @isToggled={{@product.is_available}} @onToggle={{fn (mut @product.is_available)}} @disabled={{unauthorized}} @label={{t "storefront.products.form.flags.available"}} />
+                    <Toggle @isToggled={{@product.is_on_sale}} @onToggle={{fn (mut @product.is_on_sale)}} @disabled={{unauthorized}} @label={{t "storefront.products.form.flags.on-sale"}} />
+                    <Toggle @isToggled={{@product.is_recommended}} @onToggle={{fn (mut @product.is_recommended)}} @disabled={{unauthorized}} @label={{t "storefront.products.form.flags.recommended"}} />
+                    <Toggle @isToggled={{@product.is_service}} @onToggle={{fn (mut @product.is_service)}} @disabled={{unauthorized}} @label={{t "storefront.products.form.flags.service"}} />
+                    {{#if @product.is_service}}
+                        <Toggle @isToggled={{@product.is_bookable}} @onToggle={{fn (mut @product.is_bookable)}} @disabled={{unauthorized}} @label={{t "storefront.products.form.flags.bookable"}} />
+                    {{/if}}
+                </div>
+            </section>
+        </aside>
 
         {{#if @onSave}}
-            <div class="storefront-save-bar storefront-product-form__save-bar {{if this.isDirty 'is-dirty'}}" data-test-product-save-bar>
+            <div class="storefront-save-bar storefront-product-editor__save-bar {{if this.isDirty 'is-dirty'}}" data-test-product-save-bar>
                 <div class="storefront-save-bar__status">
                     {{#if this.isDirty}}
                         <FaIcon @icon="circle" @size="xs" class="text-amber-500 mr-2" />
@@ -85,7 +171,7 @@
                     {{#if @onDiscard}}
                         <Button @text={{t "storefront.settings.save-bar.discard"}} @disabled={{not this.isDirty}} @onClick={{@onDiscard}} />
                     {{/if}}
-                    <Button @type="primary" @icon={{or @saveIcon "save"}} @text={{or @saveText (t "storefront.products.form.save")}} @isLoading={{@isSaving}} @disabled={{unauthorized}} @onClick={{@onSave}} @permission={{@permission}} data-test-product-save />
+                    <Button @type="primary" @icon={{or @saveIcon "save"}} @text={{or @saveText (t "storefront.products.form.save")}} @isLoading={{@isSaving}} @disabled={{unauthorized}} @onClick={{this.save}} @permission={{@permission}} data-test-product-save />
                 </div>
             </div>
         {{/if}}

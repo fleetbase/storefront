@@ -1,78 +1,31 @@
-<ContentPanel @title={{t "storefront.products.form.sections.variants"}} @open={{true}} @wrapperClass="bordered-top" @panelBodyWrapperClass="px-0i">
-    <TabNavigation @tabs={{@variantTabs}}>
-        <:actions>
-            <Button @text={{t "storefront.products.form.actions.new-variant"}} @size="xs" @icon="plus" @iconPrefix="fas" @onClick={{@createProductVariant}} @permission="storefront create product-variant" />
-        </:actions>
-        <:default as |activeTab|>
-            {{#let activeTab.variant as |variant|}}
-                <div class="storefront-product-variant-panel">
-                    <div class="storefront-product-variant-panel__actions">
-                        <Button
-                            class="mr-2"
-                            @type="danger"
-                            @size="xs"
-                            @text={{t "storefront.products.form.actions.remove-variant"}}
-                            @icon="trash"
-                            @onClick={{fn @removeProductVariant variant}}
-                            @permission="storefront delete product-variant"
-                        />
-                        <Button
-                            class="mr-2"
-                            @type="warning"
-                            @size="xs"
-                            @text={{t "storefront.products.form.actions.edit-variant"}}
-                            @icon="pencil"
-                            @onClick={{fn @editProductVariant variant}}
-                            @permission="storefront update product-variant"
-                        />
-                        <Button
-                            @text={{concat "New " (lowercase variant.name) " option"}}
-                            @icon="plus"
-                            @size="xs"
-                            @iconPrefix="fas"
-                            @onClick={{fn @addVariantOption variant}}
-                            @permission="storefront create product-variant-option"
-                        />
-                    </div>
-                    <div class="storefront-product-variant-options">
-                        {{#each variant.options as |variantOption index|}}
-                            <div class="storefront-product-variant-option-row">
-                                <Input
-                                    @type="text"
-                                    @value={{variantOption.name}}
-                                    class="form-input w-full"
-                                    placeholder="Option Name"
-                                    disabled={{cannot "storefront update product-variant-option"}}
-                                />
-                                <Input
-                                    @type="text"
-                                    @value={{variantOption.description}}
-                                    class="form-input w-full"
-                                    placeholder="Option Description"
-                                    disabled={{cannot "storefront update product-variant-option"}}
-                                />
-                                <MoneyInput
-                                    class="w-full"
-                                    @currency={{if @product.currency @product.currency @activeStore.currency}}
-                                    @canSelectCurrency={{false}}
-                                    @value={{variantOption.additional_cost}}
-                                    @disabled={{cannot "storefront update product-variant-option"}}
-                                />
-                                <Button
-                                    @type="danger"
-                                    @size="xs"
-                                    @text={{t "common.remove"}}
-                                    @icon="trash"
-                                    @onClick={{fn @removeVariantOption variant index}}
-                                    @permission="storefront delete product-variant-option"
-                                />
-                            </div>
-                        {{else}}
-                            <div class="storefront-product-addon-empty">{{t "storefront.products.form.fields.no-options"}}</div>
-                        {{/each}}
-                    </div>
+{{! Each variant is a compact block: its name and rules, then one row per option. }}
+<div class="storefront-product-variants" data-test-product-variants>
+    {{#each @product.variants as |variant|}}
+        <div class="storefront-product-variant" data-test-product-variant={{variant.name}}>
+            <div class="storefront-product-variant__head">
+                <div class="storefront-product-variant__name">
+                    <strong>{{n-a variant.name}}</strong>
+                    {{#if variant.is_required}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.form.variants.required"}} />{{/if}}
+                    {{#if variant.is_multiselect}}<Badge @status="default" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.form.variants.multiple"}} />{{/if}}
                 </div>
-            {{/let}}
-        </:default>
-    </TabNavigation>
-</ContentPanel>
+                <div class="storefront-card__buttons">
+                    <Button @size="xs" @icon="plus" @text={{t "storefront.products.form.variants.add-option"}} @onClick={{fn @addVariantOption variant}} @permission="storefront create product-variant-option" />
+                    <Button @size="xs" @icon="pencil" @helpText={{t "storefront.products.form.actions.edit-variant"}} @onClick={{fn @editProductVariant variant}} @permission="storefront update product-variant" />
+                    <Button @size="xs" @type="danger" @icon="trash" @helpText={{t "storefront.products.form.actions.remove-variant"}} @onClick={{fn @removeProductVariant variant}} @permission="storefront delete product-variant" />
+                </div>
+            </div>
+            {{#each variant.options as |variantOption index|}}
+                <div class="storefront-product-variant__option">
+                    <Input @type="text" @value={{variantOption.name}} class="form-input form-input-sm w-full" placeholder={{t "storefront.products.form.variants.option-name"}} aria-label={{t "storefront.products.form.variants.option-name"}} disabled={{cannot "storefront update product-variant-option"}} />
+                    <Input @type="text" @value={{variantOption.description}} class="form-input form-input-sm w-full" placeholder={{t "storefront.products.form.variants.option-description"}} aria-label={{t "storefront.products.form.variants.option-description"}} disabled={{cannot "storefront update product-variant-option"}} />
+                    <MoneyInput class="w-full" @currency={{or @product.currency @activeStore.currency}} @canSelectCurrency={{false}} @value={{variantOption.additional_cost}} @disabled={{cannot "storefront update product-variant-option"}} />
+                    <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} @onClick={{fn @removeVariantOption variant index}} @permission="storefront delete product-variant-option" />
+                </div>
+            {{else}}
+                <div class="storefront-product-variant__empty">{{t "storefront.products.form.fields.no-options"}}</div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="storefront-product-editor__empty">{{t "storefront.products.form.variants.none"}}</div>
+    {{/each}}
+</div>

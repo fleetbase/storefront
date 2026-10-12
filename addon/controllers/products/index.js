@@ -371,14 +371,15 @@ export default class ProductsIndexController extends BaseController {
      *
      * @memberof ProductsIndexController
      */
+    /** Whether the add-ons panel is open. */
+    @tracked addonsPanelOpen = false;
+
     @action manageAddons() {
-        this.modalsManager.show('modals/manage-addons', {
-            title: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-title'),
-            acceptButtonText: this.intl.t('storefront.products.index.manage-addons-dialog.manage-addons-accept-button'),
-            acceptButtonIcon: 'save',
-            modalClass: 'modal-lg',
-            store: this.activeStore,
-        });
+        this.addonsPanelOpen = true;
+    }
+
+    @action closeAddons() {
+        this.addonsPanelOpen = false;
     }
 
     @action viewAllProducts() {
