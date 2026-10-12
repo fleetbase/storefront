@@ -7,57 +7,88 @@
 <Layout::Section::Body class="overflow-y-scroll-i h-full">
     <Storefront::Promotions::HubTabs />
 
-    {{#if this.rows.length}}
-        {{#if this.isCards}}
-            <div class="storefront-promotions-hub__cards-toolbar px-5 pt-4">
-                <div class="storefront-status-tabs" role="tablist" data-test-promotion-status-tabs>
-                    {{#each this.tabs as |tab|}}
-                        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>{{tab.label}}</button>
-                    {{/each}}
-                </div>
+    {{#if this.isCards}}
+        <div class="storefront-promotions-hub__cards-toolbar px-5 pt-4">
+            <div class="storefront-status-tabs" role="tablist" data-test-promotion-status-tabs>
+                {{#each this.tabs as |tab|}}
+                    <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                        <span>{{tab.label}}</span>
+                        {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+                    </button>
+                {{/each}}
             </div>
+        </div>
+        {{#if this.rows.length}}
             <Layout::Resource::CardsGrid @resource="promotion" @data={{this.rows}} @columns="3" @containerClass="p-5" @showPagination={{true}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @paginationMeta={{@model.meta}} class="h-full" as |Item|>
                 <Storefront::Promotion::Card @promotion={{Item.model}} @onEdit={{this.editPromotion}} @actions={{this.cardActions}} />
             </Layout::Resource::CardsGrid>
         {{else}}
-            <div class="storefront-table-card" data-test-promotions-table-card>
-                <div class="storefront-table-card__toolbar">
-                    <div class="storefront-status-tabs" role="tablist" data-test-promotion-status-tabs>
-                        {{#each this.tabs as |tab|}}
-                            <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>{{tab.label}}</button>
-                        {{/each}}
-                    </div>
-                </div>
-                {{#if this.hasSelection}}
-                    <div class="storefront-table-card__bulk" data-test-promotion-bulk-bar>
-                        <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selectedPromotions.length}}</span>
-                        <Button @size="xs" @icon="pause" @text={{t "storefront.promotions.list.pause"}} @onClick={{fn this.bulkSetStatus "paused"}} @permission="storefront update promotion" />
-                        <Button @size="xs" @icon="play" @text={{t "storefront.promotions.list.activate"}} @onClick={{fn this.bulkSetStatus "active"}} @permission="storefront update promotion" />
-                        <Button @size="xs" @type="danger" @icon="stop" @text={{t "storefront.promotions.list.end"}} @onClick={{fn this.bulkSetStatus "ended"}} @permission="storefront update promotion" />
-                        <a href="javascript:;" class="storefront-table-card__bulk-clear" {{on "click" this.clearSelection}}>{{t "storefront.networks.invitations.clear"}}</a>
+            <div class="px-5 py-4">
+                {{#if this.hasAny}}
+                    <div class="storefront-panel-sections__empty storefront-promotions-hub__empty" data-test-promotions-filter-empty>{{t "storefront.promotions.list.none-with-status" status=this.activeTabLabel}}</div>
+                {{else}}
+                    <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                            <FaIcon @icon="tags" @size="lg" />
+                        </div>
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{if this.query (t "storefront.promotions.common.no-results") (t "storefront.promotions.list.empty-title")}}</h3>
+                        <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{if this.query (t "storefront.promotions.common.no-results-help") (t "storefront.promotions.list.empty-help")}}</p>
+                        {{#if this.query}}
+                            <Button @size="sm" @icon="arrow-left" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
+                        {{else}}
+                            <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
+                        {{/if}}
                     </div>
                 {{/if}}
-                <Table @wrapperClass="storefront-table-card__table" @rows={{this.rows}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
-                <div class="storefront-table-card__footer">
-                    <span class="storefront-table-card__note"></span>
-                    <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
-                </div>
             </div>
         {{/if}}
     {{else}}
-        <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
-            <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                <FaIcon @icon="tags" @size="lg" />
+        <div class="storefront-table-card" data-test-promotions-table-card>
+            <div class="storefront-table-card__toolbar">
+                <div class="storefront-status-tabs" role="tablist" data-test-promotion-status-tabs>
+                    {{#each this.tabs as |tab|}}
+                        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                            <span>{{tab.label}}</span>
+                            {{#if tab.count}}<span class="storefront-status-tab__count">{{tab.count}}</span>{{/if}}
+                        </button>
+                    {{/each}}
+                </div>
             </div>
-            {{#if (or this.query this.status (gt this.page 1))}}
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.common.no-results"}}</h3>
-                <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.common.no-results-help"}}</p>
-                <Button @size="sm" @icon="arrow-left" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
-            {{else}}
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{t "storefront.promotions.list.empty-title"}}</h3>
-                <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{t "storefront.promotions.list.empty-help"}}</p>
-                <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
+            {{#if this.hasSelection}}
+                <div class="storefront-table-card__bulk" data-test-promotion-bulk-bar>
+                    <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selectedPromotions.length}}</span>
+                    <Button @size="xs" @icon="pause" @text={{t "storefront.promotions.list.pause"}} @onClick={{fn this.bulkSetStatus "paused"}} @permission="storefront update promotion" />
+                    <Button @size="xs" @icon="play" @text={{t "storefront.promotions.list.activate"}} @onClick={{fn this.bulkSetStatus "active"}} @permission="storefront update promotion" />
+                    <Button @size="xs" @type="danger" @icon="stop" @text={{t "storefront.promotions.list.end"}} @onClick={{fn this.bulkSetStatus "ended"}} @permission="storefront update promotion" />
+                    <a href="javascript:;" class="storefront-table-card__bulk-clear" {{on "click" this.clearSelection}}>{{t "storefront.networks.invitations.clear"}}</a>
+                </div>
             {{/if}}
+            {{#if this.rows.length}}
+                <Table @wrapperClass="storefront-table-card__table" @rows={{this.rows}} @columns={{this.registeredColumns}} @selectable={{true}} @canSelectAll={{true}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
+            {{else}}
+                <div class="px-4 py-3">
+                {{#if this.hasAny}}
+                    <div class="storefront-panel-sections__empty storefront-promotions-hub__empty" data-test-promotions-filter-empty>{{t "storefront.promotions.list.none-with-status" status=this.activeTabLabel}}</div>
+                {{else}}
+                    <div class="flex flex-col items-center justify-center px-4 py-12 text-center">
+                        <div class="flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                            <FaIcon @icon="tags" @size="lg" />
+                        </div>
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{if this.query (t "storefront.promotions.common.no-results") (t "storefront.promotions.list.empty-title")}}</h3>
+                        <p class="max-w-md mt-2 mb-4 text-sm text-gray-500 dark:text-gray-400">{{if this.query (t "storefront.promotions.common.no-results-help") (t "storefront.promotions.list.empty-help")}}</p>
+                        {{#if this.query}}
+                            <Button @size="sm" @icon="arrow-left" @text={{t "storefront.promotions.common.reset-filters"}} @onClick={{this.resetFilters}} />
+                        {{else}}
+                            <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.promotions.list.new-promotion"}} @onClick={{this.createPromotion}} @permission="storefront create promotion" />
+                        {{/if}}
+                    </div>
+                {{/if}}
+                </div>
+            {{/if}}
+            <div class="storefront-table-card__footer">
+                <span class="storefront-table-card__note"></span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
         </div>
     {{/if}}
 </Layout::Section::Body>

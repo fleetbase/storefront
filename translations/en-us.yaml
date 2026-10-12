@@ -1733,6 +1733,7 @@ storefront:
       sent: Sent
       canceled: Canceled
     list:
+      none-with-status: "No {status} promotions."
       bulk-updated: "{count, plural, one {# promotion updated.} other {# promotions updated.}}"
       tab-title: Promotions
       header: Promotions

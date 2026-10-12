@@ -25,21 +25,45 @@ export default class PromotionsIndexController extends BaseController {
     statusTabs = ['all', 'active', 'scheduled', 'paused', 'ended', 'draft'];
 
     get activeStatusTab() {
-        if (this.status === 'active' && this.scheduledOnly) {
-            return 'scheduled';
-        }
-
         return this.status ?? 'all';
     }
 
-    @tracked _scheduledOnly = false;
+    /** Which tab a promotion falls under; scheduled is an active promotion that has not started. */
+    tabOf(promotion) {
+        const status = promotion?.status;
 
-    get scheduledOnly() {
-        return this._scheduledOnly;
+        if (status === 'active' && promotion.starts_at && new Date(promotion.starts_at) > new Date()) {
+            return 'scheduled';
+        }
+
+        return status;
+    }
+
+    get allRows() {
+        return this.model?.toArray?.() ?? Array.from(this.model ?? []);
+    }
+
+    get hasAny() {
+        return this.allRows.length > 0;
     }
 
     get tabs() {
-        return this.statusTabs.map((id) => ({ id, label: this.intl.t(`storefront.promotions.statuses.${id}`), isActive: id === this.activeStatusTab }));
+        const counts = this.allRows.reduce((map, promotion) => {
+            const tab = this.tabOf(promotion);
+            map[tab] = (map[tab] ?? 0) + 1;
+            return map;
+        }, {});
+
+        return this.statusTabs.map((id) => ({
+            id,
+            label: this.intl.t(`storefront.promotions.statuses.${id}`),
+            count: id === 'all' ? this.allRows.length : (counts[id] ?? 0),
+            isActive: id === this.activeStatusTab,
+        }));
+    }
+
+    get activeTabLabel() {
+        return this.intl.t(`storefront.promotions.statuses.${this.activeStatusTab}`).toLowerCase();
     }
 
     get isCards() {
@@ -47,18 +71,13 @@ export default class PromotionsIndexController extends BaseController {
     }
 
     /**
-     * The page's promotions; the Scheduled tab narrows active ones to those not yet started.
+     * The promotions on the selected tab. The hub loads the owner's promotions once and the
+     * tabs filter them here, so switching tabs is instant and never empties the page.
      */
     get rows() {
-        const rows = this.model?.toArray?.() ?? Array.from(this.model ?? []);
+        const tab = this.activeStatusTab;
 
-        if (this.activeStatusTab === 'scheduled') {
-            const now = new Date();
-
-            return rows.filter((promotion) => promotion.starts_at && new Date(promotion.starts_at) > now);
-        }
-
-        return rows;
+        return tab === 'all' ? this.allRows : this.allRows.filter((promotion) => this.tabOf(promotion) === tab);
     }
 
     get cardActions() {
@@ -233,9 +252,7 @@ export default class PromotionsIndexController extends BaseController {
 
     @action selectStatusTab(tab) {
         const id = tab.id ?? tab;
-        this._scheduledOnly = id === 'scheduled';
-        this.status = id === 'all' ? null : id === 'scheduled' ? 'active' : id;
-        this.page = 1;
+        this.status = id === 'all' ? null : id;
     }
 
     @action setView(view) {
