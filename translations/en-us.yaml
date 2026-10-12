@@ -343,7 +343,8 @@ storefront:
       no-categories: No categories for this network
       create-category: Create a new category
     schedule-manager:
-      add-hours: Add Hours
+      add-hours: Add hours
+      no-hours: No hours
       add-new-hours-for-day: Add new hours for {day}
       new-hours-added-for-day: New hours added for {day}
       you-wish-to-remove-these-hour: Are you sure you wish to remove these hours?
@@ -1323,13 +1324,16 @@ storefront:
         media: Images and videos
         variants: Variants
         addons: Add-ons
+        translations: Translations
       fields:
         name: Name
+        name-placeholder: What the product is called in the app, for example Margherita pizza
         description: Description
         description-placeholder: What the customer reads in the app
         category: Category
         category-placeholder: Select a category
         sku: SKU
+        sku-placeholder: For example PIZ-MARG-12
         sku-help: Optional; shown on order lines and exports.
         tags: Tags
         tags-placeholder: Add tags
@@ -1337,7 +1341,7 @@ storefront:
         price-help: What the customer pays for one unit.
         sale-price: Sale price
         sale-price-help: Charged instead of the price while the product is on sale.
-        video-placeholder: Enter a YouTube video URL
+        video-placeholder: https://www.youtube.com/watch?v=...
         video-urls: YouTube video URLs
         video-urls-help: Videos shown on the product in the app.
         no-options: No options in this variant.
@@ -1349,7 +1353,8 @@ storefront:
         recommended: Recommended, pinned at the top of its category
         available: Available to order
       status-help: Drafts stay hidden from the app until they are published.
-      hours-hint: When the product can be ordered; empty means whenever the store is open.
+      hours-hint: When the product can be ordered.
+      hours-empty: No hours set, so the product can be ordered whenever the store is open.
       variants:
         hint: Required or optional choices such as size, each option adding to the price.
         new-option: "New {name} option"
@@ -1359,13 +1364,38 @@ storefront:
         none: No variants. Add one for choices like size or flavour.
         option-name: Option name
         option-description: Option description
+        option: Option
+        extra-cost: Extra cost
+        optional: Optional
+        pick-one: Pick one
+        options-count: "{count, plural, =0 {no options} one {# option} other {# options}}"
+        edit: Edit variant
+        remove: Remove variant
+      videos:
+        add: Add video
+        invalid: Not a YouTube link; paste a watch, share or shorts link.
       addons:
         hint: Reusable add-on groups; untick an add-on to hide it for this product.
         no-description: No description
         group-empty: No add-ons in this group yet.
         none: No add-on groups attached.
+        offered: "{offered} of {total} offered"
+        hidden: Hidden
+        remove-group: Remove group
       more: More
       more-subtitle: "translations ({translations}), metadata ({metadata} keys)"
+      metadata: Metadata
+      metadata-subtitle: "{count, plural, =0 {no keys} one {# key} other {# keys}} for integrations"
+      translations:
+        hint: The name and description in other languages; the app shows the customer's language when it exists.
+        add-language: Add language
+        remove-language: "Remove {language}"
+        placeholder: Same as the original
+        custom-fields: Custom fields
+        new-field: New field key, for example ingredients
+        add-field: Add field
+        help: An empty field shows the original text in the app.
+        none: Not translated yet. Add a language to translate the name and description.
       needs-attention: "{count, plural, one {# field needs attention} other {# fields need attention}}"
       create: Create product
       creating: Creating the product...

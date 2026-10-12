@@ -160,7 +160,7 @@
             <div class="storefront-catalog-editor__panel">
                 <p class="storefront-settings-section__lede">{{t "storefront.catalogs.editor.hours-lede"}}</p>
                 <Storefront::HoursStrip @hours={{this.hours}} class="mb-4" />
-                <ScheduleManager @subject={{this.catalog}} @subjectKey="catalog_uuid" @hourModelType="catalog-hour" class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-2" />
+                <ScheduleManager @subject={{this.catalog}} @subjectKey="catalog_uuid" @hourModelType="catalog-hour" />
             </div>
         {{else if (eq this.activeSection "served-by")}}
             <div class="storefront-catalog-editor__panel">

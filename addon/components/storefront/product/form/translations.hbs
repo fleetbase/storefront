@@ -1,8 +1,88 @@
-<InputGroup>
-    <TranslationsEditor
-        @value={{@product.translations}}
-        @defaultKeys={{array "name" "description"}}
-        @onChange={{fn (mut @product.translations)}}
-        @disabled={{@disabled}}
-    />
-</InputGroup>
+{{! The product in other languages: a chip per language, then that language's name and description
+    beside the original, then any custom fields. Empty fields fall back to the original in the app. }}
+<div class="storefront-product-translations" data-test-product-translations>
+    <div class="storefront-product-translations__languages">
+        {{#each @languages as |language|}}
+            <span class="storefront-product-translations__language {{if language.isActive 'is-active'}}" data-test-translation-language={{language.code}}>
+                <button type="button" {{on "click" (fn @onSelect language.code)}}>
+                    {{language.label}}
+                    <span class="storefront-product-translations__code">{{language.code}}</span>
+                </button>
+                {{#unless @disabled}}
+                    <button type="button" class="storefront-product-translations__remove" aria-label={{t "storefront.products.form.translations.remove-language" language=language.label}} {{on "click" (fn @onRemove language.code)}}>
+                        <FaIcon @icon="times" @size="xs" />
+                    </button>
+                {{/unless}}
+            </span>
+        {{/each}}
+        {{#unless @disabled}}
+            <div class="storefront-product-translations__add">
+                <select class="form-select form-select-sm" aria-label={{t "storefront.products.form.translations.add-language"}} {{on "change" @onAdd}} data-test-translation-add-language>
+                    <option value="" selected>{{t "storefront.products.form.translations.add-language"}}</option>
+                    {{#each @languageOptions as |language|}}
+                        <option value={{language.value}}>{{language.label}}</option>
+                    {{/each}}
+                </select>
+            </div>
+        {{/unless}}
+    </div>
+
+    {{#if @languages.length}}
+        <div class="storefront-product-translations__fields">
+            {{#each @fields.standard as |field|}}
+                <div class="storefront-create-order__field">
+                    <label class="storefront-create-order__label" for="product-translation-{{field.key}}">{{t (concat "storefront.products.form.fields." field.key)}}</label>
+                    {{#if field.isLong}}
+                        <textarea
+                            id="product-translation-{{field.key}}"
+                            class="form-input w-full"
+                            rows="3"
+                            placeholder={{or field.original (t "storefront.products.form.translations.placeholder")}}
+                            disabled={{@disabled}}
+                            value={{field.value}}
+                            {{on "change" (fn @onSetField field.key)}}
+                        ></textarea>
+                    {{else}}
+                        <input
+                            id="product-translation-{{field.key}}"
+                            type="text"
+                            class="form-input w-full"
+                            value={{field.value}}
+                            placeholder={{or field.original (t "storefront.products.form.translations.placeholder")}}
+                            disabled={{@disabled}}
+                            {{on "change" (fn @onSetField field.key)}}
+                        />
+                    {{/if}}
+                </div>
+            {{/each}}
+            {{#if @fields.custom.length}}
+                <div class="storefront-create-order__label">{{t "storefront.products.form.translations.custom-fields"}}</div>
+                {{#each @fields.custom as |field|}}
+                    <div class="storefront-product-translations__custom">
+                        <span class="storefront-product-translations__key" title={{field.key}}>{{field.key}}</span>
+                        <input type="text" class="form-input w-full" value={{field.value}} aria-label={{field.key}} disabled={{@disabled}} {{on "change" (fn @onSetField field.key)}} />
+                        {{#unless @disabled}}
+                            <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} aria-label={{t "common.remove"}} @onClick={{fn @onRemoveField field.key}} />
+                        {{/unless}}
+                    </div>
+                {{/each}}
+            {{/if}}
+            {{#unless @disabled}}
+                <div class="storefront-product-translations__custom storefront-product-translations__custom--new">
+                    <input
+                        type="text"
+                        class="form-input w-full"
+                        value={{@newKey}}
+                        placeholder={{t "storefront.products.form.translations.new-field"}}
+                        aria-label={{t "storefront.products.form.translations.new-field"}}
+                        {{on "input" @onNewKey}}
+                    />
+                    <Button @size="xs" @icon="plus" @text={{t "storefront.products.form.translations.add-field"}} @disabled={{not @newKey}} @onClick={{@onAddField}} />
+                </div>
+            {{/unless}}
+            <p class="storefront-create-order__help mt-0">{{t "storefront.products.form.translations.help"}}</p>
+        </div>
+    {{else}}
+        <p class="storefront-create-order__help mt-0">{{t "storefront.products.form.translations.none"}}</p>
+    {{/if}}
+</div>

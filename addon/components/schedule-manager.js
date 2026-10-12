@@ -33,6 +33,21 @@ export default class ScheduleManagerComponent extends Component {
         return schedule;
     }
 
+    /** The week in order, each day with its label in the console's language and its slots. */
+    get days() {
+        const schedule = this.schedule;
+        // 5 Jan 1970 was a Monday; adding the index gives each weekday's name in the current locale.
+        return Object.keys(schedule).map((name, index) => ({
+            name,
+            label: this.intl.formatDate(new Date(Date.UTC(1970, 0, 5 + index, 12)), { weekday: 'long', timeZone: 'UTC' }),
+            hours: schedule[name],
+        }));
+    }
+
+    get hasHours() {
+        return this.days.some((day) => day.hours.length > 0);
+    }
+
     @computed('args.hourModelType') get hourModelType() {
         const { hourModelType } = this.args;
 
