@@ -18,7 +18,7 @@
             <tbody>
                 {{#each this.orders as |order|}}
                     <tr class="storefront-panel-table__row" data-test-customer-orders-row={{order.public_id}}>
-                        <td><a href="javascript:;" class="storefront-table__link" {{on "click" (fn this.viewOrder order)}}>{{order.public_id}}</a></td>
+                        <td><a href="javascript:;" class="storefront-table__link" {{on "click" (fn this.viewOrder order)}} title={{order.public_id}}>{{or order.tracking order.public_id}}</a></td>
                         <td class="is-muted">{{order.createdAgo}}</td>
                         <td><Badge @status={{if order.meta.is_pickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} /></td>
                         <td><Badge @status={{order.status}} @size="xs" /></td>

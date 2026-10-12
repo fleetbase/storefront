@@ -6,7 +6,7 @@
             {{#each this.siblings as |order|}}
                 <div class="storefront-member-row" data-test-checkout-sibling={{order.public_id}}>
                     <div class="storefront-member-row__identity">
-                        <a href="javascript:;" class="storefront-member-row__name storefront-order-ref__id--link" {{on "click" (fn this.storefrontOrderActions.viewOrder order)}}>{{order.public_id}}</a>
+                        <a href="javascript:;" class="storefront-member-row__name storefront-order-ref__id--link" {{on "click" (fn this.storefrontOrderActions.viewOrder order)}} title={{order.public_id}}>{{or order.tracking order.public_id}}</a>
                         <div class="storefront-member-row__meta">{{n-a order.meta.storefront}}</div>
                     </div>
                     <div class="storefront-member-row__amount">{{format-currency order.meta.total order.meta.currency}}</div>

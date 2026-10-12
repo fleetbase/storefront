@@ -1616,8 +1616,22 @@ body[data-theme='dark'] .storefront-table-muted {
 
 .storefront-table-actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
     gap: 0.35rem;
+}
+
+/* Buttons in table rows (orders page, dashboard widgets): one 26px height with 12px text, so
+   a row's Assign driver, next step and menu line up and read at the same weight */
+:is(.storefront-table-card__table, .storefront-orders-table, .storefront-customers-table) tbody .btn,
+:is(.storefront-table-card__table, .storefront-orders-table, .storefront-customers-table) tbody .btn-wrapper > .btn,
+:is(.storefront-table-card__table, .storefront-orders-table, .storefront-customers-table) tbody .ember-basic-dropdown-trigger .btn-wrapper > .btn,
+.storefront-table-card__table.next-table-wrapper table tbody tr td span.btn-wrapper > button.btn {
+    height: 1.625rem;
+    min-height: 0;
+    padding: 0 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1;
 }
 
 .storefront-order-inline-actions {

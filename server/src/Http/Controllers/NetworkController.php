@@ -473,6 +473,7 @@ class NetworkController extends StorefrontController
             'members'       => $stores,
             'recent_orders' => $orders->take(5)->map(fn ($order) => [
                 'public_id'          => $order->public_id,
+                'tracking'           => $order->trackingNumber?->tracking_number,
                 'checkout_id'        => data_get($order, 'meta.checkout_id'),
                 'customer_name'      => data_get($order, 'customer.name'),
                 'customer_id'        => data_get($order, 'customer.public_id'),

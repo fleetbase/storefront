@@ -213,7 +213,7 @@
                                     data-test-truck-order={{order.public_id}}
                                 >
                                     <div class="storefront-member-row__identity">
-                                        <div class="storefront-member-row__name">{{order.public_id}}</div>
+                                        <div class="storefront-member-row__name">{{or order.tracking order.public_id}}</div>
                                         <div class="storefront-member-row__meta">{{n-a order.customer_name order.customer.name}} · {{order.createdAgo}}</div>
                                     </div>
                                     <span class="storefront-truck-panel__order-total">{{format-currency

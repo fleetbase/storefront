@@ -46,7 +46,7 @@
                         <tr class="storefront-animate-row">
                             <td><a href="javascript:;" {{on "click" (fn this.viewCustomer customer)}} class="storefront-customer-id">{{customer.public_id}}</a></td>
                             <td>
-                                <Customer::Pill @customer={{customer}} @subtitle={{null}} @onClick={{fn this.viewCustomer customer}} />
+                                <Table::Cell::Identity @row={{customer}} @column={{hash resourceType="customer" action=this.viewCustomer}} />
                             </td>
                             <td><span class="storefront-table-text">{{n-a customer.phone}}</span></td>
                             <td><span class="storefront-table-text">{{n-a customer.email}}</span></td>

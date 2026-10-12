@@ -85,7 +85,7 @@
                 {{#each this.orders as |order|}}
                     <button type="button" class="storefront-member-row storefront-member-row--link storefront-customer-order-row" {{on "click" (fn this.viewOrder order)}} data-test-customer-order={{order.public_id}}>
                         <div class="storefront-member-row__identity">
-                            <span class="storefront-member-row__name">{{order.public_id}}</span>
+                            <span class="storefront-member-row__name">{{or order.tracking order.public_id}}</span>
                             <span class="storefront-member-row__meta">{{order.createdAgo}} · {{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}}{{#if order.meta.storefront}} · {{order.meta.storefront}}{{/if}}</span>
                         </div>
                         <span class="storefront-member-row__amount">{{format-currency (or order.meta.total order.transaction_amount 0) order.meta.currency}}</span>

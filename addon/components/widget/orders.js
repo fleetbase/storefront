@@ -123,6 +123,15 @@ export default class WidgetOrdersComponent extends Component {
         });
     }
 
+    /** Opens the customer's panel, as the orders page does. */
+    @action viewCustomer(customer) {
+        if (!customer?.public_id) {
+            return;
+        }
+
+        return this.hostRouter.transitionTo('console.storefront.customers.index.view', customer.public_id);
+    }
+
     @action handleOrderChange() {
         this.loadOrders.perform();
     }

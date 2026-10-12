@@ -6,7 +6,8 @@
                     <Image src={{concat "data:image/png;base64," @options.order.tracking_number.qr_code}} class="w-18 h-18" alt={{@options.order.public_id}} />
                 </div>
                 <div class="mt-3 text-center">
-                    <h2 class="dark:text-gray-100 font-semibold">{{@options.order.public_id}}</h2>
+                    <h2 class="dark:text-gray-100 font-semibold">{{or @options.order.tracking @options.order.public_id}}</h2>
+                    {{#if @options.order.tracking}}<div class="text-xs text-gray-500 dark:text-gray-400">{{@options.order.public_id}}</div>{{/if}}
                 </div>
                 <div>
                     <Badge @status={{@options.order.status}} />
