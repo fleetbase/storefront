@@ -1,1 +1,8 @@
-<CustomerPanel @customer={{@model}} @tab={{this.view}} @onTabChanged={{this.onTabChanged}} @onPressCancel={{this.transitionBack}} @onEdit={{this.onEdit}} />
+<CustomerPanel
+    @customer={{@model}}
+    @tab={{this.view}}
+    @startEditing={{this.editing}}
+    @onTabChanged={{this.onTabChanged}}
+    @onPressCancel={{this.transitionBack}}
+    @onDoneEditing={{this.onDoneEditing}}
+/>

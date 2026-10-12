@@ -94,6 +94,7 @@ export default class CustomerPanelComponent extends Component {
         applyContextComponentArguments(this);
         // Read the requested tab from the arguments, not from the tracked field the helper just wrote.
         this.tab = this.getTabUsingSlug(this.args.tab ?? this.args.dynamicArgs?.tab);
+        this.isEditing = Boolean(this.args.startEditing);
         this.loadInsights.perform();
     }
 
@@ -245,6 +246,7 @@ export default class CustomerPanelComponent extends Component {
 
     @action doneEditing() {
         this.isEditing = false;
+        contextComponentCallback(this, 'onDoneEditing', this.customer);
         this.loadInsights.perform();
     }
 

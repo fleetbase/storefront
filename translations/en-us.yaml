@@ -402,6 +402,7 @@ storefront:
       places-lede: The customer's Fleet-Ops places. Open a place from its pill to edit it in Fleet-Ops.
       places-note: Places belong to Fleet-Ops; the default is the one the app proposes at checkout.
       stores-ordered-from: Stores ordered from
+      orders-count: "{count, plural, one {# order} other {# orders}}"
       recent-orders: Recent orders
       no-orders: No orders yet.
       canceled-orders: Canceled orders

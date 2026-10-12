@@ -243,15 +243,10 @@ export default class CustomersIndexController extends BaseController {
                     fn: this.viewCustomer,
                 },
                 {
+                    id: 'edit-customer',
                     label: this.intl.t('storefront.customers.index.edit-customer'),
-                    // fn: this.editVendor,
-                },
-                {
-                    separator: true,
-                },
-                {
-                    label: this.intl.t('storefront.customers.index.delete-customer'),
-                    // fn: this.deleteVendor,
+                    fn: this.editCustomer,
+                    permission: 'storefront update customer',
                 },
             ],
             sortable: false,
@@ -300,7 +295,12 @@ export default class CustomersIndexController extends BaseController {
     }
 
     @action viewCustomer(customer) {
-        return this.transitionToRoute('customers.index.view', customer);
+        return this.transitionToRoute('customers.index.view', customer, { queryParams: { editing: false } });
+    }
+
+    /** Opens the customer's panel on its details form. */
+    @action editCustomer(customer) {
+        return this.transitionToRoute('customers.index.view', customer, { queryParams: { editing: true } });
     }
 
     /**

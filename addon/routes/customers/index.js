@@ -1,8 +1,10 @@
 import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
+import queryCustomers from '@fleetbase/storefront-engine/utils/query-customers';
 
 export default class CustomersIndexRoute extends StorefrontListRoute {
     @service store;
+    @service fetch;
     @service storefront;
     @service intl;
     @service abilities;
@@ -32,6 +34,6 @@ export default class CustomersIndexRoute extends StorefrontListRoute {
     }
 
     model(params) {
-        return this.store.query('customer', { ...params, storefront: this.storefront.getActiveStore('public_id') });
+        return queryCustomers(this, { ...params, storefront: this.storefront.getActiveStore('public_id') });
     }
 }

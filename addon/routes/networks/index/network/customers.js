@@ -1,8 +1,10 @@
 import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
+import queryCustomers from '@fleetbase/storefront-engine/utils/query-customers';
 
 export default class NetworksIndexNetworkCustomersRoute extends StorefrontListRoute {
     @service store;
+    @service fetch;
 
     queryParams = {
         page: { refreshModel: true, as: 'c_page' },
@@ -20,6 +22,6 @@ export default class NetworksIndexNetworkCustomersRoute extends StorefrontListRo
     };
 
     model(params) {
-        return this.store.query('customer', { ...params, network: this.modelFor('networks.index.network').public_id });
+        return queryCustomers(this, { ...params, network: this.modelFor('networks.index.network').public_id });
     }
 }
