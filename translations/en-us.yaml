@@ -1005,7 +1005,9 @@ storefront:
       when: When
       notes: Notes
       notify-customer: "Tell {name} what changed"
-      notify-driver: Tell the driver
+      notify-driver: "Tell {name}"
+      notify-driver-dropoff: "Tell {name} (new drop-off)"
+      notify-driver-items: "Tell {name} (items changed)"
       pricing: Pricing the change…
       no-changes: No changes yet.
       discard: Discard
@@ -1013,7 +1015,7 @@ storefront:
       saved: "Order {id} updated"
       settle-label: How the difference is settled
       settle:
-        refund: Refund
+        refund: "Refund to {method}"
         store_credit: Store credit
         payment_link: Payment link
         collect: Driver collects
@@ -1025,6 +1027,48 @@ storefront:
         collect: "{amount} more is due; the driver collects it on delivery."
         cod_update: "The cash the driver collects changes by {amount}."
         none: ""
+      applies-to-order: Changes apply to this order only, unless you say otherwise below.
+      back: Back to order
+      the-customer: the customer
+      the-driver: the driver
+      was-prefix: Was
+      address: Address
+      address-placeholder: Search for an address
+      saved-places: "{name}'s saved places"
+      unit: Unit, floor
+      door-contact: Contact at the door
+      instructions: Instructions for the driver
+      map-label: Map of the drop-off. Drag the pin to adjust it.
+      drag-pin: Drag the pin to the exact entrance
+      distance: "Distance {was} → {now}"
+      distance-now: "Distance {now}"
+      fee-unchanged: "delivery fee unchanged {fee}"
+      fee-changed: "delivery fee {was} → {now}"
+      save-place: "Save to {name}'s places"
+      open-profile: "Open {name}'s profile"
+      items-source: from the catalogs the store sells now
+      add-product: Add product
+      removed-out-of-stock: "Removed: out of stock"
+      substitute: Substitute
+      substitute-for: "for {name}"
+      substitute-title: "Substitute for {name}"
+      options-changed: Options changed
+      out-of-stock: Out of stock
+      change-options: Change options
+      quantity-of: "Quantity of {name}"
+      decrease: "One fewer {name}"
+      increase: "One more {name}"
+      remove: "Remove {name}"
+      promotion-applies: "{promotion} ({amount} off) still applies: new subtotal {subtotal}."
+      promotion-lost: "{promotion} no longer applies to the new items."
+      due: "Due {time}"
+      asap-help: As soon as the store can
+      schedule-help: Pick a day and time
+      closed-today: The store is closed today
+      open-until: "Within store hours, today until {time}"
+      customer-note: Note from the customer
+      changes-count: "{count, plural, one {# change} other {# changes}}"
+      paid-by: "Paid {amount} by {method}:"
       stage:
         open: "Everything can still change. Item changes while preparing are flagged to the store."
         ready: "The order is ready: items can only be removed and the time only moved earlier."

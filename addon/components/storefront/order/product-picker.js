@@ -11,6 +11,8 @@ import { action, get } from '@ember/object';
  * @argument {String} currency for option prices
  * @argument {Function} onAdd called with (product, quantity, variants, addons)
  * @argument {Function} [onDone] shows a Done button that calls it
+ * @argument {Object} [configure] opens straight on this product's options (to change a line's options)
+ * @argument {Number} [quantity] the quantity to start configuring with
  */
 export default class StorefrontOrderProductPickerComponent extends Component {
     @service intl;
@@ -20,6 +22,14 @@ export default class StorefrontOrderProductPickerComponent extends Component {
     @tracked configVariants = {};
     @tracked configAddons = [];
     @tracked configQuantity = 1;
+
+    constructor() {
+        super(...arguments);
+        if (this.args.configure) {
+            this.pickProduct(this.args.configure);
+            this.configQuantity = Math.max(1, Number(this.args.quantity) || 1);
+        }
+    }
 
     get currency() {
         return this.args.currency;
@@ -138,5 +148,8 @@ export default class StorefrontOrderProductPickerComponent extends Component {
 
     @action cancelConfig() {
         this.configuring = null;
+        if (this.args.configure) {
+            this.args.onDone?.();
+        }
     }
 }

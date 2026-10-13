@@ -426,7 +426,7 @@ class OrderController extends FleetbaseOrderController
         return response()->json([
             'payment' => OrderPayments::summary($order),
             ...OrderInsights::forOrder($order),
-            'edit'              => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order)],
+            'edit'              => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order), 'hours' => OrderEditor::hoursToday($order)],
             'cancel'            => OrderSettlement::cancelPlan($order),
             'chat'              => static::chatSummary($order),
             'source'            => $order->getMeta('placed_via') === 'console' ? 'console' : 'app',

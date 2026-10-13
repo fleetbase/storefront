@@ -7,6 +7,7 @@ use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\FleetOps\Support\Utils as FleetOpsUtils;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Http\Controllers\v1\ServiceQuoteController;
 use Fleetbase\Storefront\Http\Requests\GetServiceQuoteFromCart;
@@ -14,6 +15,7 @@ use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\PromotionRedemption;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Notifications\StorefrontOrderUpdated;
 use Fleetbase\Storefront\Promotions\PromotionContext;
 use Fleetbase\Storefront\Promotions\PromotionEngine;
@@ -91,6 +93,43 @@ class OrderEditor
     }
 
     /**
+     * Today's opening windows of the store location the order is made at (else the store's first
+     * location), in the store's time zone, for the edit form's "When".
+     *
+     * @return array{timezone: string, windows: array<int, array{opens: string, closes: string, start: string, end: string}>}
+     */
+    public static function hoursToday(Order $order): array
+    {
+        $store    = Store::where('public_id', $order->getMeta('storefront_id'))->first();
+        $timezone = BookingSlots::timezone($store);
+        $today    = Carbon::now($timezone)->startOfDay();
+        $weekday  = strtolower($today->englishDayOfWeek);
+
+        $location = null;
+        if ($store) {
+            $pickupUuid = data_get($order, 'payload.pickup_uuid');
+            $location   = ($pickupUuid ? StoreLocation::where('store_uuid', $store->uuid)->where('place_uuid', $pickupUuid)->with('hours')->first() : null)
+                ?? StoreLocation::where('store_uuid', $store->uuid)->with('hours')->orderBy('created_at')->first();
+        }
+
+        $windows = collect($location?->hours ?? [])
+            ->filter(fn ($hour) => strtolower((string) data_get($hour, 'day_of_week')) === $weekday)
+            ->map(function ($hour) use ($today) {
+                $open  = $today->copy()->setTimeFromTimeString((string) data_get($hour, 'start'));
+                $close = $today->copy()->setTimeFromTimeString((string) data_get($hour, 'end'));
+
+                // The wall-clock times as the store set them, and the moments they fall on.
+                return $close->gt($open) ? ['opens' => $open->format('H:i'), 'closes' => $close->format('H:i'), 'start' => $open->toIso8601String(), 'end' => $close->toIso8601String()] : null;
+            })
+            ->filter()
+            ->sortBy('start')
+            ->values()
+            ->all();
+
+        return ['timezone' => $timezone, 'windows' => $windows];
+    }
+
+    /**
      * Price the edit without changing anything.
      */
     public static function preview(Order $order, array $input): array
@@ -119,7 +158,7 @@ class OrderEditor
      */
     public static function apply(Order $order, array $input): array
     {
-        $plan = static::plan($order, $input);
+        $plan = static::plan($order, $input, true);
 
         if ($plan['violations']) {
             throw new OrderEditException(implode(' ', array_values($plan['violations'])), 422, ['violations' => $plan['violations']]);
@@ -205,7 +244,7 @@ class OrderEditor
     /**
      * Work out the edit: what changes, the new totals, and what the order's stage does not allow.
      */
-    protected static function plan(Order $order, array $input): array
+    protected static function plan(Order $order, array $input, bool $persist = false): array
     {
         $order->loadMissing(['payload.entities', 'payload.dropoff', 'payload.pickup', 'customer']);
 
@@ -248,7 +287,7 @@ class OrderEditor
         // Drop-off
         $dropoff = null;
         if (!empty($input['dropoff']) && !$isPickup) {
-            $dropoff = static::resolveDropoff($order, (array) $input['dropoff'], (bool) data_get($input, 'save_place_to_customer', false));
+            $dropoff = static::resolveDropoff($order, (array) $input['dropoff'], (bool) data_get($input, 'save_place_to_customer', false), $persist);
             if (!$dropoff) {
                 $violations['dropoff'] = 'The new address could not be found.';
             } elseif ($dropoff->uuid !== data_get($order, 'payload.dropoff_uuid')) {
@@ -329,6 +368,11 @@ class OrderEditor
             'delivery_fee' => $isPickup ? 0 : $deliveryFee,
             'discount'     => $discount,
             'promotions'   => $promotionResult ? $promotionResult->toPublicArray()['applied'] : $order->getMeta('promotions', []),
+            // Codes the order used that the new items no longer qualify for, said before Save.
+            'promotions_lost' => $promotionResult ? array_values(array_diff(
+                collect($order->getMeta('promotions', []))->pluck('code')->filter()->all(),
+                collect($promotionResult->toPublicArray()['applied'])->pluck('code')->filter()->all()
+            )) : [],
             'tip'          => $tip,
             'delivery_tip' => $deliveryTip,
             'total'        => $total,
@@ -600,8 +644,10 @@ class OrderEditor
 
     /**
      * The new drop-off: a saved place (`{ place }`) or an address, optionally saved to the customer.
+     * Pricing an edit (`$persist` false) builds the address without saving it, so a preview never
+     * leaves places behind.
      */
-    protected static function resolveDropoff(Order $order, array $input, bool $saveToCustomer): ?Place
+    protected static function resolveDropoff(Order $order, array $input, bool $saveToCustomer, bool $persist = true): ?Place
     {
         if (!empty($input['place'])) {
             return Place::where('company_uuid', $order->company_uuid)
@@ -615,6 +661,17 @@ class OrderEditor
         }
         if (empty($attributes['street1']) && empty($attributes['location'])) {
             return null;
+        }
+
+        if (!$persist) {
+            $draft = new Place();
+            $draft->fill(Arr::except($attributes, ['location']));
+            $location = !empty($attributes['location']) ? FleetOpsUtils::getPointFromMixed($attributes['location']) : null;
+            if ($location) {
+                $draft->setAttribute('location', $location);
+            }
+
+            return $draft;
         }
 
         $place = Place::createFromMixed($attributes, ['company_uuid' => $order->company_uuid]);
