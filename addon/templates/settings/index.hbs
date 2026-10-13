@@ -17,7 +17,19 @@
                     <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
                 </InputGroup>
                 <InputGroup @name={{t "storefront.settings.sections.timezone"}} @helpText={{t "storefront.settings.sections.timezone-help"}}>
-                    <Select @value={{@model.timezone}} @options={{this.timezones}} @onSelect={{fn (mut @model.timezone)}} @placeholder={{t "storefront.settings.sections.timezone"}} class="w-full" data-test-settings-timezone />
+                    <PowerSelect
+                        @options={{this.timezones}}
+                        @selected={{@model.timezone}}
+                        @searchEnabled={{true}}
+                        @searchPlaceholder={{t "storefront.settings.sections.timezone-search"}}
+                        @placeholder={{t "storefront.settings.sections.timezone"}}
+                        @onChange={{fn (mut @model.timezone)}}
+                        @triggerClass="form-select form-input w-full"
+                        data-test-settings-timezone
+                        as |zone|
+                    >
+                        {{zone}}
+                    </PowerSelect>
                 </InputGroup>
                 <InputGroup @name={{t "storefront.settings.sections.default-order-config"}} @helpText={{t "storefront.settings.sections.default-order-config-help"}}>
                     <Select
@@ -280,7 +292,7 @@
                         @placeholder={{t "storefront.settings.index.alert-placeholder"}}
                         @triggerClass="form-select form-input multiple"
                         @infiniteScroll={{false}}
-                        @renderInPlace={{true}}
+                        @renderInPlace={{false}}
                         @onChange={{fn this.makeAlertable "for_new_order"}}
                         as |model|
                     >

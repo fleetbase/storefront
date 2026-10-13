@@ -1513,6 +1513,7 @@ storefront:
       store-key: Store key
       timezone: Timezone
       timezone-help: Hours and scheduled orders are read in this timezone.
+      timezone-search: Search time zones, e.g. Ulaanbaatar
       store-key-help: Used by the app and the API; it cannot change.
       default-order-config: Default order config
       default-order-config-help: Applies to every order created for this store.
