@@ -22,6 +22,13 @@ class OrderChat
     public const META_ORDER_UUID = 'storefront_order_uuid';
     public const META_ORDER_ID   = 'storefront_order_id';
     public const META_KIND       = 'kind';
+    public const META_PUBLIC_ID  = 'order_public_id';
+
+    /**
+     * How the customer-and-driver thread is tagged on the channel (`meta.kind`), as the shared
+     * contract names it; the driver app shows it as the thread with the customer.
+     */
+    public const CHANNEL_KIND_GROUP = 'group';
 
     /** The customer and the driver. Channels made before kinds existed are this kind. */
     public const KIND_DRIVER = 'driver';
@@ -53,7 +60,7 @@ class OrderChat
             ->where('meta->' . static::META_ORDER_UUID, $order->uuid)
             ->when(
                 $kind === static::KIND_DRIVER,
-                fn ($query) => $query->where(fn ($query) => $query->whereNull('meta->' . static::META_KIND)->orWhere('meta->' . static::META_KIND, static::KIND_DRIVER)),
+                fn ($query) => $query->where(fn ($query) => $query->whereNull('meta->' . static::META_KIND)->orWhereIn('meta->' . static::META_KIND, [static::KIND_DRIVER, static::CHANNEL_KIND_GROUP])),
                 fn ($query) => $query->where('meta->' . static::META_KIND, $kind)
             )
             ->first();
@@ -66,7 +73,9 @@ class OrderChat
 
     public static function kindOf(ChatChannel $channel): string
     {
-        return static::normalizeKind(data_get($channel->meta, static::META_KIND));
+        $kind = data_get($channel->meta, static::META_KIND);
+
+        return static::normalizeKind($kind === static::CHANNEL_KIND_GROUP ? static::KIND_DRIVER : $kind);
     }
 
     /**
@@ -91,6 +100,7 @@ class OrderChat
                 'meta'            => [
                     static::META_ORDER_UUID => $order->uuid,
                     static::META_ORDER_ID   => $order->public_id,
+                    static::META_PUBLIC_ID  => $order->public_id,
                     static::META_KIND       => static::KIND_CUSTOMER,
                 ],
             ]);
@@ -186,7 +196,8 @@ class OrderChat
                 'meta'            => [
                     static::META_ORDER_UUID => $order->uuid,
                     static::META_ORDER_ID   => $order->public_id,
-                    static::META_KIND       => static::KIND_DRIVER,
+                    static::META_PUBLIC_ID  => $order->public_id,
+                    static::META_KIND       => static::CHANNEL_KIND_GROUP,
                 ],
             ]);
         }

@@ -13,6 +13,7 @@ function chatChannel(?string $kind): ChatChannel
 
 test('a thread without a kind is the driver thread, and unknown kinds fall back to it', function () {
     expect(OrderChat::kindOf(chatChannel(null)))->toBe(OrderChat::KIND_DRIVER)
+        ->and(OrderChat::kindOf(chatChannel('group')))->toBe(OrderChat::KIND_DRIVER)
         ->and(OrderChat::kindOf(chatChannel('customer')))->toBe(OrderChat::KIND_CUSTOMER)
         ->and(OrderChat::normalizeKind('group'))->toBe(OrderChat::KIND_DRIVER)
         ->and(OrderChat::normalizeKind(null))->toBe(OrderChat::KIND_DRIVER);
