@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Auth\AppleVerifier;
 use Fleetbase\Auth\GoogleVerifier;
+use Fleetbase\Exceptions\SmsBlockedException;
 use Fleetbase\FleetOps\Exceptions\UserAlreadyExistsException;
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
@@ -25,6 +26,7 @@ use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Support\SocketCluster\SocketToken;
 use Fleetbase\Support\Utils;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +35,19 @@ use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
+    /**
+     * Seconds inside which a repeated creation-code request answers "ok" without sending
+     * again: the first code is still valid, and a second message would only cost money.
+     */
+    public const CREATION_CODE_RESEND_SECONDS = 60;
+
+    /**
+     * Wrong codes an identity may try inside the window before it is locked out, so a
+     * six-digit code cannot be guessed from many addresses.
+     */
+    public const CODE_ATTEMPT_LIMIT  = 10;
+    public const CODE_ATTEMPT_WINDOW = 900;
+
     protected function authenticatedCustomerForRequest(Request $request): ?Contact
     {
         return Storefront::getCustomerFromToken();
@@ -238,6 +253,23 @@ class CustomerController extends Controller
             $identity = static::phone($identity);
         }
 
+        // An identity that already has an account cannot ask for a creation code. Nothing
+        // is checked or sent; the caller is told to sign in instead.
+        if (static::accountExistsForIdentity($identity, $isEmail)) {
+            return response()->apiError('An account already exists for this ' . ($isEmail ? 'email address' : 'phone number') . '. Sign in instead.', 422);
+        }
+
+        // A number that can never receive a text is refused before anything is written.
+        if ($isPhone && ($rejection = static::phoneRejection($identity))) {
+            return response()->apiError($rejection, 422);
+        }
+
+        // A code sent moments ago is still valid: answer as if it went out again rather
+        // than paying for a second message.
+        if (static::hasRecentCreationCode($identity)) {
+            return response()->json(['status' => 'ok']);
+        }
+
         // set contact attributes
         $attributes[$isEmail ? 'email' : 'phone'] = $identity;
 
@@ -263,6 +295,8 @@ class CustomerController extends Controller
             }
 
             return response()->json(['status' => 'ok']);
+        } catch (SmsBlockedException $e) {
+            return static::blockedResponse($e);
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->apiError($e->getMessage());
         } catch (\Exception $e) {
@@ -298,11 +332,19 @@ class CustomerController extends Controller
             return response()->apiError('An identity is required to create a customer.');
         }
 
+        if ($this->codeAttemptsExceeded('create|' . $identity)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // verify code
         $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_create_customer', 'meta->identity' => $identity])->exists();
         if (!$verificationCode) {
+            $this->recordFailedCodeAttempt('create|' . $identity);
+
             return response()->apiError('Invalid verification code provided!');
         }
+
+        $this->clearCodeAttempts('create|' . $identity);
 
         // check for existing user to attach contact to
         if (Utils::isEmail($identity)) {
@@ -641,6 +683,8 @@ class CustomerController extends Controller
             return "Your {$about->name} verification code is {$verification->code}";
         };
 
+        $smsFailure = null;
+
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
                 'messageCallback' => $messageCallback,
@@ -648,6 +692,8 @@ class CustomerController extends Controller
 
             return response()->json(['status' => 'OK', 'method' => 'sms']);
         } catch (\Throwable $e) {
+            $smsFailure = $e;
+
             if (app()->bound('sentry')) {
                 app('sentry')->captureException($e);
             }
@@ -667,7 +713,9 @@ class CustomerController extends Controller
             }
         }
 
-        return response()->apiError('Unable to send verification code.');
+        // With no email to fall back to, a refusal by the SMS guard is answered with its
+        // own status so the app can tell "wait a minute" from "something broke".
+        return static::sendFailureResponse($smsFailure, 'Unable to send verification code.');
     }
 
     /**
@@ -1010,18 +1058,28 @@ class CustomerController extends Controller
             return response()->apiError('Unable to verify code.');
         }
 
+        if ($this->codeAttemptsExceeded('verify|' . $identity)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // check if user exists
         $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
 
         if (!$user) {
+            $this->recordFailedCodeAttempt('verify|' . $identity);
+
             return response()->apiError('Unable to verify code.');
         }
 
         // find and verify code
         $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
+            $this->recordFailedCodeAttempt('verify|' . $identity);
+
             return response()->apiError('Invalid verification code!');
         }
+
+        $this->clearCodeAttempts('verify|' . $identity);
 
         // get the storefront or network logging in for
         $about = Storefront::about(['company_uuid']);
@@ -1086,6 +1144,123 @@ class CustomerController extends Controller
         }
 
         return $phone;
+    }
+
+    /**
+     * Whether an account already exists for an identity. Anything that goes wrong looking
+     * counts as "no", so a bare install without the table cannot block signups.
+     */
+    protected static function accountExistsForIdentity(?string $identity, bool $isEmail): bool
+    {
+        if (blank($identity)) {
+            return false;
+        }
+
+        try {
+            return User::where($isEmail ? 'email' : 'phone', $identity)->whereNull('deleted_at')->withoutGlobalScopes()->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether a creation code went to this identity moments ago and is still valid.
+     */
+    protected static function hasRecentCreationCode(?string $identity): bool
+    {
+        $seconds = (int) config('storefront.verification.resend_seconds', static::CREATION_CODE_RESEND_SECONDS);
+        if (blank($identity) || $seconds <= 0) {
+            return false;
+        }
+
+        try {
+            return VerificationCode::where('for', 'storefront_create_customer')
+                ->where('meta->identity', $identity)
+                ->where('created_at', '>', now()->subSeconds($seconds))
+                ->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Why a phone number cannot be texted, or null when it can. Null too when the core in
+     * use has no SMS guard yet, or the guard is switched off: this is the same rule the
+     * guard applies on the send, surfaced before anything is written.
+     */
+    protected static function phoneRejection(?string $phone): ?string
+    {
+        if (blank($phone) || !class_exists(\Fleetbase\Support\Sms\PhoneValidator::class) || !class_exists(\Fleetbase\Support\Sms\SmsPolicy::class)) {
+            return null;
+        }
+
+        $settings = \Fleetbase\Support\Sms\SmsPolicy::settings();
+        if (!$settings['enabled']) {
+            return null;
+        }
+
+        $result = \Fleetbase\Support\Sms\PhoneValidator::validate($phone, $settings['validation']);
+
+        return $result['valid'] ? null : \Fleetbase\Support\Sms\PhoneValidator::messageFor($result['reason']);
+    }
+
+    /**
+     * The response for a send the SMS guard refused: its own status (422 bad number, 429
+     * limited, 423 paused) and Retry-After when there is a time to wait.
+     */
+    protected static function blockedResponse(SmsBlockedException $e)
+    {
+        $response = response()->apiError($e->getMessage(), $e->status());
+        $response->headers->add($e->headers());
+
+        return $response;
+    }
+
+    /**
+     * The response when a code could not be sent: the guard's refusal when that is why,
+     * otherwise the flow's own generic message.
+     */
+    protected static function sendFailureResponse(?\Throwable $failure, string $message)
+    {
+        if ($failure instanceof SmsBlockedException) {
+            return static::blockedResponse($failure);
+        }
+
+        return response()->apiError($message);
+    }
+
+    protected function codeAttemptsExceeded(string $key): bool
+    {
+        $limiter = $this->attemptLimiter();
+
+        return $limiter ? $limiter->tooManyAttempts($this->codeAttemptKey($key), static::CODE_ATTEMPT_LIMIT) : false;
+    }
+
+    protected function recordFailedCodeAttempt(string $key): void
+    {
+        $this->attemptLimiter()?->hit($this->codeAttemptKey($key), static::CODE_ATTEMPT_WINDOW);
+    }
+
+    protected function clearCodeAttempts(string $key): void
+    {
+        $this->attemptLimiter()?->clear($this->codeAttemptKey($key));
+    }
+
+    protected function codeAttemptKey(string $key): string
+    {
+        return 'storefront-code-attempts:' . sha1(strtolower($key));
+    }
+
+    /**
+     * The limiter behind the attempt lockout, or null where none is bound (unit tests).
+     */
+    protected function attemptLimiter(): ?RateLimiter
+    {
+        try {
+            return app()->bound(RateLimiter::class) ? app(RateLimiter::class) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function getStripeEphemeralKey(Request $request)
@@ -1198,7 +1373,8 @@ class CustomerController extends Controller
         // `if phone / elseif email` meant a customer WITH a phone never reached the email
         // branch — the request just returned the SDK's own message, "Credentials are
         // required to create a Client", to the client.
-        $sent = false;
+        $sent       = false;
+        $smsFailure = null;
 
         if ($user->phone) {
             try {
@@ -1208,6 +1384,8 @@ class CustomerController extends Controller
                 ]);
                 $sent = true;
             } catch (\Throwable $e) {
+                $smsFailure = $e;
+
                 if (app()->bound('sentry')) {
                     app('sentry')->captureException($e);
                 }
@@ -1233,7 +1411,7 @@ class CustomerController extends Controller
             return response()->json(['status' => 'OK']);
         }
 
-        return response()->apiError('Unable to send account closure verification code.');
+        return static::sendFailureResponse($smsFailure, 'Unable to send account closure verification code.');
     }
 
     public function confirmAccountClosure(Request $request)
@@ -1258,11 +1436,19 @@ class CustomerController extends Controller
         // Get verification identity
         $identity = $user->phone ?? $user->email;
 
+        if ($this->codeAttemptsExceeded('closure|' . $customer->uuid)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // verify account closure code
         $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_account_closure', 'meta->identity' => $identity])->exists();
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
+            $this->recordFailedCodeAttempt('closure|' . $customer->uuid);
+
             return response()->apiError('Invalid verification code provided!');
         }
+
+        $this->clearCodeAttempts('closure|' . $customer->uuid);
 
         try {
             // If the user type is `contact` or `customer` delete the user account
@@ -1324,6 +1510,11 @@ class CustomerController extends Controller
             return response()->json(['status' => 'ok', 'method' => 'bypass']);
         }
 
+        // A number that can never receive a text is refused before anything is written.
+        if ($rejection = static::phoneRejection($phone)) {
+            return response()->apiError($rejection, 422);
+        }
+
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
                 'messageCallback' => function ($verification) use ($about) {
@@ -1333,6 +1524,8 @@ class CustomerController extends Controller
             ]);
 
             return response()->json(['status' => 'ok']);
+        } catch (SmsBlockedException $e) {
+            return static::blockedResponse($e);
         } catch (\Throwable $e) {
             if (app()->bound('sentry')) {
                 app('sentry')->captureException($e);
@@ -1377,6 +1570,10 @@ class CustomerController extends Controller
             return response()->apiError('No user associated with this customer.');
         }
 
+        if ($this->codeAttemptsExceeded('verify-phone|' . $user->uuid)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // Find the verification code
         $verificationCode = VerificationCode::where([
             'subject_uuid' => $user->uuid,
@@ -1396,8 +1593,12 @@ class CustomerController extends Controller
                 return new Customer($customer->fresh());
             }
 
+            $this->recordFailedCodeAttempt('verify-phone|' . $user->uuid);
+
             return response()->apiError('Invalid verification code!');
         }
+
+        $this->clearCodeAttempts('verify-phone|' . $user->uuid);
 
         // Get the phone number from meta. A row written by anything other than
         // requestPhoneVerification may not carry it, and an unguarded subscript turns a

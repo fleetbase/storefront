@@ -39,6 +39,10 @@ if (!function_exists('config')) {
     }
 }
 
+// The core SMS guard is off in this suite unless a test turns it on: its counters live
+// in the shared array cache, so one file's sends would otherwise rate-limit the next's.
+config(['sms.guard.enabled' => false]);
+
 if (!function_exists('logger')) {
     function logger(): mixed
     {
