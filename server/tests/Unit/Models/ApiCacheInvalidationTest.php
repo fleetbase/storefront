@@ -20,10 +20,18 @@ function createApiCacheInvalidationSchema(): void
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
 
-    foreach (['network_stores', 'categories', 'catalog_subjects', 'catalog_category_products', 'transactions', 'transaction_items'] as $table) {
+    foreach (['networks', 'network_stores', 'categories', 'catalog_subjects', 'catalog_category_products', 'transactions', 'transaction_items'] as $table) {
         $schema->dropIfExists($table);
     }
 
+    $schema->create('networks', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
     $schema->create('network_stores', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
@@ -84,19 +92,18 @@ test('network membership changes made through the query builder invalidate the c
     createApiCacheInvalidationSchema();
     session(['company' => 'company_network']);
     $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'company_uuid' => 'company_network']);
     $connection->table('network_stores')->insert([
         ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_a', 'category_uuid' => 'category_uuid', 'status' => 'pending'],
         ['network_uuid' => 'network_uuid', 'store_uuid' => 'store_b', 'category_uuid' => 'category_uuid', 'status' => 'active'],
     ]);
     $connection->table('categories')->insert(['uuid' => 'category_uuid', 'owner_uuid' => 'network_uuid', 'name' => 'Food', 'for' => 'storefront_network']);
 
-    $controller       = new NetworkController();
-    $setStatus        = new ReflectionMethod($controller, 'setMembershipStatus');
-    $setStatus->setAccessible(true);
-    $networkStores    = apiQueryCacheVersion('network_stores', 'company_network');
-    $stores           = apiQueryCacheVersion('stores', 'company_network');
+    $controller    = new NetworkController();
+    $networkStores = apiQueryCacheVersion('network_stores', 'company_network');
+    $stores        = apiQueryCacheVersion('stores', 'company_network');
 
-    $setStatus->invoke($controller, 'network_uuid', ['store_a'], 'active');
+    $controller->reinstateStores('network_uuid', NetworkActionRequest::create('/', 'POST', ['stores' => ['store_a']]));
 
     expect($connection->table('network_stores')->where('store_uuid', 'store_a')->value('status'))->toBe('active')
         ->and(apiQueryCacheVersion('network_stores', 'company_network'))->toBe($networkStores + 1)
