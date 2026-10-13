@@ -82,6 +82,10 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
+        if ($request->filled('category_uuid') && !$this->networkCategory($network, $request->input('category_uuid'))) {
+            return response()->error('This category is not one of the network\'s categories.', 422);
+        }
+
         $recipients    = collect($request->array('recipients'))->filter(fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL))->map(fn ($email) => strtolower(trim($email)))->unique()->values();
         $expiresInDays = $request->input('expires_in_days');
         $meta          = array_filter([
@@ -228,7 +232,7 @@ class NetworkController extends StorefrontController
             }
 
             $link     = static::linkSettings($network);
-            $category = $link['category_uuid'] ? Category::where('uuid', $link['category_uuid'])->first() : null;
+            $category = $this->networkCategory($network, $link['category_uuid']);
 
             return response()->json([
                 'invitation' => static::serializeLinkInvitation($network, $uri, $link),
@@ -243,7 +247,7 @@ class NetworkController extends StorefrontController
         }
 
         $network  = $invitation->subject;
-        $category = data_get($invitation->meta, 'category_uuid') ? Category::where('uuid', data_get($invitation->meta, 'category_uuid'))->first() : null;
+        $category = $this->networkCategory($network, data_get($invitation->meta, 'category_uuid'));
 
         return response()->json([
             'invitation' => static::serializeInvitation($invitation),
@@ -341,7 +345,7 @@ class NetworkController extends StorefrontController
             [
                 'network_uuid'  => $network->uuid,
                 'store_uuid'    => $store->uuid,
-                'category_uuid' => data_get($invitation->meta, 'category_uuid'),
+                'category_uuid' => $this->networkCategory($network, data_get($invitation->meta, 'category_uuid'))?->uuid,
                 'status'        => $requireApproval ? NetworkStore::STATUS_PENDING : NetworkStore::STATUS_ACTIVE,
             ]
         );
@@ -454,7 +458,7 @@ class NetworkController extends StorefrontController
 
         $invitations = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->orderBy('created_at', 'desc')->get()->map(fn (Invite $invitation) => static::serializeInvitation($invitation));
         $byStore     = $liveOrders->groupBy(fn ($order) => data_get($order, 'meta.storefront_id'));
-        $categories  = Category::whereIn('uuid', $network->stores->map(fn (Store $store) => $store->pivot->category_uuid ?? null)->filter()->unique()->values())->get()->keyBy('uuid');
+        $categories  = Category::where('owner_uuid', $network->uuid)->whereIn('uuid', $network->stores->map(fn (Store $store) => $store->pivot->category_uuid ?? null)->filter()->unique()->values())->get()->keyBy('uuid');
         $stores      = $network->stores->map(function (Store $store) use ($byStore, $liveOrders, $revenue, $categories) {
             $storeOrders  = $byStore->get($store->public_id, collect());
             $storeRevenue = round($storeOrders->sum(fn ($order) => (float) (data_get($order, 'meta.total') ?? 0)), 2);
@@ -609,6 +613,10 @@ class NetworkController extends StorefrontController
 
         if (!$network) {
             return response()->error('Network not found.', 404);
+        }
+
+        if ($request->filled('category_uuid') && !$this->networkCategory($network, $request->input('category_uuid'))) {
+            return response()->error('This category is not one of the network\'s categories.', 422);
         }
 
         $options = (array) ($network->options ?? []);
@@ -829,6 +837,20 @@ class NetworkController extends StorefrontController
     }
 
     /**
+     * The category with this uuid when it is one of the network's own categories (its
+     * subcategories included), so a category id from another network is never stored
+     * on an invitation, join link or membership, nor shown back.
+     */
+    protected function networkCategory(Network $network, mixed $categoryId): ?Category
+    {
+        if (!is_string($categoryId) || $categoryId === '') {
+            return null;
+        }
+
+        return Category::where(['owner_uuid' => $network->uuid, 'uuid' => $categoryId])->first();
+    }
+
+    /**
      * The network with this uuid or public id, only when it belongs to the session company.
      * Join links are the only actions that reach another company's network, and they do not
      * come through here.
@@ -899,13 +921,17 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $category = $request->input('category');
+        $category = $this->networkCategory($network, $request->input('category'));
         $store    = $request->input('store');
+
+        if (!$category) {
+            return response()->error('This category is not one of the network\'s categories.', 422);
+        }
 
         // get network store instance
         $networkStore = NetworkStore::where(['network_uuid' => $network->uuid, 'store_uuid' => $store])->first();
         if ($networkStore) {
-            $networkStore->update(['category_uuid' => $category]);
+            $networkStore->update(['category_uuid' => $category->uuid]);
         }
 
         return response()->json(['status' => 'ok']);

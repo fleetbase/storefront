@@ -69,6 +69,7 @@ function createNetworkScopingSchema(): void
         $table->increments('id');
         $table->string('uuid');
         $table->string('owner_uuid');
+        $table->string('name')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
@@ -94,8 +95,9 @@ function createNetworkScopingSchema(): void
         ['uuid' => 'other_invite_uuid', 'public_id' => 'invite_other', 'company_uuid' => 'other_company_uuid', 'subject_uuid' => 'other_network_uuid', 'reason' => 'join_storefront_network', 'protocol' => 'link', 'uri' => 'other-invite', 'meta' => json_encode(['status' => 'awaiting_approval', 'accepted_store' => 'store_uuid'])],
     ]);
     $connection->table('categories')->insert([
-        ['uuid' => 'category_uuid', 'owner_uuid' => 'network_uuid'],
-        ['uuid' => 'other_category_uuid', 'owner_uuid' => 'other_network_uuid'],
+        ['uuid' => 'category_uuid', 'owner_uuid' => 'network_uuid', 'name' => 'Food'],
+        ['uuid' => 'sub_category_uuid', 'owner_uuid' => 'network_uuid', 'name' => 'Noodles'],
+        ['uuid' => 'other_category_uuid', 'owner_uuid' => 'other_network_uuid', 'name' => 'Other Food'],
     ]);
 }
 
@@ -235,4 +237,67 @@ test('add stores adds the company\'s own stores, keeps existing members and neve
     $members = $connection->table('network_stores')->where('network_uuid', 'network_uuid')->whereNull('deleted_at')->pluck('store_uuid')->sort()->values()->all();
     expect($response->getData(true))->toBe(['status' => 'ok'])
         ->and($members)->toBe(['member_store_uuid', 'second_store_uuid', 'store_uuid']);
+});
+
+test('network writes refuse a category of another network', function () {
+    createNetworkScopingSchema();
+    session(['company' => 'company_uuid', 'user' => 'user_uuid']);
+    $mail       = fakeNetworkScopingMail();
+    $before     = networkScopingSnapshot();
+    $controller = new NetworkController();
+
+    $invite = $controller->sendInvites('network_uuid', networkActionRequest(['recipients' => ['store@example.test'], 'category_uuid' => 'other_category_uuid']));
+    $link   = $controller->updateShareableLink('network_uuid', networkActionRequest(['enabled' => true, 'category_uuid' => 'other_category_uuid']));
+    $assign = $controller->addStoreToCategory('network_uuid', AddStoreToNetworkCategory::create('/', 'POST', ['store' => 'store_uuid', 'category' => 'other_category_uuid']));
+
+    expect($invite->getStatusCode())->toBe(422)
+        ->and($link->getStatusCode())->toBe(422)
+        ->and($assign->getStatusCode())->toBe(422)
+        ->and(networkScopingSnapshot())->toEqual($before)
+        ->and($mail->sent)->toBe([]);
+});
+
+test('network writes accept the network\'s own categories and subcategories, and no category', function () {
+    createNetworkScopingSchema();
+    session(['company' => 'company_uuid', 'user' => 'user_uuid']);
+    fakeNetworkScopingMail();
+    $controller = new NetworkController();
+    $connection = Capsule::connection('mysql');
+
+    $invite = $controller->sendInvites('network_uuid', networkActionRequest(['recipients' => ['store@example.test'], 'category_uuid' => 'sub_category_uuid']));
+    expect($invite->getStatusCode())->toBe(200)
+        ->and($invite->getData(true)['invitations'][0]['category_uuid'])->toBe('sub_category_uuid');
+
+    expect($controller->sendInvites('network_uuid', networkActionRequest(['recipients' => ['other@example.test'], 'category_uuid' => '']))->getStatusCode())->toBe(200);
+
+    $link = $controller->updateShareableLink('network_uuid', networkActionRequest(['enabled' => true, 'category_uuid' => 'category_uuid']));
+    expect($link->getStatusCode())->toBe(200)
+        ->and($link->getData(true)['link']['category_uuid'])->toBe('category_uuid');
+
+    $cleared = $controller->updateShareableLink('network_uuid', networkActionRequest(['category_uuid' => null]));
+    expect($cleared->getStatusCode())->toBe(200)
+        ->and($cleared->getData(true)['link']['category_uuid'])->toBeNull();
+
+    expect($controller->addStoreToCategory('network_uuid', AddStoreToNetworkCategory::create('/', 'POST', ['store' => 'store_uuid', 'category' => 'sub_category_uuid']))->getStatusCode())->toBe(200)
+        ->and($connection->table('network_stores')->where(['network_uuid' => 'network_uuid', 'store_uuid' => 'store_uuid'])->value('category_uuid'))->toBe('sub_category_uuid');
+});
+
+test('the join page and joining ignore a category of another network stored on an invitation before it was checked', function () {
+    createNetworkScopingSchema();
+    session(['company' => 'company_uuid', 'user' => 'user_uuid']);
+    $connection = Capsule::connection('mysql');
+    $connection->table('invites')->insert([
+        'uuid'   => 'own_invite_uuid', 'public_id' => 'invite_own', 'company_uuid' => 'company_uuid', 'subject_uuid' => 'network_uuid', 'subject_type' => Network::class,
+        'reason' => 'join_storefront_network', 'protocol' => 'email', 'uri' => 'own-invite', 'meta' => json_encode(['status' => 'pending', 'category_uuid' => 'other_category_uuid']),
+    ]);
+
+    $lookup   = (new NetworkController())->lookupInvitation('own-invite');
+    $response = (new NetworkController())->acceptInvitation('own-invite', Request::create('/', 'POST', ['store' => 'second_store_uuid']));
+
+    expect($lookup->getStatusCode())->toBe(200)
+        ->and($lookup->getData(true)['category'])->toBeNull();
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($connection->table('network_stores')->where(['network_uuid' => 'network_uuid', 'store_uuid' => 'second_store_uuid'])->exists())->toBeTrue()
+        ->and($connection->table('network_stores')->where(['network_uuid' => 'network_uuid', 'store_uuid' => 'second_store_uuid'])->value('category_uuid'))->toBeNull();
 });
