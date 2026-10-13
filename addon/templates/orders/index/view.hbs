@@ -10,8 +10,12 @@
     @width="640px"
     @isResizable={{true}}
 >
-    <div class="scrollable storefront-order-panel-tab-content">
-        <Storefront::Order::Overview @order={{@model}} @refresh={{this.refreshOrder}} />
-    </div>
+    <TabNavigation @tabs={{this.tabs}} @contentClass="scrollable storefront-order-panel-tab-content" @tablistClass="pl-2 storefront-order-panel-tablist" as |activeTab|>
+        {{#if activeTab.registeredSlug}}
+            <Storefront::Order::Details::RegisteredTab @class={{activeTab.registeredSlug}} @resource={{@model}} />
+        {{else}}
+            <Storefront::Order::Overview @order={{@model}} @refresh={{this.refreshOrder}} />
+        {{/if}}
+    </TabNavigation>
     {{outlet}}
 </Layout::Resource::Panel>

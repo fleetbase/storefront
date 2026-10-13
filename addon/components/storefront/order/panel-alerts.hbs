@@ -1,0 +1,16 @@
+{{! What needs the store's attention, each as a banner with the buttons that deal with it. }}
+{{#each this.rows as |row|}}
+    <div class="sfop-alert-wrap">
+        <div class="sfop-alert sfop-alert--{{row.tone}}" role={{if (eq row.tone "bad") "alert" "status"}} data-test-order-alert={{row.code}}>
+            <FaIcon @icon={{row.icon}} class="sfop-alert__icon" />
+            <div class="sfop-alert__text"><strong>{{row.title}}</strong>{{#if row.detail}} {{row.detail}}{{/if}}</div>
+            {{#if row.actions.length}}
+                <div class="sfop-alert__actions">
+                    {{#each row.actions as |cta|}}
+                        <Button @size="xs" @type={{if cta.primary "primary" "default"}} @icon={{cta.icon}} @text={{cta.text}} @onClick={{cta.onClick}} />
+                    {{/each}}
+                </div>
+            {{/if}}
+        </div>
+    </div>
+{{/each}}

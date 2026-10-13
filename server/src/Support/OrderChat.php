@@ -36,7 +36,12 @@ class OrderChat
     /** The customer and the store's staff. */
     public const KIND_CUSTOMER = 'customer';
 
-    public const KINDS = [self::KIND_DRIVER, self::KIND_CUSTOMER];
+    /** The store's staff and the driver (the driver app's "Message dispatch"). Channel meta.kind `driver`. */
+    public const KIND_DISPATCH = 'dispatch';
+
+    public const CHANNEL_KIND_DISPATCH = 'driver';
+
+    public const KINDS = [self::KIND_DRIVER, self::KIND_CUSTOMER, self::KIND_DISPATCH];
 
     public const ROLE_CUSTOMER = 'customer';
     public const ROLE_DRIVER   = 'driver';
@@ -56,26 +61,90 @@ class OrderChat
      */
     public static function find(Order $order, string $kind = self::KIND_DRIVER): ?ChatChannel
     {
-        return ChatChannel::where('company_uuid', $order->company_uuid)
-            ->where('meta->' . static::META_ORDER_UUID, $order->uuid)
-            ->when(
-                $kind === static::KIND_DRIVER,
-                fn ($query) => $query->where(fn ($query) => $query->whereNull('meta->' . static::META_KIND)->orWhereIn('meta->' . static::META_KIND, [static::KIND_DRIVER, static::CHANNEL_KIND_GROUP])),
-                fn ($query) => $query->where('meta->' . static::META_KIND, $kind)
-            )
-            ->first();
+        $query = ChatChannel::where('company_uuid', $order->company_uuid)->where('meta->' . static::META_ORDER_UUID, $order->uuid);
+
+        return match ($kind) {
+            static::KIND_CUSTOMER => $query->where('meta->' . static::META_KIND, static::KIND_CUSTOMER)->first(),
+            static::KIND_DISPATCH => $query->where('meta->' . static::META_KIND, static::CHANNEL_KIND_DISPATCH)->first(),
+            // The customer and driver thread: tagged `group`, or untagged from before kinds existed.
+            default => $query->where(fn ($query) => $query->whereNull('meta->' . static::META_KIND)->orWhere('meta->' . static::META_KIND, static::CHANNEL_KIND_GROUP))->first(),
+        };
     }
 
     public static function normalizeKind(?string $kind): string
     {
+        if ($kind === static::CHANNEL_KIND_GROUP) {
+            return static::KIND_DRIVER;
+        }
+
         return in_array($kind, static::KINDS, true) ? $kind : static::KIND_DRIVER;
     }
 
     public static function kindOf(ChatChannel $channel): string
     {
-        $kind = data_get($channel->meta, static::META_KIND);
+        return match (data_get($channel->meta, static::META_KIND)) {
+            static::KIND_CUSTOMER         => static::KIND_CUSTOMER,
+            static::CHANNEL_KIND_DISPATCH => static::KIND_DISPATCH,
+            default                       => static::KIND_DRIVER,
+        };
+    }
 
-        return static::normalizeKind($kind === static::CHANNEL_KIND_GROUP ? static::KIND_DRIVER : $kind);
+    /**
+     * The order's thread between the store and the driver, started when needed. Null without a
+     * driver who has an account.
+     */
+    public static function openDispatch(Order $order, string $staffUserUuid): ?ChatChannel
+    {
+        $driverUserUuid = static::driverUserUuid($order);
+        if (!$driverUserUuid) {
+            return null;
+        }
+
+        $channel = static::find($order, static::KIND_DISPATCH);
+        if (!$channel) {
+            $channel = ChatChannel::create([
+                'company_uuid'    => $order->company_uuid,
+                'created_by_uuid' => $staffUserUuid,
+                'name'            => 'Order ' . $order->public_id . ' · driver',
+                'meta'            => [
+                    static::META_ORDER_UUID => $order->uuid,
+                    static::META_ORDER_ID   => $order->public_id,
+                    static::META_PUBLIC_ID  => $order->public_id,
+                    static::META_KIND       => static::CHANNEL_KIND_DISPATCH,
+                ],
+            ]);
+        }
+
+        // A reassigned order's thread moves to the new driver.
+        foreach (ChatParticipant::where('chat_channel_uuid', $channel->uuid)->get() as $participant) {
+            if ($participant->user_uuid !== $driverUserUuid && static::isDriverUser($participant->user_uuid)) {
+                $participant->delete();
+            }
+        }
+        static::join($channel, $driverUserUuid, static::ROLE_DRIVER);
+        static::join($channel, $staffUserUuid, static::ROLE_STORE);
+
+        return $channel;
+    }
+
+    /**
+     * A console user of the order's company who is not a driver: store staff.
+     */
+    public static function isStaffUser(ChatChannel $channel, ?string $userUuid): bool
+    {
+        return $userUuid && !static::isDriverUser($userUuid) && \Fleetbase\Models\User::where('uuid', $userUuid)->where('company_uuid', $channel->company_uuid)->where('type', '!=', 'customer')->exists();
+    }
+
+    public static function isDriverUser(?string $userUuid): bool
+    {
+        if (!$userUuid) {
+            return false;
+        }
+
+        // A plain query: the model's scopes would hide drivers of other companies or contexts.
+        $driver = new \Fleetbase\FleetOps\Models\Driver();
+
+        return \Illuminate\Support\Facades\DB::connection($driver->getConnectionName())->table($driver->getTable())->where('user_uuid', $userUuid)->whereNull('deleted_at')->exists();
     }
 
     /**
@@ -154,7 +223,11 @@ class OrderChat
             return static::ROLE_CUSTOMER;
         }
 
-        return static::kindOf($channel) === static::KIND_CUSTOMER ? static::ROLE_STORE : static::ROLE_DRIVER;
+        return match (static::kindOf($channel)) {
+            static::KIND_CUSTOMER => static::ROLE_STORE,
+            static::KIND_DISPATCH => static::isDriverUser(data_get($participant, 'user_uuid')) ? static::ROLE_DRIVER : static::ROLE_STORE,
+            default               => static::isDriverUser(data_get($participant, 'user_uuid')) || !data_get($participant, 'user_uuid') ? static::ROLE_DRIVER : static::ROLE_STORE,
+        };
     }
 
     /**
@@ -257,8 +330,10 @@ class OrderChat
     {
         $existing = ChatParticipant::where('chat_channel_uuid', $channel->uuid)->get();
 
+        // Anyone else who was the customer or a driver goes (a reassigned order); store staff who
+        // joined the thread stay.
         foreach ($existing as $participant) {
-            if (!in_array($participant->user_uuid, $userUuids, true)) {
+            if (!in_array($participant->user_uuid, $userUuids, true) && (data_get($participant, 'meta.role') !== static::ROLE_STORE) && (static::isDriverUser($participant->user_uuid) || data_get($participant, 'meta.role') === static::ROLE_CUSTOMER || !static::isStaffUser($channel, $participant->user_uuid))) {
                 $participant->delete();
             }
         }

@@ -1,0 +1,86 @@
+{{! Who is involved: the customer and the driver, each with call, message and their latest state. }}
+<div class="sfop-people" data-test-order-people>
+    <div class="sfop-box" data-test-order-customer-card>
+        <div class="sfop-lbl">{{t "storefront.common.customer"}}</div>
+        {{#if this.customer}}
+            <div class="sfop-person">
+                {{#if this.customerPhoto}}
+                    <Image src={{this.customerPhoto}} alt={{this.customer.name}} class="sfop-av" />
+                {{else}}
+                    <span class="sfop-av" aria-hidden="true">{{this.initials this.customer.name}}</span>
+                {{/if}}
+                <div class="sfop-person__text">
+                    <button type="button" class="sfop-link sfop-person__name" {{on "click" this.openCustomer}}>{{this.customer.name}}</button>
+                    {{#if this.customerHistory}}<div class="sfop-muted sfop-small">{{this.customerHistory}}</div>{{/if}}
+                </div>
+            </div>
+            <div class="sfop-row">
+                <span class="sfop-mono">{{n-a this.customer.phone}}</span>
+                <span class="sfop-row__actions">
+                    {{#if this.customer.phone}}
+                        <Button @size="xs" @icon="phone" aria-label={{t "storefront.order.panel.call" name=this.customerFirstName}} @onClick={{fn this.call this.customer.phone}} />
+                    {{/if}}
+                    <Button @size="xs" @icon="comment" aria-label={{t "storefront.order.panel.message-to" name=this.customerFirstName}} @onClick={{fn this.openChat "customer"}} />
+                </span>
+            </div>
+            {{#if this.lastMessage}}
+                <button type="button" class="sfop-quote" {{on "click" (fn this.openChat "customer")}}><span class="sfop-muted">{{this.lastMessage.time}}</span> “{{this.lastMessage.content}}”</button>
+            {{/if}}
+        {{else}}
+            <div class="sfop-muted sfop-small">{{t "storefront.order.panel.no-customer"}}</div>
+        {{/if}}
+    </div>
+
+    {{#if this.isPickup}}
+        <div class="sfop-box" data-test-order-pickup-card>
+            <div class="sfop-lbl">{{t "storefront.common.pickup"}}</div>
+            <div class="sfop-person">
+                <span class="sfop-av sfop-av--store" aria-hidden="true"><FaIcon @icon="store" @size="xs" /></span>
+                <div class="sfop-person__text">
+                    <strong>{{n-a this.order.payload.pickup.name this.order.meta.storefront}}</strong>
+                    <div class="sfop-muted sfop-small">{{n-a this.order.payload.pickup.address}}</div>
+                </div>
+            </div>
+            <div class="sfop-small">{{t "storefront.order.panel.collects" name=this.customerFirstName}}</div>
+        </div>
+    {{else if this.driver}}
+        <div class="sfop-box" data-test-order-driver-card>
+            <div class="sfop-lbl">{{t "storefront.order.panel.driver"}}</div>
+            <div class="sfop-person">
+                <Image src={{this.driver.photo_url}} @fallbackSrc={{config "defaultValues.driverImage"}} alt={{this.driver.name}} class="sfop-av sfop-av--driver" />
+                <div class="sfop-person__text">
+                    <button type="button" class="sfop-link sfop-person__name" {{on "click" this.openDriver}}>{{this.driver.name}}</button>
+                    {{#if this.driver.vehicle_name}}<div class="sfop-muted sfop-small">{{this.driver.vehicle_name}}</div>{{/if}}
+                </div>
+                <Badge @status={{if this.driver.online "online" "offline"}} @text={{if this.driver.online (t "storefront.order.panel.online") (t "storefront.order.panel.offline")}} @disableHumanize={{true}} @size="xs" />
+            </div>
+            <div class="sfop-row">
+                <span>{{this.driverStatus}}</span>
+                <span class="sfop-row__actions">
+                    {{#if this.driver.phone}}
+                        <Button @size="xs" @icon="phone" aria-label={{t "storefront.order.panel.call" name=this.driverFirstName}} @onClick={{fn this.call this.driver.phone}} />
+                    {{/if}}
+                    <Button @size="xs" @icon="comment" aria-label={{t "storefront.order.panel.message-to" name=this.driverFirstName}} @onClick={{fn this.openChat "dispatch"}} />
+                </span>
+            </div>
+            <div class="sfop-pair">
+                <Button @size="xs" @icon="map-location-dot" @text={{t "storefront.order.panel.track"}} @onClick={{this.track}} />
+                {{#if this.canAssign}}<Button @size="xs" @icon="user-pen" @text={{t "storefront.order.panel.reassign"}} @onClick={{this.assign}} />{{/if}}
+            </div>
+        </div>
+    {{else}}
+        <div class="sfop-box" data-test-order-driver-card>
+            <div class="sfop-lbl">{{t "storefront.order.panel.driver"}}</div>
+            <div class="sfop-person">
+                <span class="sfop-av sfop-av--empty" aria-hidden="true"><FaIcon @icon="user" @size="xs" /></span>
+                <div class="sfop-person__text">
+                    <strong>{{t "storefront.order.panel.no-driver"}}</strong>
+                    <div class="sfop-muted sfop-small">{{if this.order.adhoc (t "storefront.order.panel.adhoc") (t "storefront.order.panel.assign-hint")}}</div>
+                </div>
+            </div>
+            {{#if this.canAssign}}
+                <div class="sfop-pair"><Button @size="xs" @type="primary" @icon="user-plus" @text={{t "storefront.order.panel.assign-driver"}} @onClick={{this.assign}} /></div>
+            {{/if}}
+        </div>
+    {{/if}}
+</div>

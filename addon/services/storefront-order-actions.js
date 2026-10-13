@@ -1,12 +1,62 @@
 import Service, { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
+import { isArray } from '@ember/array';
+import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 class CancelDraft {
     @tracked reason = '';
-    @tracked refund = true;
+    // refund | store_credit | none
+    @tracked giveBack = 'none';
+    @tracked amount = 0;
+}
+
+/**
+ * State the order panel's header and body share: whether the messages drawer is open, on which
+ * thread, with what draft, and the order's overview (payment, alerts, unread counts).
+ */
+class OrderPanelState {
+    @tracked chatOpen = false;
+    @tracked chatKind = 'customer';
+    @tracked chatDraft = '';
+    @tracked overview = null;
+    @tracked flow = null;
+    @tracked printingLabel = false;
+    orderId = null;
+    printLabel = null;
+    refresh = null;
+
+    openChat = (kind = 'customer', draft = '') => {
+        this.chatKind = kind;
+        this.chatDraft = draft ?? '';
+        this.chatOpen = true;
+    };
+
+    closeChat = () => {
+        this.chatOpen = false;
+    };
+
+    setOverview(orderId, overview) {
+        if (this.orderId !== orderId) {
+            this.chatOpen = false;
+            this.chatDraft = '';
+        }
+        this.orderId = orderId;
+        this.overview = overview;
+    }
+
+    get unread() {
+        return this.overview?.chat?.unread ?? {};
+    }
+
+    get unreadTotal() {
+        return this.overview?.chat?.unread_total ?? 0;
+    }
 }
 
 export default class StorefrontOrderActionsService extends Service {
+    /** The open order panel's shared state (see OrderPanelState). */
+    panel = new OrderPanelState();
+
     @service hostRouter;
     @service intl;
     @service notifications;
@@ -15,6 +65,7 @@ export default class StorefrontOrderActionsService extends Service {
     @service storefront;
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
+    @service('universe/menu-service') menuService;
 
     async viewOrder(order, options = {}) {
         const hydratedOrder = await this.fetch.get(
@@ -34,7 +85,7 @@ export default class StorefrontOrderActionsService extends Service {
             resource: hydratedOrder,
             title: hydratedOrder.public_id,
             header: 'storefront/order/panel-header',
-            content: 'storefront/order/overview',
+            tabs: this.tabsFor(hydratedOrder),
             onChange: options.onChange,
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
             registry: 'storefront:order:details',
@@ -47,6 +98,22 @@ export default class StorefrontOrderActionsService extends Service {
         });
 
         return hydratedOrder;
+    }
+
+    /** The order's own view, then tabs other extensions register on `storefront:component:order:details`. */
+    tabsFor() {
+        const registered = this.menuService.getMenuItems('storefront:component:order:details');
+
+        return [
+            { label: this.intl.t('storefront.order.panel.details-tab'), key: 'details', icon: 'receipt', component: 'storefront/order/overview' },
+            ...(isArray(registered) ? registered : []).map((tab) => ({
+                label: tab.label ?? tab.title,
+                key: tab.slug,
+                icon: tab.icon,
+                component: 'storefront/order/details/registered-tab',
+                class: tab.slug,
+            })),
+        ];
     }
 
     actionButtonsFor(order, callback) {
@@ -260,34 +327,49 @@ export default class StorefrontOrderActionsService extends Service {
     }
 
     /**
-     * Cancel with a reason; what was paid is refunded (or credited where the gateway cannot
-     * refund it) unless the store says otherwise. The customer is told why.
+     * Cancel with a reason and give back what was paid: refunded to the gateway (in part where it
+     * can refund part of a payment), given as store credit, or kept. The customer is told why.
      */
     async cancelOrder(order, callback) {
-        let payment = null;
+        let overview = null;
         try {
-            payment = (await this.fetch.get(`orders/${order.public_id}/overview`, {}, { namespace: 'storefront/int/v1' }))?.payment ?? null;
+            overview = await this.fetch.get(`orders/${order.public_id}/overview`, {}, { namespace: 'storefront/int/v1' });
         } catch {
-            // The dialog still cancels; it just cannot say what is refunded.
+            // The dialog still cancels; it just cannot offer a refund.
         }
 
+        const plan = overview?.cancel ?? null;
         const draft = new CancelDraft();
+        if (plan?.refundable > 0) {
+            draft.giveBack = plan.default ?? 'none';
+            draft.amount = plan.refundable;
+        }
+
+        const confirmKey = { refund: 'confirm-refund', store_credit: 'confirm-credit' }[draft.giveBack] ?? 'confirm';
 
         this.modalsManager.show('modals/cancel-order', {
             title: this.intl.t('storefront.order.cancel.title'),
-            acceptButtonText: this.intl.t('storefront.order.cancel.confirm'),
+            acceptButtonText: this.intl.t(`storefront.order.cancel.${confirmKey}`, { amount: formatCurrency(draft.amount, plan?.currency) }),
             acceptButtonScheme: 'danger',
             acceptButtonIcon: 'ban',
+            declineButtonText: this.intl.t('storefront.order.cancel.keep-order'),
             order,
-            payment,
+            payment: overview?.payment ?? null,
+            plan,
             draft,
             confirm: async (modal) => {
                 modal.startLoading();
 
+                const giveBack = plan?.refundable > 0 && draft.giveBack !== 'none';
                 try {
                     const response = await this.fetch.patch(
                         'orders/cancel',
-                        { order: order.id, reason: draft.reason?.trim() || null, refund: draft.refund },
+                        {
+                            order: order.id,
+                            reason: draft.reason?.trim() || null,
+                            refund: giveBack,
+                            ...(giveBack ? { settlement: draft.giveBack, amount: draft.amount } : {}),
+                        },
                         { namespace: 'storefront/int/v1' }
                     );
                     this.setOrderStateFromResponse(order, response, 'canceled', callback);

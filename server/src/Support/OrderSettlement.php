@@ -69,6 +69,28 @@ class OrderSettlement
     }
 
     /**
+     * What canceling the order would give back: what was paid and is still held, and the ways it
+     * can go back (a refund where the gateway can refund it, else store credit).
+     */
+    public static function cancelPlan(Order $order): array
+    {
+        $payment    = OrderPayments::summary($order);
+        $refundable = max(0, $payment['amount_paid'] - $payment['amount_refunded'] - $payment['amount_credited']);
+        $plan       = $refundable > 0 ? static::plan($order, -$refundable) : null;
+        $options    = array_values(array_intersect($plan['options'] ?? [], [static::METHOD_REFUND, static::METHOD_STORE_CREDIT]));
+
+        return [
+            'refundable'              => $options ? $refundable : 0,
+            'currency'                => $payment['currency'],
+            'gateway'                 => $payment['gateway'],
+            'method_label'            => $payment['method_label'],
+            'options'                 => $options,
+            'default'                 => $options[0] ?? null,
+            'supports_partial_refund' => (bool) ($plan['supports_partial_refund'] ?? false),
+        ];
+    }
+
+    /**
      * Return money to the customer, by refund or store credit.
      *
      * @throws \RuntimeException when the gateway cannot refund this amount

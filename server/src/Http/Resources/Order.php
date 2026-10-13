@@ -68,7 +68,6 @@ class Order extends FleetOpsOrderResource
             'amount_paid',
             'balance_due',
             'address_change_request',
-            'offer',
             'currency',
             'gateway',
             'is_pickup',

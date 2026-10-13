@@ -480,32 +480,10 @@ export default class OrdersIndexController extends BaseController {
     }
 
     /**
-     * Cancels a specific order after confirmation.
-     * @param {Object} order - The order to cancel.
-     * @param {Object} [options={}] - Additional options for the modal.
-     * @action
-     * @memberof OperationsOrdersIndexController
+     * Cancel an order: why, and whether what was paid is refunded or given as store credit.
      */
-    @action cancelOrder(order, options = {}) {
-        this.modalsManager.confirm({
-            title: this.intl.t('storefront.component.widget.orders.cancel-order-modal-title'),
-            body: this.intl.t('storefront.component.widget.orders.cancel-order-modal-body'),
-            order,
-            confirm: async (modal) => {
-                modal.startLoading();
-
-                try {
-                    await this.fetch.patch('orders/cancel', { order: order.id }, { namespace: 'storefront/int/v1' });
-                    order.set('status', 'canceled');
-                    this.notifications.success(this.intl.t('storefront.component.widget.orders.cancel-order-success', { orderId: order.public_id }));
-                    modal.done();
-                } catch (error) {
-                    this.notifications.serverError(error);
-                    modal.stopLoading();
-                }
-            },
-            ...options,
-        });
+    @action cancelOrder(order) {
+        return this.storefrontOrderActions.cancelOrder(order, this.refreshOrders);
     }
 
     @action dispatchOrder(order, options = {}) {

@@ -1,0 +1,50 @@
+{{! The order's messages in a side sheet next to the panel: the customer, the driver, and all three together. }}
+<span class="sfop-anchor" hidden {{did-insert this.setupAnchor}} {{will-destroy this.teardownAnchor}}></span>
+{{#if (and this.panel.chatOpen this.destination)}}
+    {{#in-element this.destination insertBefore=null}}
+        <section class="sfop-drawer" style={{this.position}} aria-label={{t "storefront.order.chat.title"}} data-test-order-chat-drawer>
+            <div class="sfop-drawer__head">
+                <h2 class="sfop-h2">{{t "storefront.order.chat.title"}}</h2>
+                <Button @size="xs" @icon="times" aria-label={{t "storefront.order.panel.close-messages"}} @onClick={{this.panel.closeChat}} data-test-chat-close />
+            </div>
+            <div class="sfop-tabs" role="tablist">
+                {{#each this.tabs as |tab|}}
+                    <button type="button" role="tab" class="sfop-tab {{if tab.active 'is-on'}}" aria-selected={{if tab.active "true" "false"}} {{on "click" (fn this.pick tab.id)}} data-test-chat-tab={{tab.id}}>
+                        {{tab.label}}
+                        {{#if tab.unread}}<span class="sfop-count">{{tab.unread}}</span>{{/if}}
+                    </button>
+                {{/each}}
+            </div>
+            <div class="sfop-drawer__messages" role="log" aria-live="polite" {{did-insert this.scrollToEnd}} {{did-update this.scrollToEnd this.messages.length this.panel.chatKind}}>
+                {{#if this.load.isRunning}}
+                    <Spinner @size="sm" />
+                {{else}}
+                    {{#each this.messages as |message|}}
+                        <div class="sfop-bubble {{if message.is_mine 'is-out' 'is-in'}} {{if message.system 'is-system'}}" data-test-chat-message={{message.id}}>
+                            {{#if this.showSenders}}{{#unless message.is_mine}}<span class="sfop-bubble__who">{{message.sender.name}}</span>{{/unless}}{{/if}}
+                            {{! the text keeps its own line breaks; the template's indentation must not reach it }}
+                            <span class="sfop-bubble__text">{{message.content}}</span>
+                        </div>
+                        <div class="sfop-bubble__time {{if message.is_mine 'is-out'}}">{{this.timeOf message}}</div>
+                    {{else}}
+                        <div class="sfop-muted sfop-small">{{this.emptyText}}</div>
+                    {{/each}}
+                {{/if}}
+            </div>
+            {{#if this.canWrite}}
+                {{#if this.quickReplies.length}}
+                    <div class="sfop-drawer__quick">
+                        {{#each this.quickReplies as |reply|}}
+                            <Button @size="xs" @text={{reply}} @onClick={{fn this.useReply reply}} />
+                        {{/each}}
+                    </div>
+                {{/if}}
+                <form class="sfop-drawer__compose" {{on "submit" this.submit}}>
+                    <Input class="form-input form-input-sm w-full" @value={{this.panel.chatDraft}} placeholder={{this.placeholder}} aria-label={{this.placeholder}} {{on "input" this.setDraft}} data-test-chat-input />
+                    <Button @size="sm" @type="primary" @icon="paper-plane" @text={{t "storefront.order.chat.send"}} @buttonType="submit" @disabled={{or (not this.panel.chatDraft) this.send.isRunning}} @isLoading={{this.send.isRunning}} @permission="storefront update order" data-test-chat-send />
+                </form>
+            {{/if}}
+            <div class="sfop-muted sfop-small sfop-drawer__foot">{{this.footnote}}</div>
+        </section>
+    {{/in-element}}
+{{/if}}

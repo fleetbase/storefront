@@ -734,6 +734,155 @@ storefront:
       picked_up: Picked up
       completed: Completed
       canceled: Canceled
+    panel:
+      copy-tracking: Copy tracking number
+      copied: "Copied {value}"
+      booking: Booking
+      app-order: App order
+      console-order: Console order
+      placed: "placed {time} ({ago})"
+      part-of-checkout: "part of checkout {checkout}"
+      message: Message
+      more: More actions
+      print-label: Print label
+      tracking-page: Customer tracking page
+      open-in-fleet-ops: Open in Fleet-Ops
+      steps: Order steps
+      due-left: "Due {time} · {left} left"
+      eta: "ETA {time}"
+      driver: Driver
+      driver-tab: "{name} (driver)"
+      all-three: All three
+      everyone: everyone
+      no-customer: No customer on this order.
+      orders-count: "{count, plural, one {# order} other {# orders}}"
+      since: "since {date}"
+      call: "Call {name}"
+      message-to: "Message {name}"
+      online: Online
+      offline: Offline
+      track: Track on map
+      reassign: Reassign
+      no-driver: No driver yet
+      adhoc: Offered to nearby drivers.
+      assign-hint: Assign a driver when the order is ready.
+      assign-driver: Assign driver
+      collects: "{name} collects it at the store."
+      driver-status:
+        assigned: Assigned
+        heading-to-store: Heading to the store
+        picked-up: Picked up the order
+        on-the-way: On the way to the customer
+        arrived: Arrived at the drop-off
+        delivered: Delivered
+      open-in-maps: Open in maps
+      edit-address: Edit address
+      map-label: "Map: the store and the drop-off"
+      map-focus: Focus the route
+      map-expand: Widen the map
+      map-shrink: Make the map smaller
+      from: From
+      to: To
+      no-address: No drop-off address
+      out-of-stock: Out of stock?
+      substitute-or-remove: Substitute or remove
+      each: "{price} each"
+      promotion: "Promotion {code}"
+      payment:
+        paid: Paid
+        paid-at: "by {method} at {time} · nothing to collect"
+        paid-with: "by {method} · nothing to collect"
+        to-collect: "{amount} to collect"
+        cash-on-delivery: cash on delivery
+        unpaid: Not paid yet
+        balance-due: "{amount} still due"
+        paid-by: "· {amount} paid by {method}"
+        refunded: Refunded
+        refunded-to: "{amount} to {method}"
+        credited: "by {method} · {amount} given as store credit"
+        partly-refunded: "by {method} · {amount} refunded"
+      store-author: "{name} (store)"
+      staff-only: staff only
+      customer-sees: the customer sees this
+      note-placeholder: Add a staff note (the customer never sees it)
+      staff-note: Staff note
+      add: Add
+      checkout: Checkout
+      other-stores: "{count, plural, one {# other store} other {# other stores}} in {checkout}"
+      method: Method
+      transaction: Transaction
+      gateway-reference: Gateway reference
+      invoice: Invoice
+      invoice-short: "invoice {id}"
+      paid: Paid
+      refunded: Refunded
+      credited: Store credit
+      balance: Balance due
+      details-documents: Details and documents
+      details-summary: IDs, custom fields, files
+      details-summary-count: "IDs, metadata, {files, plural, =0 {no files} one {# file} other {# files}}"
+      details-tab: Order
+      tracking-number: Tracking number
+      created: Created
+      scheduled: Scheduled for
+      updated: Updated
+      no-files: No files yet.
+      payment-state: Status
+      paid-at: Paid at
+      credit-code: Credit code
+      cash-to-collect: Cash to collect
+      payment-states:
+        paid: Paid
+        to_collect: To collect
+        unpaid: Unpaid
+        refunded: Refunded
+        partially_refunded: Partly refunded
+        balance_due: Balance due
+      details-tabs:
+        details: Details
+        metadata: Metadata
+        files: Files
+      order-id: Order ID
+      internal-id: Internal ID
+      open: Open
+      events: "{count, plural, one {# event} other {# events}}"
+      last: "last {time}"
+      no-activity: Nothing has happened yet.
+      activity:
+        note: "Note by {name}: {content}"
+        edit: "{name} changed the order: {summary}"
+        message: "{name}: {content}"
+        payment-refund: "Refunded {amount}"
+        payment-store_credit: "Store credit {amount}"
+        payment-charge: "Charged {amount}"
+        payment-cod_update: "Cash to collect changed by {amount}"
+      close-messages: Close messages
+      unread: unread
+      group-hint: A thread with the customer, the driver and the store, for handovers. Off until someone writes in it.
+      group-no-driver: The customer, the driver and the store can talk here once a driver is assigned.
+      assign-to-message: Assign a driver to message them.
+      customer-footnote: Arrives as a push and in the app's order chat.
+      driver-footnote: Arrives in the driver's app.
+      alerts:
+        address-wrong: "{name} says the address is wrong."
+        suggested: "Suggested: {address}"
+        reply: Reply
+        dismiss: Dismiss
+        update-address: Update address
+        balance-due: "{amount} is still due after an edit."
+        balance-link: The customer was sent a payment link.
+        balance-collect: The driver collects it on delivery.
+        copy-link: Copy payment link
+        late: "{late} past due."
+        late-detail: The customer has not been told.
+        tell: "Tell {name}"
+        late-message: We're running a little late with your order, sorry. It's on its way as soon as possible.
+        delivered: "Delivered {time}"
+        picked-up: "Picked up {time}"
+        early: "{minutes, plural, =0 {on time} one {# min early} other {# min early}}"
+        late-by: "{minutes, plural, one {# min late} other {# min late}}"
+        proof-captured: "{count, plural, one {Proof of delivery captured.} other {# proofs of delivery captured.}}"
+        view-proof: View proof
     overview:
       items-count: "{count, plural, one {# item} other {# items}} · {products, plural, one {# product} other {# products}}"
       print-label: Print label
@@ -806,12 +955,36 @@ storefront:
     cancel:
       title: Cancel this order?
       body: The customer is told why. Promotions they used become available again.
+      why: Why is it canceled?
+      common-reasons: Common reasons
+      reasons:
+        customer-asked: The customer asked to cancel
+        out-of-stock: Items are out of stock
+        store-closed: The store is closed
+        cannot-deliver: We cannot deliver to this address
+        payment-problem: There is a problem with the payment
       reason: Reason
-      reason-placeholder: "For example: an item is out of stock"
-      refund: "Refund what was paid ({amount} by {method})"
-      refund-credit: "Give what was paid ({amount}) as store credit"
-      nothing-paid: Nothing was paid, so nothing is refunded.
+      reason-placeholder: Or say why in your own words; the customer sees this
+      money-back: What happens to the payment
+      paid-line: "{amount} paid by {method}"
+      already-back: "{amount} already given back"
+      refund-to: "Refund to {method}"
+      store-credit: Store credit
+      keep: Don't give it back
+      amount: Amount
+      up-to: "Up to {amount}, what is still paid."
+      whole-only: "{method} refunds the whole payment only. For part of it, give store credit."
+      credit-help: A single-use code for this customer, valid for a year.
+      nothing-paid: Nothing was paid, so nothing is given back.
+      nothing-collected: Cash on delivery was not collected yet; the driver will not collect it.
+      review:
+        none: The order is canceled and the customer is told why. Nothing is given back.
+        refund: "The order is canceled, {amount} is refunded to {method} and the customer is told why."
+        store_credit: "The order is canceled, {amount} is given as store credit and the customer gets the code and why."
+      keep-order: Keep the order
       confirm: Cancel order
+      confirm-refund: "Cancel and refund {amount}"
+      confirm-credit: "Cancel and credit {amount}"
       success: "Order {orderId} canceled"
     edit:
       title: Edit order

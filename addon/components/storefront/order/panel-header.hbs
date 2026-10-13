@@ -1,46 +1,47 @@
-<div class="storefront-order-panel-heading" data-test-order-panel-header>
-    <div class="storefront-order-panel-heading__row">
-        <div class="storefront-order-panel-heading__main">
-            <div class="storefront-order-panel-heading__icon">
-                <FaIcon @icon={{if @resource.meta.is_pickup "store" "truck"}} />
+{{! The order panel's header: tracking number and badges with Message / Edit / More / Close, the order line across the full width, then what to do next, the steps and the notices, all on the header's background. }}
+<div class="sfop-head" data-test-order-panel-header>
+    <div class="sfop-head__top">
+        <div class="sfop-head__main">
+            <div class="sfop-head__title">
+                <span class="sfop-mono" data-test-order-panel-title>{{this.trackingNumber}}</span>
+                <Button @size="xs" @icon="copy" @helpText={{t "storefront.order.panel.copy-tracking"}} aria-label={{t "storefront.order.panel.copy-tracking"}} @onClick={{this.copyTracking}} @wrapperClass="sfop-head__copy" />
             </div>
-            <div class="min-w-0">
-                <div class="storefront-order-panel-heading__title">
-                    <span data-test-order-panel-title>{{or @resource.tracking_number.tracking_number @resource.tracking @resource.public_id}}</span>
-                </div>
-                {{! Under the tracking number: the status, then the network (or store) the order came through. }}
-                <div class="storefront-order-panel-heading__badges" data-test-order-panel-badges>
-                    <Badge @status={{@resource.status}} @size="xs" data-test-order-panel-status />
-                    {{#if @resource.meta.storefront_network}}
-                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
-                            <FaIcon @icon="network-wired" class="mr-1" />
-                            {{@resource.meta.storefront_network}}
-                        </Badge>
-                    {{else if @resource.meta.storefront}}
-                        <Badge @hideStatusDot={{true}} @status="info" @size="xs" @wrapperClass="storefront-order-panel-heading__fulfillment-badge" data-test-order-panel-owner-badge>
-                            <FaIcon @icon="store" class="mr-1" />
-                            {{@resource.meta.storefront}}
-                        </Badge>
-                    {{/if}}
-                </div>
+            <div class="sfop-head__badges" data-test-order-panel-badges>
+                <Badge @status={{this.order.status}} @size="xs" />
+                <Badge @status="violet" @text={{this.fulfillmentLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
+                <Badge @status="gray" @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
+                {{#if this.storeName}}<Badge @status="blue" @text={{this.storeName}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />{{/if}}
             </div>
         </div>
-        <div class="storefront-order-panel-heading__actions">
-            <Layout::Resource::Panel::HeaderActions @resource={{@resource}} @actionButtons={{@actionButtons}} @onPressCancel={{@onPressCancel}} @authSchema={{@authSchema}} />
+        <div class="sfop-head__actions">
+            <Button @size="xs" @icon="comment" @text={{t "storefront.order.panel.message"}} @onClick={{this.openMessages}} data-test-order-panel-message>
+                {{#if this.panel.unreadTotal}}<span class="sfop-count ml-1" aria-label={{t "storefront.order.chat.unread" count=this.panel.unreadTotal}}>{{this.panel.unreadTotal}}</span>{{/if}}
+            </Button>
+            {{#if this.canEdit}}
+                <Button @size="xs" @icon="pen" @text={{t "common.edit"}} @onClick={{this.edit}} @permission="storefront update order" data-test-order-panel-edit />
+            {{/if}}
+            <DropdownButton @icon="ellipsis-h" @size="xs" @renderInPlace={{false}} aria-label={{t "storefront.order.panel.more"}} as |dd|>
+                <div class="next-dd-menu mt-1 mx-0">
+                    {{#each this.moreItems as |item|}}
+                        {{#if item.separator}}
+                            <div class="next-dd-menu-seperator"></div>
+                        {{else}}
+                            <a href="javascript:;" class="next-dd-item {{item.class}}" {{on "click" (fn this.runMore item dd)}}>
+                                <span class="mr-2"><FaIcon @icon={{item.icon}} @size="xs" /></span>
+                                {{item.text}}
+                            </a>
+                        {{/if}}
+                    {{/each}}
+                </div>
+            </DropdownButton>
+            {{#if @onPressCancel}}
+                <Button @size="xs" @icon="times" aria-label={{t "common.close"}} @onClick={{@onPressCancel}} data-test-order-panel-close />
+            {{/if}}
         </div>
     </div>
-    <div class="storefront-order-panel-heading__meta" data-test-order-panel-meta>
-        {{#if (or @resource.tracking_number.tracking_number @resource.tracking)}}
-            <span><ClickToCopy @value={{@resource.public_id}} class="storefront-order-panel-heading__id" data-test-order-panel-id>{{@resource.public_id}}</ClickToCopy></span>
-        {{/if}}
-        {{#if @resource.meta.checkout_id}}
-            <span>{{t "storefront.networks.orders.part-of" checkout=@resource.meta.checkout_id}}</span>
-        {{/if}}
-        {{#if (and @resource.meta.storefront_network @resource.meta.storefront)}}
-            <span>{{@resource.meta.storefront}}</span>
-        {{/if}}
-        <span>{{n-a @resource.createdAt}}</span>
+    <div class="sfop-head__meta" data-test-order-panel-meta>
+        {{this.order.public_id}}{{#if this.placedLine}} · {{this.placedLine}}{{/if}}{{#if this.order.meta.checkout_id}} · {{t "storefront.order.panel.part-of-checkout" checkout=this.order.meta.checkout_id}}{{/if}}
     </div>
-    <Storefront::Order::FlowSteps @order={{@resource}} />
-    <Storefront::Order::IdentityStrip @order={{@resource}} @onChange={{@overlay.onChange}} />
+    <Storefront::Order::PanelProgress @order={{this.order}} @overview={{this.panel.overview}} @flow={{this.panel.flow}} @refresh={{this.panel.refresh}} @onPrintLabel={{this.printLabel}} @isPrintingLabel={{this.panel.printingLabel}} />
+    <Storefront::Order::PanelAlerts @order={{this.order}} @overview={{this.panel.overview}} @refresh={{this.panel.refresh}} />
 </div>

@@ -3,19 +3,7 @@
     {{#if this.order.payload.entities}}
         <div class="storefront-order-items">
             {{#each this.order.payload.entities as |entity|}}
-                <div class="storefront-order-item {{if entity.meta.unavailable 'is-unavailable'}} {{if entity.meta.packed_at 'is-packed'}}" data-test-order-item={{entity.public_id}}>
-                    {{#if @packing}}
-                        <button
-                            type="button"
-                            class="storefront-check {{if entity.meta.packed_at 'is-checked'}} storefront-order-item__pack"
-                            role="checkbox"
-                            aria-checked={{if entity.meta.packed_at "true" "false"}}
-                            aria-label={{t "storefront.order.packing.mark-packed" item=entity.name}}
-                            disabled={{entity.meta.unavailable}}
-                            {{on "click" (fn @onPack entity "packed" (not entity.meta.packed_at))}}
-                            data-test-order-item-pack
-                        ></button>
-                    {{/if}}
+                <div class="storefront-order-item {{if entity.meta.unavailable 'is-unavailable'}}" data-test-order-item={{entity.public_id}}>
                     <div class="storefront-order-item__qty">{{n-a entity.meta.quantity 1}}x</div>
                     <Image src={{or entity.photo_url entity.image_url entity.meta.photo_url entity.meta.image_url entity.meta.product_image_url}} @fallbackSrc={{config "defaultValues.entityImage"}} class="storefront-order-item__image" alt={{entity.name}} />
                     <div class="storefront-order-item__body">
@@ -45,11 +33,6 @@
                         {{/if}}
                         {{#if entity.meta.unavailable}}
                             <div class="storefront-order-item__flag">{{t "storefront.order.packing.unavailable"}}</div>
-                        {{/if}}
-                        {{#if @packing}}
-                            <button type="button" class="storefront-order-item__toggle" {{on "click" (fn @onPack entity "unavailable" (not entity.meta.unavailable))}} data-test-order-item-unavailable>
-                                {{if entity.meta.unavailable (t "storefront.order.packing.available-again") (t "storefront.order.packing.mark-unavailable")}}
-                            </button>
                         {{/if}}
                     </div>
                     <div class="storefront-order-item__price">

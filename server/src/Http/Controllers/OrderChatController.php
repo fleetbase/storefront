@@ -14,8 +14,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 /**
- * The store's side of an order's chats, in the console: the thread with the customer, which
- * staff write in, and the customer's thread with the driver, which staff can read.
+ * The store's side of an order's chats, in the console: `customer` (store and customer),
+ * `dispatch` (store and driver) and `group` (the customer's thread with the driver, which staff
+ * join when they write in it, making it all three).
  *
  * storefront/int/v1/orders/{id}/chat/{kind}
  */
@@ -41,14 +42,14 @@ class OrderChatController extends Controller
         // Looking does not start a thread; the store's first message does.
         $kind     = OrderChat::normalizeKind($kind);
         $channel  = OrderChat::find($order, $kind);
-        $canWrite = $kind === OrderChat::KIND_CUSTOMER && !OrderChat::isClosed($order);
+        $canWrite = static::canWrite($order, $kind, $channel);
 
         if (!$channel) {
             return response()->json([
                 'chat'          => null,
-                'reason'        => $kind === OrderChat::KIND_DRIVER ? 'driver_not_assigned' : 'not_started',
+                'reason'        => $kind === OrderChat::KIND_CUSTOMER ? 'not_started' : (OrderChat::driverUserUuid($order) ? 'not_started' : 'driver_not_assigned'),
                 'can_write'     => $canWrite,
-                'quick_replies' => $canWrite ? static::quickReplies($order) : [],
+                'quick_replies' => $canWrite ? static::quickReplies($order, $kind) : [],
             ]);
         }
 
@@ -60,12 +61,29 @@ class OrderChatController extends Controller
         return response()->json([
             'chat'          => (new OrderChatResource($channel, $order, OrderChat::customerUserUuid($order), $messages, $unread, session('user')))->resolve(),
             'can_write'     => $canWrite,
-            'quick_replies' => $canWrite ? static::quickReplies($order) : [],
+            'quick_replies' => $canWrite ? static::quickReplies($order, $kind) : [],
         ]);
     }
 
     /**
-     * Write to the customer as the store. Only the store thread; the driver thread is theirs.
+     * Whether staff can write in the thread: the customer thread while the order is open, the
+     * driver threads once a driver is assigned.
+     */
+    protected static function canWrite(Order $order, string $kind, ?ChatChannel $channel): bool
+    {
+        if (OrderChat::isClosed($order)) {
+            return false;
+        }
+
+        return match ($kind) {
+            OrderChat::KIND_CUSTOMER => true,
+            OrderChat::KIND_DISPATCH => (bool) OrderChat::driverUserUuid($order),
+            default                  => (bool) $channel || (OrderChat::driverUserUuid($order) && OrderChat::customerUserUuid($order)),
+        };
+    }
+
+    /**
+     * Write as the store in one of the order's threads.
      */
     public function send(Request $request, string $id, string $kind)
     {
@@ -75,16 +93,18 @@ class OrderChatController extends Controller
         if (!$order) {
             return response()->error('Order not found', 404);
         }
-        if (OrderChat::normalizeKind($kind) !== OrderChat::KIND_CUSTOMER) {
-            return response()->error('Staff can only write in the thread with the customer.', 403);
-        }
+        $kind = OrderChat::normalizeKind($kind);
         if (OrderChat::isClosed($order)) {
             return response()->error('This chat closed when the order finished.', 423);
         }
 
-        $channel = OrderChat::openStore($order, session('user'));
+        $channel = match ($kind) {
+            OrderChat::KIND_CUSTOMER => OrderChat::openStore($order, session('user')),
+            OrderChat::KIND_DISPATCH => OrderChat::openDispatch($order, session('user')),
+            default                  => OrderChat::find($order) ?? OrderChat::open($order),
+        };
         if (!$channel) {
-            return response()->error('This order has no chat with the store.', 409);
+            return response()->error($kind === OrderChat::KIND_CUSTOMER ? 'This order has no chat with the store.' : 'Assign a driver to message them.', 409);
         }
 
         $sender  = OrderChat::join($channel, session('user'), OrderChat::ROLE_STORE);
@@ -144,6 +164,41 @@ class OrderChatController extends Controller
     }
 
     /**
+     * Messages the store has not read, per thread: what no staff member has a receipt for.
+     *
+     * @return array{customer: int, dispatch: int, group: int}
+     */
+    public static function unread(Order $order): array
+    {
+        return [
+            'customer' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_CUSTOMER), [OrderChat::customerUserUuid($order)]),
+            'dispatch' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_DISPATCH), [OrderChat::driverUserUuid($order)]),
+            'group'    => static::unreadIn(OrderChat::find($order), [OrderChat::customerUserUuid($order), OrderChat::driverUserUuid($order)]),
+        ];
+    }
+
+    /**
+     * Messages in a thread from the given users (the customer, the driver) that no one else has read.
+     */
+    protected static function unreadIn(?ChatChannel $channel, array $userUuids): int
+    {
+        $userUuids = array_values(array_filter($userUuids));
+        if (!$channel || !$userUuids) {
+            return 0;
+        }
+
+        $senders = \Fleetbase\Models\ChatParticipant::where('chat_channel_uuid', $channel->uuid)->whereIn('user_uuid', $userUuids)->pluck('uuid');
+        if ($senders->isEmpty()) {
+            return 0;
+        }
+
+        return ChatMessage::where('chat_channel_uuid', $channel->uuid)
+            ->whereIn('sender_uuid', $senders)
+            ->whereDoesntHave('receipts', fn ($query) => $query->whereNotIn('participant_uuid', $senders))
+            ->count();
+    }
+
+    /**
      * Messages from the customer the store has not read: what no staff member has a receipt for.
      */
     public static function unreadFromCustomer(Order $order): int
@@ -168,13 +223,25 @@ class OrderChatController extends Controller
     /**
      * The store's own replies (store option `quick_replies`), else the defaults.
      */
-    public static function quickReplies(Order $order): array
+    public static function quickReplies(Order $order, string $kind = OrderChat::KIND_CUSTOMER): array
     {
+        if ($kind === OrderChat::KIND_DISPATCH) {
+            return static::DEFAULT_DRIVER_REPLIES;
+        }
+
         $store   = \Fleetbase\Storefront\Models\Store::where('public_id', $order->getMeta('storefront_id'))->first();
         $replies = array_values(array_filter(array_map('trim', (array) data_get($store?->options, 'quick_replies', [])), fn ($reply) => is_string($reply) && $reply !== ''));
 
         return $replies ?: static::DEFAULT_QUICK_REPLIES;
     }
+
+    /** Replies offered when writing to the driver. */
+    public const DEFAULT_DRIVER_REPLIES = [
+        'The order is ready for pickup.',
+        'The drop-off address changed, please check the app.',
+        'Please call the customer on arrival.',
+        'How long until you reach the store?',
+    ];
 
     protected function findOrder(string $id): ?Order
     {

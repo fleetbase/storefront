@@ -324,12 +324,24 @@ class OrderController extends FleetbaseOrderController
         $refund = null;
 
         if ($request->boolean('refund', true)) {
-            $payment   = OrderPayments::summary($order);
-            $remaining = $payment['amount_paid'] - $payment['amount_refunded'] - $payment['amount_credited'];
-            if ($remaining > 0) {
-                $method = $request->input('settlement') ?: OrderSettlement::plan($order, -$remaining)['action'];
+            $plan = OrderSettlement::cancelPlan($order);
+            if ($plan['refundable'] > 0) {
+                $method = $request->input('settlement') ?: $plan['default'];
+                if (!in_array($method, $plan['options'], true)) {
+                    return response()->error('This payment cannot be given back that way.');
+                }
+
+                // Part of it only where the gateway refunds part of a payment, or as store credit.
+                $amount = $request->filled('amount') ? (int) $request->input('amount') : $plan['refundable'];
+                if ($amount < 1 || $amount > $plan['refundable']) {
+                    return response()->error('The amount given back must be more than nothing and no more than what was paid.');
+                }
+                if ($amount < $plan['refundable'] && $method === OrderSettlement::METHOD_REFUND && !$plan['supports_partial_refund']) {
+                    return response()->error('This payment can only be refunded in full; give store credit for part of it.');
+                }
+
                 try {
-                    $refund = OrderSettlement::refund($order, $remaining, $method, $reason ?? 'Order canceled');
+                    $refund = OrderSettlement::refund($order, $amount, $method, $reason ?? 'Order canceled');
                 } catch (\Throwable $e) {
                     return response()->error($e->getMessage());
                 }
@@ -414,9 +426,62 @@ class OrderController extends FleetbaseOrderController
         return response()->json([
             'payment' => OrderPayments::summary($order),
             ...OrderInsights::forOrder($order),
-            'edit'    => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order)],
-            'chat'    => ['unread' => OrderChatController::unreadFromCustomer($order), 'has_driver_thread' => OrderChat::find($order) !== null],
+            'edit'              => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order)],
+            'cancel'            => OrderSettlement::cancelPlan($order),
+            'chat'              => static::chatSummary($order),
+            'source'            => $order->getMeta('placed_via') === 'console' ? 'console' : 'app',
+            'payment_reference' => static::paymentReference($order),
+            'delivery'          => [
+                'distance_m'   => $order->distance !== null ? (int) $order->distance : null,
+                'duration_s'   => $order->time !== null ? (int) $order->time : null,
+                'delivered_at' => OrderInsights::finishedAt($order),
+                'proofs'       => static::proofCount($order),
+            ],
         ]);
+    }
+
+    protected static function chatSummary(Order $order): array
+    {
+        $unread = OrderChatController::unread($order);
+
+        return [
+            'unread'       => $unread,
+            'unread_total' => array_sum($unread),
+            'threads'      => [
+                'customer' => OrderChat::find($order, OrderChat::KIND_CUSTOMER) !== null,
+                'dispatch' => OrderChat::find($order, OrderChat::KIND_DISPATCH) !== null,
+                'group'    => OrderChat::find($order) !== null,
+            ],
+        ];
+    }
+
+    /**
+     * What identifies the payment: the capture transaction, the gateway's reference and when it was paid.
+     */
+    protected static function paymentReference(Order $order): ?array
+    {
+        $transaction = $order->relationLoaded('transaction') ? $order->transaction : $order->transaction()->first();
+        if (!$transaction) {
+            return null;
+        }
+
+        $checkout = \Fleetbase\Storefront\Models\Checkout::where('order_uuid', $order->uuid)->first();
+
+        return [
+            'transaction' => $transaction->public_id,
+            'reference'   => $transaction->gateway_transaction_id,
+            'invoice'     => $checkout?->getOption('qpay_invoice_id'),
+            'paid_at'     => optional($transaction->settled_at ?? (in_array(OrderPayments::summary($order)['state'], [OrderPayments::STATE_TO_COLLECT, OrderPayments::STATE_UNPAID], true) ? null : $transaction->created_at))->toIso8601String(),
+        ];
+    }
+
+    protected static function proofCount(Order $order): int
+    {
+        try {
+            return $order->proofs()->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**

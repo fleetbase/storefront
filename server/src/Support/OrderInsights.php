@@ -110,20 +110,6 @@ class OrderInsights
             ];
         }
 
-        $offer = $order->getMeta('offer');
-        if (is_array($offer)) {
-            $expired = ($offer['status'] ?? null) === 'expired'
-                || (($offer['status'] ?? null) === 'offered' && !empty($offer['expires_at']) && now()->greaterThan(Carbon::parse($offer['expires_at'])));
-            if ($expired) {
-                $alerts[] = [
-                    'code'    => 'driver_not_accepted',
-                    'message' => 'The driver has not accepted the order.',
-                    'at'      => $offer['offered_at'] ?? null,
-                    'driver'  => $offer['driver'] ?? null,
-                ];
-            }
-        }
-
         $unavailable = collect(data_get($order, 'payload.entities', []))
             ->filter(fn ($entity) => (bool) data_get($entity, 'meta.unavailable'))
             ->map(fn ($entity) => $entity->name ?? data_get($entity, 'name'))
@@ -167,19 +153,29 @@ class OrderInsights
         ];
     }
 
+    /**
+     * The customer's latest message to the store or the driver.
+     */
     public static function lastMessage(Order $order): ?array
     {
+        $customerUserUuid = OrderChat::customerUserUuid($order);
+        if (!$customerUserUuid) {
+            return null;
+        }
+
         try {
-            $channel = OrderChat::find($order);
+            $channels = collect([OrderChat::find($order, OrderChat::KIND_CUSTOMER), OrderChat::find($order)])->filter()->pluck('uuid');
         } catch (\Throwable $e) {
             return null;
         }
-
-        if (!$channel) {
+        if ($channels->isEmpty()) {
             return null;
         }
 
-        $message = ChatMessage::where('chat_channel_uuid', $channel->uuid)->latest()->first();
+        $message = ChatMessage::whereIn('chat_channel_uuid', $channels)
+            ->whereHas('sender', fn ($query) => $query->where('user_uuid', $customerUserUuid))
+            ->latest()
+            ->first();
         if (!$message) {
             return null;
         }
@@ -189,6 +185,25 @@ class OrderInsights
             'at'      => optional($message->created_at)->toIso8601String(),
             'from'    => data_get($message, 'sender.user.name') ?? data_get($message, 'sender.name'),
         ];
+    }
+
+    /**
+     * When the order was delivered or picked up, from its tracking history.
+     */
+    public static function finishedAt(Order $order): ?string
+    {
+        if (!in_array((string) $order->status, ['completed', 'picked_up'], true) || !$order->tracking_number_uuid) {
+            return null;
+        }
+
+        $at = \Illuminate\Support\Facades\DB::connection($order->getConnectionName())->table('tracking_statuses')
+            ->where('tracking_number_uuid', $order->tracking_number_uuid)
+            ->whereIn('code', ['COMPLETED', 'PICKED_UP', 'completed', 'picked_up'])
+            ->whereNull('deleted_at')
+            ->orderByDesc('created_at')
+            ->value('created_at');
+
+        return $at ? Carbon::parse($at)->toIso8601String() : null;
     }
 
     public static function trackingUrl(Order $order): ?string

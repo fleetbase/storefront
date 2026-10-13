@@ -1,0 +1,44 @@
+{{! The paperwork, folded: payment references, the rest of the checkout, IDs and documents, and sections other extensions add. }}
+<div class="sfop-folds" data-test-order-folds>
+    <Storefront::Order::PanelActivity @order={{@order}} />
+
+    <Storefront::Order::PanelFold @title={{t "storefront.order.tabs.payment"}} @summary={{this.paymentSummary}} data-test-order-payment-fold>
+        <div class="sfop-facts" data-test-order-payment-facts>
+            {{#each this.paymentFacts as |fact|}}
+                <div class="sfop-fact">
+                    <div class="sfop-fact__label">{{fact.label}}</div>
+                    <div class="sfop-fact__value {{if fact.mono 'sfop-mono'}}">
+                        {{#if fact.copy}}
+                            <ClickToCopy @value={{fact.value}}>{{fact.value}}</ClickToCopy>
+                        {{else}}
+                            {{fact.value}}
+                        {{/if}}
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+        {{#each this.adjustments as |adjustment|}}
+            <div class="sfop-row sfop-activity-row"><span>{{adjustment.text}}</span><span class="sfop-muted">{{adjustment.time}}</span></div>
+        {{/each}}
+    </Storefront::Order::PanelFold>
+
+    {{#if @order.meta.checkout_id}}
+        <Storefront::Order::PanelFold @title={{t "storefront.order.panel.checkout"}} @summary={{this.checkoutSummary}} data-test-order-checkout-fold>
+            {{#each this.siblings as |sibling|}}
+                <div class="sfop-row sfop-activity-row">
+                    <button type="button" class="sfop-link" {{on "click" (fn this.storefrontOrderActions.viewOrder sibling)}}>{{or sibling.tracking sibling.public_id}}</button>
+                    <span class="sfop-muted">{{n-a sibling.meta.storefront}}</span>
+                    <span>{{format-currency sibling.meta.total sibling.meta.currency}}</span>
+                    <Badge @status={{sibling.status}} @size="xs" />
+                </div>
+            {{else}}
+                <div class="sfop-muted sfop-small">{{t "storefront.order.no-other-orders"}}</div>
+            {{/each}}
+        </Storefront::Order::PanelFold>
+    {{/if}}
+
+    <Storefront::Order::PanelFold @title={{t "storefront.order.panel.details-documents"}} @summary={{this.detailsSummary}} @bodyClass="sfop-fold__body--flush" data-test-order-details-fold>
+        <Storefront::Order::PanelDetails @order={{@order}} @resource={{@order}} @overview={{@overview}} />
+    </Storefront::Order::PanelFold>
+
+</div>

@@ -71,6 +71,13 @@ test('a lower total is refunded where the gateway can, else credited', function 
         ->and(OrderSettlement::plan(paymentOrder(['gateway' => 'qpay']), -5000))->toMatchArray(['action' => 'refund', 'options' => ['refund', 'store_credit']]);
 });
 
+test('canceling gives back what is still paid, by refund where the gateway can, else store credit', function () {
+    expect(OrderSettlement::cancelPlan(paymentOrder()))->toMatchArray(['options' => ['refund', 'store_credit'], 'default' => 'refund', 'supports_partial_refund' => true])
+        ->and(OrderSettlement::cancelPlan(paymentOrder(['gateway' => 'qpay'])))->toMatchArray(['options' => ['refund', 'store_credit'], 'default' => 'refund', 'supports_partial_refund' => false])
+        ->and(OrderSettlement::cancelPlan(paymentOrder(['gateway' => 'cash'], ['cod_amount' => 5000, 'cod_payment_method' => 'cash'], ['settlement_status' => Transaction::SETTLEMENT_STATUS_UNPAID, 'amount' => 5000])))
+        ->toMatchArray(['refundable' => 0, 'options' => [], 'default' => null]);
+});
+
 test('a higher total asks for a payment link, and cash orders just change what the driver collects', function () {
     $cash = paymentOrder(['gateway' => 'cash'], ['cod_amount' => 5000, 'cod_payment_method' => 'cash'], ['settlement_status' => Transaction::SETTLEMENT_STATUS_UNPAID]);
 

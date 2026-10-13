@@ -40,8 +40,8 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
             open(definition) {
                 assert.strictEqual(definition.resource.public_id, 'order_test');
                 assert.strictEqual(definition.header, 'storefront/order/panel-header');
-                assert.strictEqual(definition.content, 'storefront/order/overview');
-                assert.notOk(definition.tabs);
+                assert.notOk(definition.content);
+                assert.strictEqual(definition.tabs[0].component, 'storefront/order/overview');
                 assert.strictEqual(definition.width, '640px');
             }
         }
@@ -49,6 +49,14 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
         this.owner.register('service:fetch', FetchStub);
         this.owner.register('service:storefront', StorefrontStub);
         this.owner.register('service:resource-context-panel', ResourceContextPanelStub);
+        this.owner.register(
+            'service:universe/menu-service',
+            class extends Service {
+                getMenuItems() {
+                    return [];
+                }
+            }
+        );
 
         const service = this.owner.lookup('service:storefront-order-actions');
 

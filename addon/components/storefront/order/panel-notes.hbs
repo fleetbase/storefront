@@ -1,0 +1,23 @@
+{{! The customer's note, then the store's own notes (the customer never sees them), and a box to add one. }}
+<div class="sfop-section" data-test-order-notes>
+    <h3 class="sfop-h3">{{t "storefront.order.edit.notes"}}</h3>
+    {{#if this.order.notes}}
+        <div class="sfop-note sfop-note--lg"><strong>{{t "storefront.order.panel.from" name=this.customerFirstName}}</strong> {{this.order.notes}}</div>
+    {{/if}}
+    {{#each this.notes as |note|}}
+        <div class="sfop-staff-note" data-test-order-note={{note.id}}>
+            <span class="sfop-av sfop-av--sm" aria-hidden="true">{{note.initials}}</span>
+            <span class="sfop-staff-note__body">
+                <strong>{{note.author}}</strong>
+                <span class="sfop-muted sfop-small">{{note.time}} · {{if note.internal (t "storefront.order.panel.staff-only") (t "storefront.order.panel.customer-sees")}}</span>
+                <div>{{note.content}}</div>
+            </span>
+        </div>
+    {{/each}}
+    {{#if this.canAdd}}
+        <form class="sfop-add-note" {{on "submit" this.submit}}>
+            <Input class="form-input form-input-sm w-full" @value={{this.draft}} placeholder={{t "storefront.order.panel.note-placeholder"}} aria-label={{t "storefront.order.panel.staff-note"}} {{on "input" this.setDraft}} data-test-order-note-input />
+            <Button @size="sm" @icon="plus" @text={{t "storefront.order.panel.add"}} @buttonType="submit" @disabled={{or (not this.draft) this.add.isRunning}} @isLoading={{this.add.isRunning}} @permission="storefront update order" />
+        </form>
+    {{/if}}
+</div>
