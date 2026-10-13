@@ -76,7 +76,12 @@ class NetworkController extends StorefrontController
      */
     public function sendInvites(string $id, NetworkActionRequest $request)
     {
-        $network       = Network::find($id);
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $recipients    = collect($request->array('recipients'))->filter(fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL))->map(fn ($email) => strtolower(trim($email)))->unique()->values();
         $expiresInDays = $request->input('expires_in_days');
         $meta          = array_filter([
@@ -125,7 +130,7 @@ class NetworkController extends StorefrontController
      */
     public function invitations(string $id)
     {
-        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
+        $network = $this->findCompanyNetwork($id);
 
         if (!$network) {
             return response()->error('Network not found.', 404);
@@ -147,7 +152,12 @@ class NetworkController extends StorefrontController
      */
     public function resendInvitation(string $id, string $invitationId, Request $request)
     {
-        $network    = Network::find($id);
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $invitation = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
 
         if (!$invitation) {
@@ -182,7 +192,12 @@ class NetworkController extends StorefrontController
      */
     public function revokeInvitation(string $id, string $invitationId)
     {
-        $network    = Network::find($id);
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $invitation = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
 
         if (!$invitation) {
@@ -413,7 +428,7 @@ class NetworkController extends StorefrontController
      */
     public function overview(string $id)
     {
-        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->with(['stores'])->first();
+        $network = $this->findCompanyNetwork($id)?->load(['stores']);
 
         if (!$network) {
             return response()->error('Network not found.', 404);
@@ -552,21 +567,28 @@ class NetworkController extends StorefrontController
      */
     public function addStores(string $id, NetworkActionRequest $request)
     {
-        $network = Network::find($id);
-        $stores  = collect($request->input('stores', []));
-        $remove  = collect($request->input('remove', []));
+        $network = $this->findCompanyNetwork($id);
 
-        // firstOrCreate each
-        foreach ($stores as $storeId) {
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        $stores  = collect($request->array('stores'))->filter(fn ($storeId) => is_string($storeId))->values();
+        $remove  = collect($request->array('remove'))->filter(fn ($storeId) => is_string($storeId))->values();
+        $members = NetworkStore::where('network_uuid', $network->uuid)->whereIn('store_uuid', $stores)->pluck('store_uuid');
+
+        // Existing members (which may belong to other companies) are left as they are; new
+        // members are added directly only for the company's own stores, others join by invitation.
+        $ownStores = Store::where('company_uuid', session('company'))->whereIn('uuid', $stores->diff($members))->pluck('uuid');
+        foreach ($ownStores as $storeId) {
             NetworkStore::firstOrCreate(
                 ['network_uuid' => $network->uuid, 'store_uuid' => $storeId],
                 ['network_uuid' => $network->uuid, 'store_uuid' => $storeId]
             );
         }
 
-        // delete each
-        foreach ($remove as $storeId) {
-            NetworkStore::where('store_uuid', $storeId)->delete();
+        if ($remove->isNotEmpty()) {
+            NetworkStore::where('network_uuid', $network->uuid)->whereIn('store_uuid', $remove)->delete();
         }
 
         $this->forgetCachedResponses();
@@ -582,7 +604,7 @@ class NetworkController extends StorefrontController
      */
     public function updateShareableLink(string $id, NetworkActionRequest $request)
     {
-        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
+        $network = $this->findCompanyNetwork($id);
 
         if (!$network) {
             return response()->error('Network not found.', 404);
@@ -703,7 +725,13 @@ class NetworkController extends StorefrontController
      */
     public function suspendStores(string $id, NetworkActionRequest $request)
     {
-        return $this->setMembershipStatus($id, $request->array('stores'), NetworkStore::STATUS_SUSPENDED);
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        return $this->setMembershipStatus($network, $request->array('stores'), NetworkStore::STATUS_SUSPENDED);
     }
 
     /**
@@ -713,7 +741,13 @@ class NetworkController extends StorefrontController
      */
     public function reinstateStores(string $id, NetworkActionRequest $request)
     {
-        return $this->setMembershipStatus($id, $request->array('stores'), NetworkStore::STATUS_ACTIVE);
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        return $this->setMembershipStatus($network, $request->array('stores'), NetworkStore::STATUS_ACTIVE);
     }
 
     /**
@@ -724,10 +758,16 @@ class NetworkController extends StorefrontController
      */
     public function approveStores(string $id, NetworkActionRequest $request)
     {
-        $stores = $request->array('stores');
-        $this->closeAwaitingInvitations($id, $stores, 'accepted', 'approved_at');
+        $network = $this->findCompanyNetwork($id);
 
-        return $this->setMembershipStatus($id, $stores, NetworkStore::STATUS_ACTIVE);
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        $stores = $request->array('stores');
+        $this->closeAwaitingInvitations($network->uuid, $stores, 'accepted', 'approved_at');
+
+        return $this->setMembershipStatus($network, $stores, NetworkStore::STATUS_ACTIVE);
     }
 
     /**
@@ -738,10 +778,16 @@ class NetworkController extends StorefrontController
      */
     public function rejectStores(string $id, NetworkActionRequest $request)
     {
-        $stores = $request->array('stores');
-        $this->closeAwaitingInvitations($id, $stores, 'rejected', 'rejected_at');
+        $network = $this->findCompanyNetwork($id);
 
-        $removed = NetworkStore::where('network_uuid', $id)
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        $stores = $request->array('stores');
+        $this->closeAwaitingInvitations($network->uuid, $stores, 'rejected', 'rejected_at');
+
+        $removed = NetworkStore::where('network_uuid', $network->uuid)
             ->whereIn('store_uuid', $stores)
             ->where('status', NetworkStore::STATUS_PENDING)
             ->delete();
@@ -770,15 +816,33 @@ class NetworkController extends StorefrontController
         }
     }
 
-    protected function setMembershipStatus(string $networkId, array $stores, string $status)
+    protected function setMembershipStatus(Network $network, array $stores, string $status)
     {
-        $updated = NetworkStore::where('network_uuid', $networkId)
+        $updated = NetworkStore::where('network_uuid', $network->uuid)
             ->whereIn('store_uuid', $stores)
             ->update(['status' => $status]);
 
         $this->forgetCachedResponses();
 
         return response()->json(['status' => 'ok', 'updated' => $updated]);
+    }
+
+    /**
+     * The network with this uuid or public id, only when it belongs to the session company.
+     * Join links are the only actions that reach another company's network, and they do not
+     * come through here.
+     */
+    protected function findCompanyNetwork(string $id): ?Network
+    {
+        $company = session('company');
+
+        if (!$company) {
+            return null;
+        }
+
+        return Network::where('company_uuid', $company)
+            ->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))
+            ->first();
     }
 
     /**
@@ -800,11 +864,17 @@ class NetworkController extends StorefrontController
      */
     public function removeStores(string $id, NetworkActionRequest $request)
     {
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $stores = $request->array('stores');
 
         // delete each
         foreach ($stores as $storeId) {
-            NetworkStore::where(['store_uuid' => $storeId, 'network_uuid' => $id])->delete();
+            NetworkStore::where(['store_uuid' => $storeId, 'network_uuid' => $network->uuid])->delete();
         }
 
         $this->forgetCachedResponses();
@@ -819,11 +889,17 @@ class NetworkController extends StorefrontController
      */
     public function addStoreToCategory(string $id, AddStoreToNetworkCategory $request)
     {
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $category = $request->input('category');
         $store    = $request->input('store');
 
         // get network store instance
-        $networkStore = NetworkStore::where(['network_uuid' => $id, 'store_uuid' => $store])->first();
+        $networkStore = NetworkStore::where(['network_uuid' => $network->uuid, 'store_uuid' => $store])->first();
         if ($networkStore) {
             $networkStore->update(['category_uuid' => $category]);
         }
@@ -838,10 +914,16 @@ class NetworkController extends StorefrontController
      */
     public function removeStoreCategory(string $id, NetworkActionRequest $request)
     {
-        $store    = $request->input('store');
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
+        $store = $request->input('store');
 
         // get network store instance
-        $networkStore = NetworkStore::where(['network_uuid' => $id, 'store_uuid' => $store])->first();
+        $networkStore = NetworkStore::where(['network_uuid' => $network->uuid, 'store_uuid' => $store])->first();
         if ($networkStore) {
             $networkStore->update(['category_uuid' => null]);
         }
@@ -856,13 +938,19 @@ class NetworkController extends StorefrontController
      */
     public function deleteCategory(string $id, NetworkActionRequest $request)
     {
+        $network = $this->findCompanyNetwork($id);
+
+        if (!$network) {
+            return response()->error('Network not found.', 404);
+        }
+
         $category = $request->input('category');
 
         // get network store instance
-        NetworkStore::where(['network_uuid' => $id, 'category_uuid' => $category])->update(['category_uuid' => null]);
+        NetworkStore::where(['network_uuid' => $network->uuid, 'category_uuid' => $category])->update(['category_uuid' => null]);
 
         // delete the category
-        Category::where(['owner_uuid' => $id, 'uuid' => $category])->delete();
+        Category::where(['owner_uuid' => $network->uuid, 'uuid' => $category])->delete();
 
         return response()->json(['status' => 'ok']);
     }

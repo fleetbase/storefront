@@ -923,6 +923,7 @@ test('network controller persists and sends an email invitation with its request
         $table->increments('id');
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
         $table->string('name')->nullable();
         $table->timestamps();
         $table->softDeletes();
@@ -946,10 +947,11 @@ test('network controller persists and sends an email invitation with its request
         $table->softDeletes();
     });
     $connection->table('networks')->insert([
-        'id'        => 1,
-        'uuid'      => 'network_uuid',
-        'public_id' => 'network_abcdefgh',
-        'name'      => 'Delivery network',
+        'id'           => 1,
+        'uuid'         => 'network_uuid',
+        'public_id'    => 'network_abcdefgh',
+        'company_uuid' => 'company_uuid',
+        'name'         => 'Delivery network',
     ]);
     session(['company' => 'company_uuid', 'user' => 'user_uuid']);
     $sender = new User();
@@ -1011,9 +1013,18 @@ test('network controller adds removes and categorizes store assignments', functi
     $schema     = $connection->getSchemaBuilder();
     $schema->dropIfExists('networks');
     $schema->dropIfExists('network_stores');
+    $schema->dropIfExists('stores');
     $schema->dropIfExists('categories');
     $schema->create('networks', function ($table) {
         $table->string('uuid')->primary();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('company_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('network_stores', function ($table) {
@@ -1033,7 +1044,12 @@ test('network controller adds removes and categorizes store assignments', functi
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
-    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'company_uuid' => 'company_uuid']);
+    session(['company' => 'company_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_a', 'company_uuid' => 'company_uuid'],
+        ['uuid' => 'store_b', 'company_uuid' => 'company_uuid'],
+    ]);
     $connection->table('categories')->insert([
         'uuid'       => 'category_uuid',
         'owner_uuid' => 'network_uuid',
@@ -1074,8 +1090,17 @@ test('network controller add stores removes requested stale assignments in the s
     $schema     = $connection->getSchemaBuilder();
     $schema->dropIfExists('networks');
     $schema->dropIfExists('network_stores');
+    $schema->dropIfExists('stores');
     $schema->create('networks', function ($table) {
         $table->string('uuid')->primary();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('company_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('network_stores', function ($table) {
@@ -1088,13 +1113,15 @@ test('network controller add stores removes requested stale assignments in the s
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
-    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'company_uuid' => 'company_uuid']);
+    session(['company' => 'company_uuid']);
     $connection->table('network_stores')->insert([
         'network_uuid' => 'network_uuid',
         'store_uuid'   => 'store_old',
         'created_at'   => now(),
         'updated_at'   => now(),
     ]);
+    $connection->table('stores')->insert(['uuid' => 'store_new', 'company_uuid' => 'company_uuid']);
 
     $request = NetworkActionRequest::create('/network', 'POST', [
         'stores' => ['store_new'],
