@@ -41,7 +41,7 @@ class BookingSlots
     }
 
     /**
-     * @return array<int, array{start: string, end: string, time: string, past: bool, available: bool, remaining: int, capacity: int}>
+     * @return array<int, array{start: string, end: string, time: string, past: bool, available: bool, remaining: int, providers: int, capacity: int}>
      */
     public static function forDay(Product $product, string $date): array
     {
@@ -69,6 +69,8 @@ class BookingSlots
                     'past'      => $start->lte($now),
                     'available' => $remaining > 0 && $start->gt($now),
                     'remaining' => $remaining,
+                    // The contract's name for places left (providers free at that time).
+                    'providers' => $remaining,
                     'capacity'  => $service['capacity'],
                 ];
             }
