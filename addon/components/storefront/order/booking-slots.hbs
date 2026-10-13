@@ -1,33 +1,52 @@
-{{! A day and the service's free slots on it; picking one sets the booking time. }}
-<div class="storefront-booking-slots" data-test-booking-slots>
-    <div class="storefront-booking-slots__day">
-        <label class="storefront-create-order__label" for="booking-slots-date-{{this.uid}}">{{t "storefront.orders.booking.day"}}</label>
-        <input id="booking-slots-date-{{this.uid}}" type="date" class="form-input form-input-sm" value={{this.date}} min={{this.today}} {{on "change" this.setDate}} data-test-booking-date />
-        <span class="storefront-create-order__help mt-0">{{t "storefront.orders.booking.length" minutes=this.service.duration_minutes}}{{#if (gt this.service.capacity 1)}} · {{t "storefront.orders.booking.capacity" count=this.service.capacity}}{{/if}}</span>
+{{! A week of the service's days (places left, full, closed) and the start times of the chosen day; picking a time sets the booking. }}
+<div class="sfbk" data-test-booking-slots>
+    <div class="sfbk__week-head">
+        <span class="sfbk__month">{{this.monthLabel}}</span>
+        <span class="sfbk__week-nav">
+            <Button @size="xs" @icon="chevron-left" @disabled={{not this.canGoBack}} @onClick={{fn this.shiftWeek -1}} aria-label={{t "storefront.orders.booking.previous-week"}} />
+            <Button @size="xs" @icon="chevron-right" @onClick={{fn this.shiftWeek 1}} aria-label={{t "storefront.orders.booking.next-week"}} />
+        </span>
+    </div>
+    <div class="sfbk__days" role="group" aria-label={{t "storefront.orders.booking.day"}}>
+        {{#each this.days as |day|}}
+            <button
+                type="button"
+                class="sfbk__day is-{{day.state}} {{if day.isSelected 'is-selected'}}"
+                disabled={{day.isDisabled}}
+                aria-pressed={{if day.isSelected "true" "false"}}
+                {{on "click" (fn this.pickDay day)}}
+                data-test-booking-day={{day.key}}
+            >
+                <span class="sfbk__day-name">{{day.weekday}} {{day.number}}</span>
+                <span class="sfbk__day-note">{{#if (eq day.state "loading")}}…{{else}}{{day.note}}{{/if}}</span>
+            </button>
+        {{/each}}
+    </div>
+
+    <div class="sfbk__times-head">
+        <span class="sfbk__label">{{t "storefront.orders.booking.start-time"}}</span>
+        {{#if this.lengthLabel}}<span class="sfbk__muted">{{this.lengthLabel}}{{#if this.rangeLabel}} · {{this.rangeLabel}}{{/if}}</span>{{/if}}
     </div>
     {{#if this.load.isRunning}}
         <Spinner @size="sm" />
     {{else if this.slots.length}}
-        <div class="storefront-booking-slots__grid" role="group" aria-label={{t "storefront.orders.booking.slots"}}>
+        <div class="sfbk__times" role="group" aria-label={{t "storefront.orders.booking.slots"}}>
             {{#each this.slots as |slot|}}
                 <button
                     type="button"
-                    class="storefront-booking-slots__slot {{if slot.isSelected 'is-selected'}}"
+                    class="sfbk__time {{if slot.isSelected 'is-selected'}}"
                     disabled={{not slot.available}}
                     aria-pressed={{if slot.isSelected "true" "false"}}
+                    title={{unless slot.available (t "storefront.orders.booking.full")}}
                     {{on "click" (fn this.pick slot)}}
                     data-test-booking-slot={{slot.start}}
                 >
-                    <span>{{slot.label}}</span>
-                    {{#if slot.available}}
-                        {{#if (gt slot.capacity 1)}}<span class="storefront-booking-slots__left">{{t "storefront.orders.booking.left" count=slot.remaining}}</span>{{/if}}
-                    {{else}}
-                        <span class="storefront-booking-slots__left">{{t "storefront.orders.booking.full"}}</span>
-                    {{/if}}
+                    {{slot.label}}
                 </button>
             {{/each}}
         </div>
     {{else}}
-        <p class="storefront-create-order__help">{{t "storefront.orders.booking.no-slots"}}</p>
+        <p class="sfbk__muted">{{t "storefront.orders.booking.no-slots"}}</p>
     {{/if}}
+    <p class="sfbk__muted">{{t "storefront.orders.booking.slots-help"}}</p>
 </div>

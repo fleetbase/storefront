@@ -82,7 +82,11 @@ export default class StorefrontOrderOverviewComponent extends Component {
         entity.set('meta', { ...previous, unavailable: value });
 
         try {
-            await this.fetch.patch(`orders/${this.order.public_id}/entities/${entity.public_id}`, { unavailable: value }, { namespace: 'storefront/int/v1' });
+            const response = await this.fetch.patch(`orders/${this.order.public_id}/entities/${entity.public_id}`, { unavailable: value }, { namespace: 'storefront/int/v1' });
+            if (response?.customer_told) {
+                const name = String(this.order.customer?.name ?? '').split(' ')[0] || this.intl.t('storefront.order.edit.the-customer');
+                this.notifications.info(this.intl.t('storefront.order.packing.unavailable-told', { item: entity.name, name }));
+            }
             this.load.perform();
         } catch (error) {
             entity.set('meta', previous);

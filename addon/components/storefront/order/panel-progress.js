@@ -1,7 +1,7 @@
 import StorefrontOrderFlowStepsComponent from './flow-steps';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { format, formatDistanceToNowStrict, isValid, parseISO } from 'date-fns';
+import { format, formatDistanceToNowStrict, isPast, isValid, parseISO } from 'date-fns';
 
 const FINISHED = ['completed', 'picked_up', 'canceled', 'order_canceled', 'expired', 'failed'];
 // Statuses with their own Storefront action (accepting, and marking ready, which dispatches).
@@ -19,6 +19,14 @@ const DELIVERY_STEPS = [
     ['ready', ['ready', 'preparing', 'dispatched', 'started', 'driver_enroute_to_store']],
     ['dispatched', ['driver_picked_up', 'driver_enroute', 'en_route', 'out_for_delivery']],
     ['completed', ['completed']],
+];
+// A service booking (the Storefront booking flow): at the customer's address, or at the store.
+const BOOKING_STEPS = [
+    ['booked', ['created', 'pending']],
+    ['confirmed', ['accepted', 'confirmed']],
+    ['on_the_way', ['dispatched', 'started', 'provider_arrived']],
+    ['in_progress', ['in_progress']],
+    ['done', ['completed']],
 ];
 const PICKUP_STEPS = [
     ['created', ['created', 'pending']],
@@ -57,6 +65,10 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return this.storefrontOrderWorkflow.isDefaultStorefrontConfig(this.order);
     }
 
+    get isBooking() {
+        return Boolean(this.order?.meta?.is_booking);
+    }
+
     /** The panel's refresh, looked up when needed: the panel sets it after it loads. */
     reload() {
         (this.storefrontOrderActions.panel.refresh ?? this.args.refresh)?.();
@@ -65,6 +77,11 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
     /* Steps */
 
     get groups() {
+        if (this.isBooking) {
+            // At the store the customer comes in: nobody is on the way.
+            return this.isPickup ? BOOKING_STEPS.filter(([code]) => code !== 'on_the_way') : BOOKING_STEPS;
+        }
+
         return this.isPickup ? PICKUP_STEPS : DELIVERY_STEPS;
     }
 
@@ -89,7 +106,7 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
     }
 
     get steps() {
-        if (!this.isDefaultConfig && this.flowSteps.length) {
+        if (!this.isBooking && !this.isDefaultConfig && this.flowSteps.length) {
             return this.flowSteps.map((step, index) => ({
                 code: step.code,
                 number: index + 1,
@@ -113,7 +130,7 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return this.groups.map(([code, codes], index) => ({
             code,
             number: index + 1,
-            label: this.labelFor(code),
+            label: this.isBooking ? this.intl.t(`storefront.order.booking-steps.${code}`) : this.labelFor(code),
             isComplete: index < current || (index === current && finished),
             isCurrent: index === current && !finished,
             isUpcoming: index > current,
@@ -127,6 +144,8 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
 
     get timedSteps() {
         const steps = this.steps;
+        // A booking is done when its time ends.
+        const doneBy = this.isBooking ? parse(this.order?.meta?.booking?.end) : this.dueAt;
 
         return steps.map((step, index) => {
             let time = null;
@@ -134,8 +153,8 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
                 time = this.timeLabel(step.reachedAt);
             } else if (step.isCurrent && step.reachedAt) {
                 time = formatDistanceToNowStrict(step.reachedAt);
-            } else if (index === steps.length - 1 && !step.isComplete && this.dueAt) {
-                time = this.intl.t('storefront.order.panel.eta', { time: this.timeLabel(this.dueAt) });
+            } else if (index === steps.length - 1 && !step.isComplete && doneBy) {
+                time = this.intl.t('storefront.order.panel.eta', { time: this.timeLabel(doneBy) });
             }
 
             return { ...step, time };
@@ -218,6 +237,16 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         if (this.isFinished) {
             return isPickup ? t('picked-up') : t('delivered');
         }
+        if (this.isBooking) {
+            if (['created', 'pending'].includes(status)) {
+                return t('confirm-booking');
+            }
+            if (['accepted', 'confirmed'].includes(status)) {
+                return isPickup ? t('start-when-arrives', { name: this.customerFirstName }) : t('send-provider');
+            }
+            const next = this.expectedNext;
+            return next ? t('next-step', { step: next.label }) : t('in-progress', { step: this.flowSteps.find((item) => item.state === 'current')?.label ?? status });
+        }
         if (['created', 'pending'].includes(status)) {
             return t('accept');
         }
@@ -241,6 +270,35 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return next ? t('next-step', { step: next.label }) : t('in-progress', { step: this.flowSteps.find((item) => item.state === 'current')?.label ?? status });
     }
 
+    get customerFirstName() {
+        return String(this.order?.customer?.name ?? '').split(' ')[0];
+    }
+
+    /** "Tue 14 Oct, 10:00 to 13:00 · starts in 2 days · Mei Tan". */
+    get bookingLine() {
+        if (!this.isBooking) {
+            return null;
+        }
+
+        const booking = this.order?.meta?.booking ?? {};
+        const start = parse(booking.start ?? this.order?.meta?.booking_at);
+        if (!start) {
+            return null;
+        }
+
+        const end = parse(booking.end);
+        const when = end
+            ? this.intl.t('storefront.order.panel.booking-when', { day: format(start, 'EEE d MMM'), start: format(start, 'HH:mm'), end: format(end, 'HH:mm') })
+            : format(start, 'EEE d MMM, HH:mm');
+        const relative = this.isFinished
+            ? null
+            : isPast(start)
+              ? this.intl.t('storefront.order.panel.booking-started', { ago: formatDistanceToNowStrict(start) })
+              : this.intl.t('storefront.order.panel.booking-starts', { in: formatDistanceToNowStrict(start) });
+
+        return [when, relative, this.driverName].filter(Boolean).join(' · ');
+    }
+
     get dueAt() {
         return parse(this.overview?.due_at);
     }
@@ -258,6 +316,9 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
     }
 
     get dueLine() {
+        if (this.isBooking) {
+            return null;
+        }
         if (this.isFinished || !this.dueAt) {
             return null;
         }

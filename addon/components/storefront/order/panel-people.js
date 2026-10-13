@@ -1,5 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
+import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
 import { format, isValid, parseISO } from 'date-fns';
 
@@ -21,8 +22,16 @@ const DRIVER_STATUS = {
 export default class StorefrontOrderPanelPeopleComponent extends Component {
     @service intl;
     @service abilities;
-    @service hostRouter;
     @service storefrontOrderActions;
+
+    /**
+     * The router: the engine's host router inside Storefront, the console's own router when the
+     * panel opens from the console (the resource context panel), where engines' services are not.
+     */
+    get hostRouter() {
+        const owner = getOwner(this);
+        return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
+    }
 
     get order() {
         return this.args.order;
@@ -38,6 +47,15 @@ export default class StorefrontOrderPanelPeopleComponent extends Component {
 
     get isPickup() {
         return Boolean(this.order?.meta?.is_pickup);
+    }
+
+    /** A service booking: the driver is the provider who does the job. */
+    get isBooking() {
+        return Boolean(this.order?.meta?.is_booking);
+    }
+
+    get driverLabel() {
+        return this.isBooking ? this.intl.t('storefront.order.panel.provider') : this.intl.t('storefront.order.panel.driver');
     }
 
     get customerPhoto() {

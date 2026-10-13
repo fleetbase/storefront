@@ -3,12 +3,12 @@
         <:default>
             <div class="min-w-0">
                 <div class="storefront-create-order__title">{{if this.isBooking (t "storefront.orders.booking.title") (t "storefront.orders.create.title")}}</div>
-                <div class="storefront-create-order__store">{{if this.activeStore this.activeStore.name this.network.name}} · {{t "storefront.orders.create.subtitle"}}</div>
+                <div class="storefront-create-order__store">{{if this.activeStore this.activeStore.name this.network.name}} · {{if this.isBooking (t "storefront.orders.booking.subtitle") (t "storefront.orders.create.subtitle")}}</div>
             </div>
         </:default>
     </Overlay::Header>
     <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-create-order" data-test-create-order>
-        <div class="storefront-create-order__steps">
+        <div class="storefront-create-order__steps {{if this.isBooking 'is-booking'}}">
             {{#if this.isNetworkContext}}
                 {{! Network context: which member store the order is placed with }}
                 <section class="storefront-create-order__sec" data-test-create-order-step="store">
@@ -46,27 +46,40 @@
             </section>
 
             {{! 2 · Fulfillment }}
-            <section class="storefront-create-order__sec" data-test-create-order-step="fulfillment">
-                <h3 class="storefront-create-order__sec-title">{{this.stepNumbers.fulfillment}} · {{t "storefront.networks.orders.columns.fulfillment"}}</h3>
+            <section class="storefront-create-order__sec storefront-create-order__sec--when" data-test-create-order-step="fulfillment">
+                <h3 class="storefront-create-order__sec-title">{{this.stepNumbers.fulfillment}} · {{if this.isBooking (t "storefront.orders.booking.when-where") (t "storefront.networks.orders.columns.fulfillment")}}</h3>
+                {{#if this.isBooking}}
+                    {{#if this.bookableLine}}
+                        <div class="storefront-create-order__field" data-test-create-order-booking>
+                            <Storefront::Order::BookingSlots @product={{this.bookableLine.product}} @value={{this.scheduledAt}} @onSelect={{this.selectSlot}} />
+                        </div>
+                    {{else}}
+                        <p class="storefront-create-order__help mt-0">{{t "storefront.orders.booking.add-service-first"}}</p>
+                    {{/if}}
+                {{/if}}
                 <div class="storefront-create-order__row">
-                    <Storefront::ViewToggle @options={{array (hash id="delivery" label=(t "storefront.networks.orders.delivery")) (hash id="pickup" label=(t "storefront.common.pickup"))}} @value={{if this.isPickup "pickup" "delivery"}} @onChange={{this.setFulfillment}} @label={{t "storefront.orders.create.fulfillment"}} data-test-fulfillment-toggle />
-                    {{#unless this.bookableLine}}
+                    <Storefront::ViewToggle
+                        @options={{if
+                            this.isBooking
+                            (array (hash id="delivery" label=(t "storefront.orders.booking.at-customer")) (hash id="pickup" label=(t "storefront.orders.booking.at-store")))
+                            (array (hash id="delivery" label=(t "storefront.networks.orders.delivery")) (hash id="pickup" label=(t "storefront.common.pickup")))
+                        }}
+                        @value={{if this.isPickup "pickup" "delivery"}}
+                        @onChange={{this.setFulfillment}}
+                        @label={{t "storefront.orders.create.fulfillment"}}
+                        data-test-fulfillment-toggle
+                    />
+                    {{#unless this.isBooking}}
                         <Storefront::ViewToggle @options={{array (hash id="asap" label=(t "storefront.order.asap")) (hash id="schedule" label=(t "storefront.orders.create.schedule"))}} @value={{if this.isScheduled "schedule" "asap"}} @onChange={{this.setTiming}} @label={{t "storefront.orders.create.schedule"}} data-test-timing-toggle />
                         {{#if this.isScheduled}}
                             <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
                         {{/if}}
                     {{/unless}}
-                    <span class="storefront-create-order__help mt-0">{{t "storefront.orders.create.fulfillment-help"}}</span>
+                    <span class="storefront-create-order__help mt-0">{{if this.isBooking (t "storefront.orders.booking.where-help") (t "storefront.orders.create.fulfillment-help")}}</span>
                 </div>
-                {{#if this.bookableLine}}
-                    <div class="storefront-create-order__field" data-test-create-order-booking>
-                        <div class="storefront-create-order__label">{{t "storefront.orders.booking.when" service=this.bookableLine.product.name}}</div>
-                        <Storefront::Order::BookingSlots @product={{this.bookableLine.product}} @value={{this.scheduledAt}} @onSelect={{this.selectSlot}} />
-                    </div>
-                {{/if}}
                 <div class="storefront-create-order__grid">
                     <div class="storefront-create-order__field">
-                        <div class="storefront-create-order__label">{{if this.isPickup (t "storefront.orders.create.pickup-from") (t "storefront.orders.create.leaves-from")}}</div>
+                        <div class="storefront-create-order__label">{{if this.isBooking (if this.isPickup (t "storefront.orders.booking.at-location") (t "storefront.orders.booking.provider-from")) (if this.isPickup (t "storefront.orders.create.pickup-from") (t "storefront.orders.create.leaves-from"))}}</div>
                         {{#if this.locationRows.length}}
                             <div class="storefront-create-order__places" data-test-create-order-locations>
                                 {{#each this.locationRows as |row|}}
@@ -87,7 +100,7 @@
                     </div>
                     {{#unless this.isPickup}}
                         <div class="storefront-create-order__field" data-test-create-order-dropoff>
-                            <div class="storefront-create-order__label">{{t "storefront.orders.create.deliver-to"}}</div>
+                            <div class="storefront-create-order__label">{{if this.isBooking (t "storefront.orders.booking.service-address") (t "storefront.orders.create.deliver-to")}}</div>
                             {{#if this.selectedCustomer}}
                                 {{#if this.placeRows.length}}
                                     <div class="storefront-create-order__places">
@@ -98,6 +111,7 @@
                                                     <span class="storefront-create-order__place-name">{{n-a row.place.name (t "storefront.common.address")}}</span>
                                                     <span class="storefront-create-order__place-address">{{n-a row.place.address}}</span>
                                                 </span>
+                                                {{#if row.distance}}<span class="storefront-create-order__distance">{{row.distance}}</span>{{/if}}
                                                 {{#if row.isDefault}}<Badge @status="default" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.customers.panel.default"}} />{{/if}}
                                             </button>
                                         {{/each}}
@@ -141,12 +155,48 @@
                         </div>
                     {{/unless}}
                 </div>
+                {{#if this.isBooking}}
+                    <div class="storefront-create-order__field storefront-create-order__notes">
+                        <label class="storefront-create-order__label" for="create-booking-notes">{{t "storefront.orders.booking.job-notes"}}</label>
+                        <Textarea id="create-booking-notes" class="form-input w-full" rows="2" @value={{this.notes}} placeholder={{t "storefront.orders.booking.job-notes-placeholder"}} {{on "input" this.setNotes}} />
+                    </div>
+                {{/if}}
             </section>
+
+            {{#if this.isBooking}}
+                {{! 4 · Provider: a booking's provider is one of the company's drivers }}
+                <section class="storefront-create-order__sec storefront-create-order__sec--provider" data-test-create-order-step="provider">
+                    <h3 class="storefront-create-order__sec-title">{{this.stepNumbers.provider}} · {{t "storefront.orders.booking.provider"}}</h3>
+                    <div class="storefront-create-order__places">
+                        <button type="button" class="storefront-create-order__place {{unless this.provider 'is-selected'}}" {{on "click" (fn this.setProvider null)}} data-test-provider-any>
+                            <span class="storefront-create-order__tile"><FaIcon @icon="users" @size="xs" /></span>
+                            <span class="storefront-create-order__place-text">
+                                <span class="storefront-create-order__place-name">{{t "storefront.orders.booking.any-provider"}}</span>
+                                <span class="storefront-create-order__place-address">{{t "storefront.orders.booking.assign-at-confirmation"}}</span>
+                            </span>
+                        </button>
+                        {{#if this.provider}}
+                            <div class="storefront-create-order__place is-selected is-static" data-test-provider-picked>
+                                <Driver::Pill @driver={{this.provider}} @static={{true}} @noPopover={{true}} />
+                            </div>
+                        {{/if}}
+                    </div>
+                    <div class="storefront-create-order__dropoff-row">
+                        <ModelSelect @modelName="driver" @selectedModel={{this.provider}} @placeholder={{t "storefront.orders.booking.choose-provider"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.setProvider}} as |model|>
+                            <span class="storefront-create-order__place-text">
+                                <span class="storefront-create-order__place-name">{{model.name}}</span>
+                                <span class="storefront-create-order__place-address">{{n-a model.phone (t "storefront.orders.booking.driver")}}</span>
+                            </span>
+                        </ModelSelect>
+                    </div>
+                    <p class="storefront-create-order__help">{{t "storefront.orders.booking.provider-help"}}</p>
+                </section>
+            {{/if}}
 
             {{! 3 · Items }}
             <section class="storefront-create-order__sec storefront-create-order__sec--last" data-test-create-order-step="items">
                 <h3 class="storefront-create-order__sec-title">
-                    {{this.stepNumbers.items}} · {{t "storefront.order.tabs.items"}}<span class="storefront-create-order__sec-hint">{{t "storefront.orders.create.items-hint"}}</span>
+                    {{this.stepNumbers.items}} · {{if this.isBooking (t "storefront.orders.booking.services-products") (t "storefront.order.tabs.items")}}<span class="storefront-create-order__sec-hint">{{if this.isBooking (t "storefront.orders.booking.services-hint") (t "storefront.orders.create.items-hint")}}</span>
                     {{#unless this.pickerVisible}}
                         <Button @type="primary" @size="xs" @icon="plus" @text={{t "storefront.orders.create.add-products"}} @onClick={{this.openPicker}} class="ml-auto" data-test-add-products />
                     {{/unless}}
@@ -157,6 +207,7 @@
                         <thead>
                             <tr>
                                 <th>{{t "storefront.orders.create.product"}}</th>
+                                {{#if this.isBooking}}<th>{{t "storefront.orders.booking.type"}}</th>{{/if}}
                                 <th>{{t "storefront.orders.create.options"}}</th>
                                 <th class="storefront-create-order__th-qty">{{t "storefront.orders.create.qty"}}</th>
                                 <th class="is-right">{{t "storefront.orders.create.price"}}</th>
@@ -172,10 +223,22 @@
                                             <Image src={{line.product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{line.product.name}} class="storefront-create-order__thumb" />
                                             <span class="storefront-create-order__place-text">
                                                 <span class="storefront-create-order__place-name">{{line.product.name}}</span>
-                                                <span class="storefront-create-order__place-address">{{n-a line.product.category.name}}{{#if line.unavailable}} · <span class="text-red-500">{{t "storefront.catalogs.editor.out-of-stock"}}</span>{{/if}}</span>
+                                                <span class="storefront-create-order__place-address">
+                                                    {{#if (and this.isBooking line.isService)}}
+                                                        {{n-a line.length line.product.category.name}}
+                                                    {{else if (and this.isBooking (not this.isPickup))}}
+                                                        {{t "storefront.orders.booking.brought-along"}}
+                                                    {{else}}
+                                                        {{n-a line.product.category.name}}
+                                                    {{/if}}
+                                                    {{#if line.unavailable}} · <span class="text-red-500">{{t "storefront.catalogs.editor.out-of-stock"}}</span>{{/if}}
+                                                </span>
                                             </span>
                                         </span>
                                     </td>
+                                    {{#if this.isBooking}}
+                                        <td><Badge @status={{if line.isService "info" "default"}} @size="xs" @hideStatusDot={{true}} @text={{if line.isService (t "storefront.orders.booking.service") (t "storefront.orders.booking.product")}} /></td>
+                                    {{/if}}
                                     <td class="storefront-create-order__options-cell">{{#if line.optionsLabel}}{{line.optionsLabel}}{{else}}—{{/if}}</td>
                                     <td>
                                         <span class="storefront-create-order__qty">
@@ -192,21 +255,42 @@
                         </tbody>
                     </table>
                     </div>
+                    {{#if (and this.isBooking (not this.isPickup) this.bookingSplit.productsCount)}}
+                        <p class="storefront-create-order__help">{{t "storefront.orders.booking.products-ride"}}</p>
+                    {{/if}}
                 {{/if}}
 
                 {{#if this.pickerVisible}}
                     <Storefront::Order::ProductPicker @products={{this.pickerProducts}} @currency={{this.currency}} @onAdd={{this.addLine}} @onDone={{if this.lineRows.length this.closePicker}} />
                 {{/if}}
 
-                <div class="storefront-create-order__field storefront-create-order__notes">
-                    <label class="storefront-create-order__label" for="create-order-notes">{{t "storefront.orders.create.notes"}}</label>
-                    <Textarea id="create-order-notes" class="form-input w-full" rows="3" @value={{this.notes}} placeholder={{t "storefront.orders.create.notes-placeholder"}} {{on "input" this.setNotes}} />
-                </div>
+                {{#unless this.isBooking}}
+                    <div class="storefront-create-order__field storefront-create-order__notes">
+                        <label class="storefront-create-order__label" for="create-order-notes">{{t "storefront.orders.create.notes"}}</label>
+                        <Textarea id="create-order-notes" class="form-input w-full" rows="3" @value={{this.notes}} placeholder={{t "storefront.orders.create.notes-placeholder"}} {{on "input" this.setNotes}} />
+                    </div>
+                {{/unless}}
                 <Spacer @height="60px" />
             </section>
         </div>
 
         <aside class="storefront-create-order__summary" data-test-create-order-summary>
+            {{#if this.isBooking}}
+                <section class="storefront-create-order__sec" data-test-booking-card>
+                    <h3 class="storefront-create-order__sec-title">{{t "storefront.orders.booking.booking"}}</h3>
+                    {{#if this.bookingWhen}}
+                        <div class="storefront-create-order__booking">
+                            <FaIcon @icon="calendar-check" class="storefront-create-order__booking-icon" />
+                            <span class="storefront-create-order__place-text">
+                                <span class="storefront-create-order__place-name">{{this.bookingWhen}}</span>
+                                <span class="storefront-create-order__place-address">{{n-a this.bookingWhere}}</span>
+                            </span>
+                        </div>
+                    {{else}}
+                        <p class="storefront-create-order__help mt-0">{{t "storefront.orders.booking.pick-slot"}}</p>
+                    {{/if}}
+                </section>
+            {{/if}}
             <section class="storefront-create-order__sec">
                 <h3 class="storefront-create-order__sec-title">{{t "storefront.orders.create.promotion"}}</h3>
                 <form class="storefront-create-order__promo" {{on "submit" this.applyPromoCode}}>
@@ -227,8 +311,9 @@
                 <div class="storefront-create-order__field">
                     <label class="storefront-create-order__label" for="create-order-payment">{{t "storefront.orders.create.method"}}</label>
                     <Select id="create-order-payment" class="w-full" @value={{this.payment}} @options={{this.paymentOptions}} @optionLabel="label" @optionValue="value" @onSelect={{this.setPayment}} data-test-payment />
-                    <p class="storefront-create-order__help">{{t "storefront.orders.create.payment-help"}}</p>
+                    <p class="storefront-create-order__help">{{if this.isBooking (t "storefront.orders.booking.payment-help") (t "storefront.orders.create.payment-help")}}</p>
                 </div>
+                {{#unless this.isBooking}}
                 <div class="storefront-create-order__field">
                     <div class="storefront-create-order__label">{{t "storefront.orders.create.tip"}}</div>
                     <Storefront::ViewToggle @options={{array (hash id="none" label=(t "storefront.orders.create.tip-none")) (hash id="fixed" label=(format-currency 350 this.currency)) (hash id="percent-10" label="10%") (hash id="percent-20" label="20%") (hash id="percent-30" label="30%") (hash id="custom" label=(t "storefront.orders.create.tip-custom"))}} @value={{this.tipMode}} @onChange={{this.setTipMode}} @label={{t "storefront.orders.create.tip"}} data-test-tip-toggle />
@@ -236,14 +321,24 @@
                         <MoneyInput class="w-full mt-2" @currency={{this.currency}} @value={{this.tipCustom}} @canSelectCurrency={{false}} @onChange={{this.setTipCustom}} />
                     {{/if}}
                 </div>
+                {{/unless}}
             </section>
 
             <section class="storefront-create-order__sec storefront-create-order__sec--grow">
                 <h3 class="storefront-create-order__sec-title">{{t "storefront.orders.create.summary"}}</h3>
                 <dl class="storefront-create-order__totals">
-                    <div><dt>{{t "storefront.orders.create.subtotal" count=this.totals.items}}</dt><dd>{{format-currency this.totals.subtotal this.currency}}</dd></div>
+                    {{#if this.isBooking}}
+                        {{#each this.bookingSplit.services as |service|}}
+                            <div><dt>{{service.label}}</dt><dd>{{format-currency service.total this.currency}}</dd></div>
+                        {{/each}}
+                        {{#if this.bookingSplit.productsCount}}
+                            <div><dt>{{if this.isPickup (t "storefront.orders.booking.products" count=this.bookingSplit.productsCount) (t "storefront.orders.booking.products-brought" count=this.bookingSplit.productsCount)}}</dt><dd>{{format-currency this.bookingSplit.productsTotal this.currency}}</dd></div>
+                        {{/if}}
+                    {{else}}
+                        <div><dt>{{t "storefront.orders.create.subtotal" count=this.totals.items}}</dt><dd>{{format-currency this.totals.subtotal this.currency}}</dd></div>
+                    {{/if}}
                     {{#if this.totals.discount}}<div class="is-discount"><dt>{{t "storefront.orders.create.discount"}}{{#if this.appliedPromoCode}} {{this.appliedPromoCode}}{{/if}}</dt><dd>−{{format-currency this.totals.discount this.currency}}</dd></div>{{/if}}
-                    {{#unless this.isPickup}}<div><dt>{{t "storefront.orders.create.delivery-fee"}}</dt><dd>{{#if this.quote}}{{format-currency this.totals.delivery_fee this.currency}}{{else}}—{{/if}}</dd></div>{{/unless}}
+                    {{#unless this.isPickup}}<div><dt>{{if this.isBooking (if this.travelDistance (t "storefront.orders.booking.travel-fee-km" distance=this.travelDistance) (t "storefront.orders.booking.travel-fee")) (t "storefront.orders.create.delivery-fee")}}</dt><dd>{{#if this.quote}}{{format-currency this.totals.delivery_fee this.currency}}{{else}}—{{/if}}</dd></div>{{/unless}}
                     {{#if this.totals.tip}}<div><dt>{{t "storefront.orders.create.tip"}}</dt><dd>{{format-currency this.totals.tip this.currency}}</dd></div>{{/if}}
                     <div class="is-total"><dt>{{t "storefront.networks.orders.columns.total"}}</dt><dd>{{format-currency this.totals.total this.currency}}</dd></div>
                 </dl>
@@ -259,7 +354,7 @@
             </section>
 
             <div class="storefront-create-order__footer">
-                <Button @type="primary" @size="md" @icon="check" @text={{t "storefront.orders.create.place" total=(format-currency this.totals.total this.currency)}} @disabled={{not this.canPlace}} @isLoading={{this.place.isRunning}} @onClick={{perform this.place}} @permission="storefront create order" class="w-full" @wrapperClass="w-full" data-test-place-order />
+                <Button @type="primary" @size="md" @icon="check" @text={{if this.isBooking this.bookLabel (t "storefront.orders.create.place" total=(format-currency this.totals.total this.currency))}} @disabled={{not this.canPlace}} @isLoading={{this.place.isRunning}} @onClick={{perform this.place}} @permission="storefront create order" class="w-full" @wrapperClass="w-full" data-test-place-order />
             </div>
         </aside>
     </Overlay::Body>

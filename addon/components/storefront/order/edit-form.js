@@ -1,11 +1,13 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
+import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
 import { format, isValid, parseISO } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 import getRoutingHost from '@fleetbase/ember-core/utils/get-routing-host';
+import findContact from '@fleetbase/storefront-engine/utils/find-contact';
 
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
@@ -71,8 +73,16 @@ export default class StorefrontOrderEditFormComponent extends Component {
     @service notifications;
     @service store;
     @service storefront;
-    @service hostRouter;
     @service storefrontOrderActions;
+
+    /**
+     * The router: the engine's host router inside Storefront, the console's own router when the
+     * panel opens from the console (the resource context panel), where engines' services are not.
+     */
+    get hostRouter() {
+        const owner = getOwner(this);
+        return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
+    }
 
     @tracked overview = null;
     @tracked preview = null;
@@ -146,6 +156,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
                 addons: entity.meta?.addons ?? [],
                 unitPrice: Math.round(subtotal / quantity),
                 unavailable: Boolean(entity.meta?.unavailable),
+                scheduledAt: entity.meta?.scheduled_at ?? null,
                 optionsChanged: false,
                 removed: false,
                 isNew: false,
@@ -158,8 +169,8 @@ export default class StorefrontOrderEditFormComponent extends Component {
         this.addressQuery = this.currentDropoff?.address ?? '';
         this.selectedPlace = null;
         this.newDistance = null;
-        this.isScheduled = Boolean(order?.scheduled_at);
-        this.scheduledAt = order?.scheduled_at ?? null;
+        this.isScheduled = Boolean(this.originalTime);
+        this.scheduledAt = this.originalTime;
         this.notes = order?.notes ?? '';
         this.settlement = null;
         this.preview = null;
@@ -178,7 +189,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
 
         const [store, contact] = yield Promise.all([
             order.meta?.storefront_id ? this.store.findRecord('store', order.meta.storefront_id).catch(() => null) : null,
-            order.customer?.public_id ? this.store.findRecord('contact', order.customer.public_id).catch(() => null) : null,
+            order.customer?.id ? findContact(this.store, order.customer.id, { reload: true }).catch(() => null) : null,
         ]);
 
         this.customer = contact;
@@ -635,8 +646,48 @@ export default class StorefrontOrderEditFormComponent extends Component {
         this.requote.perform();
     }
 
+    /** A service booking: its time is a slot of the booked service, kept in `meta.booking`. */
+    get isBooking() {
+        return Boolean(this.order?.meta?.is_booking);
+    }
+
+    get originalTime() {
+        const meta = this.order?.meta ?? {};
+        return this.isBooking ? (meta.booking?.start ?? meta.booking_at ?? null) : (this.order?.scheduled_at ?? null);
+    }
+
+    /** The booked service, for its free slots. */
+    get bookedService() {
+        const line = this.lines.find((item) => item.scheduledAt) ?? this.lines[0];
+        return (
+            this.products.find((product) => product.public_id === line?.productId && product.is_bookable) ??
+            this.products.find((product) => this.lines.some((item) => item.productId === product.public_id) && product.is_bookable) ??
+            null
+        );
+    }
+
+    /** "Tue 14 Oct, 10:00 to 13:00" for the booking as it is. */
+    get bookedLabel() {
+        const booking = this.order?.meta?.booking ?? {};
+        const start = this.originalTime ? parseISO(this.originalTime) : null;
+        if (!start || !isValid(start)) {
+            return null;
+        }
+        const end = booking.end ? parseISO(booking.end) : null;
+
+        return end && isValid(end)
+            ? this.intl.t('storefront.order.panel.booking-when', { day: format(start, 'EEE d MMM'), start: format(start, 'HH:mm'), end: format(end, 'HH:mm') })
+            : format(start, 'EEE d MMM, HH:mm');
+    }
+
+    @action pickSlot(start) {
+        this.isScheduled = true;
+        this.scheduledAt = start;
+        this.requote.perform();
+    }
+
     get scheduleChanged() {
-        const was = this.order?.scheduled_at ? new Date(this.order.scheduled_at).getTime() : null;
+        const was = this.originalTime ? new Date(this.originalTime).getTime() : null;
         const now = this.isScheduled && this.scheduledAt ? new Date(this.scheduledAt).getTime() : null;
 
         return was !== now;

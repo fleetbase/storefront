@@ -1,0 +1,32 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="sfrs" data-test-reschedule-booking>
+            <div class="sfrs__times">
+                <div class="sfrs__time">
+                    <span class="sfrs__label">{{t "storefront.order.edit.booked-for"}}</span>
+                    {{#if this.isMoved}}<s class="sfrs__was">{{this.currentLabel}}</s>{{else}}<strong>{{or this.currentLabel "—"}}</strong>{{/if}}
+                </div>
+                {{#if this.newLabel}}
+                    <FaIcon @icon="arrow-right" @size="xs" class="sfrs__arrow" />
+                    <div class="sfrs__time">
+                        <span class="sfrs__label">{{t "storefront.order.reschedule.moving-to"}}</span>
+                        <strong data-test-reschedule-new>{{this.newLabel}}</strong>
+                    </div>
+                {{/if}}
+            </div>
+
+            <Storefront::Order::BookingSlots @product={{this.options.product}} @value={{or this.draft.start this.options.current}} @current={{this.options.current}} @onSelect={{this.pick}} />
+
+            <div class="sfrs__tell">
+                <Checkbox @value={{this.draft.notifyCustomer}} @onToggle={{this.toggleCustomer}} data-test-reschedule-notify-customer>
+                    {{t "storefront.order.edit.notify-customer" name=this.options.customerName}}
+                </Checkbox>
+                {{#if this.options.providerName}}
+                    <Checkbox @value={{this.draft.notifyProvider}} @onToggle={{this.toggleProvider}} data-test-reschedule-notify-provider>
+                        {{t "storefront.order.edit.notify-driver" name=this.options.providerName}}
+                    </Checkbox>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</Modal::Default>

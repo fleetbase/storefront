@@ -8,6 +8,7 @@ use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Promotion;
 use Fleetbase\Storefront\Models\PromotionCode;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Notifications\StorefrontOrderBalancePaid;
 use Illuminate\Support\Str;
 
 /**
@@ -218,6 +219,14 @@ class OrderSettlement
 
         $charge = OrderPayments::recordAdjustment($order, 'charge', $amount, ['gateway' => $gateway, 'reference' => $reference, 'reason' => 'Balance paid by link']);
         static::announcePayment($order, 'The balance is paid');
+
+        // A receipt for the customer.
+        try {
+            $order->loadMissing('customer');
+            $order->customer?->notify(new StorefrontOrderBalancePaid($order, $amount));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return $charge;
     }

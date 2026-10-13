@@ -7,6 +7,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
 use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
+use Fleetbase\Storefront\Notifications\StorefrontOrderItemUnavailable;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
 use Fleetbase\Storefront\Support\OrderChat;
@@ -619,12 +620,13 @@ class OrderController extends FleetbaseOrderController
 
     /**
      * Mark one item of the order unavailable (or available again), or note something about it.
-     * Everything else on the order is taken as packed and delivered.
+     * Everything else on the order is taken as packed and delivered. The customer is told when an
+     * item becomes unavailable.
      */
     public function updateEntity(string $id, string $entityId, Request $request)
     {
         try {
-            $order = Order::findRecordOrFail($id, ['payload.entities']);
+            $order = Order::findRecordOrFail($id, ['payload.entities', 'customer']);
         } catch (ModelNotFoundException $exception) {
             return response()->error('Order not found', 404);
         }
@@ -634,7 +636,9 @@ class OrderController extends FleetbaseOrderController
             return response()->error('Item not found on this order', 404);
         }
 
+        $becameUnavailable = false;
         if ($request->has('unavailable')) {
+            $becameUnavailable = $request->boolean('unavailable') && !data_get($entity, 'meta.unavailable');
             $entity->setMeta('unavailable', $request->boolean('unavailable'));
         }
         if ($request->has('note')) {
@@ -642,6 +646,16 @@ class OrderController extends FleetbaseOrderController
         }
         $entity->save();
 
-        return $this->orderResponse($order);
+        $customerTold = false;
+        if ($becameUnavailable && $order->customer) {
+            try {
+                $order->customer->notify(new StorefrontOrderItemUnavailable($order, (string) $entity->name));
+                $customerTold = true;
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return [...$this->orderResponse($order), 'customer_told' => $customerTold];
     }
 }

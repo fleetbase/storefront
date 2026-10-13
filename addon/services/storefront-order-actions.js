@@ -1,4 +1,5 @@
 import Service, { inject as service } from '@ember/service';
+import { getOwner } from '@ember/application';
 import { tracked } from '@glimmer/tracking';
 import { isArray } from '@ember/array';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
@@ -8,6 +9,13 @@ class CancelDraft {
     // refund | store_credit | none
     @tracked giveBack = 'none';
     @tracked amount = 0;
+}
+
+class RescheduleDraft {
+    @tracked start = null;
+    @tracked end = null;
+    @tracked notifyCustomer = true;
+    @tracked notifyProvider = true;
 }
 
 /**
@@ -57,7 +65,6 @@ export default class StorefrontOrderActionsService extends Service {
     /** The open order panel's shared state (see OrderPanelState). */
     panel = new OrderPanelState();
 
-    @service hostRouter;
     @service intl;
     @service notifications;
     @service fetch;
@@ -66,6 +73,15 @@ export default class StorefrontOrderActionsService extends Service {
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
     @service('universe/menu-service') menuService;
+
+    /**
+     * The router: the engine's host router inside Storefront, the console's own router when the
+     * service is used from the console (the resource context panel), where engines' services are not.
+     */
+    get hostRouter() {
+        const owner = getOwner(this);
+        return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
+    }
 
     async viewOrder(order, options = {}) {
         const hydratedOrder = await this.fetch.get(
@@ -418,6 +434,76 @@ export default class StorefrontOrderActionsService extends Service {
                 this.panel.openChat('customer', this.intl.t('storefront.order.panel.alerts.link-message', { amount: formatCurrency(amount, payment.currency), link }));
             },
         });
+    }
+
+    /**
+     * Move a booking to another free time of its service: the week of free times, the customer
+     * and the provider told. The time is changed through the order edit (which checks the time
+     * is still free).
+     */
+    rescheduleBooking(order, callback) {
+        const entities = order?.payload?.entities?.toArray?.() ?? Array.from(order?.payload?.entities ?? []);
+        const line = entities.find((entity) => entity.meta?.scheduled_at) ?? entities.find((entity) => entity.meta?.product_id);
+        const productId = line?.meta?.product_id;
+        if (!productId) {
+            return this.editOrder(order, { focus: 'schedule' });
+        }
+
+        const booking = order.meta?.booking ?? {};
+        const firstName = (name) => String(name ?? '').split(' ')[0];
+        const draft = new RescheduleDraft();
+        const provider = order.driver_assigned;
+
+        this.modalsManager.show('modals/reschedule-booking', {
+            title: this.intl.t('storefront.order.reschedule.title'),
+            acceptButtonText: this.intl.t('storefront.order.reschedule.move'),
+            acceptButtonIcon: 'calendar-check',
+            acceptButtonDisabled: true,
+            declineButtonText: this.intl.t('storefront.order.reschedule.keep'),
+            size: 'lg',
+            order,
+            product: { id: productId, name: line.name },
+            current: booking.start ?? order.meta?.booking_at ?? null,
+            currentEnd: booking.end ?? null,
+            customerName: firstName(order.customer?.name) || this.intl.t('storefront.order.edit.the-customer'),
+            providerName: provider ? firstName(provider.name) || this.intl.t('storefront.order.edit.the-driver') : null,
+            draft,
+            confirm: async (modal) => {
+                if (!draft.start) {
+                    return;
+                }
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch(
+                        `orders/${order.public_id}/edit`,
+                        { scheduled_at: draft.start, notify_customer: draft.notifyCustomer, notify_driver: Boolean(provider) && draft.notifyProvider },
+                        { namespace: 'storefront/int/v1' }
+                    );
+                    await order.reload();
+                    this.notifications.success(this.intl.t('storefront.order.reschedule.moved', { id: order.public_id }));
+                    modal.done();
+                    (this.panel.refresh ?? callback)?.(order);
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
+    /**
+     * Assign a driver to an order without the dialog (a booking's provider is its driver), the
+     * same way the Assign driver dialog does.
+     */
+    async setDriver(order, driver) {
+        this.setOrderProperty(order, 'driver_assigned', driver);
+        this.setOrderProperty(order, 'driver_assigned_uuid', driver?.id ?? driver?.uuid ?? null);
+        this.setOrderProperty(order, 'has_driver_assigned', Boolean(driver));
+        await order.save();
+
+        return order;
     }
 
     async assignDriver(order, callback) {

@@ -3,7 +3,7 @@
     <div class="sfop-section-pad">
         <div class="sfop-box" data-test-order-delivery>
             <div class="sfop-box__head">
-                <span class="sfop-lbl">{{t "storefront.networks.orders.delivery"}}</span>
+                <span class="sfop-lbl">{{if this.order.meta.is_booking (t "storefront.orders.booking.service-address") (t "storefront.networks.orders.delivery")}}</span>
                 {{#if this.summary}}<span class="sfop-muted sfop-small">{{this.summary}}</span>{{/if}}
                 {{#if @canEdit}}
                     <span class="sfop-box__head-actions">

@@ -17,6 +17,9 @@
             <Button @size="xs" @icon="comment" @text={{t "storefront.order.panel.message"}} @onClick={{this.openMessages}} data-test-order-panel-message>
                 {{#if this.panel.unreadTotal}}<span class="sfop-count ml-1" aria-label={{t "storefront.order.chat.unread" count=this.panel.unreadTotal}}>{{this.panel.unreadTotal}}</span>{{/if}}
             </Button>
+            {{#if this.canReschedule}}
+                <Button @size="xs" @icon="calendar-days" @text={{t "storefront.order.panel.reschedule"}} @onClick={{this.reschedule}} @permission="storefront update order" data-test-order-panel-reschedule />
+            {{/if}}
             {{#if this.canEdit}}
                 <Button @size="xs" @icon="pen" @text={{t "common.edit"}} @onClick={{this.edit}} @permission="storefront update order" data-test-order-panel-edit />
             {{/if}}

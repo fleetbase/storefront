@@ -3,6 +3,27 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
+import { format, isValid, parseISO } from 'date-fns';
+import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
+import findContact from '@fleetbase/storefront-engine/utils/find-contact';
+
+/** A place's [lat, lng], or null. */
+function coordinates(place) {
+    const lat = Number(place?.latitude ?? place?.location?.coordinates?.[1]);
+    const lng = Number(place?.longitude ?? place?.location?.coordinates?.[0]);
+
+    return Number.isFinite(lat) && Number.isFinite(lng) && (lat || lng) ? [lat, lng] : null;
+}
+
+/** Straight-line kilometres between two [lat, lng] points. */
+function kilometres(a, b) {
+    const rad = Math.PI / 180;
+    const dLat = (b[0] - a[0]) * rad;
+    const dLng = (b[1] - a[1]) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+
+    return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
 
 function cents(value) {
     const parsed = parseFloat(value);
@@ -41,7 +62,10 @@ export default class OrdersIndexNewController extends Controller {
     @tracked isPickup = false;
     @tracked isScheduled = false;
     @tracked scheduledAt = null;
+    @tracked scheduledEnd = null;
     @tracked pickupLocation = null;
+    /** A booking's provider: one of the company's drivers, or none to assign when it is confirmed. */
+    @tracked provider = null;
     @tracked dropoff = null;
     @tracked lines = [];
     @tracked notes = '';
@@ -63,6 +87,8 @@ export default class OrdersIndexNewController extends Controller {
         this.isPickup = false;
         this.isScheduled = false;
         this.scheduledAt = null;
+        this.scheduledEnd = null;
+        this.provider = null;
         this.dropoff = null;
         this.lines = [];
         this.notes = '';
@@ -85,7 +111,10 @@ export default class OrdersIndexNewController extends Controller {
     get stepNumbers() {
         const offset = this.isNetworkContext ? 1 : 0;
 
-        return { store: 1, customer: 1 + offset, fulfillment: 2 + offset, items: 3 + offset };
+        // A booking picks its services first; their time and place follow.
+        return this.isBooking
+            ? { store: 1, customer: 1 + offset, items: 2 + offset, fulfillment: 3 + offset, provider: 4 + offset }
+            : { store: 1, customer: 1 + offset, fulfillment: 2 + offset, items: 3 + offset };
     }
 
     get storeOptionRows() {
@@ -144,8 +173,8 @@ export default class OrdersIndexNewController extends Controller {
     /** Console orders are cash on delivery or already paid; cards are collected in the app. */
     get paymentOptions() {
         return [
-            { value: 'cash', label: this.intl.t('storefront.orders.create.payment-cash') },
-            { value: 'paid', label: this.intl.t('storefront.orders.create.payment-paid') },
+            { value: 'cash', label: this.isBooking ? this.intl.t('storefront.orders.booking.payment-after') : this.intl.t('storefront.orders.create.payment-cash') },
+            { value: 'paid', label: this.isBooking ? this.intl.t('storefront.orders.booking.payment-paid') : this.intl.t('storefront.orders.create.payment-paid') },
         ];
     }
 
@@ -158,15 +187,94 @@ export default class OrdersIndexNewController extends Controller {
         return this.lines.find((line) => line.product?.is_bookable) ?? null;
     }
 
-    /** In a booking, the picker offers the store's bookable services. */
+    /** In a booking, the picker offers the store's bookable services first, then the products the provider can bring. */
     get pickerProducts() {
-        return this.booking ? this.products.filter((product) => product.is_bookable) : this.products;
+        if (!this.booking) {
+            return this.products;
+        }
+
+        return [...this.products.filter((product) => product.is_bookable), ...this.products.filter((product) => !product.is_bookable)];
     }
 
-    @action selectSlot(start) {
+    @action selectSlot(start, end) {
         this.isScheduled = true;
         this.scheduledAt = start;
+        this.scheduledEnd = end ?? null;
         this.requote.perform();
+    }
+
+    /** Whether a line books a service (rather than a product brought along). */
+    isServiceLine(line) {
+        return Boolean(line.product?.is_bookable || line.product?.is_service);
+    }
+
+    serviceLength(product) {
+        const minutes = Number(product?.meta?.service?.duration_minutes) || 0;
+        if (!minutes) {
+            return null;
+        }
+
+        return minutes % 60 === 0 ? this.intl.t('storefront.orders.booking.hours', { count: minutes / 60 }) : this.intl.t('storefront.orders.booking.minutes', { count: minutes });
+    }
+
+    /** The booking at a glance: "Tue 14 Oct · 10:00 to 13:00". */
+    get bookingWhen() {
+        const start = this.scheduledAt ? parseISO(this.scheduledAt) : null;
+        if (!start || !isValid(start)) {
+            return null;
+        }
+
+        const end = this.scheduledEnd ? parseISO(this.scheduledEnd) : null;
+        return `${format(start, 'EEE d MMM')} · ${end && isValid(end) ? this.intl.t('storefront.orders.booking.range', { start: format(start, 'HH:mm'), end: format(end, 'HH:mm') }) : format(start, 'HH:mm')}`;
+    }
+
+    get bookingWhere() {
+        const where = this.isPickup
+            ? this.intl.t('storefront.orders.booking.at-store-short', { store: this.pickupLocation?.name ?? this.activeStore?.name ?? '' })
+            : this.dropoff
+              ? (this.dropoff.name ?? this.dropoff.address)
+              : null;
+
+        return [this.provider?.name ?? this.intl.t('storefront.orders.booking.any-provider'), where].filter(Boolean).join(' · ');
+    }
+
+    @action setProvider(driver) {
+        this.provider = driver ?? null;
+    }
+
+    /** "Book Tue 10:00 · ₮35,000". */
+    get bookLabel() {
+        const start = this.scheduledAt ? parseISO(this.scheduledAt) : null;
+        const total = formatCurrency(this.totals.total ?? 0, this.currency);
+
+        return start && isValid(start)
+            ? this.intl.t('storefront.orders.booking.book-at', { when: format(start, 'EEE HH:mm'), total })
+            : this.intl.t('storefront.orders.booking.book', { total });
+    }
+
+    /** What the booking costs, split as the design shows it: services, products brought along, travel. */
+    get bookingSplit() {
+        const rows = this.lineRows;
+        const services = rows.filter((line) => line.isService);
+        const products = rows.filter((line) => !line.isService);
+
+        return {
+            services: services.map((line) => ({ label: [line.product.name, this.serviceLength(line.product)].filter(Boolean).join(' · '), total: line.total })),
+            productsTotal: products.reduce((sum, line) => sum + line.total, 0),
+            productsCount: products.reduce((sum, line) => sum + line.quantity, 0),
+        };
+    }
+
+    /** How far the service address is from the store the provider leaves from. */
+    distanceTo(place) {
+        const from = coordinates(this.pickupLocation?.place);
+        const to = coordinates(place);
+        return from && to ? kilometres(from, to) : null;
+    }
+
+    get travelDistance() {
+        const km = this.isPickup ? null : this.distanceTo(this.dropoff);
+        return km === null ? null : `${km.toFixed(1)} km`;
     }
 
     get pickerVisible() {
@@ -193,7 +301,11 @@ export default class OrdersIndexNewController extends Controller {
     }
 
     get placeRows() {
-        return this.customerPlaces.map((place) => ({ place, isDefault: place.id === this.defaultPlaceId, isSelected: this.dropoff?.id === place.id }));
+        return this.customerPlaces.map((place) => {
+            const km = this.isBooking ? this.distanceTo(place) : null;
+
+            return { place, isDefault: place.id === this.defaultPlaceId, isSelected: this.dropoff?.id === place.id, distance: km === null ? null : `${km.toFixed(1)} km` };
+        });
     }
 
     get itemsCount() {
@@ -224,6 +336,8 @@ export default class OrdersIndexNewController extends Controller {
             total: this.lineTotal(line),
             optionsLabel: [...line.variants.map((option) => option.name), ...line.addons.map((addon) => `+ ${addon.name}`)].join(' · '),
             unavailable: line.product.is_available === false,
+            isService: this.isServiceLine(line),
+            length: this.serviceLength(line.product),
         }));
     }
 
@@ -278,12 +392,14 @@ export default class OrdersIndexNewController extends Controller {
             issues.push(this.intl.t('storefront.orders.booking.pick-slot'));
         }
 
-        if (!this.lines.length) {
+        if (this.isBooking && !this.bookableLine) {
+            issues.push(this.intl.t('storefront.orders.booking.issues.service'));
+        } else if (!this.lines.length) {
             issues.push(this.intl.t('storefront.orders.create.issues.items'));
         }
 
         if (!this.isPickup && !this.dropoff) {
-            issues.push(this.intl.t('storefront.orders.create.issues.dropoff'));
+            issues.push(this.intl.t(this.isBooking ? 'storefront.orders.booking.issues.address' : 'storefront.orders.create.issues.dropoff'));
         }
 
         if (!this.pickupLocation) {
@@ -376,6 +492,14 @@ export default class OrdersIndexNewController extends Controller {
                 { ...this.payload, cart: this.quote?.cart, service_quote: this.quote?.service_quote },
                 { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' }
             );
+            // A booking's provider is its driver: assigned the way the Assign driver dialog does.
+            if (order && this.isBooking && this.provider) {
+                try {
+                    yield this.storefrontOrderActions.setDriver(order, this.provider);
+                } catch (error) {
+                    this.notifications.warning(this.intl.t('storefront.orders.booking.provider-not-assigned', { name: this.provider.name }));
+                }
+            }
             this.notifications.success(this.intl.t('storefront.orders.create.placed', { id: order?.public_id ?? '' }));
             yield this.returnToOrders();
             this.hostRouter.refresh();
@@ -410,7 +534,7 @@ export default class OrdersIndexNewController extends Controller {
      */
     @task({ restartable: true }) *loadCustomerPlaces(customer) {
         try {
-            const contact = yield this.store.findRecord('contact', customer.public_id ?? customer.id);
+            const contact = yield findContact(this.store, customer.id ?? customer.public_id);
             const places = yield contact.places;
             if (this.selectedCustomer !== customer) {
                 return;

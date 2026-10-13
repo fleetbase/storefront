@@ -680,6 +680,12 @@ storefront:
       trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
       network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
   order:
+    booking-steps:
+      booked: Booked
+      confirmed: Confirmed
+      on_the_way: On the way
+      in_progress: In progress
+      done: Done
     sections:
       details: Details
       metadata: Metadata
@@ -778,6 +784,15 @@ storefront:
       open-in-maps: Open in maps
       edit-address: Edit address
       map-label: "Map: the store and the drop-off"
+      provider: Provider
+      no-provider: No provider yet
+      assign-provider: Assign provider
+      bring-to-job: Bring to the job
+      hand-over: Hand over at the store
+      booking-when: "{day}, {start} to {end}"
+      booking-starts: "starts in {in}"
+      booking-started: "started {ago} ago"
+      reschedule: Reschedule
       move-to: "Move to {step}"
       complete-order: Complete order
       complete-now: Complete the order now
@@ -939,6 +954,9 @@ storefront:
         canceled-because: "Canceled: {reason}"
         next-step: "Next: {step}"
         in-progress: "In progress: {step}"
+        confirm-booking: "Next: confirm the booking"
+        send-provider: "Next: send the provider"
+        start-when-arrives: "Next: start when {name} arrives"
     alerts:
       address-change-requested: The customer says the address is wrong
       update-address: Update address
@@ -993,6 +1011,7 @@ storefront:
       unavailable: Unavailable
       mark-unavailable: Mark unavailable
       available-again: Available again
+      unavailable-told: "{item} marked unavailable. {name} was told."
     payment:
       paid: "Paid {amount} by {method} · nothing to collect"
       to-collect: "Cash on delivery · {amount} to collect"
@@ -1035,6 +1054,13 @@ storefront:
       confirm-refund: "Cancel and refund {amount}"
       confirm-credit: "Cancel and credit {amount}"
       success: "Order {orderId} canceled"
+    reschedule:
+      title: Reschedule booking
+      moving-to: Moving to
+      move: Pick a new time
+      move-to: "Move to {time}"
+      keep: Keep this time
+      moved: "Booking {id} moved."
     edit:
       title: Edit order
       edit-items: Edit items
@@ -1118,6 +1144,8 @@ storefront:
       customer-note: Note from the customer
       changes-count: "{count, plural, one {# change} other {# changes}}"
       paid-by: "Paid {amount} by {method}:"
+      booked-for: Booked for
+      no-booked-service: "The booked service isn't in the store's catalog any more, so its free times can't be shown."
       unit-placeholder: "For example: Apt 4B, 3rd floor"
       door-contact-placeholder: Phone to call at the door
       instructions-placeholder: "For example: leave at reception, call on arrival"
@@ -1495,15 +1523,61 @@ storefront:
   orders:
     booking:
       title: New booking
-      when: "When · {service}"
+      subtitle: the order form, opened on services
+      booking: Booking
+      when-where: When and where
+      services-products: Services and products
+      services-hint: Services and the products the provider brings along
+      type: Type
+      service: Service
+      product: Product
+      brought-along: Brought by the provider
+      products-ride: "Products in a booking ride with the provider: no separate delivery, packed for the job."
+      add-service-first: Add a service to see its free days and times.
+      at-customer: At the customer's address
+      at-store: At the store
+      at-store-short: "At {store}"
+      where-help: The provider goes to the customer, or the customer comes to the store.
+      provider-from: The provider sets off from
+      at-location: The customer comes to
+      service-address: Service address
+      job-notes: Access and job notes
+      job-notes-placeholder: "For example: key with the concierge, cat in the second bedroom"
       day: Day
       slots: Free times
-      length: "{minutes} min per booking"
-      capacity: "{count} at a time"
+      start-time: Start time
+      previous-week: Previous week
+      next-week: Next week
+      closed: Closed
+      range: "{start} to {end}"
+      hours: "{count, plural, one {# h} other {# h}}"
+      minutes: "{count} min"
+      hours-job: "{count, plural, one {# h job} other {# h job}}"
+      minutes-job: "{count} min job"
+      slots-help: Times come from the service's hours and length, minus its bookings. Struck-out times are full.
       left: "{count} left"
       full: Full
-      no-slots: No free times on this day. The service's hours (or the store's) set when it can be booked.
+      no-slots: "No free times on this day. The service's hours (or the store's) set when it can be booked."
       pick-slot: Pick a time for the booking
+      issues:
+        service: Add a service.
+        address: Pick the service address.
+      payment-after: Cash after the job
+      payment-paid: Paid now
+      payment-help: Paid now is recorded as paid; otherwise the provider collects after the job.
+      products: "{count, plural, one {Products · # item} other {Products · # items}}"
+      products-brought: "{count, plural, one {Products · # item, brought along} other {Products · # items, brought along}}"
+      travel-fee: Travel fee
+      travel-fee-km: "Travel fee · {distance}"
+      book: "Book · {total}"
+      book-at: "Book {when} · {total}"
+      provider: Provider
+      any-provider: Any available
+      assign-at-confirmation: Assign a driver when the booking is confirmed
+      choose-provider: Choose a driver
+      driver: Driver
+      provider-help: Providers are the store's Fleet-Ops drivers; the live map and chat work as for any driver.
+      provider-not-assigned: "The booking is placed, but {name} could not be assigned. Assign them from the order."
     create:
       add-product-from-storefront: Add product from storefront
       select-store: Select store

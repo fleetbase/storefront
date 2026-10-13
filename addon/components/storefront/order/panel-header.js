@@ -1,5 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
+import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
 import { format, formatDistanceToNowStrict, isValid } from 'date-fns';
 
@@ -11,9 +12,17 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
     @service intl;
     @service abilities;
     @service notifications;
-    @service hostRouter;
     @service fetch;
     @service storefrontOrderActions;
+
+    /**
+     * The router: the engine's host router inside Storefront, the console's own router when the
+     * panel opens from the console (the resource context panel), where engines' services are not.
+     */
+    get hostRouter() {
+        const owner = getOwner(this);
+        return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
+    }
 
     get panel() {
         return this.storefrontOrderActions.panel;
@@ -95,6 +104,15 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
 
     @action edit() {
         return this.storefrontOrderActions.editOrder(this.order);
+    }
+
+    /** A booking not yet under way can move to another free slot (the edit form, at its time). */
+    get canReschedule() {
+        return this.canEdit && Boolean(this.order?.meta?.is_booking) && !['in_progress', 'completed', 'canceled', 'order_canceled'].includes(this.order?.status);
+    }
+
+    @action reschedule() {
+        return this.storefrontOrderActions.rescheduleBooking(this.order, this.args.refresh);
     }
 
     @action async copyTracking() {

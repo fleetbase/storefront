@@ -37,6 +37,20 @@ export default class StorefrontOrderPanelItemsComponent extends Component {
         return this.meta.currency ?? this.args.overview?.payment?.currency;
     }
 
+    get isBooking() {
+        return Boolean(this.meta.is_booking);
+    }
+
+    /** In a booking, the booked services (lines with a time); everything else rides along. */
+    get mainRows() {
+        return this.isBooking ? this.rows.filter((row) => row.isService) : this.rows;
+    }
+
+    /** What the provider brings to the job (or the store hands over, at the store). */
+    get bringRows() {
+        return this.isBooking ? this.rows.filter((row) => !row.isService) : [];
+    }
+
     get entities() {
         const entities = this.order?.payload?.entities;
         return entities?.toArray?.() ?? Array.from(entities ?? []);
@@ -55,6 +69,7 @@ export default class StorefrontOrderPanelItemsComponent extends Component {
             return {
                 id: entity.public_id,
                 entity,
+                isService: Boolean(meta.scheduled_at || meta.is_service || meta.is_bookable),
                 quantity,
                 single: quantity === 1,
                 name: entity.name,

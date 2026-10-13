@@ -17,7 +17,6 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
     @service fetch;
     @service abilities;
     @service notifications;
-    @service hostRouter;
     @service storefrontOrderActions;
 
     get order() {

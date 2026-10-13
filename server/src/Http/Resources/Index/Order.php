@@ -50,6 +50,8 @@ class Order extends FleetOpsOrderIndexResource
             'is_pickup',
             'is_booking',
             'booking_at',
+            // Start, end and length: a list refresh pushes into the record the order panel shows.
+            'booking',
             'booking_has_items',
             'is_master_order',
             'related_orders',

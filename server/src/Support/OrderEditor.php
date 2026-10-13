@@ -193,7 +193,11 @@ class OrderEditor
                 static::writeContact($order, (array) data_get($input, 'contact', []));
             }
             if (in_array('schedule', $plan['changes'], true)) {
-                $order->scheduled_at = $plan['scheduled_at'];
+                if ($order->isMeta('is_booking')) {
+                    static::moveBooking($order, $plan['scheduled_at']);
+                } else {
+                    $order->scheduled_at = $plan['scheduled_at'];
+                }
             }
             if (in_array('notes', $plan['changes'], true)) {
                 $order->notes = $plan['notes'];
@@ -309,14 +313,26 @@ class OrderEditor
             }
         }
 
-        // Time
+        // Time. A booking keeps its time in `meta.booking` (not `scheduled_at`, which Fleet-Ops
+        // dispatches on its own), and moves only to a free slot of its service.
         $scheduledAt = null;
+        $isBooking   = (bool) $order->isMeta('is_booking');
         if (array_key_exists('scheduled_at', $input)) {
             $scheduledAt = $input['scheduled_at'] ? Carbon::parse($input['scheduled_at']) : null;
-            $was         = $order->scheduled_at ? Carbon::parse($order->scheduled_at) : null;
+            $wasAt       = $isBooking ? (data_get($order->meta, 'booking.start') ?? data_get($order->meta, 'booking_at')) : $order->scheduled_at;
+            $was         = $wasAt ? Carbon::parse($wasAt) : null;
             if (optional($scheduledAt)->toIso8601String() !== optional($was)->toIso8601String()) {
                 $changes[] = 'schedule';
-                $summary[] = $scheduledAt ? 'Time moved to ' . $scheduledAt->format('D j M, H:i') : 'Time cleared (as soon as possible)';
+                // In the store's time, as the store and the customer read it.
+                $summary[] = $scheduledAt ? ($isBooking ? 'Booking moved to ' : 'Time moved to ') . $scheduledAt->copy()->setTimezone(BookingSlots::timezone($store))->format('D j M, H:i') : 'Time cleared (as soon as possible)';
+                if ($isBooking) {
+                    $service = static::bookingService($order);
+                    if (!$scheduledAt) {
+                        $violations['schedule'] = 'A booking needs a time.';
+                    } elseif ($service && !BookingSlots::isAvailable($service, $scheduledAt)) {
+                        $violations['schedule'] = 'That time is not free for ' . $service->name . '.';
+                    }
+                }
                 $rule      = $locks['schedule']['rule'] ?? null;
                 if ($rule === 'locked' || ($rule === 'earlier_only' && (!$scheduledAt || ($was && $scheduledAt->greaterThan($was))))) {
                     $violations['schedule'] = $locks['schedule']['reason'];
@@ -776,9 +792,47 @@ class OrderEditor
 
         if ($notifyCustomer && $order->customer) {
             try {
-                $order->customer->notify(new StorefrontOrderUpdated($order, $plan['summary']));
+                $order->customer->notify(new StorefrontOrderUpdated($order, $plan['summary'], $plan['changes']));
             } catch (\Throwable $e) {
                 report($e);
+            }
+        }
+    }
+
+    /**
+     * The service a booking books: the product of its line with a time, else its first bookable one.
+     */
+    protected static function bookingService(Order $order): ?Product
+    {
+        $entities = collect(data_get($order, 'payload.entities', []));
+        $line     = $entities->first(fn ($entity) => data_get($entity, 'meta.scheduled_at')) ?? $entities->first();
+        $ids      = $entities->map(fn ($entity) => data_get($entity, 'meta.product_id'))->filter()->unique()->values();
+        if ($ids->isEmpty()) {
+            return null;
+        }
+
+        $products = Product::whereIn('public_id', $ids)->with(['hours', 'store'])->get()->keyBy('public_id');
+
+        return $products->get(data_get($line, 'meta.product_id')) ?? $products->first(fn ($product) => $product->is_bookable);
+    }
+
+    /**
+     * Move a booking to a new start: its `meta.booking`, `booking_at` and its service lines' time.
+     */
+    protected static function moveBooking(Order $order, Carbon $start): void
+    {
+        $service  = static::bookingService($order);
+        $duration = (int) (data_get($order->meta, 'booking.duration_minutes') ?: ($service ? BookingSlots::service($service)['duration_minutes'] : BookingSlots::DEFAULT_DURATION));
+
+        $order->setMeta([
+            'booking_at' => $start->toIso8601String(),
+            'booking'    => ['start' => $start->toIso8601String(), 'end' => $start->copy()->addMinutes($duration)->toIso8601String(), 'duration_minutes' => $duration],
+        ]);
+
+        foreach (data_get($order, 'payload.entities', []) as $entity) {
+            if (data_get($entity, 'meta.scheduled_at')) {
+                $entity->setMeta('scheduled_at', $start->toIso8601String());
+                $entity->save();
             }
         }
     }

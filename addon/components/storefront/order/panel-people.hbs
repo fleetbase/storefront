@@ -31,7 +31,7 @@
         {{/if}}
     </div>
 
-    {{#if this.isPickup}}
+    {{#if (and this.isPickup (not this.isBooking))}}
         <div class="sfop-box" data-test-order-pickup-card>
             <div class="sfop-lbl">{{t "storefront.common.pickup"}}</div>
             <div class="sfop-person">
@@ -45,7 +45,7 @@
         </div>
     {{else if this.driver}}
         <div class="sfop-box" data-test-order-driver-card>
-            <div class="sfop-lbl">{{t "storefront.order.panel.driver"}}</div>
+            <div class="sfop-lbl">{{this.driverLabel}}</div>
             <div class="sfop-person">
                 <Image src={{this.driver.photo_url}} @fallbackSrc={{config "defaultValues.driverImage"}} alt={{this.driver.name}} class="sfop-av sfop-av--driver" />
                 <div class="sfop-person__text">
@@ -70,16 +70,16 @@
         </div>
     {{else}}
         <div class="sfop-box" data-test-order-driver-card>
-            <div class="sfop-lbl">{{t "storefront.order.panel.driver"}}</div>
+            <div class="sfop-lbl">{{this.driverLabel}}</div>
             <div class="sfop-person">
                 <span class="sfop-av sfop-av--empty" aria-hidden="true"><FaIcon @icon="user" @size="xs" /></span>
                 <div class="sfop-person__text">
-                    <strong>{{t "storefront.order.panel.no-driver"}}</strong>
+                    <strong>{{if this.isBooking (t "storefront.order.panel.no-provider") (t "storefront.order.panel.no-driver")}}</strong>
                     <div class="sfop-muted sfop-small">{{if this.order.adhoc (t "storefront.order.panel.adhoc") (t "storefront.order.panel.assign-hint")}}</div>
                 </div>
             </div>
             {{#if this.canAssign}}
-                <div class="sfop-pair"><Button @size="xs" @type="primary" @icon="user-plus" @text={{t "storefront.order.panel.assign-driver"}} @onClick={{this.assign}} /></div>
+                <div class="sfop-pair"><Button @size="xs" @type="primary" @icon="user-plus" @text={{if this.isBooking (t "storefront.order.panel.assign-provider") (t "storefront.order.panel.assign-driver")}} @onClick={{this.assign}} /></div>
             {{/if}}
         </div>
     {{/if}}
