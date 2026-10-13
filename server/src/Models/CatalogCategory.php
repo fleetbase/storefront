@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Models\Category;
+use Fleetbase\Support\ApiModelCache;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -111,11 +112,13 @@ class CatalogCategory extends Category
         $incomingProductUuids = array_values(array_unique($incomingProductUuids));
 
         // 1) Remove pivot rows for products not in incoming list
-        $toRemove = array_diff($existingProductUuids, $incomingProductUuids);
+        $toRemove             = array_diff($existingProductUuids, $incomingProductUuids);
+        $pivotsWrittenQuietly = false;
         if (!empty($toRemove)) {
             CatalogProduct::where('catalog_category_uuid', $this->uuid)
                 ->whereIn('product_uuid', $toRemove)
                 ->delete();
+            $pivotsWrittenQuietly = true;
         }
 
         // 2) Create pivot rows for new products, carrying their overrides
@@ -149,9 +152,26 @@ class CatalogCategory extends Category
             CatalogProduct::where('catalog_category_uuid', $this->uuid)
                 ->where('product_uuid', $pivot->product_uuid)
                 ->update($next);
+            $pivotsWrittenQuietly = true;
+        }
+
+        // Removals and override edits go through the query builder, which raises no model
+        // events, so the cached lists embedding these pivots (catalogs, products) are
+        // invalidated here.
+        if ($pivotsWrittenQuietly) {
+            static::invalidateCatalogProductCache($this->company_uuid);
         }
 
         return $this;
+    }
+
+    /**
+     * Invalidate the cached lists that embed `catalog_category_products`, after writes
+     * to it that raise no model events.
+     */
+    public static function invalidateCatalogProductCache(?string $companyUuid = null): void
+    {
+        ApiModelCache::invalidateModelCache(new CatalogProduct(), $companyUuid);
     }
 
     /**

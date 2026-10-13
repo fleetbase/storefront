@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/ApiCacheTestHelpers.php';
+
 use Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers;
 use Fleetbase\Storefront\Console\Commands\NotifyStorefrontOrderNearby;
 use Fleetbase\Storefront\Console\Commands\PurgeExpiredCarts;
@@ -139,10 +141,13 @@ test('purge carts deletes only expired open empty carts and keeps every cart tha
     $output  = new OutputStyle(new ArrayInput([]), $buffer);
     $command = new PurgeExpiredCarts();
     $command->setOutput($output);
+    $cartsVersion = apiQueryCacheVersion('carts');
 
     expect($command->handle())->toBe(Command::SUCCESS)
         ->and($connection->table('carts')->orderBy('id')->pluck('name')->all())->toBe(['abandoned', 'checked-out', 'checkout-linked-empty', 'cleared', 'current'])
-        ->and($buffer->fetch())->toContain('Successfully deleted 3 expired carts.');
+        ->and($buffer->fetch())->toContain('Successfully deleted 3 expired carts.')
+        // The purge spans companies, so the table wide cart cache version is advanced
+        ->and(apiQueryCacheVersion('carts'))->toBe($cartsVersion + 1);
 });
 
 test('purge carts restores foreign key enforcement when deletion fails', function () {

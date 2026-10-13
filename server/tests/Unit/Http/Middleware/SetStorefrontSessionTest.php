@@ -47,12 +47,11 @@ test('storefront session middleware validates store credentials and exposes comp
 
     expect($middleware->isValidKey('store_secret'))->toBeTrue();
 
-    $response = $middleware->handle(
-        Request::create('/storefront', 'GET', [], [], [], ['HTTP_AUTHORIZATION' => 'Bearer store_secret']),
-        fn () => response()->json(['ok' => true])
-    );
+    $request  = Request::create('/storefront', 'GET', [], [], [], ['HTTP_AUTHORIZATION' => 'Bearer store_secret']);
+    $response = $middleware->handle($request, fn () => response()->json(['ok' => true]));
 
     expect($response->getData(true))->toBe(['ok' => true])
+        ->and($request->attributes->get('api_request_log_related'))->toBe(['store_public'])
         ->and(session('storefront_key'))->toBe('store_secret')
         ->and(session('storefront_store'))->toBe('store_uuid')
         ->and(session('storefront_store_public_id'))->toBe('store_public')
@@ -87,10 +86,27 @@ test('storefront session middleware validates network credentials and exposes co
 
     $middleware->setKey('network_secret');
 
+    $request = Request::create('/storefront/v1/customers/request-creation-code', 'POST');
+    $request->attributes->set('api_request_log_related', ['order_public']);
+    $middleware->relateApiRequestLog($request);
+
     expect(session('storefront_network'))->toBe('network_uuid')
         ->and(session('storefront_network_public_id'))->toBe('network_public')
         ->and(session('storefront_currency'))->toBe('MNT')
-        ->and(session('api_credential'))->toBe('network_secret');
+        ->and(session('api_credential'))->toBe('network_secret')
+        ->and($request->attributes->get('api_request_log_related'))->toBe(['order_public', 'network_public']);
+});
+
+test('storefront session middleware relates no api request log id without a resolved store or network', function () {
+    session([
+        'storefront_store_public_id'   => null,
+        'storefront_network_public_id' => null,
+    ]);
+
+    $request = Request::create('/storefront/v1/customers/request-creation-code', 'POST');
+    (new SetStorefrontSession())->relateApiRequestLog($request);
+
+    expect($request->attributes->has('api_request_log_related'))->toBeFalse();
 });
 
 test('switching between a network and a store key never leaves both scopes in the session', function () {

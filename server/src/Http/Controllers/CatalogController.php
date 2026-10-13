@@ -7,6 +7,7 @@ use Fleetbase\Storefront\Models\Catalog;
 use Fleetbase\Storefront\Models\CatalogSubject;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Support\ApiModelCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -56,9 +57,15 @@ class CatalogController extends StorefrontController
             ->unique()
             ->values();
 
-        CatalogSubject::where(['catalog_uuid' => $catalog->uuid, 'subject_type' => $subjectType])
+        $removed = CatalogSubject::where(['catalog_uuid' => $catalog->uuid, 'subject_type' => $subjectType])
             ->whereNotIn('subject_uuid', $incoming)
             ->delete();
+
+        // A builder delete raises no model events, so the cached lists embedding the
+        // assignments (catalogs, food trucks) are invalidated here.
+        if ($removed > 0) {
+            ApiModelCache::invalidateModelCache(new CatalogSubject(), $catalog->company_uuid);
+        }
 
         foreach ($incoming as $subjectUuid) {
             CatalogSubject::firstOrCreate(

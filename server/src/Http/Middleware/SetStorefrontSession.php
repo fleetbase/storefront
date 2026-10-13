@@ -24,6 +24,7 @@ class SetStorefrontSession
 
         if ($this->isValidKey($key)) {
             $this->setKey($key);
+            $this->relateApiRequestLog($request);
             $this->setupCustomerSession($request);
 
             return $next($request);
@@ -90,6 +91,25 @@ class SetStorefrontSession
         $session['api_credential'] = $key;
 
         session($session);
+    }
+
+    /**
+     * Relates the request's API log to the store or network whose key made it.
+     *
+     * Core's LogApiRequest adds the ids in this request attribute (its
+     * RELATED_ATTRIBUTE constant) to the log's related column. The name is
+     * spelled out so an older core without the constant ignores it.
+     */
+    public function relateApiRequestLog(Request $request): void
+    {
+        $publicId = session('storefront_store_public_id') ?? session('storefront_network_public_id');
+
+        if ($publicId) {
+            $related   = (array) $request->attributes->get('api_request_log_related', []);
+            $related[] = $publicId;
+
+            $request->attributes->set('api_request_log_related', $related);
+        }
     }
 
     /**
