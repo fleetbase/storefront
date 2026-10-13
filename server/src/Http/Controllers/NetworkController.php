@@ -564,9 +564,9 @@ class NetworkController extends StorefrontController
             );
         }
 
-        // delete each
+        // delete each from this network only; the store stays in its other networks
         foreach ($remove as $storeId) {
-            NetworkStore::where('store_uuid', $storeId)->delete();
+            NetworkStore::where(['network_uuid' => $network->uuid, 'store_uuid' => $storeId])->delete();
         }
 
         $this->forgetCachedResponses();
