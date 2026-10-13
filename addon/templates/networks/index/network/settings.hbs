@@ -238,6 +238,10 @@
                         <InputGroup @name={{t "storefront.networks.index.network.index.api-panel.network-key-label"}} @helpText={{t "storefront.networks.index.network.index.api-panel.network-key-help-text"}}>
                             <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
                         </InputGroup>
+                        <div class="storefront-settings-key-rotation">
+                            <p>{{t "storefront.settings.rotate-key.help"}}</p>
+                            <Button @type="danger" @size="sm" @icon="rotate" @text={{t "storefront.settings.rotate-key.button"}} @onClick={{this.rotateKey}} @permission="storefront rotate-key network" data-test-rotate-network-key />
+                        </div>
                     </ContentPanel>
                 </section>
 

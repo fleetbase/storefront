@@ -11,6 +11,7 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Traits\HasStorefrontKey;
 use Fleetbase\Support\Utils as FleetbaseUtils;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
@@ -20,7 +21,6 @@ use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -33,6 +33,7 @@ class Store extends StorefrontModel
     use HasOptionsAttributes;
     use HasMetaAttributes;
     use HasSlug;
+    use HasStorefrontKey;
     use Searchable;
 
     /**
@@ -41,6 +42,11 @@ class Store extends StorefrontModel
      * @var string
      */
     protected $publicIdType = 'store';
+
+    /**
+     * The prefix of the storefront key, which SetStorefrontSession resolves the key by.
+     */
+    public const KEY_PREFIX = 'store_';
 
     /**
      * The database table used by the model.
@@ -107,15 +113,6 @@ class Store extends StorefrontModel
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
-    }
-
-    /** on boot generate key */
-    public static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            $model->key = 'store_' . md5(Str::random(14) . time());
-        });
     }
 
     /**

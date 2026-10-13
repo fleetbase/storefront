@@ -524,4 +524,39 @@ export default class StorefrontService extends Service.extend(Evented) {
             },
         });
     }
+
+    /**
+     * Issue a store or network a new storefront key after confirming that apps using the
+     * old key stop working at once. The new key is pushed into the record without making
+     * it dirty, so every place that shows the key updates and no save is pending.
+     */
+    rotateKey(record) {
+        const type = record?.constructor?.modelName;
+
+        if (!record?.id || !['store', 'network'].includes(type)) {
+            return;
+        }
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.settings.rotate-key.title', { type }),
+            body: this.intl.t('storefront.settings.rotate-key.body', { type, name: record.name }),
+            acceptButtonText: this.intl.t('storefront.settings.rotate-key.confirm'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'rotate',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    const { key } = await this.fetch.post(`${type}s/${record.id}/rotate-key`, {}, { namespace: 'storefront/int/v1' });
+
+                    this.store.push({ data: { id: record.id, type, attributes: { key } } });
+                    this.notifications.success(this.intl.t('storefront.settings.rotate-key.done', { type }));
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
 }

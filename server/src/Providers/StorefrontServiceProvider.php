@@ -69,6 +69,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers::class,
         \Fleetbase\Storefront\Console\Commands\ReleasePromotionReservations::class,
         \Fleetbase\Storefront\Console\Commands\DispatchCampaigns::class,
+        \Fleetbase\Storefront\Console\Commands\RotateStorefrontKey::class,
     ];
 
     /**

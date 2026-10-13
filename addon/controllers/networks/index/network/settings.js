@@ -57,6 +57,13 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
     @service store;
 
     /**
+     * Storefront service, which rotates the network key.
+     *
+     * @property {Service} storefront
+     */
+    @service storefront;
+
+    /**
      * Proof of delivery methods.
      *
      * @property {Array} podMethods
@@ -183,6 +190,10 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
         }
 
         this.optionsRevision++;
+    }
+
+    @action rotateKey() {
+        this.storefront.rotateKey(this.model);
     }
 
     @action async copyNetworkKey() {

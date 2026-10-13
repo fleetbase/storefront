@@ -36,4 +36,22 @@ class StoreController extends StorefrontController
 
         return response()->json(['stores' => $stores]);
     }
+
+    /**
+     * Issue the store a new storefront key. Apps using the old key stop working at once.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function rotateKey(string $id, Request $request)
+    {
+        $store = Store::where('company_uuid', $request->session()->get('company'))
+            ->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))
+            ->first();
+
+        if (!$store) {
+            return response()->error('Store not found.', 404);
+        }
+
+        return response()->json(['status' => 'ok', 'key' => $store->rotateKey()]);
+    }
 }

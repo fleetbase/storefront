@@ -5,6 +5,10 @@
             <InputGroup @name={{t "storefront.settings.api.store-key"}} @helpText={{t "storefront.settings.api.store-key-help-text"}} @wrapperClass="mb-0">
                 <ClickToReveal @value={{@model.key}} @clickToCopy={{true}} class="form-input disabled" />
             </InputGroup>
+            <div class="storefront-settings-key-rotation">
+                <p>{{t "storefront.settings.rotate-key.help"}}</p>
+                <Button @type="danger" @size="sm" @icon="rotate" @text={{t "storefront.settings.rotate-key.button"}} @onClick={{this.rotateKey}} @permission="storefront rotate-key store" data-test-rotate-store-key />
+            </div>
         </ContentPanel>
     </section>
     <Spacer @height="120px" />

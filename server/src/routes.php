@@ -234,6 +234,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes(
                             'networks',
                             function ($router, $controller) {
+                                $router->post('{id}/rotate-key', $controller('rotateKey'));
                                 $router->delete('{id}/remove-category', $controller('deleteCategory'));
                                 $router->post('{id}/set-store-category', $controller('addStoreToCategory'));
                                 $router->post('{id}/remove-store-category', $controller('removeStoreCategory'));
@@ -261,7 +262,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->get('{id}/insights', $controller('insights'));
                             }
                         );
-                        $router->fleetbaseRoutes('stores');
+                        $router->fleetbaseRoutes(
+                            'stores',
+                            function ($router, $controller) {
+                                $router->post('{id}/rotate-key', $controller('rotateKey'));
+                            }
+                        );
                         $router->fleetbaseRoutes('store-hours');
                         $router->fleetbaseRoutes('store-locations');
                         $router->fleetbaseRoutes(

@@ -1546,6 +1546,13 @@ storefront:
       split-tips: A multi-store order's store tip is divided by each store's share; off, the network keeps it.
       reviews-label: Customer reviews
       reviews: Customers can review products and stores after a completed order.
+    rotate-key:
+      button: Rotate key
+      help: Rotating issues a new key. Apps and integrations using the current key are rejected immediately until they are updated with the new one.
+      title: Rotate the {type} key?
+      body: '{name} gets a new key and the current key stops working immediately. Every app, website and integration using it is rejected until it is updated with the new key.'
+      confirm: Rotate key
+      done: The {type} key was rotated. Update your apps with the new key.
     save-bar:
       unsaved: "{count, plural, one {# unsaved change} other {# unsaved changes}}"
       saved: All changes saved
