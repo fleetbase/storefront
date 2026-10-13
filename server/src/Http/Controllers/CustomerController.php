@@ -13,6 +13,13 @@ class CustomerController extends StorefrontController
     public $resource = 'customer';
 
     /**
+     * Console-created customers need a name; without this the internal create accepted an empty contact.
+     *
+     * @var string
+     */
+    public $createRequest = \Fleetbase\Storefront\Http\Requests\Internal\CreateCustomerRequest::class;
+
+    /**
      * Lifetime numbers for one customer, scoped to the store or network in the request:
      * orders, spend, average, first and last order, and the stores ordered from.
      *

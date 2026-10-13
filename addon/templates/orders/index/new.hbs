@@ -34,9 +34,12 @@
                     </div>
                 {{else}}
                     <div class="storefront-create-order__field">
-                        <ModelSelect @modelName="customer" @selectedModel={{this.selectedCustomer}} @placeholder={{t "storefront.orders.create.customer-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectCustomer}} as |model|>
-                            <SelectOption::Customer @option={{model}} />
-                        </ModelSelect>
+                        <div class="storefront-create-order__dropoff-row">
+                            <ModelSelect @modelName="customer" @selectedModel={{this.selectedCustomer}} @placeholder={{t "storefront.orders.create.customer-placeholder"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectCustomer}} as |model|>
+                                <SelectOption::Customer @option={{model}} />
+                            </ModelSelect>
+                            <Button @size="sm" @icon="user-plus" @text={{t "storefront.customers.create.button"}} @onClick={{this.newCustomer}} @permission="storefront create customer" data-test-new-customer-button />
+                        </div>
                         <p class="storefront-create-order__help">{{t "storefront.orders.create.customer-help"}}</p>
                     </div>
                 {{/if}}

@@ -372,6 +372,13 @@ storefront:
   home:
     title: Storefront Dashboard
   customers:
+    create:
+      button: New customer
+      title: New customer
+      save: Add customer
+      saved: "{name} was added."
+      name-placeholder: Full name
+      help: Only the name is required; add a phone or email so the store can reach them about the order.
     addresses:
       new-title: "New address for {name}"
       save: Save address

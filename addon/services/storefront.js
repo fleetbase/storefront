@@ -9,6 +9,22 @@ import Point from '@fleetbase/fleetops-data/utils/geojson/point';
 /**
  * Service to manage storefront operations.
  */
+
+/** The New customer modal's fields; tracked so the inputs and the save check see each change. */
+class CustomerDraft {
+    @tracked name = '';
+    @tracked email = '';
+    @tracked phone = '';
+
+    get payload() {
+        return {
+            name: this.name.trim(),
+            email: this.email.trim() || null,
+            phone: this.phone?.trim?.() || null,
+        };
+    }
+}
+
 export default class StorefrontService extends Service.extend(Evented) {
     @service store;
     @service intl;
@@ -452,6 +468,45 @@ export default class StorefrontService extends Service.extend(Evented) {
         } catch (error) {
             // do nothing with error
         }
+    }
+
+    /**
+     * Opens the New customer modal and saves through Storefront's own customers endpoint
+     * (Fleet-Ops has no customer create route). The saved customer is handed to `onSaved`.
+     *
+     * @param {Object} [options]
+     * @param {Function} [options.onSaved] called with the new customer record
+     */
+    createCustomer({ onSaved } = {}) {
+        const draft = new CustomerDraft();
+
+        this.modalsManager.show('modals/new-customer', {
+            title: this.intl.t('storefront.customers.create.title'),
+            acceptButtonText: this.intl.t('storefront.customers.create.save'),
+            acceptButtonIcon: 'check',
+            keepOpen: true,
+            draft,
+            confirm: async (modal) => {
+                if (!draft.name.trim()) {
+                    this.notifications.warning(this.intl.t('storefront.customers.panel.name-required'));
+                    return;
+                }
+
+                modal.startLoading();
+
+                try {
+                    const response = await this.fetch.post('customers', { customer: draft.payload }, { namespace: 'storefront/int/v1' });
+                    const customer = this.store.push(this.store.normalize('customer', response.customer));
+
+                    this.notifications.success(this.intl.t('storefront.customers.create.saved', { name: customer.name }));
+                    modal.done();
+                    onSaved?.(customer);
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
     }
 
     /**

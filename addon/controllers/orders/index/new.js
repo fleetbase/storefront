@@ -386,6 +386,11 @@ export default class OrdersIndexNewController extends Controller {
         }
     }
 
+    /** Adds a customer on the spot and puts the order in their name. */
+    @action newCustomer() {
+        this.storefront.createCustomer({ onSaved: (customer) => this.selectCustomer(customer) });
+    }
+
     @action selectCustomer(customer) {
         this.selectedCustomer = customer;
         this.changingDropoff = false;
