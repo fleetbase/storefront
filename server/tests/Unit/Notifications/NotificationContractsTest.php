@@ -237,7 +237,11 @@ test('created-order notification renders pickup messages without delivery-only c
     $store        = new Store(['name' => 'Corner Store']);
     $notification = notificationWithoutConstructor(StorefrontOrderCreated::class, $order, $store);
 
-    expect($notification->via(null))->toBe(['mail', TwilioChannel::class]);
+    // Through core's guarded channel when the installed core has it, else Twilio's.
+    $smsChannel = class_exists(Fleetbase\Notifications\Channels\SmsServiceChannel::class) ? Fleetbase\Notifications\Channels\SmsServiceChannel::class : TwilioChannel::class;
+    expect($notification->via(null))->toBe(['mail', $smsChannel])
+        ->and($notification->smsPurpose)->toBe('storefront_order_alert')
+        ->and($notification->toSms(null))->toContain('A new pickup order was just created!');
 
     $sms  = $notification->toTwilio(null);
     $mail = $notification->toMail(null);

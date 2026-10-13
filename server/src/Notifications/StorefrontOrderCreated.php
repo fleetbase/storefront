@@ -8,10 +8,10 @@ use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
 
@@ -54,11 +54,28 @@ class StorefrontOrderCreated extends Notification implements ShouldQueue
     }
 
     /**
+     * What the SMS guard files the text under.
+     */
+    public string $smsPurpose = 'storefront_order_alert';
+
+    /**
      * Get the notification's delivery channels.
+     *
+     * The text goes through core's SmsServiceChannel, so it passes the SMS guard and lands
+     * on the send ledger like every other message. A core without that channel (before
+     * 1.6.70) keeps the Twilio notification channel.
      */
     public function via($notifiable): array
     {
-        return ['mail', TwilioChannel::class];
+        return ['mail', class_exists(\Fleetbase\Notifications\Channels\SmsServiceChannel::class) ? \Fleetbase\Notifications\Channels\SmsServiceChannel::class : TwilioChannel::class];
+    }
+
+    /**
+     * The text message, for SmsServiceChannel.
+     */
+    public function toSms($notifiable): string
+    {
+        return (string) $this->toTwilio($notifiable)->content;
     }
 
     /**

@@ -48,6 +48,11 @@ class CustomerController extends Controller
     public const CODE_ATTEMPT_LIMIT  = 10;
     public const CODE_ATTEMPT_WINDOW = 900;
 
+    /**
+     * Wrong guesses a single code tolerates before it locks itself (core's check()).
+     */
+    public const CODE_CHECK_ATTEMPTS = 5;
+
     protected function authenticatedCustomerForRequest(Request $request): ?Contact
     {
         return Storefront::getCustomerFromToken();
@@ -287,6 +292,7 @@ class CustomerController extends Controller
                 ]);
             } else {
                 VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
+                    'hashed'          => true,
                     'messageCallback' => function ($verification) use ($about) {
                         return "Your {$about->name} verification code is {$verification->code}";
                     },
@@ -336,9 +342,8 @@ class CustomerController extends Controller
             return response()->apiError('Too many attempts. Try again later.', 429);
         }
 
-        // verify code
-        $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_create_customer', 'meta->identity' => $identity])->exists();
-        if (!$verificationCode) {
+        // verify code: the newest live code for this identity, checked and used up
+        if (!$this->verifyIdentityCode('storefront_create_customer', $identity, $code)) {
             $this->recordFailedCodeAttempt('create|' . $identity);
 
             return response()->apiError('Invalid verification code provided!');
@@ -687,6 +692,7 @@ class CustomerController extends Controller
 
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
+                'hashed'          => true,
                 'messageCallback' => $messageCallback,
             ]);
 
@@ -1071,8 +1077,8 @@ class CustomerController extends Controller
             return response()->apiError('Unable to verify code.');
         }
 
-        // find and verify code
-        $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
+        // find and verify code: the newest live code for this user, checked and used up
+        $verificationCode = $this->verifySubjectCode($for, $user->uuid, $code);
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             $this->recordFailedCodeAttempt('verify|' . $identity);
 
@@ -1229,6 +1235,52 @@ class CustomerController extends Controller
         return response()->apiError($message);
     }
 
+    /**
+     * Check a code filed under an identity and use it up. The newest live code is the one
+     * that counts; a wrong guess counts against it until it locks. A core without
+     * findActiveFor() (before 1.6.70) falls back to the plain lookup it always had.
+     */
+    protected function verifyIdentityCode(string $for, string $identity, mixed $code): bool
+    {
+        if (!method_exists(VerificationCode::class, 'findActiveFor')) {
+            return VerificationCode::where(['code' => $code, 'for' => $for, 'meta->identity' => $identity])->exists();
+        }
+
+        $verificationCode = VerificationCode::findActiveFor($for, $identity);
+
+        return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code);
+    }
+
+    /**
+     * The live code for a subject once the submitted code matched it (and used it up), else null.
+     */
+    protected function findSubjectCode(string $for, string $subjectUuid, mixed $code): ?VerificationCode
+    {
+        if (!method_exists(VerificationCode::class, 'findActiveForSubject')) {
+            return VerificationCode::where(['subject_uuid' => $subjectUuid, 'code' => $code, 'for' => $for])->first();
+        }
+
+        $verificationCode = VerificationCode::findActiveForSubject($for, $subjectUuid);
+
+        return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code) ? $verificationCode : null;
+    }
+
+    protected function verifySubjectCode(string $for, string $subjectUuid, mixed $code): bool
+    {
+        return $this->findSubjectCode($for, $subjectUuid, $code) !== null;
+    }
+
+    protected function checkAndConsume(VerificationCode $verificationCode, mixed $code): bool
+    {
+        if ($verificationCode->check((string) $code, static::CODE_CHECK_ATTEMPTS) !== VerificationCode::CHECK_VALID) {
+            return false;
+        }
+
+        $verificationCode->consume();
+
+        return true;
+    }
+
     protected function codeAttemptsExceeded(string $key): bool
     {
         $limiter = $this->attemptLimiter();
@@ -1379,6 +1431,7 @@ class CustomerController extends Controller
         if ($user->phone) {
             try {
                 VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
+                    'hashed'          => true,
                     'messageCallback' => $messageCallback,
                     'meta'            => ['identity' => $identity],
                 ]);
@@ -1441,7 +1494,7 @@ class CustomerController extends Controller
         }
 
         // verify account closure code
-        $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_account_closure', 'meta->identity' => $identity])->exists();
+        $verificationCode = $this->verifyIdentityCode('storefront_account_closure', $identity, $code);
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
             $this->recordFailedCodeAttempt('closure|' . $customer->uuid);
 
@@ -1517,6 +1570,7 @@ class CustomerController extends Controller
 
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
+                'hashed'          => true,
                 'messageCallback' => function ($verification) use ($about) {
                     return "Your {$about->name} verification code is {$verification->code}";
                 },
@@ -1574,12 +1628,8 @@ class CustomerController extends Controller
             return response()->apiError('Too many attempts. Try again later.', 429);
         }
 
-        // Find the verification code
-        $verificationCode = VerificationCode::where([
-            'subject_uuid' => $user->uuid,
-            'code'         => $code,
-            'for'          => 'storefront_verify_phone',
-        ])->first();
+        // Find the verification code: the newest live one for this user, checked and used up
+        $verificationCode = $this->findSubjectCode('storefront_verify_phone', $user->uuid, $code);
 
         // The bypass leaves no code row to read the phone back from, so it comes from the
         // request — which is what the caller is asking to verify in the first place.
@@ -1612,8 +1662,11 @@ class CustomerController extends Controller
         $user->update(['phone' => $phone, 'phone_verified_at' => now()]);
         $customer->update(['phone' => $phone]);
 
-        // Invalidate the verification code
-        $verificationCode->delete();
+        // The code was used up by findSubjectCode(); older cores without consume() still
+        // need the row removed so it cannot verify twice.
+        if (!method_exists($verificationCode, 'consume')) {
+            $verificationCode->delete();
+        }
 
         return new Customer($customer->fresh());
     }
