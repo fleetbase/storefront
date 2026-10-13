@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\Casts\Json;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasUuid;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductAddonCategory extends StorefrontModel
 {
@@ -62,16 +63,13 @@ class ProductAddonCategory extends StorefrontModel
      */
     protected $hidden = ['product'];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(AddonCategory::class)->with(['addons']);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function product()
     {
