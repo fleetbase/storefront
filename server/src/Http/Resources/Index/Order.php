@@ -44,6 +44,7 @@ class Order extends FleetOpsOrderIndexResource
             'discount',
             'promotions',
             'payment_status',
+            'payment',
             'currency',
             'gateway',
             'is_pickup',

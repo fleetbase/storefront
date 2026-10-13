@@ -191,6 +191,7 @@ class InternalOrderActionControllerStub extends InternalOrderController
     public ?Fleetbase\FleetOps\Models\Order $order = null;
     public bool $notificationFails                 = false;
     public int $patches                            = 0;
+    public int $released                           = 0;
 
     protected function findOrderRecord($id): Fleetbase\FleetOps\Models\Order
     {
@@ -204,6 +205,13 @@ class InternalOrderActionControllerStub extends InternalOrderController
     protected function findOrderForAction($uuid, array $relations = []): ?Fleetbase\FleetOps\Models\Order
     {
         return $this->order;
+    }
+
+    protected function releasePromotions(Fleetbase\FleetOps\Models\Order $order): int
+    {
+        $this->released++;
+
+        return 0;
     }
 
     protected function patchOrderConfig(Fleetbase\FleetOps\Models\Order $order)
@@ -1390,10 +1398,21 @@ test('internal preparing completed rejected and driver-unassignment actions pres
     ]));
     expect($completedDelivery['status'])->toBe('completed');
 
-    $rejected = $controller->rejectOrder(Request::create('/orders/reject', 'POST', [
+    // A finished order cannot be canceled; an open one can.
+    $finished = $controller->rejectOrder(Request::create('/orders/reject', 'POST', [
         'order' => 'order_uuid',
     ]));
-    expect($rejected['status'])->toBe('canceled');
+    expect($finished->getStatusCode())->toBe(400)
+        ->and($order->status)->toBe('completed');
+
+    $order->status = 'preparing';
+    $rejected      = $controller->rejectOrder(Request::create('/orders/reject', 'POST', [
+        'order'  => 'order_uuid',
+        'reason' => 'Out of stock',
+    ]));
+    expect($rejected['status'])->toBe('canceled')
+        ->and($order->getMeta('cancel_reason'))->toBe('Out of stock')
+        ->and($controller->released)->toBe(1);
 
     $driver = new DriverAssignmentStub();
     $order->setRelation('driverAssigned', $driver);
@@ -1483,11 +1502,11 @@ test('a customer gets their own order as steps from its order config', function 
         'key'       => 'olimax',
         'name'      => 'Oli Max delivery',
         'flow'      => json_encode([
-            'created'    => ['code' => 'created', 'status' => 'Created', 'activities' => ['dispatched']],
-            'dispatched' => ['code' => 'dispatched', 'status' => 'Dispatched', 'details' => 'Sent from {storefront.name}', 'activities' => ['unsupported', 'started']],
+            'created'     => ['code' => 'created', 'status' => 'Created', 'activities' => ['dispatched']],
+            'dispatched'  => ['code' => 'dispatched', 'status' => 'Dispatched', 'details' => 'Sent from {storefront.name}', 'activities' => ['unsupported', 'started']],
             'unsupported' => ['code' => 'unsupported', 'status' => 'Unsupported', 'logic' => [['type' => 'not-a-logic-type', 'conditions' => []]]],
-            'started'    => ['code' => 'started', 'status' => 'Started', 'activities' => ['completed']],
-            'completed'  => ['code' => 'completed', 'status' => 'Completed', 'complete' => true],
+            'started'     => ['code' => 'started', 'status' => 'Started', 'activities' => ['completed']],
+            'completed'   => ['code' => 'completed', 'status' => 'Completed', 'complete' => true],
         ]),
     ]);
     $connection->table('orders')->insert([

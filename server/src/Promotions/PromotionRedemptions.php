@@ -102,6 +102,16 @@ class PromotionRedemptions
     }
 
     /**
+     * Give back a canceled order's promotion uses, so limits and budgets count them no more.
+     */
+    public static function releaseForOrder(Order $order): int
+    {
+        return PromotionRedemption::where('order_uuid', $order->uuid)
+            ->whereIn('status', [PromotionRedemption::STATUS_RESERVED, PromotionRedemption::STATUS_REDEEMED])
+            ->update(['status' => PromotionRedemption::STATUS_RELEASED]);
+    }
+
+    /**
      * Release reservations of checkouts that were never captured.
      */
     public static function releaseStale(): int

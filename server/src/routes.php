@@ -124,18 +124,6 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->delete('{id}', 'NotificationController@delete');
                 });
 
-                // storefront/v1/notifications
-                $router->group(['prefix' => 'notifications'], function () use ($router) {
-                    $router->get('/', 'NotificationController@query');
-                    $router->get('unread-count', 'NotificationController@unreadCount');
-                    $router->get('preferences', 'NotificationController@getPreferences');
-                    $router->put('preferences', 'NotificationController@updatePreferences');
-                    $router->put('read-all', 'NotificationController@markAllAsRead');
-                    $router->get('{id}', 'NotificationController@find');
-                    $router->put('{id}/read', 'NotificationController@markAsRead');
-                    $router->delete('{id}', 'NotificationController@delete');
-                });
-
                 // storefront/v1/customers
                 $router->group(['prefix' => 'customers'], function () use ($router) {
                     $router->put('{id}', 'CustomerController@update');
@@ -229,6 +217,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('unassign-driver', $controller('unassignDriver'));
                                 // Moves an order on a custom flow (e.g. a booking) to its next activity.
                                 $router->patch('update-activity/{id}', $controller('updateActivity'));
+                                $router->get('label/{id}', $controller('label'));
+                                $router->get('{id}/flow', $controller('flow'));
+                                $router->get('{id}/activity', $controller('activity'));
+                                $router->patch('{id}/entities/{entityId}', $controller('updateEntity'));
+                                $router->post('{id}/edit/preview', $controller('previewEdit'));
+                                $router->patch('{id}/edit', $controller('edit'));
                             }
                         );
                         $router->fleetbaseRoutes(

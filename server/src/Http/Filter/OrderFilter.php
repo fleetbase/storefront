@@ -85,6 +85,16 @@ class OrderFilter extends FleetOpsOrderFilter
         }
     }
 
+    /**
+     * The orders of one checkout (a multi-store purchase): its stores' orders and the master.
+     */
+    public function checkout(string $checkout)
+    {
+        $this->builder->where(function ($query) use ($checkout) {
+            $query->where('meta->checkout_id', $checkout)->orWhere('meta->checkout', $checkout);
+        });
+    }
+
     public function storefront(string $storefront)
     {
         $this->builder->where('meta->storefront_id', $storefront);

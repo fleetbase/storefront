@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Observers;
 
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderActivity;
+use Fleetbase\Storefront\Notifications\StorefrontOrderCanceled;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -55,8 +56,15 @@ class OrderActivityObserver
                 return;
             }
 
-            $flow = OrderActivityFlow::forOrder($order);
-            $step = collect($flow['steps'] ?? [])->firstWhere('code', $status);
+            // A cancellation says why and what happens to the money.
+            if ($status === 'canceled' && !Storefront::isBookingOrder($order)) {
+                $order->customer->notify(new StorefrontOrderCanceled($order));
+
+                return;
+            }
+
+            $flow  = OrderActivityFlow::forOrder($order);
+            $step  = collect($flow['steps'] ?? [])->firstWhere('code', $status);
             $label = data_get($step, 'label') ?: ucfirst(str_replace('_', ' ', $status));
 
             $order->customer->notify(new StorefrontOrderActivity($order, $label, data_get($step, 'details') ?: null));

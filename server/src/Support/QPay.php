@@ -599,6 +599,25 @@ class QPay
     }
 
     /**
+     * Refund a whole payment. QPay v2 takes the payment id in the path (`DELETE payment/refund/{payment_id}`)
+     * and refunds the full amount; there is no partial refund.
+     *
+     * @param string      $paymentId The QPay payment id (not the invoice id)
+     * @param string|null $note      Shown on the refund
+     *
+     * @return object|null Refund response
+     */
+    public function refundPayment(string $paymentId, ?string $note = null)
+    {
+        $params = array_filter([
+            'callback_url' => 'https://qpay.mn/payment/result?payment_id=' . $paymentId,
+            'note'         => $note,
+        ]);
+
+        return $this->delete('payment/refund/' . $paymentId, $params);
+    }
+
+    /**
      * Create an invoice using static method (convenience wrapper).
      *
      * @param string $username      QPay merchant username

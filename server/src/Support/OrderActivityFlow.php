@@ -32,9 +32,9 @@ class OrderActivityFlow
     {
         // Plain queries: only a few columns are needed, and the tracking status model's
         // spatial columns are not.
-        $db     = DB::connection($order->getConnectionName());
-        $config = $order->order_config_uuid ? $db->table('order_configs')->where('uuid', $order->order_config_uuid)->first(['public_id', 'key', 'name', 'flow']) : null;
-        $flow   = $config ? (json_decode((string) $config->flow, true) ?: []) : [];
+        $db      = DB::connection($order->getConnectionName());
+        $config  = $order->order_config_uuid ? $db->table('order_configs')->where('uuid', $order->order_config_uuid)->first(['public_id', 'key', 'name', 'flow']) : null;
+        $flow    = $config ? (json_decode((string) $config->flow, true) ?: []) : [];
         $history = $order->tracking_number_uuid
             ? $db->table('tracking_statuses')
                 ->where('tracking_number_uuid', $order->tracking_number_uuid)
@@ -61,12 +61,12 @@ class OrderActivityFlow
     }
 
     /**
-     * @param array         $flow      the order config's activities, keyed by code
-     * @param string|null   $status    the order's current status code
-     * @param array         $history   tracking statuses, oldest first: ['code', 'label', 'at']
-     * @param callable      $passes    whether an activity's conditions hold for the order
-     * @param string|null   $createdAt when the order was placed
-     * @param array         $tokens    values for `{placeholders}` in activity details
+     * @param array       $flow      the order config's activities, keyed by code
+     * @param string|null $status    the order's current status code
+     * @param array       $history   tracking statuses, oldest first: ['code', 'label', 'at']
+     * @param callable    $passes    whether an activity's conditions hold for the order
+     * @param string|null $createdAt when the order was placed
+     * @param array       $tokens    values for `{placeholders}` in activity details
      */
     public static function resolve(array $flow, ?string $status, array $history, callable $passes, ?string $createdAt = null, array $tokens = []): array
     {

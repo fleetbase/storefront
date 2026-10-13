@@ -247,7 +247,7 @@ class PromotionEngine
             return self::REASON_INVALID_CODE;
         }
 
-        if ($code->usage_limit !== null && PromotionRedemption::counting()->where('promotion_code_uuid', $code->uuid)->count() >= $code->usage_limit) {
+        if ($code->usage_limit !== null && static::countingFor($context)->where('promotion_code_uuid', $code->uuid)->count() >= $code->usage_limit) {
             return self::REASON_USAGE_LIMIT;
         }
 
@@ -317,7 +317,7 @@ class PromotionEngine
             return [];
         }
 
-        $rows = PromotionRedemption::counting()
+        $rows = static::countingFor($context)
             ->whereIn('promotion_uuid', $promotionUuids)
             ->groupBy('promotion_uuid')
             ->selectRaw('promotion_uuid, COUNT(*) as uses, COALESCE(SUM(amount), 0) as spent, SUM(CASE WHEN customer_uuid = ? THEN 1 ELSE 0 END) as customer_uses', [$context->customer?->uuid])
@@ -341,7 +341,16 @@ class PromotionEngine
         return Order::where('customer_uuid', $context->customer->uuid)
             ->where('type', 'storefront')
             ->where('status', '!=', 'canceled')
+            ->when($context->excludeOrderUuid, fn ($query, $uuid) => $query->where('uuid', '!=', $uuid))
             ->exists();
+    }
+
+    /**
+     * Redemptions that count towards limits, without the order being re-priced.
+     */
+    protected static function countingFor(PromotionContext $context)
+    {
+        return PromotionRedemption::counting()->when($context->excludeOrderUuid, fn ($query, $uuid) => $query->where(fn ($query) => $query->whereNull('order_uuid')->orWhere('order_uuid', '!=', $uuid)));
     }
 
     /**

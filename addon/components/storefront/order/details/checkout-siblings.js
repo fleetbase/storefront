@@ -26,7 +26,11 @@ export default class StorefrontOrderDetailsCheckoutSiblingsComponent extends Com
         }
 
         try {
-            const orders = yield this.fetch.get('orders', { query: this.checkoutId, limit: 25 }, { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' });
+            const orders = yield this.fetch.get(
+                'orders',
+                { checkout: this.checkoutId, limit: 25 },
+                { namespace: 'storefront/int/v1', normalizeToEmberData: true, normalizeModelType: 'order' }
+            );
             const list = orders?.toArray?.() ?? Array.from(orders ?? []);
             this.siblings = list.filter((order) => order.meta?.checkout_id === this.checkoutId && order.id !== this.args.resource.id);
         } catch {

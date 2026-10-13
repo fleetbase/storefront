@@ -7,6 +7,14 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
 use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
+use Fleetbase\Storefront\Promotions\PromotionRedemptions;
+use Fleetbase\Storefront\Support\OrderActivityFlow;
+use Fleetbase\Storefront\Support\OrderEditException;
+use Fleetbase\Storefront\Support\OrderEditor;
+use Fleetbase\Storefront\Support\OrderInsights;
+use Fleetbase\Storefront\Support\OrderPayments;
+use Fleetbase\Storefront\Support\OrderSettlement;
+use Fleetbase\Storefront\Support\OrderTimeline;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -262,6 +270,7 @@ class OrderController extends FleetbaseOrderController
         $this->patchOrderConfig($order);
 
         $order->updateStatus($order->isMeta('is_pickup') ? 'picked_up' : 'completed');
+        OrderPayments::settleCollected($order);
 
         return $this->orderResponse($order);
     }
@@ -290,13 +299,15 @@ class OrderController extends FleetbaseOrderController
     }
 
     /**
-     * Reject order and notify customer order is rejected/canceled.
+     * Cancel an order: say why, release its promotion uses and give the money back (a refund to the
+     * gateway, or store credit where the gateway cannot refund it). The refund happens first, so a
+     * refund the gateway refuses leaves the order as it was for staff to choose store credit.
      *
      * @return \Illuminate\Http\Response
      */
     public function rejectOrder(Request $request)
     {
-        $order = $this->findOrderForAction($request->order, ['customer']);
+        $order = $this->findOrderForAction($request->order, ['customer', 'payload', 'transaction']);
 
         if (!$order) {
             return response()->json([
@@ -304,10 +315,144 @@ class OrderController extends FleetbaseOrderController
             ], 400);
         }
 
+        if (OrderInsights::isFinished($order)) {
+            return response()->error('This order is already ' . str_replace('_', ' ', $order->status) . '.');
+        }
+
+        $reason = trim((string) $request->input('reason')) ?: null;
+        $refund = null;
+
+        if ($request->boolean('refund', true)) {
+            $payment   = OrderPayments::summary($order);
+            $remaining = $payment['amount_paid'] - $payment['amount_refunded'] - $payment['amount_credited'];
+            if ($remaining > 0) {
+                $method = $request->input('settlement') ?: OrderSettlement::plan($order, -$remaining)['action'];
+                try {
+                    $refund = OrderSettlement::refund($order, $remaining, $method, $reason ?? 'Order canceled');
+                } catch (\Throwable $e) {
+                    return response()->error($e->getMessage());
+                }
+            }
+        }
+
+        if ($reason) {
+            $order->updateMeta('cancel_reason', $reason);
+        }
+
+        $this->releasePromotions($order);
+
         // Patch order config
         $this->patchOrderConfig($order);
 
         $order->updateStatus('canceled');
+
+        return [...$this->orderResponse($order), 'refund' => $refund];
+    }
+
+    /**
+     * A canceled order gives its promotion uses back.
+     */
+    protected function releasePromotions(Order $order): int
+    {
+        return PromotionRedemptions::releaseForOrder($order);
+    }
+
+    /**
+     * Price an edit without making it: new totals, the difference and how it would be settled,
+     * and what the order's stage does not allow.
+     */
+    public function previewEdit(string $id, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'payload.dropoff', 'payload.pickup']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(OrderEditor::preview($order, $request->all()));
+    }
+
+    /**
+     * Change a placed order (items, drop-off, contact, time, notes), settle the difference and
+     * tell the driver and the customer.
+     */
+    public function edit(string $id, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'payload.dropoff', 'payload.pickup', 'driverAssigned']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            $result = OrderEditor::apply($order, $request->all());
+        } catch (OrderEditException $e) {
+            return response()->json(['errors' => [$e->getMessage()], ...$e->context], $e->status());
+        }
+
+        return [
+            ...$this->orderResponse($result['order']),
+            'settlement' => $result['settlement'],
+            'changes'    => $result['changes'],
+            'summary'    => $result['summary'],
+        ];
+    }
+
+    /**
+     * The order's steps on its flow: done, current and expected next.
+     */
+    public function flow(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(OrderActivityFlow::forOrder($order));
+    }
+
+    /**
+     * Everything that happened to the order, newest first: its steps, notes, payment changes,
+     * edits and chat messages.
+     */
+    public function activity(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['trackingStatuses', 'comments.author']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(['activity' => OrderTimeline::forOrder($order)]);
+    }
+
+    /**
+     * Mark one item of the order packed or unavailable, or note something about it.
+     */
+    public function updateEntity(string $id, string $entityId, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['payload.entities']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        $entity = collect(data_get($order, 'payload.entities', []))->first(fn ($entity) => in_array($entityId, [$entity->public_id, $entity->uuid], true));
+        if (!$entity) {
+            return response()->error('Item not found on this order', 404);
+        }
+
+        if ($request->has('packed')) {
+            $entity->setMeta('packed_at', $request->boolean('packed') ? now()->toIso8601String() : null);
+        }
+        if ($request->has('unavailable')) {
+            $entity->setMeta('unavailable', $request->boolean('unavailable'));
+        }
+        if ($request->has('note')) {
+            $entity->setMeta('note', trim((string) $request->input('note')) ?: null);
+        }
+        $entity->save();
 
         return $this->orderResponse($order);
     }

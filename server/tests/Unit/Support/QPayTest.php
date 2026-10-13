@@ -379,3 +379,15 @@ test('qpay creates deterministic test-payment shape from checkout state', functi
             'barimt_status'=> 'REGISTERED',
         ]);
 });
+
+test('qpay refunds a payment by its payment id in the path', function () {
+    $history = [];
+    $qpay    = qpayWithResponses([new Response(200, [], '{}')], $history);
+    $qpay->setAuthToken('token-123');
+
+    $qpay->refundPayment('pay_987', 'Refund for order_1');
+
+    expect($history[0]['request']->getMethod())->toBe('DELETE')
+        ->and((string) $history[0]['request']->getUri())->toEndWith('/v2/payment/refund/pay_987')
+        ->and(json_decode((string) $history[0]['request']->getBody(), true))->toMatchArray(['note' => 'Refund for order_1']);
+});

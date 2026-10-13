@@ -13,18 +13,17 @@ use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
+use Fleetbase\Storefront\Http\Middleware\SetStorefrontSession;
 use Fleetbase\Storefront\Http\Requests\CaptureOrderRequest;
 use Fleetbase\Storefront\Http\Requests\CreateStripeSetupIntentRequest;
 use Fleetbase\Storefront\Http\Requests\InitializeCheckoutRequest;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Checkout;
-use Fleetbase\Storefront\Http\Middleware\SetStorefrontSession;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
-use Illuminate\Support\Carbon;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Promotions\PromotionContext;
@@ -32,6 +31,7 @@ use Fleetbase\Storefront\Promotions\PromotionEngine;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
+use Fleetbase\Storefront\Support\OrderPayments;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StorefrontSocket;
@@ -41,6 +41,7 @@ use Fleetbase\Support\SocketCluster\SocketClusterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -1239,10 +1240,6 @@ class CheckoutController extends Controller
     /**
      * Process a cart item.
      *
-     * @param mixed $cartItem the cart item
-     * @param mixed $payload  the payload
-     * @param mixed $customer the customer
-     *
      * @return void
      */
     /**
@@ -1284,6 +1281,31 @@ class CheckoutController extends Controller
             'is_booking'        => true,
             'booking_at'        => $first ? $first->toIso8601String() : null,
             'booking_has_items' => $items->contains(fn ($item) => !data_get($item, 'scheduled_at') && !$bookable->contains(data_get($item, 'product_id'))),
+        ];
+    }
+
+    /**
+     * How the order's transaction is settled at capture. Money taken online is paid; cash on
+     * delivery and console orders marked unpaid are pending until the driver collects the cash
+     * (see OrderPayments::settleCollected()).
+     */
+    public static function captureSettlement(Checkout $checkout, array $transactionDetails, $amount, ?string $currency): array
+    {
+        $unpaid = $checkout->is_cod || strtolower((string) data_get($transactionDetails, 'payment_status')) === 'unpaid';
+
+        if ($unpaid) {
+            return [
+                'status'            => Transaction::STATUS_PENDING,
+                'settlement_status' => Transaction::SETTLEMENT_STATUS_UNPAID,
+            ];
+        }
+
+        return [
+            'status'            => Transaction::STATUS_SUCCESS,
+            'settlement_status' => Transaction::SETTLEMENT_STATUS_PAID,
+            'settled_at'        => now(),
+            'settled_amount'    => $amount,
+            'settled_currency'  => $currency,
         ];
     }
 
@@ -1466,11 +1488,7 @@ class CheckoutController extends Controller
             'currency'               => $currency,
             'description'            => 'Storefront order',
             'type'                   => 'storefront',
-            'status'                 => Transaction::STATUS_SUCCESS,
-            'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
-            'settled_at'             => now(),
-            'settled_amount'         => $amount,
-            'settled_currency'       => $currency,
+            ...static::captureSettlement($checkout, $transactionDetails, $amount, $currency),
             'meta'                   => $transactionMeta,
         ]);
 
@@ -1665,6 +1683,9 @@ class CheckoutController extends Controller
             'captured' => true,
         ]);
 
+        // what was paid and how, on the order's own meta for every client
+        OrderPayments::snapshot($order);
+
         return new OrderResource($order);
     }
 
@@ -1850,11 +1871,7 @@ class CheckoutController extends Controller
                 'currency'               => $currency,
                 'description'            => 'Storefront network order',
                 'type'                   => 'storefront',
-                'status'                 => Transaction::STATUS_SUCCESS,
-                'settlement_status'      => Transaction::SETTLEMENT_STATUS_PAID,
-                'settled_at'             => now(),
-                'settled_amount'         => $amount,
-                'settled_currency'       => $currency,
+                ...static::captureSettlement($checkout, $transactionDetails, $amount, $currency),
                 'meta'                   => $transactionMeta,
             ]);
 
@@ -2133,6 +2150,11 @@ class CheckoutController extends Controller
                 // 'store_uuid' => $about->uuid,
                 'captured' => true,
             ]);
+
+            // what was paid and how, on each order's own meta for every client
+            foreach ([...$multipleOrders, $order] as $placedOrder) {
+                OrderPayments::snapshot($placedOrder);
+            }
 
             return new OrderResource($order);
         } catch (\Throwable $e) {
