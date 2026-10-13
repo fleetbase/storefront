@@ -1,18 +1,31 @@
 import StorefrontOrderFlowStepsComponent from './flow-steps';
 import { inject as service } from '@ember/service';
+import { action } from '@ember/object';
 import { format, formatDistanceToNowStrict, isValid, parseISO } from 'date-fns';
 
-const NEXT = {
-    created: 'accept',
-    pending: 'accept',
-    accepted: 'ready',
-    confirmed: 'ready',
-    preparing: 'ready',
-    started: 'ready',
-};
 const FINISHED = ['completed', 'picked_up', 'canceled', 'order_canceled', 'expired', 'failed'];
-// Flow codes that stand for the same step as a status (the default flow's step codes).
-const STEP_FOR = { preparing: 'accepted', confirmed: 'accepted', pickup_ready: 'ready', driver_enroute: 'dispatched', started: 'dispatched' };
+// Statuses with their own Storefront action (accepting, and marking ready, which dispatches).
+const STORE_ACTIONS = ['created', 'pending', 'accepted', 'confirmed'];
+
+/*
+ * The default Storefront flow runs created → dispatched → started → preparing → driver en route
+ * to the store → driver picked up → driver en route → completed (or ready for pickup → picked up).
+ * The store thinks of it in five steps; each step stands for the statuses below. A custom order
+ * config shows its own steps as they are.
+ */
+const DELIVERY_STEPS = [
+    ['created', ['created', 'pending']],
+    ['accepted', ['accepted', 'confirmed']],
+    ['ready', ['ready', 'preparing', 'dispatched', 'started', 'driver_enroute_to_store']],
+    ['dispatched', ['driver_picked_up', 'driver_enroute', 'en_route', 'out_for_delivery']],
+    ['completed', ['completed']],
+];
+const PICKUP_STEPS = [
+    ['created', ['created', 'pending']],
+    ['accepted', ['accepted', 'confirmed', 'dispatched', 'started', 'preparing']],
+    ['pickup_ready', ['pickup_ready', 'ready', 'ready_for_pickup']],
+    ['picked_up', ['picked_up']],
+];
 
 function parse(value) {
     const date = value ? parseISO(value) : null;
@@ -20,8 +33,10 @@ function parse(value) {
 }
 
 /**
- * The next-step bar and the step strip of the 11a order panel. Step logic (default or custom
- * flow, current step) is the flow steps component's; times come from the order's flow history.
+ * The next-step bar and the step strip of the 11a order panel, from the order's own flow (the
+ * server resolves its steps, the next steps its conditions allow, and the step that completes
+ * it). Accepting and marking ready keep their Storefront actions; after that the order moves
+ * along its flow, step by step or straight to completion.
  */
 export default class StorefrontOrderPanelProgressComponent extends StorefrontOrderFlowStepsComponent {
     @service storefrontOrderActions;
@@ -30,15 +45,161 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return this.args.overview;
     }
 
+    get flow() {
+        return this.args.flow ?? null;
+    }
+
     get isFinished() {
-        return FINISHED.includes(this.status);
+        return FINISHED.includes(this.status) || Boolean(this.flow?.completed);
+    }
+
+    get isDefaultConfig() {
+        return this.storefrontOrderWorkflow.isDefaultStorefrontConfig(this.order);
+    }
+
+    /** The panel's refresh, looked up when needed: the panel sets it after it loads. */
+    reload() {
+        (this.storefrontOrderActions.panel.refresh ?? this.args.refresh)?.();
+    }
+
+    /* Steps */
+
+    get groups() {
+        return this.isPickup ? PICKUP_STEPS : DELIVERY_STEPS;
+    }
+
+    get flowSteps() {
+        return this.flow?.steps ?? [];
+    }
+
+    /** When each status was reached, from the flow's history. */
+    get reached() {
+        const reached = {};
+        this.flowSteps.forEach((step) => {
+            const at = parse(step.reached_at);
+            if (at && !reached[step.code]) {
+                reached[step.code] = at;
+            }
+        });
+        if (!reached.created && this.order?.created_at) {
+            reached.created = new Date(this.order.created_at);
+        }
+
+        return reached;
+    }
+
+    get steps() {
+        if (!this.isDefaultConfig && this.flowSteps.length) {
+            return this.flowSteps.map((step, index) => ({
+                code: step.code,
+                number: index + 1,
+                label: step.label,
+                isComplete: step.state === 'done',
+                isCurrent: step.state === 'current',
+                isUpcoming: step.state === 'upcoming',
+                reachedAt: parse(step.reached_at),
+            }));
+        }
+
+        const status = this.status;
+        const reached = this.reached;
+        const finished = FINISHED.includes(status);
+        let current = this.groups.findIndex(([, codes]) => codes.includes(status));
+        if (current < 0) {
+            // A status the steps do not name lands on the last step it has been through.
+            current = this.groups.reduce((last, [, codes], index) => (codes.some((code) => reached[code]) ? index : last), 0);
+        }
+
+        return this.groups.map(([code, codes], index) => ({
+            code,
+            number: index + 1,
+            label: this.labelFor(code),
+            isComplete: index < current || (index === current && finished),
+            isCurrent: index === current && !finished,
+            isUpcoming: index > current,
+            reachedAt: codes.map((member) => reached[member]).find(Boolean) ?? null,
+        }));
+    }
+
+    timeLabel(date) {
+        return format(date, new Date().toDateString() === date.toDateString() ? 'HH:mm' : 'd MMM HH:mm');
+    }
+
+    get timedSteps() {
+        const steps = this.steps;
+
+        return steps.map((step, index) => {
+            let time = null;
+            if (step.isComplete && step.reachedAt) {
+                time = this.timeLabel(step.reachedAt);
+            } else if (step.isCurrent && step.reachedAt) {
+                time = formatDistanceToNowStrict(step.reachedAt);
+            } else if (index === steps.length - 1 && !step.isComplete && this.dueAt) {
+                time = this.intl.t('storefront.order.panel.eta', { time: this.timeLabel(this.dueAt) });
+            }
+
+            return { ...step, time };
+        });
+    }
+
+    /* What to do next */
+
+    /** Accepting and marking ready (which dispatches) keep their Storefront actions. */
+    get storeAction() {
+        if (!STORE_ACTIONS.includes(this.status)) {
+            return null;
+        }
+
+        return this.storefrontOrderActions.actionItemsFor(this.order, () => this.reload()).find((item) => item.id === 'perform-workflow-action') ?? null;
+    }
+
+    get nextOptions() {
+        return this.flow?.next ?? [];
+    }
+
+    get expectedNext() {
+        return this.nextOptions.find((option) => option.expected) ?? this.nextOptions[0] ?? null;
+    }
+
+    optionText(option) {
+        if (option.complete) {
+            return this.isPickup ? this.intl.t('storefront.order.workflow.mark-picked-up') : this.intl.t('storefront.order.panel.complete-order');
+        }
+
+        return this.intl.t('storefront.order.panel.move-to', { step: option.label });
     }
 
     get primary() {
         if (this.isFinished) {
             return null;
         }
-        return this.storefrontOrderActions.actionItemsFor(this.order, this.args.refresh).find((item) => item.id === 'perform-workflow-action') ?? null;
+        if (this.storeAction) {
+            return this.storeAction;
+        }
+
+        const option = this.expectedNext;
+        return option ? { text: this.optionText(option), icon: option.complete ? 'check' : 'forward', fn: () => this.moveTo(option) } : null;
+    }
+
+    /** Other steps the flow allows now, and finishing the order straight away. */
+    get moreOptions() {
+        if (this.isFinished || this.storeAction) {
+            return [];
+        }
+
+        const primary = this.expectedNext;
+        const others = this.nextOptions.filter((option) => option !== primary).map((option) => ({ text: this.optionText(option), option }));
+        const completion = this.flow?.completion;
+        if (completion && !this.nextOptions.some((option) => option.code === completion.code)) {
+            others.push({ text: this.intl.t('storefront.order.panel.complete-now'), option: completion });
+        }
+
+        return others;
+    }
+
+    @action moveTo(option, dropdown) {
+        dropdown?.actions?.close?.();
+        return this.storefrontOrderActions.moveToActivity(this.order, option, () => this.reload());
     }
 
     get driverName() {
@@ -48,7 +209,7 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
     get title() {
         const t = (key, options) => this.intl.t(`storefront.order.overview.next.${key}`, options);
         const status = this.status;
-        const isPickup = Boolean(this.order?.meta?.is_pickup);
+        const isPickup = this.isPickup;
 
         if (status === 'canceled' || status === 'order_canceled') {
             const reason = this.order?.meta?.cancel_reason;
@@ -57,17 +218,27 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         if (this.isFinished) {
             return isPickup ? t('picked-up') : t('delivered');
         }
-        if (NEXT[status]) {
-            return t(NEXT[status]);
+        if (['created', 'pending'].includes(status)) {
+            return t('accept');
         }
-        if (['ready', 'pickup_ready', 'ready_for_pickup'].includes(status)) {
+        if (['accepted', 'confirmed'].includes(status)) {
+            return t('ready');
+        }
+
+        if (this.isDefaultConfig) {
             if (isPickup) {
                 return t('hand-to-customer');
             }
-            return this.driverName ? t('hand-to-driver', { driver: this.driverName }) : t('assign-driver');
+            const step = this.steps.find((item) => item.isCurrent)?.code;
+            if (step === 'ready') {
+                return this.driverName ? t('hand-to-driver', { driver: this.driverName }) : t('assign-driver');
+            }
+
+            return this.driverName ? t('with-driver', { driver: this.driverName }) : t('on-the-way');
         }
 
-        return this.driverName ? t('with-driver', { driver: this.driverName }) : t('on-the-way');
+        const next = this.expectedNext;
+        return next ? t('next-step', { step: next.label }) : t('in-progress', { step: this.flowSteps.find((item) => item.state === 'current')?.label ?? status });
     }
 
     get dueAt() {
@@ -86,10 +257,6 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return minutes >= 60 ? t('hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 }) : t('minutes', { count: minutes });
     }
 
-    timeLabel(date) {
-        return format(date, new Date().toDateString() === date.toDateString() ? 'HH:mm' : 'd MMM HH:mm');
-    }
-
     get dueLine() {
         if (this.isFinished || !this.dueAt) {
             return null;
@@ -102,39 +269,5 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
 
         const minutes = Math.max(0, Math.round((this.dueAt.getTime() - Date.now()) / 60000));
         return this.intl.t('storefront.order.panel.due-left', { time, left: this.duration(minutes) });
-    }
-
-    /** When each step was reached, from the flow history (keyed by step code). */
-    get reachedAt() {
-        const reached = {};
-        (this.args.flow?.steps ?? []).forEach((step) => {
-            const code = STEP_FOR[step.code] ?? step.code;
-            if (step.reached_at && !reached[code]) {
-                reached[code] = parse(step.reached_at);
-            }
-        });
-        if (!reached.created && this.order?.created_at) {
-            reached.created = new Date(this.order.created_at);
-        }
-
-        return reached;
-    }
-
-    get timedSteps() {
-        const reached = this.reachedAt;
-        const steps = this.steps;
-
-        return steps.map((step, index) => {
-            let time = null;
-            if (step.isComplete && reached[step.code]) {
-                time = this.timeLabel(reached[step.code]);
-            } else if (step.isCurrent && reached[step.code]) {
-                time = formatDistanceToNowStrict(reached[step.code]);
-            } else if (index === steps.length - 1 && !step.isComplete && this.dueAt) {
-                time = this.intl.t('storefront.order.panel.eta', { time: this.timeLabel(this.dueAt) });
-            }
-
-            return { ...step, time };
-        });
     }
 }

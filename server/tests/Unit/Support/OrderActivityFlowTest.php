@@ -86,31 +86,48 @@ test('completed and canceled orders project nothing further', function () {
 });
 
 test('a status the flow does not know is still shown, with its tracking label or a readable code', function () {
-    $tracked = OrderActivityFlow::resolve(storefrontFlow(), 'at_warehouse', [['code' => 'created'], ['code' => 'at_warehouse', 'label' => 'At Warehouse']], fn () => true);
-    $untracked = OrderActivityFlow::resolve([], 'at_warehouse', [], fn () => true);
-    $empty     = OrderActivityFlow::resolve([], null, [], fn () => true);
+    $tracked     = OrderActivityFlow::resolve(storefrontFlow(), 'at_warehouse', [['code' => 'created'], ['code' => 'at_warehouse', 'label' => 'At Warehouse']], fn () => true);
+    $untracked   = OrderActivityFlow::resolve([], 'at_warehouse', [], fn () => true);
+    $empty       = OrderActivityFlow::resolve([], null, [], fn () => true);
     $historyOnly = OrderActivityFlow::resolve([], null, [['code' => 'created', 'label' => 'Created']], fn () => true);
 
     expect(flowCodes($tracked))->toBe(['created:done', 'at_warehouse:current'])
         ->and($tracked['steps'][1]['label'])->toBe('At Warehouse')
         ->and($untracked['steps'][0]['label'])->toBe('At warehouse')
-        ->and($empty)->toBe(['status' => null, 'canceled' => false, 'completed' => false, 'steps' => []])
+        ->and($empty)->toBe(['status' => null, 'canceled' => false, 'completed' => false, 'steps' => [], 'next' => [], 'completion' => null])
         ->and(flowCodes($historyOnly))->toBe(['created:current']);
 });
 
 test('projection skips cancellations, visited activities and failing branches, and stops at a limit', function () {
     $loop = [
-        'created' => ['activities' => ['canceled', 'missing', 'created', 'step_0']],
-        'canceled' => ['activities' => []],
+        'created'      => ['activities' => ['canceled', 'missing', 'created', 'step_0']],
+        'canceled'     => ['activities' => []],
         'cancel_event' => ['events' => ['order.canceled']],
     ];
     for ($i = 0; $i < 30; $i++) {
         $loop["step_$i"] = ['activities' => ['cancel_event', 'step_' . ($i + 1)]];
     }
-    $result = OrderActivityFlow::resolve($loop, 'created', [], fn () => true);
+    $result  = OrderActivityFlow::resolve($loop, 'created', [], fn () => true);
     $blocked = OrderActivityFlow::resolve(['created' => ['activities' => ['next']], 'next' => []], 'created', [], fn () => false);
 
     expect($result['steps'])->toHaveLength(1 + OrderActivityFlow::MAX_PROJECTED)
         ->and($result['steps'][1]['code'])->toBe('step_0')
         ->and(flowCodes($blocked))->toBe(['created:current']);
+});
+
+test('the order can be moved to the next activities its conditions allow, the expected one first, and to its completing activity', function () {
+    $delivery = OrderActivityFlow::resolve(storefrontFlow(), 'preparing', [], fn ($activity) => empty($activity['logic']));
+    $pickup   = OrderActivityFlow::resolve(storefrontFlow(), 'preparing', [], fn () => true);
+    $done     = OrderActivityFlow::resolve(storefrontFlow(), 'completed', [], fn () => true);
+    $unknown  = OrderActivityFlow::resolve(storefrontFlow(), 'accepted', [], fn () => true);
+
+    expect(array_column($delivery['next'], 'code'))->toBe(['driver_enroute_to_store'])
+        ->and($delivery['next'][0]['expected'])->toBeTrue()
+        ->and($delivery['completion'])->toMatchArray(['code' => 'completed', 'label' => 'Order completed', 'complete' => true])
+        ->and(array_column($pickup['next'], 'code'))->toBe(['pickup_ready', 'driver_enroute_to_store'])
+        ->and($pickup['completion']['code'])->toBe('picked_up')
+        ->and($done['next'])->toBe([])
+        ->and($done['completion'])->toBeNull()
+        ->and($unknown['next'])->toBe([])
+        ->and($unknown['completion']['code'])->toBe('completed');
 });

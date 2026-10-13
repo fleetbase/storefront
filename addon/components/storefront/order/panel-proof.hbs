@@ -1,0 +1,31 @@
+{{! Proof of delivery: the photos, signatures and scanned codes captured for the order. Shown once there is any. }}
+{{#if this.items.length}}
+    <div class="sfop-section-pad" id="sfop-proof">
+        <div class="sfop-box" data-test-order-proof>
+            <div class="sfop-box__head">
+                <span class="sfop-lbl">{{t "storefront.order.panel.proof-title"}}</span>
+                <span class="sfop-muted sfop-small">{{t "storefront.order.panel.proof-count" count=this.items.length}}</span>
+            </div>
+            <div class="sfop-proofs">
+                {{#each this.items as |proof|}}
+                    <div class="sfop-proof sfop-proof--{{proof.type}}" data-test-order-proof-item={{proof.id}}>
+                        {{#if proof.isImage}}
+                            <a class="sfop-proof__media" href={{proof.url}} target="_blank" rel="noopener noreferrer" aria-label={{t "storefront.order.panel.proof-open" type=proof.typeLabel}}>
+                                <Image src={{proof.url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{proof.typeLabel}} class="sfop-proof__image" />
+                            </a>
+                        {{else if proof.code}}
+                            <div class="sfop-proof__media sfop-proof__code"><FaIcon @icon="qrcode" /><span class="sfop-mono">{{proof.code}}</span></div>
+                        {{else if proof.url}}
+                            <a class="sfop-proof__media sfop-proof__code" href={{proof.url}} target="_blank" rel="noopener noreferrer"><FaIcon @icon="file" /><span>{{t "storefront.order.panel.proof-open" type=proof.typeLabel}}</span></a>
+                        {{/if}}
+                        <div class="sfop-proof__meta">
+                            <strong>{{proof.typeLabel}}</strong>
+                            {{#if proof.time}}<span class="sfop-muted">{{proof.time}}</span>{{/if}}
+                        </div>
+                        {{#if proof.remarks}}<div class="sfop-proof__remarks sfop-muted">{{proof.remarks}}</div>{{/if}}
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+{{/if}}

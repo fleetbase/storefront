@@ -691,6 +691,50 @@ export default class StorefrontOrderActionsService extends Service {
         });
     }
 
+    /**
+     * Move the order to a step of its own flow (`option` from the flow endpoint's `next` or
+     * `completion`). The server takes the step from the order's config; proof the step asks for
+     * cannot be captured from the console, so it is bypassed, and the dialog says so.
+     */
+    moveToActivity(order, option, callback) {
+        if (!option?.code) {
+            return;
+        }
+
+        const t = (key, options) => this.intl.t(`storefront.order.panel.step-dialog.${key}`, options);
+        const isPickup = this.storefrontOrderWorkflow.isPickupOrder(order);
+        const body = [option.complete ? t(isPickup ? 'complete-pickup-body' : 'complete-body') : t('move-body', { step: option.label }), option.require_pod ? t('no-proof') : null]
+            .filter(Boolean)
+            .join(' ');
+
+        this.modalsManager.confirm({
+            title: option.complete ? t(isPickup ? 'complete-pickup-title' : 'complete-title') : t('move-title', { step: option.label }),
+            body,
+            acceptButtonText: option.complete ? t(isPickup ? 'complete-pickup' : 'complete') : t('move', { step: option.label }),
+            acceptButtonIcon: option.complete ? 'check' : 'forward',
+            acceptButtonScheme: option.complete ? 'success' : 'primary',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch(
+                        `orders/update-activity/${order.public_id ?? order.id}`,
+                        { activity: { code: option.code }, bypass_proof: true },
+                        { namespace: 'storefront/int/v1' }
+                    );
+                    order.set?.('status', option.code);
+                    this.notifications.success(t('moved', { step: option.label }));
+                    modal.done();
+                    callback?.(order);
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
     updateActivity(order, activity, callback) {
         if (!activity) {
             return;

@@ -125,7 +125,8 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
 
         const due = parse(this.overview.due_at);
         const diff = due ? differenceInMinutes(at, due) : null;
-        const timing = diff === null ? '' : diff <= 0 ? this.t('early', { minutes: Math.abs(diff) }) : this.t('late-by', { minutes: diff });
+        const timing =
+            diff === null ? '' : diff === 0 ? this.t('on-time') : diff < 0 ? this.t('early', { early: this.duration(Math.abs(diff)) }) : this.t('late-by', { late: this.duration(diff) });
         const proofs = this.overview.delivery?.proofs ?? 0;
 
         return {
@@ -134,7 +135,7 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
             icon: 'check',
             title: `${this.order?.meta?.is_pickup ? this.t('picked-up', { time: format(at, 'HH:mm') }) : this.t('delivered', { time: format(at, 'HH:mm') })}${timing ? `, ${timing}` : ''}.`,
             detail: proofs ? this.t('proof-captured', { count: proofs }) : null,
-            actions: proofs ? [{ text: this.t('view-proof'), onClick: () => this.hostRouter.transitionTo('console.fleet-ops.operations.orders.index.details', this.order.public_id) }] : [],
+            actions: proofs ? [{ text: this.t('view-proof'), onClick: () => document.getElementById('sfop-proof')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }] : [],
         };
     }
 

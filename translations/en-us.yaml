@@ -778,6 +778,29 @@ storefront:
       open-in-maps: Open in maps
       edit-address: Edit address
       map-label: "Map: the store and the drop-off"
+      move-to: "Move to {step}"
+      complete-order: Complete order
+      complete-now: Complete the order now
+      more-steps: More steps
+      proof-title: Proof of delivery
+      proof-count: "{count, plural, one {# proof} other {# proofs}}"
+      proof-types:
+        photo: Photo
+        signature: Signature
+        scan: Scanned code
+      proof-open: "Open {type}"
+      step-dialog:
+        move-title: "Move the order to “{step}”?"
+        move-body: "The order's status becomes “{step}”, and the customer and driver see it."
+        move: "Move to {step}"
+        complete-title: Complete this order?
+        complete-body: The order is finished; cash on delivery is settled and the customer is told.
+        complete: Complete order
+        complete-pickup-title: Mark this order picked up?
+        complete-pickup-body: The order is finished and the customer is told.
+        complete-pickup: Mark picked up
+        no-proof: This step asks for proof of delivery, which cannot be captured from the console; it is recorded without proof.
+        moved: "Order moved to “{step}”"
       map-focus: Focus the route
       map-expand: Widen the map
       map-shrink: Make the map smaller
@@ -888,8 +911,9 @@ storefront:
         late-message: We're running a little late with your order, sorry. It's on its way as soon as possible.
         delivered: "Delivered {time}"
         picked-up: "Picked up {time}"
-        early: "{minutes, plural, =0 {on time} one {# min early} other {# min early}}"
-        late-by: "{minutes, plural, one {# min late} other {# min late}}"
+        on-time: on time
+        early: "{early} early"
+        late-by: "{late} late"
         proof-captured: "{count, plural, one {Proof of delivery captured.} other {# proofs of delivery captured.}}"
         view-proof: View proof
     overview:
@@ -913,6 +937,8 @@ storefront:
         picked-up: Picked up by the customer
         canceled: Canceled
         canceled-because: "Canceled: {reason}"
+        next-step: "Next: {step}"
+        in-progress: "In progress: {step}"
     alerts:
       address-change-requested: The customer says the address is wrong
       update-address: Update address

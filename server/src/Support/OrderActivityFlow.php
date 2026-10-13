@@ -137,7 +137,53 @@ class OrderActivityFlow
             ];
         }
 
-        return ['status' => $current ?: null, 'canceled' => $canceled, 'completed' => $completed, 'steps' => $steps];
+        // What the order can be moved to now: the current activity's next activities whose
+        // conditions hold, cancellations aside; the one the order is expected to take first.
+        $next = [];
+        if (!$canceled && !$completed && isset($activities[$current])) {
+            foreach ((array) ($activities[$current]['activities'] ?? []) as $nextCode) {
+                $code     = static::code($nextCode);
+                $activity = $activities[$code] ?? null;
+                if (!$activity || static::isCancellation($code, $activity) || !$passes($activity)) {
+                    continue;
+                }
+                $next[] = static::option($activity, $code, $code === ($upcoming[0]['code'] ?? null));
+            }
+            usort($next, fn ($a, $b) => $b['expected'] <=> $a['expected']);
+        }
+
+        // The activity that finishes the order: where the expected path ends, else the first
+        // completing activity this order qualifies for.
+        $completion = null;
+        if (!$canceled && !$completed) {
+            $last = end($upcoming) ?: null;
+            if ($last && static::isComplete($activities[$last['code']] ?? [])) {
+                $completion = static::option($activities[$last['code']], $last['code'], false);
+            } else {
+                foreach ($activities as $code => $activity) {
+                    if (static::isComplete($activity) && !static::isCancellation($code, $activity) && $passes($activity)) {
+                        $completion = static::option($activity, $code, false);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return ['status' => $current ?: null, 'canceled' => $canceled, 'completed' => $completed, 'steps' => $steps, 'next' => $next, 'completion' => $completion];
+    }
+
+    /**
+     * An activity the console can move the order to.
+     */
+    protected static function option(array $activity, string $code, bool $expected): array
+    {
+        return [
+            'code'        => $code,
+            'label'       => $activity['status'] ?? static::humanize($code),
+            'complete'    => static::isComplete($activity),
+            'require_pod' => filter_var($activity['require_pod'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'expected'    => $expected,
+        ];
     }
 
     /**

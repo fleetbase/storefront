@@ -5,12 +5,35 @@
             <span class="sfop-next__title" data-test-order-next-title>{{this.title}}</span>
             {{#if this.dueLine}}<span class="sfop-next__due" data-test-order-next-due>{{this.dueLine}}</span>{{/if}}
         </div>
-        {{#unless this.isFinished}}
-            <Button @size="sm" @icon="print" @text={{t "storefront.order.overview.print-label"}} @isLoading={{@isPrintingLabel}} @onClick={{@onPrintLabel}} data-test-order-print-label />
-        {{/unless}}
-        {{#if this.primary}}
-            <Button @size="sm" @type="primary" @text={{this.primary.text}} @icon={{this.primary.icon}} @permission="storefront update order" @onClick={{this.primary.fn}} data-test-order-next-action />
-        {{/if}}
+        <div class="sfop-next__actions">
+            {{#unless this.isFinished}}
+                <Button @size="sm" @icon="print" @text={{t "storefront.order.overview.print-label"}} @isLoading={{@isPrintingLabel}} @onClick={{@onPrintLabel}} data-test-order-print-label />
+            {{/unless}}
+            {{#if this.primary}}
+                <Button @size="sm" @type="primary" @text={{this.primary.text}} @icon={{this.primary.icon}} @permission="storefront update order" @onClick={{this.primary.fn}} data-test-order-next-action />
+            {{/if}}
+            {{#if this.moreOptions.length}}
+                <DropdownButton
+                    @icon="chevron-down"
+                    @size="sm"
+                    @renderInPlace={{false}}
+                    @horizontalPosition="right"
+                    @permission="storefront update order"
+                    aria-label={{t "storefront.order.panel.more-steps"}}
+                    data-test-order-more-steps
+                    as |dd|
+                >
+                    <div class="next-dd-menu mt-1 mx-0">
+                        {{#each this.moreOptions as |item|}}
+                            <a href="javascript:;" class="next-dd-item" {{on "click" (fn this.moveTo item.option dd)}} data-test-order-step-option={{item.option.code}}>
+                                <span class="mr-2"><FaIcon @icon={{if item.option.complete "check" "forward"}} @size="xs" /></span>
+                                {{item.text}}
+                            </a>
+                        {{/each}}
+                    </div>
+                </DropdownButton>
+            {{/if}}
+        </div>
     </div>
 
     {{#if this.isCanceled}}

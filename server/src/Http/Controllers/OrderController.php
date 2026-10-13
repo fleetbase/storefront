@@ -436,6 +436,7 @@ class OrderController extends FleetbaseOrderController
                 'duration_s'   => $order->time !== null ? (int) $order->time : null,
                 'delivered_at' => OrderInsights::finishedAt($order),
                 'proofs'       => static::proofCount($order),
+                'proof_items'  => static::proofItems($order),
             ],
         ]);
     }
@@ -515,6 +516,39 @@ class OrderController extends FleetbaseOrderController
         ];
     }
 
+    /**
+     * The proof captured for the order (photos, signatures, scanned codes), newest first, for
+     * the panel to show. Proof taken at a stop or on an item counts as the order's too.
+     */
+    protected static function proofItems(Order $order): array
+    {
+        try {
+            $proofs = \Fleetbase\FleetOps\Models\Proof::where(fn ($query) => $query->where('order_uuid', $order->uuid)->orWhere('subject_uuid', $order->uuid))
+                ->with('file')
+                ->latest()
+                ->limit(24)
+                ->get();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return $proofs->map(function ($proof) {
+            $remarks = (string) $proof->remarks;
+            $type    = data_get($proof, 'data.type')
+                ?? (!$proof->file_uuid ? 'scan' : (stripos($remarks, 'signature') !== false ? 'signature' : 'photo'));
+
+            return [
+                'id'           => $proof->public_id ?? $proof->uuid,
+                'type'         => $type,
+                'url'          => $proof->file_url,
+                'content_type' => data_get($proof, 'file.content_type'),
+                'remarks'      => $remarks ?: null,
+                'code'         => $proof->file_uuid ? null : ($proof->raw_data ?: null),
+                'at'           => optional($proof->created_at)->toIso8601String(),
+            ];
+        })->values()->all();
+    }
+
     protected static function proofCount(Order $order): int
     {
         try {
@@ -522,6 +556,36 @@ class OrderController extends FleetbaseOrderController
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    /**
+     * Move the order to an activity of its own order config (the default Storefront flow or a
+     * custom one). The console sends the activity's code; the activity itself comes from the
+     * config, so its status, details and proof rules are the config's. An order finished this
+     * way without a driver is still finished properly (cash settled, customer told).
+     */
+    public function updateActivity(string $id, Request $request)
+    {
+        $order = Order::where('company_uuid', session('company'))->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))->first();
+        if (!$order) {
+            return response()->error('Order not found', 404);
+        }
+
+        $code       = strtolower(trim((string) data_get($request->input('activity'), 'code')));
+        $configured = $code !== '' ? $order->config()?->getActivityByCode($code) : null;
+        if ($configured) {
+            $request->merge(['activity' => $configured->toArray()]);
+        }
+
+        $previous = $order->status;
+        $response = parent::updateActivity($id, $request);
+
+        $order->refresh();
+        if ($configured && $configured->completesOrder() && $previous !== $order->status && !$order->driver_assigned_uuid && $order->status === $configured->code) {
+            $order->notifyCompleted();
+        }
+
+        return $response;
     }
 
     /**
