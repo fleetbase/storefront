@@ -9,6 +9,12 @@
                 </div>
                 <div class="sfoe-head__sub">{{t "storefront.order.edit.applies-to-order"}}</div>
             </div>
+            {{#if this.stageNote}}
+                <div class="sfoe-head__stage sfoe-head__stage--{{this.stage}}" data-test-order-edit-stage>
+                    <FaIcon @icon={{if (eq this.stage "closed") "lock" "circle-info"}} />
+                    <span>{{this.stageNote}}</span>
+                </div>
+            {{/if}}
         </:default>
         <:actions>
             <Button @size="sm" @icon="arrow-left" @text={{t "storefront.order.edit.back"}} @onClick={{this.backToOrder}} data-test-edit-back />

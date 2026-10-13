@@ -122,16 +122,45 @@ class OrderInsights
             ];
         }
 
-        $late = static::lateMinutes($order, $dueAt ?? static::dueAt($order));
+        $dueAt = $dueAt ?? static::dueAt($order);
+        $late  = static::lateMinutes($order, $dueAt);
         if ($late > 0) {
             $alerts[] = [
                 'code'    => 'late',
                 'message' => $late . ' min past due',
                 'minutes' => $late,
+                'told_at' => static::customerToldAt($order, $dueAt),
             ];
         }
 
         return $alerts;
+    }
+
+    /**
+     * When the store last wrote to the customer after the order fell due (so "the customer has
+     * not been told" stops being true once they have been), or null.
+     */
+    public static function customerToldAt(Order $order, ?Carbon $since): ?string
+    {
+        $customerUserUuid = OrderChat::customerUserUuid($order);
+
+        try {
+            $channel = OrderChat::find($order, OrderChat::KIND_CUSTOMER);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if (!$channel) {
+            return null;
+        }
+
+        $at = ChatMessage::where('chat_channel_uuid', $channel->uuid)
+            ->whereNotNull('sender_uuid')
+            ->when($customerUserUuid, fn ($query) => $query->whereDoesntHave('sender', fn ($sender) => $sender->where('user_uuid', $customerUserUuid)))
+            ->when($since, fn ($query) => $query->where('created_at', '>=', $since))
+            ->latest()
+            ->value('created_at');
+
+        return $at ? Carbon::parse($at)->toIso8601String() : null;
     }
 
     public static function customerSummary(Order $order): ?array

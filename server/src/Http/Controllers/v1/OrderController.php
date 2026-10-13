@@ -7,6 +7,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Storefront\Models\Checkout;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
+use Fleetbase\Storefront\Support\OrderSettlement;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,29 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    /**
+     * QPay's callback for a balance invoice. The callback is only a nudge: whether the balance
+     * was paid is asked of QPay itself.
+     */
+    public function balancePaid(Request $request): JsonResponse
+    {
+        $order = Order::withoutGlobalScopes()->where('public_id', (string) $request->input('order'))->whereNull('deleted_at')->first();
+        if (!$order) {
+            return response()->json(['status' => 'unknown'], 404);
+        }
+
+        try {
+            session(['company' => $order->company_uuid]);
+            $charge = OrderSettlement::checkBalancePayment($order);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json(['status' => 'pending']);
+        }
+
+        return response()->json(['status' => $charge ? 'paid' : 'pending']);
+    }
+
     /**
      * Marks a pickup order as completed by "customer pickup".
      *

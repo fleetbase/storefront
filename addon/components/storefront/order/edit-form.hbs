@@ -1,14 +1,5 @@
 {{! 11b: the order panel swapped to its edit form. Each section shows what it was and what the order's stage allows; the sticky footer counts and prices the change before Save. }}
 <div class="sfoe" {{did-insert this.focusSection}} data-test-order-edit-form>
-    {{#if this.stageNote}}
-        <div class="sfoe-stage">
-            <div class="sfoe-stage__note sfoe-stage__note--{{this.overview.edit.stage}}" data-test-order-edit-stage>
-                <FaIcon @icon={{if this.isClosed "lock" "circle-info"}} />
-                <span>{{this.stageNote}}</span>
-            </div>
-        </div>
-    {{/if}}
-
     {{#unless this.isPickup}}
         <section class="sfoe-sec" data-edit-section="dropoff" data-test-order-edit-section="dropoff">
             <div class="sfoe-sec__head">
@@ -56,16 +47,16 @@
                 <div class="sfoe-grid2">
                     <div class="sfoe-field">
                         <label class="sfoe-label" for="sfoe-unit">{{t "storefront.order.edit.unit"}}</label>
-                        <input id="sfoe-unit" type="text" class="form-input w-full" value={{this.address.street2}} {{on "input" (fn this.setAddressField "street2")}} />
+                        <input id="sfoe-unit" type="text" class="form-input w-full" placeholder={{t "storefront.order.edit.unit-placeholder"}} value={{this.address.street2}} {{on "input" (fn this.setAddressField "street2")}} />
                     </div>
                     <div class="sfoe-field">
                         <label class="sfoe-label" for="sfoe-door-phone">{{t "storefront.order.edit.door-contact"}}</label>
-                        <input id="sfoe-door-phone" type="tel" class="form-input w-full" value={{this.address.phone}} {{on "input" (fn this.setAddressField "phone")}} />
+                        <input id="sfoe-door-phone" type="tel" class="form-input w-full" placeholder={{t "storefront.order.edit.door-contact-placeholder"}} value={{this.address.phone}} {{on "input" (fn this.setAddressField "phone")}} />
                     </div>
                 </div>
                 <div class="sfoe-field">
                     <label class="sfoe-label" for="sfoe-instructions">{{t "storefront.order.edit.instructions"}}</label>
-                    <textarea id="sfoe-instructions" class="form-input w-full" rows="2" {{on "input" (fn this.setAddressField "instructions")}}>{{this.address.instructions}}</textarea>
+                    <textarea id="sfoe-instructions" class="form-input w-full" rows="2" placeholder={{t "storefront.order.edit.instructions-placeholder"}} {{on "input" (fn this.setAddressField "instructions")}}>{{this.address.instructions}}</textarea>
                 </div>
             {{/if}}
             <div class="sfoe-map-wrap">
@@ -101,15 +92,15 @@
         <div class="sfoe-grid2">
             <div class="sfoe-field">
                 <label class="sfoe-label" for="sfoe-name">{{t "storefront.common.name"}}</label>
-                <input id="sfoe-name" type="text" class="form-input w-full" value={{this.contact.name}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "name")}} />
+                <input id="sfoe-name" type="text" class="form-input w-full" placeholder={{t "storefront.order.edit.name-placeholder"}} value={{this.contact.name}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "name")}} />
             </div>
             <div class="sfoe-field">
                 <label class="sfoe-label" for="sfoe-phone">{{t "storefront.common.phone"}}</label>
-                <input id="sfoe-phone" type="tel" class="form-input w-full" value={{this.contact.phone}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "phone")}} />
+                <input id="sfoe-phone" type="tel" class="form-input w-full" placeholder={{t "storefront.order.edit.phone-placeholder"}} value={{this.contact.phone}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "phone")}} />
             </div>
             <div class="sfoe-field">
                 <label class="sfoe-label" for="sfoe-email">{{t "storefront.common.email"}}</label>
-                <input id="sfoe-email" type="email" class="form-input w-full" value={{this.contact.email}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "email")}} />
+                <input id="sfoe-email" type="email" class="form-input w-full" placeholder={{t "storefront.order.edit.email-placeholder"}} value={{this.contact.email}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "email")}} />
             </div>
         </div>
         <div class="sfoe-opts sfoe-opts--stacked" role="radiogroup" aria-label={{t "storefront.order.edit.contact-scope"}}>
@@ -230,7 +221,7 @@
         <div class="sfoe-sec__head"><h3>{{t "storefront.order.edit.notes"}}</h3></div>
         <div class="sfoe-field">
             <label class="sfoe-label" for="sfoe-notes">{{t "storefront.order.edit.customer-note"}}</label>
-            <textarea id="sfoe-notes" class="form-input w-full" rows="2" disabled={{this.isClosed}} {{on "input" this.setNotes}}>{{this.notes}}</textarea>
+            <textarea id="sfoe-notes" class="form-input w-full" rows="2" placeholder={{t "storefront.order.edit.notes-placeholder"}} disabled={{this.isClosed}} {{on "input" this.setNotes}}>{{this.notes}}</textarea>
         </div>
     </section>
 

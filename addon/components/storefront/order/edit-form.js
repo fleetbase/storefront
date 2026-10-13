@@ -72,6 +72,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
     @service store;
     @service storefront;
     @service hostRouter;
+    @service storefrontOrderActions;
 
     @tracked overview = null;
     @tracked preview = null;
@@ -169,6 +170,8 @@ export default class StorefrontOrderEditFormComponent extends Component {
         const order = this.order;
         try {
             this.overview = yield this.fetch.get(`orders/${order.public_id}/overview`, {}, { namespace: 'storefront/int/v1' });
+            // The header shows the stage note from the same overview.
+            this.storefrontOrderActions.panel.setOverview(order.public_id, this.overview);
         } catch (error) {
             this.notifications.serverError(error);
         }
@@ -228,11 +231,6 @@ export default class StorefrontOrderEditFormComponent extends Component {
 
     get scheduleLocked() {
         return this.lockFor('schedule')?.rule === 'locked' || this.isClosed;
-    }
-
-    get stageNote() {
-        const stage = this.overview?.edit?.stage;
-        return stage ? this.intl.t(`storefront.order.edit.stage.${stage}`) : null;
     }
 
     /* Drop-off: an address search, the unit and door contact, instructions and a pin */
@@ -318,7 +316,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
 
         const map = L.map(element, { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
         L.tileLayer(TILE_URL, { maxZoom: 19 }).addTo(map);
-        map.setView(start, 16);
+        map.setView(start, 18);
 
         if (!this.dropoffLocked) {
             this.pin = L.marker(start, {
@@ -363,7 +361,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
         }
 
         if (recenter && now) {
-            was && !samePoint(was, now) ? map.fitBounds([was, now], { padding: [30, 30], maxZoom: 17 }) : map.setView(now, 16);
+            was && !samePoint(was, now) ? map.fitBounds([was, now], { padding: [30, 30], maxZoom: 18 }) : map.setView(now, 18);
         }
     }
 
@@ -810,7 +808,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
 
     @task *save() {
         try {
-            yield this.fetch.patch(
+            const response = yield this.fetch.patch(
                 `orders/${this.order.public_id}/edit`,
                 {
                     ...this.input,
@@ -821,8 +819,24 @@ export default class StorefrontOrderEditFormComponent extends Component {
                 },
                 { namespace: 'storefront/int/v1' }
             );
-            this.notifications.success(this.intl.t('storefront.order.edit.saved', { id: this.order.public_id }));
+            const link = response?.settlement?.payment_link;
+            this.notifications.success(
+                link
+                    ? this.intl.t(this.notifyCustomer ? 'storefront.order.edit.saved-link-sent' : 'storefront.order.edit.saved-link', {
+                          id: this.order.public_id,
+                          amount: formatCurrency(response.settlement.amount ?? this.difference, this.currency),
+                          name: this.customerFirstName,
+                      })
+                    : this.intl.t('storefront.order.edit.saved', { id: this.order.public_id })
+            );
             this.args.onSaved?.();
+            if (link) {
+                this.storefrontOrderActions.showPaymentLink(this.order, {
+                    ...(this.overview?.payment ?? {}),
+                    payment_link: link,
+                    balance_due: (this.overview?.payment?.balance_due ?? 0) + this.difference,
+                });
+            }
         } catch (error) {
             this.notifications.serverError(error);
             this.requote.perform();

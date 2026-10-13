@@ -50,8 +50,8 @@
         <div class="storefront-catalog-picker__header">
             <Input class="form-input form-input-sm w-full" @value={{this.pickerQuery}} placeholder={{t "storefront.catalogs.editor.search-products"}} {{on "input" this.setPickerQuery}} />
             <span class="storefront-catalog-picker__hint">{{t "storefront.orders.create.picker-hint"}}</span>
-            {{#if this.lineRows.length}}
-                <Button @size="xs" @text={{t "common.done"}} @onClick={{this.closePicker}} data-test-picker-done />
+            {{#if @onDone}}
+                <Button @size="xs" @text={{t "common.done"}} @onClick={{@onDone}} data-test-picker-done />
             {{/if}}
         </div>
         <div class="storefront-catalog-picker__list">

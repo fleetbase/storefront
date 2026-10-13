@@ -870,11 +870,20 @@ storefront:
         dismiss: Dismiss
         update-address: Update address
         balance-due: "{amount} is still due after an edit."
-        balance-link: The customer was sent a payment link.
+        balance-link: A payment link is ready; the order is marked paid when it is paid.
         balance-collect: The driver collects it on delivery.
-        copy-link: Copy payment link
+        balance-no-link: No payment link yet.
+        view-link: Payment link
+        create-link: Create payment link
+        link-created: Payment link created
+        send-link: "Send to {name}"
+        link-message: "There is {amount} left to pay on your order. You can pay it here: {link}"
+        check-payment: Check payment
+        balance-paid: The balance is paid.
+        balance-not-paid: Not paid yet.
         late: "{late} past due."
         late-detail: The customer has not been told.
+        late-told: "{name} was told at {time}."
         tell: "Tell {name}"
         late-message: We're running a little late with your order, sorry. It's on its way as soon as possible.
         delivered: "Delivered {time}"
@@ -938,9 +947,23 @@ storefront:
         driver: Driver
         store: Store
         system: Update
+    payment-link:
+      title: Payment link
+      due-label: Balance due
+      waiting: Waiting for payment
+      via: "via {gateway}"
+      link-label: "Link for {name}"
+      open: Open
+      step-send: "Send it to {name}"
+      step-send-help: In the order chat (Send below), or copy the link into any message.
+      step-pay: "{name} pays"
+      step-pay-help: "In their bank app or by card, like at checkout. {name} also sees a Pay now button on the order in the app."
+      step-paid: The order is marked paid
+      how-qpay: QPay tells the store when it is paid; nothing to do.
+      how-stripe: Within a few minutes of payment, or at once with Check payment.
+      send: "Send to {name}"
+      close: Close
     packing:
-      packed-count: "{packed} of {total} packed"
-      mark-packed: "Packed: {item}"
       unavailable: Unavailable
       mark-unavailable: Mark unavailable
       available-again: Available again
@@ -1069,6 +1092,15 @@ storefront:
       customer-note: Note from the customer
       changes-count: "{count, plural, one {# change} other {# changes}}"
       paid-by: "Paid {amount} by {method}:"
+      unit-placeholder: "For example: Apt 4B, 3rd floor"
+      door-contact-placeholder: Phone to call at the door
+      instructions-placeholder: "For example: leave at reception, call on arrival"
+      name-placeholder: Full name
+      phone-placeholder: Phone number
+      email-placeholder: Email address
+      notes-placeholder: What the customer asked for
+      saved-link: "Order {id} updated. A payment link for {amount} is on the order."
+      saved-link-sent: "Order {id} updated. {name} was sent a payment link for {amount}."
       stage:
         open: "Everything can still change. Item changes while preparing are flagged to the store."
         ready: "The order is ready: items can only be removed and the time only moved earlier."

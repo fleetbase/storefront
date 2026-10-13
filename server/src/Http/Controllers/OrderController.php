@@ -440,6 +440,46 @@ class OrderController extends FleetbaseOrderController
         ]);
     }
 
+    /**
+     * Issue (or reissue) the payment link for the order's balance due.
+     */
+    public function issueBalanceLink(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            OrderSettlement::issueBalanceLink($order);
+        } catch (\Throwable $e) {
+            return response()->error($e->getMessage());
+        }
+
+        return response()->json(['payment' => OrderPayments::snapshot($order)]);
+    }
+
+    /**
+     * Ask the gateway whether the customer paid the balance through its link.
+     */
+    public function checkBalancePayment(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            $charge = OrderSettlement::checkBalancePayment($order);
+        } catch (\Throwable $e) {
+            return response()->error($e->getMessage());
+        }
+
+        return response()->json(['paid' => (bool) $charge, 'charge' => $charge, 'payment' => OrderPayments::snapshot($order)]);
+    }
+
     protected static function chatSummary(Order $order): array
     {
         $unread = OrderChatController::unread($order);
@@ -514,7 +554,8 @@ class OrderController extends FleetbaseOrderController
     }
 
     /**
-     * Mark one item of the order packed or unavailable, or note something about it.
+     * Mark one item of the order unavailable (or available again), or note something about it.
+     * Everything else on the order is taken as packed and delivered.
      */
     public function updateEntity(string $id, string $entityId, Request $request)
     {
@@ -529,9 +570,6 @@ class OrderController extends FleetbaseOrderController
             return response()->error('Item not found on this order', 404);
         }
 
-        if ($request->has('packed')) {
-            $entity->setMeta('packed_at', $request->boolean('packed') ? now()->toIso8601String() : null);
-        }
         if ($request->has('unavailable')) {
             $entity->setMeta('unavailable', $request->boolean('unavailable'));
         }

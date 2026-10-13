@@ -70,6 +70,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers::class,
         \Fleetbase\Storefront\Console\Commands\ReleasePromotionReservations::class,
         \Fleetbase\Storefront\Console\Commands\ReleaseInventoryReservations::class,
+        \Fleetbase\Storefront\Console\Commands\CheckBalancePayments::class,
         \Fleetbase\Storefront\Console\Commands\DispatchCampaigns::class,
         \Fleetbase\Storefront\Console\Commands\RotateStorefrontKey::class,
     ];
@@ -109,6 +110,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
             $schedule->command('storefront:purge-carts')->daily()->storeOutputInDb();
             $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->storeOutputInDb();
             $schedule->command('storefront:release-inventory')->everyMinute()->storeOutputInDb();
+            $schedule->command('storefront:check-balance-payments')->everyFiveMinutes()->storeOutputInDb();
             $schedule->command('storefront:dispatch-campaigns')->everyMinute()->storeOutputInDb();
         });
         $this->registerObservers();

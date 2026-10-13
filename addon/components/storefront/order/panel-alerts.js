@@ -1,6 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
-import { format, isValid, parseISO, differenceInMinutes } from 'date-fns';
+import { format, isValid, isToday, parseISO, differenceInMinutes } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 function parse(value) {
@@ -71,26 +71,41 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
                     ].filter(Boolean),
                 };
             case 'balance_due': {
-                const link = this.overview.payment?.payment_link;
+                const payment = this.overview.payment ?? {};
+                const link = payment.payment_link;
+                const amount = formatCurrency(alert.amount, payment.currency);
+                const collects = !link && (payment.cod_amount ?? 0) >= (alert.amount ?? 0) && (payment.cod_amount ?? 0) > 0;
+                const actions = link
+                    ? [
+                          { text: this.t('view-link'), icon: 'link', onClick: () => this.storefrontOrderActions.showPaymentLink(this.order, payment) },
+                          {
+                              text: this.t('send-link', { name: this.firstName }),
+                              onClick: () => this.storefrontOrderActions.panel.openChat('customer', this.t('link-message', { amount, link })),
+                          },
+                          this.canUpdate ? { text: this.t('check-payment'), primary: true, onClick: () => this.checkBalance() } : null,
+                      ]
+                    : [!collects && this.canUpdate ? { text: this.t('create-link'), primary: true, onClick: () => this.issueBalanceLink() } : null];
+
                 return {
                     code: alert.code,
                     tone: 'bad',
                     icon: 'credit-card',
-                    title: this.t('balance-due', { amount: formatCurrency(alert.amount, this.overview.payment?.currency) }),
-                    detail: link ? this.t('balance-link') : this.t('balance-collect'),
-                    actions: link ? [{ text: this.t('copy-link'), primary: true, onClick: () => this.copy(link) }] : [],
+                    title: this.t('balance-due', { amount }),
+                    detail: link ? this.t('balance-link') : collects ? this.t('balance-collect') : this.t('balance-no-link'),
+                    actions: actions.filter(Boolean),
                 };
             }
             case 'late': {
                 const primary = this.storefrontOrderActions.actionItemsFor(this.order, this.args.refresh).find((item) => item.id === 'perform-workflow-action');
+                const told = parse(alert.told_at);
                 return {
                     code: alert.code,
-                    tone: 'bad',
+                    tone: told ? 'warn' : 'bad',
                     icon: 'clock',
                     title: this.t('late', { late: this.duration(alert.minutes) }),
-                    detail: this.t('late-detail'),
+                    detail: told ? this.t('late-told', { name: this.firstName, time: format(told, isToday(told) ? 'HH:mm' : 'd MMM HH:mm') }) : this.t('late-detail'),
                     actions: [
-                        { text: this.t('tell', { name: this.firstName }), onClick: () => this.storefrontOrderActions.panel.openChat('customer', this.t('late-message')) },
+                        told ? null : { text: this.t('tell', { name: this.firstName }), onClick: () => this.storefrontOrderActions.panel.openChat('customer', this.t('late-message')) },
                         primary && this.canUpdate ? { text: primary.text, primary: true, onClick: primary.fn } : null,
                     ].filter(Boolean),
                 };
@@ -131,21 +146,39 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
         return minutes >= 60 ? t('hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 }) : t('minutes', { count: minutes });
     }
 
-    async dismissAddressChange() {
+    /** The panel's refresh, looked up when it is needed: the panel sets it after it loads. */
+    reload() {
+        (this.storefrontOrderActions.panel.refresh ?? this.args.refresh)?.();
+    }
+
+    /** Ask the gateway whether the customer paid the balance through its link. */
+    async checkBalance() {
         try {
-            await this.fetch.delete(`orders/${this.order.public_id}/address-change-request`, {}, { namespace: 'storefront/int/v1' });
-            this.args.refresh?.();
+            const { paid } = await this.fetch.post(`orders/${this.order.public_id}/balance/check`, {}, { namespace: 'storefront/int/v1' });
+            paid ? this.notifications.success(this.t('balance-paid')) : this.notifications.info(this.t('balance-not-paid'));
+            this.reload();
         } catch (error) {
             this.notifications.serverError(error);
         }
     }
 
-    async copy(value) {
+    /** Issue a payment link for the balance (when none was made, or to replace it). */
+    async issueBalanceLink() {
         try {
-            await navigator.clipboard.writeText(value);
-            this.notifications.success(this.intl.t('storefront.order.alerts.link-copied'));
-        } catch {
-            this.notifications.info(value);
+            const { payment } = await this.fetch.post(`orders/${this.order.public_id}/balance/link`, {}, { namespace: 'storefront/int/v1' });
+            this.reload();
+            this.storefrontOrderActions.showPaymentLink(this.order, payment);
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    async dismissAddressChange() {
+        try {
+            await this.fetch.delete(`orders/${this.order.public_id}/address-change-request`, {}, { namespace: 'storefront/int/v1' });
+            this.reload();
+        } catch (error) {
+            this.notifications.serverError(error);
         }
     }
 }

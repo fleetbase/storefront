@@ -131,18 +131,165 @@ class OrderSettlement
 
         // Paid online: the extra is a balance due, collected by the driver or through a payment link.
         $balance = (int) $order->getMeta('balance_due', 0) + $amount;
-        $order->updateMeta('balance_due', $balance);
         if ($method === static::METHOD_COLLECT) {
+            $order->updateMeta('balance_due', $balance);
+
             return static::updateCashToCollect($order, $amount, $reason);
         }
 
-        $link = static::balancePaymentLink($order, $balance);
-        if ($link) {
-            $order->updateMeta('balance_payment_link', $link);
-        }
+        // The link first: a gateway that cannot issue one leaves the order as it was.
+        $link = static::issueBalanceLink($order, $balance);
+        $order->updateMeta('balance_due', $balance);
         OrderPayments::snapshot($order);
 
         return ['type' => 'balance_due', 'amount' => $amount, 'payment_link' => $link];
+    }
+
+    /**
+     * Issue a payment link for the whole balance due (replacing an earlier one) and keep it on the
+     * order, where the console, the customer's receipt and the edit notification read it.
+     *
+     * @throws \RuntimeException when the gateway cannot issue one
+     */
+    public static function issueBalanceLink(Order $order, ?int $amount = null): string
+    {
+        $amount = $amount ?? (int) $order->getMeta('balance_due', 0);
+        if ($amount <= 0) {
+            throw new \RuntimeException('Nothing is due on this order.');
+        }
+
+        static::retireBalanceLink($order);
+        $link = static::balancePaymentLink($order, $amount);
+        $order->updateMeta('balance_payment_link', $link['url']);
+        $order->updateMeta('balance_payment', ['gateway' => $link['gateway'], 'reference' => $link['reference'], 'amount' => $amount, 'issued_at' => now()->toIso8601String()]);
+        OrderPayments::snapshot($order);
+        static::announcePayment($order, 'A payment link for the balance is ready');
+
+        return $link['url'];
+    }
+
+    /**
+     * Whether the customer paid the balance through its link; when they did, the balance is
+     * settled: it is added to what was paid, recorded as a charge, and the link is retired.
+     * Asked by QPay's callback, the console's "Check payment" and a scheduled sweep, because a
+     * Stripe Payment Link has no callback of its own here.
+     *
+     * @return array|null the recorded charge, or null when nothing was paid (yet)
+     */
+    public static function checkBalancePayment(Order $order): ?array
+    {
+        $balance = (int) $order->getMeta('balance_due', 0);
+        $issued  = (array) $order->getMeta('balance_payment', []);
+        if ($balance <= 0 || empty($issued['reference'])) {
+            return null;
+        }
+
+        $gateway = static::gatewayFor($order, static::checkout($order));
+        if (!$gateway) {
+            return null;
+        }
+
+        [$paid, $reference] = match (true) {
+            $gateway->isStripeGateway => static::stripeLinkPayment($gateway, (string) $issued['reference']),
+            $gateway->isQPayGateway   => static::qpayInvoicePayment($gateway, (string) $issued['reference']),
+            default                   => [0, null],
+        };
+
+        if ($paid < (int) ($issued['amount'] ?? $balance)) {
+            return null;
+        }
+
+        return static::settleBalance($order, min($paid, $balance), $gateway->code, $reference);
+    }
+
+    /**
+     * The balance was paid: count it as paid and close the link.
+     */
+    public static function settleBalance(Order $order, int $amount, ?string $gateway, ?string $reference): array
+    {
+        // Recording the charge adds it to what was paid.
+        $order->updateMeta('balance_due', max(0, (int) $order->getMeta('balance_due', 0) - $amount));
+        // A paid Stripe Payment Link stays payable until it is deactivated; a paid QPay invoice is done.
+        if ($gateway === 'stripe') {
+            static::retireBalanceLink($order);
+        }
+        $order->updateMeta('balance_payment_link', null);
+        $order->updateMeta('balance_payment', null);
+
+        $charge = OrderPayments::recordAdjustment($order, 'charge', $amount, ['gateway' => $gateway, 'reference' => $reference, 'reason' => 'Balance paid by link']);
+        static::announcePayment($order, 'The balance is paid');
+
+        return $charge;
+    }
+
+    /**
+     * Tell the apps the order's payment changed (`order.changed` with `payment`), so a customer
+     * looking at the order sees the link or the paid balance without reopening it.
+     */
+    protected static function announcePayment(Order $order, string $summary): void
+    {
+        try {
+            if (class_exists(\Fleetbase\FleetOps\Events\OrderChanged::class) && method_exists(\Fleetbase\FleetOps\Events\OrderChanged::class, 'dispatchFor')) {
+                \Fleetbase\FleetOps\Events\OrderChanged::dispatchFor($order, ['payment'], $summary, ['currency' => $order->getMeta('currency')], false);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Stop an earlier balance link being paid: deactivate the Stripe Payment Link (a QPay
+     * invoice is cancelled). Best effort; a link that cannot be retired is simply replaced.
+     */
+    protected static function retireBalanceLink(Order $order): void
+    {
+        $issued = (array) $order->getMeta('balance_payment', []);
+        if (empty($issued['reference'])) {
+            return;
+        }
+
+        try {
+            $gateway = static::gatewayFor($order, static::checkout($order));
+            if ($gateway?->isStripeGateway && data_get($gateway, 'config.secret_key')) {
+                \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+                \Stripe\PaymentLink::update($issued['reference'], ['active' => false]);
+            } elseif ($gateway?->isQPayGateway) {
+                static::qpay($gateway)->delete('invoice/' . $issued['reference']);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * What was paid through a Stripe Payment Link: its completed, paid Checkout Sessions.
+     *
+     * @return array{0: int, 1: ?string}
+     */
+    protected static function stripeLinkPayment(Gateway $gateway, string $linkId): array
+    {
+        \Stripe\Stripe::setApiKey($gateway->config->secret_key);
+        $sessions = \Stripe\Checkout\Session::all(['payment_link' => $linkId, 'limit' => 20]);
+        $paid     = collect($sessions->data ?? [])->filter(fn ($session) => $session->payment_status === 'paid');
+
+        // A customer paying in their own currency (adaptive pricing) is charged in that currency;
+        // the amount in the link's currency is under `currency_conversion`.
+        $amount = $paid->sum(fn ($session) => (int) (data_get($session, 'currency_conversion.amount_total') ?? $session->amount_total));
+
+        return [(int) $amount, $paid->first()?->payment_intent];
+    }
+
+    /**
+     * What was paid against a QPay invoice, from QPay's payment check (never the callback's body).
+     *
+     * @return array{0: int, 1: ?string}
+     */
+    protected static function qpayInvoicePayment(Gateway $gateway, string $invoiceId): array
+    {
+        $check = static::qpay($gateway)->paymentCheck($invoiceId);
+        $rows  = collect(data_get($check, 'rows', []))->filter(fn ($row) => data_get($row, 'payment_status') === 'PAID');
+
+        return [(int) round((float) $rows->sum(fn ($row) => (float) data_get($row, 'payment_amount', 0))), data_get($rows->first(), 'payment_id')];
     }
 
     /**
@@ -252,50 +399,67 @@ class OrderSettlement
 
     /**
      * A payment link for the balance: a Stripe Payment Link or a QPay invoice for the amount.
-     * Returns null when the gateway cannot issue one (the balance stays due; staff collect it).
+     *
+     * @return array{url: string, gateway: string, reference: string}
+     *
+     * @throws \RuntimeException when the gateway cannot issue one
      */
-    protected static function balancePaymentLink(Order $order, int $amount): ?string
+    protected static function balancePaymentLink(Order $order, int $amount): array
     {
         $checkout = static::checkout($order);
         $gateway  = static::gatewayFor($order, $checkout);
         $currency = strtolower((string) ($order->getMeta('currency') ?? 'usd'));
+        $label    = 'Balance for order ' . ($order->tracking ?? $order->public_id);
 
-        try {
-            if ($gateway && $gateway->isStripeGateway && data_get($gateway, 'config.secret_key')) {
+        if ($gateway?->isStripeGateway && data_get($gateway, 'config.secret_key')) {
+            try {
                 \Stripe\Stripe::setApiKey($gateway->config->secret_key);
-                $price = \Stripe\Price::create([
-                    'currency'     => $currency,
-                    'unit_amount'  => $amount,
-                    'product_data' => ['name' => 'Balance for order ' . ($order->tracking ?? $order->public_id)],
-                ]);
-                $link = \Stripe\PaymentLink::create([
+                $price = \Stripe\Price::create(['currency' => $currency, 'unit_amount' => $amount, 'product_data' => ['name' => $label]]);
+                $link  = \Stripe\PaymentLink::create([
                     'line_items' => [['price' => $price->id, 'quantity' => 1]],
                     'metadata'   => ['order' => $order->public_id, 'kind' => 'order_balance'],
                 ]);
-
-                return $link->url;
+            } catch (\Throwable $e) {
+                throw new \RuntimeException('Stripe could not create the payment link: ' . $e->getMessage());
             }
 
-            if ($gateway && $gateway->isQPayGateway) {
-                $qpay    = static::qpay($gateway);
-                $invoice = $qpay->createSimpleInvoice(
-                    (int) $amount,
-                    data_get($gateway, 'config.invoice_code'),
-                    'Balance for order ' . ($order->tracking ?? $order->public_id),
-                    data_get($order, 'customer.public_id') ?? 'terminal',
-                    $order->public_id . '-balance-' . now()->timestamp
-                );
-                if (data_get($invoice, 'invoice_id')) {
-                    $order->updateMeta('balance_invoice_id', data_get($invoice, 'invoice_id'));
-                }
-
-                return data_get($invoice, 'qPay_shortUrl') ?? data_get($invoice, 'urls.0.link');
-            }
-        } catch (\Throwable $e) {
-            report($e);
+            return ['url' => $link->url, 'gateway' => 'stripe', 'reference' => $link->id];
         }
 
-        return null;
+        if ($gateway?->isQPayGateway) {
+            // The same merchant invoice code checkout uses (TEST_INVOICE in sandbox).
+            $invoiceCode = $gateway->sandbox ? 'TEST_INVOICE' : data_get($gateway, 'config.invoice_id');
+            if (!$invoiceCode) {
+                throw new \RuntimeException('The QPay gateway has no invoice code, so it cannot issue a payment link.');
+            }
+
+            $invoice = static::qpay($gateway)->createSimpleInvoice(
+                (int) $amount,
+                $invoiceCode,
+                $label,
+                data_get($order, 'customer.public_id') ?? 'terminal',
+                $order->public_id . '-balance-' . now()->timestamp,
+                static::balanceCallbackUrl($order)
+            );
+            $url = data_get($invoice, 'qPay_shortUrl') ?? data_get($invoice, 'urls.0.link');
+            if (!data_get($invoice, 'invoice_id') || !$url) {
+                throw new \RuntimeException('QPay did not create the invoice' . (data_get($invoice, 'message') ? ': ' . data_get($invoice, 'message') : '.'));
+            }
+
+            return ['url' => $url, 'gateway' => 'qpay', 'reference' => (string) data_get($invoice, 'invoice_id')];
+        }
+
+        throw new \RuntimeException('This payment method cannot issue a payment link; let the driver collect it instead.');
+    }
+
+    /**
+     * Where QPay tells us a balance invoice was paid.
+     */
+    public static function balanceCallbackUrl(Order $order): string
+    {
+        $prefix = trim((string) config('storefront.api.routing.prefix', 'storefront'), '/');
+
+        return \Fleetbase\Support\Utils::apiUrl($prefix . '/v1/orders/balance-paid', ['order' => $order->public_id]);
     }
 
     protected static function qpay(Gateway $gateway): QPay

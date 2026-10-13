@@ -179,6 +179,8 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
             if (!this.response.chat.id) {
                 yield this.load.perform();
             }
+            // What the store says can settle a banner ("the customer has not been told").
+            this.panel.refresh?.();
         } catch (error) {
             this.notifications.serverError(error);
         }

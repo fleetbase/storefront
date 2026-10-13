@@ -27,6 +27,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
             $router->group(['prefix' => 'checkouts'], function () use ($router) {
                 $router->match(['get', 'post'], 'capture-qpay', 'CheckoutController@captureQpayCallback');
             });
+            // storefront/v1/orders/balance-paid: QPay's callback for a balance invoice
+            $router->match(['get', 'post'], 'orders/balance-paid', 'OrderController@balancePaid');
         });
 
         /*
@@ -232,6 +234,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->patch('{id}/entities/{entityId}', $controller('updateEntity'));
                                 $router->post('{id}/edit/preview', $controller('previewEdit'));
                                 $router->patch('{id}/edit', $controller('edit'));
+                                $router->post('{id}/balance/link', $controller('issueBalanceLink'));
+                                $router->post('{id}/balance/check', $controller('checkBalancePayment'));
                             }
                         );
                         $router->fleetbaseRoutes(

@@ -85,7 +85,7 @@ class OrderEditor
                 'schedule' => ['rule' => 'locked', 'reason' => 'The driver has the order.'],
             ],
             static::STAGE_READY => [
-                'items'    => ['rule' => 'removal_only', 'reason' => 'The order is packed; items can only be removed.'],
+                'items'    => ['rule' => 'removal_only', 'reason' => 'The order is ready; items can only be removed.'],
                 'schedule' => ['rule' => 'earlier_only', 'reason' => 'The order is ready; it can only be moved earlier.'],
             ],
             default => [],
@@ -474,13 +474,13 @@ class OrderEditor
                 if ($quantity !== $existing['quantity']) {
                     $changes[] = $product->name . ' ' . $existing['quantity'] . '→' . $quantity;
                     if ($rule === 'removal_only' && $quantity > $existing['quantity']) {
-                        $violations['items'] = 'The order is packed; items can only be removed.';
+                        $violations['items'] = 'The order is ready; items can only be removed.';
                     }
                 }
                 if ($variants != $existing['variants'] || $addons != $existing['addons']) {
                     $changes[] = $product->name . ' options changed';
                     if ($rule === 'removal_only') {
-                        $violations['items'] = 'The order is packed; items can only be removed.';
+                        $violations['items'] = 'The order is ready; items can only be removed.';
                     }
                 }
                 if ($line['note'] !== $existing['note']) {
@@ -490,7 +490,7 @@ class OrderEditor
                 $substitute = $line['substitutes'] ? $current->get($line['substitutes']) : null;
                 $changes[]  = $substitute ? $substitute['name'] . ' replaced with ' . $product->name . ' ×' . $quantity : 'Added ' . $product->name . ' ×' . $quantity;
                 if ($rule === 'removal_only') {
-                    $violations['items'] = 'The order is packed; items can only be removed.';
+                    $violations['items'] = 'The order is ready; items can only be removed.';
                 }
             }
         }

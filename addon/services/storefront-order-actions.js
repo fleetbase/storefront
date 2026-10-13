@@ -21,7 +21,7 @@ class OrderPanelState {
     @tracked overview = null;
     @tracked flow = null;
     @tracked printingLabel = false;
-    orderId = null;
+    @tracked orderId = null;
     printLabel = null;
     refresh = null;
 
@@ -386,6 +386,36 @@ export default class StorefrontOrderActionsService extends Service {
                     callback(order);
                 }
                 modal.done();
+            },
+        });
+    }
+
+    /**
+     * Show the balance's payment link: copy it, open it, or send it to the customer in the order
+     * chat. The order is marked paid by itself once the customer pays.
+     */
+    showPaymentLink(order, payment = {}) {
+        const link = payment.payment_link;
+        if (!link) {
+            return;
+        }
+
+        const name = String(order?.customer?.name ?? this.intl.t('storefront.common.customer')).split(' ')[0];
+        const amount = payment.balance_due ?? 0;
+
+        this.modalsManager.show('modals/balance-payment-link', {
+            title: this.intl.t('storefront.order.payment-link.title'),
+            acceptButtonText: this.intl.t('storefront.order.payment-link.send', { name }),
+            acceptButtonIcon: 'paper-plane',
+            declineButtonText: this.intl.t('storefront.order.payment-link.close'),
+            link,
+            name,
+            amount,
+            currency: payment.currency,
+            gateway: payment.gateway,
+            confirm: (modal) => {
+                modal.done();
+                this.panel.openChat('customer', this.intl.t('storefront.order.panel.alerts.link-message', { amount: formatCurrency(amount, payment.currency), link }));
             },
         });
     }

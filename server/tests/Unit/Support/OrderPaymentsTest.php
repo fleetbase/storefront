@@ -91,10 +91,19 @@ test('what an edit may change narrows as the order moves on', function () {
     expect(OrderEditor::stage(paymentOrder(status: 'preparing')))->toBe(OrderEditor::STAGE_OPEN)
         ->and(OrderEditor::locks(paymentOrder(status: 'preparing')))->toBe([])
         ->and(OrderEditor::locks(paymentOrder(status: 'ready')))->toMatchArray([
-            'items'    => ['rule' => 'removal_only', 'reason' => 'The order is packed; items can only be removed.'],
+            'items'    => ['rule' => 'removal_only', 'reason' => 'The order is ready; items can only be removed.'],
             'schedule' => ['rule' => 'earlier_only', 'reason' => 'The order is ready; it can only be moved earlier.'],
         ])
         ->and(array_keys(OrderEditor::locks(paymentOrder(status: 'driver_enroute'))))->toBe(['items', 'schedule'])
         ->and(OrderEditor::stage(paymentOrder(status: 'completed')))->toBe(OrderEditor::STAGE_CLOSED)
         ->and(array_keys(OrderEditor::locks(paymentOrder(status: 'canceled'))))->toBe(OrderEditor::FIELDS);
+});
+
+test('a balance with no link issued, or nothing due, is not checked with the gateway', function () {
+    expect(OrderSettlement::checkBalancePayment(paymentOrder(['balance_due' => 0, 'balance_payment' => ['reference' => 'plink_1']])))->toBeNull()
+        ->and(OrderSettlement::checkBalancePayment(paymentOrder(['balance_due' => 1200])))->toBeNull();
+});
+
+test('a balance invoice tells QPay to call back for its order', function () {
+    expect(OrderSettlement::balanceCallbackUrl(paymentOrder()))->toContain('/v1/orders/balance-paid')->toContain('order=order_1');
 });

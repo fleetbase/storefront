@@ -62,6 +62,11 @@ test('storefront provider boot wires commands schedules observers middleware and
                     return $this;
                 }
 
+                public function everyFiveMinutes(): self
+                {
+                    return $this;
+                }
+
                 public function storeOutputInDb(): self
                 {
                     return $this;
@@ -116,6 +121,7 @@ test('storefront provider boot wires commands schedules observers middleware and
         'storefront:purge-carts',
         'storefront:release-promotion-reservations',
         'storefront:release-inventory',
+        'storefront:check-balance-payments',
         'storefront:dispatch-campaigns',
         'observers',
         'middleware',
