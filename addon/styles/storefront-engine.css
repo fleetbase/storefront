@@ -1507,7 +1507,7 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(3) {
-    width: 11%;
+    width: 10%;
 }
 
 .storefront-orders-table th:nth-child(4) {
