@@ -1519,7 +1519,7 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(6) {
-    width: 9%;
+    width: 11%;
 }
 
 .storefront-orders-table th:nth-child(7) {
