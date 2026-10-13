@@ -20,6 +20,7 @@ use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
@@ -282,7 +283,7 @@ class Store extends StorefrontModel
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return BelongsToMany
      */
     /**
      * Catalog assignments pointing at this store.
@@ -316,7 +317,7 @@ class Store extends StorefrontModel
         return $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid)->where('network_stores.status', NetworkStore::STATUS_ACTIVE));
     }
 
-    public function networks()
+    public function networks(): BelongsToMany
     {
         return $this->belongsToMany(Network::class, 'network_stores', 'store_uuid', 'network_uuid')
             ->using(NetworkStore::class)
