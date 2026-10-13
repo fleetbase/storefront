@@ -930,6 +930,29 @@ class CustomerController extends Controller
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     /**
+     * The create-customer request for a verify-code call made with
+     * `for=storefront_create_customer`. Laravel resolves verifyCode()'s parameter as a plain
+     * Request, and create() requires a CreateCustomerRequest, so passing it on as-is threw a
+     * TypeError (500). This builds the form request from it and authorizes and validates it
+     * the way the router does for `POST customers`: a bad code or duplicate email is a 422.
+     */
+    protected function createCustomerRequestFrom(Request $request): CreateCustomerRequest
+    {
+        if ($request instanceof CreateCustomerRequest) {
+            return $request;
+        }
+
+        $createRequest = CreateCustomerRequest::createFrom($request);
+        $createRequest->setContainer(app());
+        if (app()->bound('redirect')) {
+            $createRequest->setRedirector(app('redirect'));
+        }
+        $createRequest->validateResolved();
+
+        return $createRequest;
+    }
+
+    /**
      * Whether a verification code should be accepted as an app-review bypass.
      *
      * App store reviewers cannot receive our SMS or email, so a fixed code has to keep
@@ -977,7 +1000,7 @@ class CustomerController extends Controller
         $attrs    = $request->input(['name', 'phone', 'email']);
 
         if ($for === 'storefront_create_customer') {
-            return $this->create($request);
+            return $this->create($this->createCustomerRequestFrom($request));
         }
 
         // Without an identity there is nobody to verify. The lookup below would compile to

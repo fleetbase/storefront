@@ -973,6 +973,54 @@ test('customer creation falls back to the payload email when no identity is sent
         ->and($missing->getData(true))->toBe(['error' => 'An identity is required to create a customer.']);
 });
 
+test('verify code for customer creation validates a plain http request instead of throwing a type error', function () {
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('contacts');
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('email')->nullable();
+        $table->string('phone')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('verification_codes')->insert([
+        'uuid'       => 'verification_uuid',
+        'code'       => '123456',
+        'for'        => 'storefront_create_customer',
+        'status'     => 'pending',
+        'meta'       => json_encode(['identity' => 'buyer@example.test']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['company' => 'company_uuid', 'storefront_key' => 'store_key']);
+
+    // The router hands verifyCode() a plain Request; this is what used to reach create().
+    $validator = new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(), 'en'), app());
+    $validator->setPresenceVerifier(new Illuminate\Validation\DatabasePresenceVerifier(Model::getConnectionResolver()));
+    app()->instance(Illuminate\Contracts\Validation\Factory::class, $validator);
+    app()->instance('validator', $validator);
+
+    $refusal = null;
+    try {
+        (new CustomerController())->verifyCode(Request::create('/customer/verify-code', 'POST', [
+            'identity' => 'buyer@example.test',
+            'code'     => '999999',
+            'for'      => 'storefront_create_customer',
+            'name'     => 'Verified Buyer',
+            'email'    => 'buyer@example.test',
+        ]));
+    } catch (Illuminate\Validation\ValidationException $exception) {
+        $refusal = $exception;
+    }
+
+    expect($refusal)->not->toBeNull()
+        ->and($refusal->errors())->toHaveKey('code')
+        ->and($refusal->getResponse()?->getStatusCode())->toBe(422);
+});
+
 test('customer creation persists a verified storefront identity and issues an access token', function () {
     createCustomerVerificationDeliverySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
