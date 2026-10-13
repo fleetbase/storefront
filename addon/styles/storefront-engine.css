@@ -1503,11 +1503,11 @@ body[data-theme='dark'] .storefront-customers-table th {
 }
 
 .storefront-orders-table th:nth-child(2) {
-    width: 17%;
+    width: 16%;
 }
 
 .storefront-orders-table th:nth-child(3) {
-    width: 8%;
+    width: 11%;
 }
 
 .storefront-orders-table th:nth-child(4) {
@@ -1528,6 +1528,7 @@ body[data-theme='dark'] .storefront-customers-table th {
 
 .storefront-orders-table th:nth-child(8) {
     width: 19%;
+    text-align: right;
 }
 
 .storefront-customers-table th:nth-child(1) {

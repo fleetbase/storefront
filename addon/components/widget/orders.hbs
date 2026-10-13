@@ -75,7 +75,7 @@
                             </td>
                             <td>
                                 {{#if row.hasDriver}}
-                                    <Driver::Pill @driver={{row.driver}} @subtitle={{null}} @showOnlineIndicator={{true}} />
+                                    <Table::Cell::Identity @row={{row.order}} @value={{row.driver}} @column={{hash resourceType="driver" resourcePath="driver_assigned" hideBadges=true}} data-test-orders-widget-driver />
                                 {{else if row.isPickup}}
                                     <span class="storefront-table-muted">{{t "storefront.component.widget.orders.driver-not-needed"}}</span>
                                 {{else}}
