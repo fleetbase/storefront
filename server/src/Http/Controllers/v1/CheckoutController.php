@@ -31,6 +31,7 @@ use Fleetbase\Storefront\Promotions\PromotionEngine;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
+use Fleetbase\Storefront\Support\BookingSlots;
 use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Storefront\Support\OrderPayments;
 use Fleetbase\Storefront\Support\QPay;
@@ -1277,11 +1278,21 @@ class CheckoutController extends Controller
             return null;
         }
 
-        $first = $times->first();
+        $first   = $times->first();
+        $service = null;
+        if ($first) {
+            $product = Product::whereIn('public_id', $bookable)->first();
+            $service = $product ? BookingSlots::service($product) : null;
+        }
 
         return [
             'is_booking'        => true,
             'booking_at'        => $first ? $first->toIso8601String() : null,
+            'booking'           => $first ? [
+                'start'            => $first->toIso8601String(),
+                'end'              => $first->copy()->addMinutes($service['duration_minutes'] ?? BookingSlots::DEFAULT_DURATION)->toIso8601String(),
+                'duration_minutes' => $service['duration_minutes'] ?? BookingSlots::DEFAULT_DURATION,
+            ] : null,
             'booking_has_items' => $items->contains(fn ($item) => !data_get($item, 'scheduled_at') && !$bookable->contains(data_get($item, 'product_id'))),
         ];
     }
@@ -2513,6 +2524,17 @@ class CheckoutController extends Controller
      */
     protected static function reservePromotions(Checkout $checkout, $checkoutOptions, ?Contact $customer): ?JsonResponse
     {
+        // A booking for a slot that filled up meanwhile ends the checkout.
+        $fullSlot = static::fullBookingSlot($checkout);
+        if ($fullSlot) {
+            $checkout->delete();
+
+            return response()->json([
+                'errors' => ['The time you picked for ' . $fullSlot . ' was just booked. Please pick another time.'],
+                'code'   => 'booking_slot_unavailable',
+            ], 422);
+        }
+
         // Stock for products that track inventory is held first; a short line ends the checkout.
         $shortages = Inventory::reserve($checkout);
         if ($shortages) {
@@ -2532,6 +2554,41 @@ class CheckoutController extends Controller
             $checkout->delete();
 
             return response()->apiError($e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * The name of a booked service whose chosen slot has no room left, if any. Only slots the
+     * service's hours define are checked; a time outside them is left to the store.
+     */
+    protected static function fullBookingSlot(Checkout $checkout): ?string
+    {
+        $cart  = $checkout->cart_uuid ? Cart::where('uuid', $checkout->cart_uuid)->first() : null;
+        $items = collect($cart?->items ?? [])->filter(fn ($item) => data_get($item, 'scheduled_at'));
+        if ($items->isEmpty()) {
+            return null;
+        }
+
+        $products = Product::whereIn('public_id', $items->pluck('product_id')->unique()->values())->where('is_bookable', true)->with(['hours', 'store'])->get()->keyBy('public_id');
+        foreach ($items as $item) {
+            $product = $products->get(data_get($item, 'product_id'));
+            if (!$product) {
+                continue;
+            }
+
+            try {
+                $at = Carbon::parse(data_get($item, 'scheduled_at'));
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $slot = collect(BookingSlots::forDay($product, $at->copy()->setTimezone(BookingSlots::timezone($product->store))->toDateString()))
+                ->first(fn ($slot) => Carbon::parse($slot['start'])->lte($at) && Carbon::parse($slot['end'])->gt($at));
+            if ($slot && $slot['remaining'] <= 0) {
+                return $product->name;
+            }
         }
 
         return null;

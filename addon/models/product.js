@@ -137,7 +137,9 @@ export default class ProductModel extends Model {
             serialized[underscore(label)] = value;
         }
 
-        setProperties(this, { meta: serialized });
+        // The service settings of a bookable product live in meta too, edited apart from the free-form fields.
+        const service = this.meta?.service;
+        setProperties(this, { meta: service ? { service, ...serialized } : serialized });
 
         return this;
     }

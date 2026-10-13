@@ -1,0 +1,33 @@
+{{! A day and the service's free slots on it; picking one sets the booking time. }}
+<div class="storefront-booking-slots" data-test-booking-slots>
+    <div class="storefront-booking-slots__day">
+        <label class="storefront-create-order__label" for="booking-slots-date-{{this.uid}}">{{t "storefront.orders.booking.day"}}</label>
+        <input id="booking-slots-date-{{this.uid}}" type="date" class="form-input form-input-sm" value={{this.date}} min={{this.today}} {{on "change" this.setDate}} data-test-booking-date />
+        <span class="storefront-create-order__help mt-0">{{t "storefront.orders.booking.length" minutes=this.service.duration_minutes}}{{#if (gt this.service.capacity 1)}} · {{t "storefront.orders.booking.capacity" count=this.service.capacity}}{{/if}}</span>
+    </div>
+    {{#if this.load.isRunning}}
+        <Spinner @size="sm" />
+    {{else if this.slots.length}}
+        <div class="storefront-booking-slots__grid" role="group" aria-label={{t "storefront.orders.booking.slots"}}>
+            {{#each this.slots as |slot|}}
+                <button
+                    type="button"
+                    class="storefront-booking-slots__slot {{if slot.isSelected 'is-selected'}}"
+                    disabled={{not slot.available}}
+                    aria-pressed={{if slot.isSelected "true" "false"}}
+                    {{on "click" (fn this.pick slot)}}
+                    data-test-booking-slot={{slot.start}}
+                >
+                    <span>{{slot.label}}</span>
+                    {{#if slot.available}}
+                        {{#if (gt slot.capacity 1)}}<span class="storefront-booking-slots__left">{{t "storefront.orders.booking.left" count=slot.remaining}}</span>{{/if}}
+                    {{else}}
+                        <span class="storefront-booking-slots__left">{{t "storefront.orders.booking.full"}}</span>
+                    {{/if}}
+                </button>
+            {{/each}}
+        </div>
+    {{else}}
+        <p class="storefront-create-order__help">{{t "storefront.orders.booking.no-slots"}}</p>
+    {{/if}}
+</div>

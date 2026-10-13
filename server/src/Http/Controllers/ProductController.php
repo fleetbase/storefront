@@ -13,6 +13,7 @@ use Fleetbase\Storefront\Models\InventoryMovement;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
+use Fleetbase\Storefront\Support\BookingSlots;
 use Fleetbase\Storefront\Support\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -235,6 +236,25 @@ class ProductController extends StorefrontController
         }
 
         return response()->json(static::inventoryPayload($product->fresh()));
+    }
+
+    /**
+     * Free booking slots for a service on a day, for booking from the console.
+     */
+    public function slots(Request $request, string $id)
+    {
+        $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+
+        $product = Product::where('company_uuid', session('company'))->where(fn ($query) => $query->where('public_id', $id)->orWhere('uuid', $id))->with(['hours', 'store'])->first();
+        if (!$product) {
+            return response()->error('Product not found', 404);
+        }
+
+        return response()->json([
+            'date'    => $request->input('date'),
+            'service' => BookingSlots::service($product),
+            'slots'   => BookingSlots::forDay($product, $request->input('date')),
+        ]);
     }
 
     protected static function inventoryPayload(Product $product): array

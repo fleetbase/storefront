@@ -459,7 +459,12 @@ export default class OrdersIndexController extends BaseController {
     }
 
     @action createOrder() {
-        return this.transitionToRoute('orders.index.new');
+        return this.transitionToRoute('orders.index.new', { queryParams: { booking: null } });
+    }
+
+    /** A new order for a bookable service: the form offers services and their free slots. */
+    @action createBooking() {
+        return this.transitionToRoute('orders.index.new', { queryParams: { booking: 1 } });
     }
 
     @action refreshOrders() {

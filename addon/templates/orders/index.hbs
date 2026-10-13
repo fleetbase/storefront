@@ -1,6 +1,7 @@
 <Storefront::PageHeader @title={{t "storefront.common.orders"}} @subtitle={{t "storefront.orders.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.orders.index.search"}} data-test-orders-header>
     <FiltersPicker @columns={{this.registeredColumns}} @onApply={{fn this.filters.apply this}} @onClear={{fn this.filters.reset this}} @onFilterClear={{this.filters.clear}} @onChange={{this.filters.set}} @size="sm" @renderInPlace={{false}} data-test-orders-filters />
     <VisibleColumnPicker @columns={{this.columns}} @onChange={{this.setColumns}} @size="sm" @renderInPlace={{false}} data-test-orders-columns />
+    <Button @size="sm" @icon="calendar-plus" @text={{t "storefront.orders.booking.title"}} @onClick={{this.createBooking}} @permission="storefront create order" data-test-new-booking />
     <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.createOrder}} @permission="storefront create order" data-test-new-order />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
 </Storefront::PageHeader>

@@ -1218,6 +1218,17 @@ storefront:
           remove-store-category: Remove store category
           remove-store-category-body: You are about to remove {storeName} from the category {categoryName}, do you wish to proceed?
   orders:
+    booking:
+      title: New booking
+      when: "When · {service}"
+      day: Day
+      slots: Free times
+      length: "{minutes} min per booking"
+      capacity: "{count} at a time"
+      left: "{count} left"
+      full: Full
+      no-slots: No free times on this day. The service's hours (or the store's) set when it can be booked.
+      pick-slot: Pick a time for the booking
     create:
       add-product-from-storefront: Add product from storefront
       select-store: Select store
@@ -1382,6 +1393,13 @@ storefront:
     empty:
       help: Create a category, then add products to it.
       category-help: Create the first product in this category.
+    booking:
+      title: Booking
+      hint: How customers book this service
+      duration: Length of a booking (minutes)
+      duration-help: Slots are cut from the service's hours (or the store's) at this length.
+      capacity: Bookings at the same time
+      capacity-help: How many customers can book the same slot, e.g. the number of providers.
     inventory:
       title: Stock
       track: Track stock for this product

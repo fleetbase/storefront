@@ -57,6 +57,24 @@
                 </div>
             </section>
 
+            {{#if (and @product.is_service @product.is_bookable)}}
+                <section class="storefront-create-order__sec" id="product-section-booking" data-test-product-section="booking">
+                    <h3 class="storefront-create-order__sec-title">{{t "storefront.products.booking.title"}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.booking.hint"}}</span></h3>
+                    <div class="storefront-create-order__grid">
+                        <div class="storefront-create-order__field">
+                            <label class="storefront-create-order__label" for="product-booking-duration">{{t "storefront.products.booking.duration"}}</label>
+                            <input id="product-booking-duration" type="number" min="5" step="5" class="form-input w-full" value={{this.service.duration_minutes}} disabled={{unauthorized}} {{on "input" (fn this.setService "duration_minutes")}} data-test-product-booking-duration />
+                            <p class="storefront-create-order__help">{{t "storefront.products.booking.duration-help"}}</p>
+                        </div>
+                        <div class="storefront-create-order__field">
+                            <label class="storefront-create-order__label" for="product-booking-capacity">{{t "storefront.products.booking.capacity"}}</label>
+                            <input id="product-booking-capacity" type="number" min="1" class="form-input w-full" value={{this.service.capacity}} disabled={{unauthorized}} {{on "input" (fn this.setService "capacity")}} data-test-product-booking-capacity />
+                            <p class="storefront-create-order__help">{{t "storefront.products.booking.capacity-help"}}</p>
+                        </div>
+                    </div>
+                </section>
+            {{/if}}
+
             <section class="storefront-create-order__sec" id="product-section-inventory" data-test-product-section="inventory">
                 <h3 class="storefront-create-order__sec-title">{{t "storefront.products.inventory.title"}}</h3>
                 <Storefront::Product::Inventory @product={{@product}} />

@@ -16,6 +16,7 @@ use Fleetbase\Storefront\Models\ProductAddonCategory;
 use Fleetbase\Storefront\Models\ProductVariant;
 use Fleetbase\Storefront\Models\ProductVariantOption;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Support\BookingSlots;
 use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -404,6 +405,30 @@ class ProductController extends Controller
 
         // response the product resource
         return new StorefrontProduct($product);
+    }
+
+    /**
+     * The times a bookable service can be booked on a day (`date`, YYYY-MM-DD, the store's time zone).
+     */
+    public function slots(Request $request, string $id)
+    {
+        $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+
+        $product = Product::where(fn ($query) => $query->where('public_id', $id)->orWhere('uuid', $id))
+            ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
+            ->when(session('storefront_network'), fn ($query) => $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network'))))
+            ->with(['hours', 'store'])
+            ->first();
+
+        if (!$product || !$product->is_bookable) {
+            return response()->error('Bookable service not found.', 404);
+        }
+
+        return response()->json([
+            'date'    => $request->input('date'),
+            'service' => BookingSlots::service($product),
+            'slots'   => BookingSlots::forDay($product, $request->input('date')),
+        ]);
     }
 
     /**

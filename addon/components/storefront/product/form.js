@@ -45,6 +45,19 @@ export default class StorefrontProductFormComponent extends Component {
         return this.args.product;
     }
 
+    /** A bookable service's slot length and how many bookings a slot takes, kept in `meta.service`. */
+    get service() {
+        const service = this.product?.meta?.service ?? {};
+
+        return { duration_minutes: service.duration_minutes ?? 60, capacity: service.capacity ?? 1 };
+    }
+
+    @action setService(key, event) {
+        const value = parseInt(event.target.value, 10);
+        const meta = this.product.meta ?? {};
+        this.product.set('meta', { ...meta, service: { ...(meta.service ?? {}), [key]: Number.isNaN(value) ? null : value } });
+    }
+
     get variantsCount() {
         return this.product?.variants?.length ?? 0;
     }

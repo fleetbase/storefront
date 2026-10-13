@@ -73,6 +73,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/products
                 $router->group(['prefix' => 'products'], function () use ($router) {
                     $router->get('/', 'ProductController@query');
+                    $router->get('{id}/slots', 'ProductController@slots');
                     $router->get('{id}', 'ProductController@find');
                     $router->post('/', 'ProductController@create');
                     $router->put('{id}', 'ProductController@update');
@@ -138,18 +139,18 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->post('/', 'CustomerController@create');
                     // Routes that send a text message carry a much smaller per-device
                     // bucket than the group throttle; see ThrottleSmsRequests.
-                    $router->post('login-with-sms', 'CustomerController@loginWithPhone')->middleware(\Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
+                    $router->post('login-with-sms', 'CustomerController@loginWithPhone')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('login-with-apple', 'CustomerController@loginWithApple');
                     $router->post('login-with-facebook', 'CustomerController@loginWithFacebook');
                     $router->post('login-with-google', 'CustomerController@loginWithGoogle');
                     $router->post('verify-code', 'CustomerController@verifyCode');
                     $router->post('login', 'CustomerController@login');
-                    $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode')->middleware(\Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
+                    $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('stripe-ephemeral-key', 'CustomerController@getStripeEphemeralKey');
                     $router->post('stripe-setup-intent', 'CustomerController@getStripeSetupIntent');
-                    $router->post('account-closure', 'CustomerController@startAccountClosure')->middleware(\Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
+                    $router->post('account-closure', 'CustomerController@startAccountClosure')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('confirm-account-closure', 'CustomerController@confirmAccountClosure');
-                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification')->middleware(\Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
+                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('verify-phone-number', 'CustomerController@verifyPhoneNumber');
                 });
 
@@ -279,6 +280,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('create-entities', $controller('createEntities'));
                                 $router->get('summary', $controller('summary'));
                                 $router->get('{id}/inventory', $controller('inventory'));
+                                $router->get('{id}/slots', $controller('slots'));
                                 $router->put('{id}/inventory', $controller('updateInventory'));
                             }
                         );

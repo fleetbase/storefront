@@ -20,8 +20,10 @@ export default class OrdersIndexNewController extends Controller {
     @service modalsManager;
     @service store;
     // Not `customer`: the orders list behind the panel filters on that key.
-    queryParams = [{ forCustomer: 'for_customer' }];
+    queryParams = [{ forCustomer: 'for_customer' }, 'booking'];
     @tracked forCustomer = null;
+    /** A booking (`?booking=1`): the picker offers bookable services and the time is a free slot. */
+    @tracked booking = null;
 
     @tracked activeStore = null;
     @tracked locations = [];
@@ -147,6 +149,26 @@ export default class OrdersIndexNewController extends Controller {
         ];
     }
 
+    get isBooking() {
+        return Boolean(this.booking) || Boolean(this.bookableLine);
+    }
+
+    /** The first line that books a service; its slots set the order's time. */
+    get bookableLine() {
+        return this.lines.find((line) => line.product?.is_bookable) ?? null;
+    }
+
+    /** In a booking, the picker offers the store's bookable services. */
+    get pickerProducts() {
+        return this.booking ? this.products.filter((product) => product.is_bookable) : this.products;
+    }
+
+    @action selectSlot(start) {
+        this.isScheduled = true;
+        this.scheduledAt = start;
+        this.requote.perform();
+    }
+
     get pickerVisible() {
         return this.showPicker || this.lines.length === 0;
     }
@@ -250,6 +272,10 @@ export default class OrdersIndexNewController extends Controller {
 
         if (!this.selectedCustomer) {
             issues.push(this.intl.t('storefront.orders.create.issues.customer'));
+        }
+
+        if (this.bookableLine && !this.scheduledAt) {
+            issues.push(this.intl.t('storefront.orders.booking.pick-slot'));
         }
 
         if (!this.lines.length) {

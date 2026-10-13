@@ -2,7 +2,7 @@
     <Overlay::Header @onPressCancel={{this.cancel}} class="storefront-create-order__header">
         <:default>
             <div class="min-w-0">
-                <div class="storefront-create-order__title">{{t "storefront.orders.create.title"}}</div>
+                <div class="storefront-create-order__title">{{if this.isBooking (t "storefront.orders.booking.title") (t "storefront.orders.create.title")}}</div>
                 <div class="storefront-create-order__store">{{if this.activeStore this.activeStore.name this.network.name}} · {{t "storefront.orders.create.subtitle"}}</div>
             </div>
         </:default>
@@ -50,12 +50,20 @@
                 <h3 class="storefront-create-order__sec-title">{{this.stepNumbers.fulfillment}} · {{t "storefront.networks.orders.columns.fulfillment"}}</h3>
                 <div class="storefront-create-order__row">
                     <Storefront::ViewToggle @options={{array (hash id="delivery" label=(t "storefront.networks.orders.delivery")) (hash id="pickup" label=(t "storefront.common.pickup"))}} @value={{if this.isPickup "pickup" "delivery"}} @onChange={{this.setFulfillment}} @label={{t "storefront.orders.create.fulfillment"}} data-test-fulfillment-toggle />
-                    <Storefront::ViewToggle @options={{array (hash id="asap" label=(t "storefront.order.asap")) (hash id="schedule" label=(t "storefront.orders.create.schedule"))}} @value={{if this.isScheduled "schedule" "asap"}} @onChange={{this.setTiming}} @label={{t "storefront.orders.create.schedule"}} data-test-timing-toggle />
-                    {{#if this.isScheduled}}
-                        <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
-                    {{/if}}
+                    {{#unless this.bookableLine}}
+                        <Storefront::ViewToggle @options={{array (hash id="asap" label=(t "storefront.order.asap")) (hash id="schedule" label=(t "storefront.orders.create.schedule"))}} @value={{if this.isScheduled "schedule" "asap"}} @onChange={{this.setTiming}} @label={{t "storefront.orders.create.schedule"}} data-test-timing-toggle />
+                        {{#if this.isScheduled}}
+                            <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
+                        {{/if}}
+                    {{/unless}}
                     <span class="storefront-create-order__help mt-0">{{t "storefront.orders.create.fulfillment-help"}}</span>
                 </div>
+                {{#if this.bookableLine}}
+                    <div class="storefront-create-order__field" data-test-create-order-booking>
+                        <div class="storefront-create-order__label">{{t "storefront.orders.booking.when" service=this.bookableLine.product.name}}</div>
+                        <Storefront::Order::BookingSlots @product={{this.bookableLine.product}} @value={{this.scheduledAt}} @onSelect={{this.selectSlot}} />
+                    </div>
+                {{/if}}
                 <div class="storefront-create-order__grid">
                     <div class="storefront-create-order__field">
                         <div class="storefront-create-order__label">{{if this.isPickup (t "storefront.orders.create.pickup-from") (t "storefront.orders.create.leaves-from")}}</div>
@@ -187,7 +195,7 @@
                 {{/if}}
 
                 {{#if this.pickerVisible}}
-                    <Storefront::Order::ProductPicker @products={{this.products}} @currency={{this.currency}} @onAdd={{this.addLine}} @onDone={{if this.lineRows.length this.closePicker}} />
+                    <Storefront::Order::ProductPicker @products={{this.pickerProducts}} @currency={{this.currency}} @onAdd={{this.addLine}} @onDone={{if this.lineRows.length this.closePicker}} />
                 {{/if}}
 
                 <div class="storefront-create-order__field storefront-create-order__notes">
