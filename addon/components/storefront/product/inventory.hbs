@@ -1,0 +1,78 @@
+{{! Stock per store location and food truck: the count on hand, what checkouts hold, what can be sold, the low stock threshold and backorders. }}
+<div class="storefront-product-inventory" data-test-product-inventory>
+    {{#if @product.isNew}}
+        <p class="storefront-create-order__help mt-0">{{t "storefront.products.inventory.save-first"}}</p>
+    {{else}}
+        <div class="storefront-product-inventory__head">
+            <Toggle @isToggled={{this.tracking}} @onToggle={{perform this.setTracking}} @disabled={{or this.cannotEdit this.setTracking.isRunning}} @label={{t "storefront.products.inventory.track"}} data-test-product-inventory-track />
+            {{#if this.tracking}}
+                <span class="storefront-product-inventory__total {{if this.summary.in_stock '' 'is-out'}}">
+                    {{#if this.summary.in_stock}}
+                        {{t "storefront.products.inventory.available-total" count=this.summary.available_total}}
+                    {{else}}
+                        {{t "storefront.products.inventory.out-of-stock"}}
+                    {{/if}}
+                </span>
+            {{/if}}
+        </div>
+        <p class="storefront-create-order__help">{{if this.tracking (t "storefront.products.inventory.help-on") (t "storefront.products.inventory.help-off")}}</p>
+
+        {{#if this.tracking}}
+            {{#if this.rows.length}}
+                <div class="storefront-create-order__table-wrap">
+                    <table class="storefront-create-order__table storefront-product-inventory__table" data-test-product-inventory-table>
+                        <thead>
+                            <tr>
+                                <th>{{t "storefront.products.inventory.location"}}</th>
+                                <th class="is-right">{{t "storefront.products.inventory.on-hand"}}</th>
+                                <th class="is-right">{{t "storefront.products.inventory.held"}}</th>
+                                <th class="is-right">{{t "storefront.products.inventory.available"}}</th>
+                                <th class="is-right">{{t "storefront.products.inventory.low-at"}}</th>
+                                <th>{{t "storefront.products.inventory.backorder"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each this.rows as |row|}}
+                                <tr data-test-product-inventory-row={{row.location}}>
+                                    <td>
+                                        <span class="storefront-create-order__place-name" title={{row.address}}><FaIcon @icon={{if (eq row.type "food_truck") "truck" "store"}} @size="xs" class="mr-1" />{{row.name}}</span>
+                                    </td>
+                                    <td class="is-right">
+                                        <input type="number" class="form-input form-input-sm storefront-product-inventory__number" value={{row.quantity}} disabled={{this.cannotEdit}} aria-label={{t "storefront.products.inventory.on-hand-for" location=row.name}} {{on "input" (fn this.setValue row "quantity")}} />
+                                    </td>
+                                    <td class="is-right">{{row.reserved}}</td>
+                                    <td class="is-right font-semibold {{if row.low 'text-amber-600'}} {{if (lt row.available 1) 'text-red-600'}}">{{row.available}}</td>
+                                    <td class="is-right">
+                                        <input type="number" min="0" class="form-input form-input-sm storefront-product-inventory__number" value={{row.low_stock_threshold}} placeholder="—" disabled={{this.cannotEdit}} aria-label={{t "storefront.products.inventory.low-at-for" location=row.name}} {{on "input" (fn this.setValue row "low_stock_threshold")}} />
+                                    </td>
+                                    <td>
+                                        <Toggle @isToggled={{row.allow_backorder}} @onToggle={{fn this.setBackorder row}} @disabled={{this.cannotEdit}} aria-label={{t "storefront.products.inventory.backorder-for" location=row.name}} />
+                                    </td>
+                                </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="storefront-product-inventory__actions">
+                    <Input class="form-input form-input-sm flex-1" @value={{this.note}} placeholder={{t "storefront.products.inventory.note-placeholder"}} aria-label={{t "storefront.products.inventory.note-placeholder"}} disabled={{this.cannotEdit}} />
+                    <Button @type="primary" @size="sm" @icon="check" @text={{t "storefront.products.inventory.save"}} @isLoading={{this.save.isRunning}} @disabled={{not this.isDirty}} @permission="storefront update product" @onClick={{perform this.save}} data-test-product-inventory-save />
+                </div>
+            {{else}}
+                <p class="storefront-create-order__help">{{t "storefront.products.inventory.no-locations"}}</p>
+            {{/if}}
+
+            {{#if this.movements.length}}
+                <div class="storefront-product-inventory__history">
+                    <div class="storefront-create-order__label">{{t "storefront.products.inventory.recent"}}</div>
+                    {{#each this.movements as |movement|}}
+                        <div class="storefront-product-inventory__movement">
+                            <span>{{t (concat "storefront.products.inventory.types." movement.type)}}{{#if movement.note}} · {{movement.note}}{{/if}}</span>
+                            <span class="{{if (gt movement.quantity 0) 'text-green-600' 'text-red-600'}}">{{if (gt movement.quantity 0) "+"}}{{movement.quantity}}</span>
+                            <span class="text-gray-500">{{format-date-fns movement.at "d MMM HH:mm"}}</span>
+                        </div>
+                    {{/each}}
+                </div>
+            {{/if}}
+        {{/if}}
+    {{/if}}
+</div>

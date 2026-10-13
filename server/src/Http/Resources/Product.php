@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
+use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Support\Http;
 use Fleetbase\Support\Utils;
 use Illuminate\Support\Arr;
@@ -43,6 +44,9 @@ class Product extends FleetbaseResource
             'is_service'         => $this->is_service,
             'is_bookable'        => $this->is_bookable,
             'is_available'       => $this->is_available,
+            'track_inventory'    => (bool) $this->track_inventory,
+            'inventory'          => $inventory = Inventory::summary($this->resource),
+            'in_stock'           => $this->is_available !== false && $inventory['in_stock'],
             'tags'               => $this->tags ?? [],
             'status'             => $this->status,
             'meta'               => data_get($this, 'meta', Utils::createObject()),

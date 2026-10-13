@@ -57,6 +57,7 @@
                     {{#if @product.is_on_sale}}<Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.on-sale"}} />{{/if}}
                     {{#if @product.is_recommended}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.groups.recommended"}} />{{/if}}
                     {{#if this.isOutOfStock}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.card.unavailable"}} />{{/if}}
+                    {{#if this.lowStockCount}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.products.inventory.only-left" count=this.lowStockCount}} />{{/if}}
                 </div>
                 {{#if @onToggleSelect}}
                     <span class="storefront-product-card__select {{if this.isSelected 'is-selected'}}">

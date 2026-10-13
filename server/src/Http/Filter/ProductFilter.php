@@ -2,9 +2,9 @@
 
 namespace Fleetbase\Storefront\Http\Filter;
 
-use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Http\Filter\Filter;
 use Fleetbase\Models\Category;
+use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Support\Http;
 
 class ProductFilter extends Filter
@@ -62,6 +62,18 @@ class ProductFilter extends Filter
     public function available($flag)
     {
         $this->builder->where('is_available', filter_var($flag, FILTER_VALIDATE_BOOLEAN));
+    }
+
+    /**
+     * Smart groups: `out` (cannot be sold now) or `low` (at or under the low stock threshold).
+     */
+    public function stock(string $state)
+    {
+        match ($state) {
+            'out'   => $this->builder->outOfStock(),
+            'low'   => $this->builder->lowStock(),
+            default => null,
+        };
     }
 
     public function onSale($flag)

@@ -112,7 +112,14 @@ export default class StorefrontProductCardComponent extends Component {
     }
 
     get isOutOfStock() {
-        return this.args.product?.is_available === false && !this.isDraft;
+        const product = this.args.product;
+        return (product?.is_available === false || product?.in_stock === false) && !this.isDraft;
+    }
+
+    /** "Only N left" when the product tracks stock and a location is at its low threshold. */
+    get lowStockCount() {
+        const inventory = this.args.product?.inventory;
+        return inventory?.tracked && inventory.low && !this.isOutOfStock ? inventory.available_total : null;
     }
 
     @action toggleSelect() {

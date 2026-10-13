@@ -67,6 +67,7 @@ export default class StorefrontProductCategorySidebarComponent extends Component
 
         return [
             { id: 'out-of-stock', icon: 'ban', label: this.intl.t('storefront.products.groups.out-of-stock'), count: summary.out_of_stock ?? 0 },
+            { id: 'low-stock', icon: 'battery-quarter', label: this.intl.t('storefront.products.groups.low-stock'), count: summary.low_stock ?? 0 },
             { id: 'drafts', icon: 'pen-ruler', label: this.intl.t('storefront.products.groups.drafts'), count: summary.draft ?? 0 },
             { id: 'recommended', icon: 'star', label: this.intl.t('storefront.products.groups.recommended'), count: summary.recommended ?? 0 },
             { id: 'on-sale', icon: 'percent', label: this.intl.t('storefront.products.groups.on-sale'), count: summary.on_sale ?? 0 },

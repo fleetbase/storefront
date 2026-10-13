@@ -18,7 +18,7 @@ export default class ProductsIndexIndexController extends BaseController {
      *
      * @var {Array}
      */
-    queryParams = ['status', 'available', 'on_sale', 'recommended', 'uncategorized', 'page', 'limit', 'sort', 'query', 'public_id', 'sku', 'created_at', 'updated_at'];
+    queryParams = ['status', 'available', 'stock', 'on_sale', 'recommended', 'uncategorized', 'page', 'limit', 'sort', 'query', 'public_id', 'sku', 'created_at', 'updated_at'];
 
     /**
      * The current page of data being viewed
@@ -77,6 +77,7 @@ export default class ProductsIndexIndexController extends BaseController {
     @tracked updated_at;
     @tracked status;
     @tracked available;
+    @tracked stock;
     @tracked on_sale;
     @tracked recommended;
     @tracked uncategorized;

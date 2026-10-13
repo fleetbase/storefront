@@ -41,14 +41,15 @@ export default class ProductsIndexController extends BaseController {
     @tracked selected = [];
 
     groupFilters = {
-        'out-of-stock': { available: false },
+        'out-of-stock': { stock: 'out' },
+        'low-stock': { stock: 'low' },
         drafts: { status: 'draft' },
         recommended: { recommended: true },
         'on-sale': { on_sale: true },
         uncategorized: { uncategorized: true },
     };
 
-    filterKeys = ['status', 'available', 'on_sale', 'recommended', 'uncategorized'];
+    filterKeys = ['status', 'available', 'stock', 'on_sale', 'recommended', 'uncategorized'];
 
     get categoryCounts() {
         return this.summary?.by_category ?? {};

@@ -108,6 +108,7 @@ class Product extends StorefrontModel
         'is_service',
         'is_bookable',
         'is_available',
+        'track_inventory',
         'is_on_sale',
         'is_recommended',
         'can_pickup',
@@ -121,16 +122,17 @@ class Product extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'is_service'     => 'boolean',
-        'is_bookable'    => 'boolean',
-        'is_on_sale'     => 'boolean',
-        'is_available'   => 'boolean',
-        'is_recommended' => 'boolean',
-        'can_pickup'     => 'boolean',
-        'tags'           => 'array',
-        'meta'           => Json::class,
-        'translations'   => Json::class,
-        'youtube_urls'   => Json::class,
+        'is_service'      => 'boolean',
+        'is_bookable'     => 'boolean',
+        'is_on_sale'      => 'boolean',
+        'is_available'    => 'boolean',
+        'track_inventory' => 'boolean',
+        'is_recommended'  => 'boolean',
+        'can_pickup'      => 'boolean',
+        'tags'            => 'array',
+        'meta'            => Json::class,
+        'translations'    => Json::class,
+        'youtube_urls'    => Json::class,
     ];
 
     /**
@@ -190,6 +192,47 @@ class Product extends StorefrontModel
     public function addonCategories(): HasMany
     {
         return $this->hasMany(ProductAddonCategory::class);
+    }
+
+    /**
+     * Products that cannot be sold now: switched off, or tracking stock with none available at
+     * any location (and no backorders).
+     */
+    public function scopeOutOfStock($query)
+    {
+        return $query->where(function ($query) {
+            $query->where('is_available', false)->orWhere(function ($query) {
+                $query->where('track_inventory', true)->whereNotExists(function ($stock) {
+                    $stock->selectRaw('1')
+                        ->from('product_inventories')
+                        ->whereColumn('product_inventories.product_uuid', 'products.uuid')
+                        ->whereNull('product_inventories.deleted_at')
+                        ->where(fn ($sellable) => $sellable->whereRaw('product_inventories.quantity - product_inventories.reserved > 0')->orWhere('product_inventories.allow_backorder', true));
+                });
+            });
+        });
+    }
+
+    /**
+     * Products tracking stock with a location at or under its low stock threshold (but not out).
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->where('track_inventory', true)->whereExists(function ($stock) {
+            $stock->selectRaw('1')
+                ->from('product_inventories')
+                ->whereColumn('product_inventories.product_uuid', 'products.uuid')
+                ->whereNull('product_inventories.deleted_at')
+                ->whereNotNull('product_inventories.low_stock_threshold')
+                ->whereRaw('product_inventories.quantity - product_inventories.reserved > 0')
+                ->whereRaw('product_inventories.quantity - product_inventories.reserved <= product_inventories.low_stock_threshold');
+        });
+    }
+
+    /** Stock per store location or food truck, when the product tracks inventory. */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(ProductInventory::class, 'product_uuid', 'uuid');
     }
 
     public function variants(): HasMany

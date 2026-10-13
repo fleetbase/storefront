@@ -1382,8 +1382,40 @@ storefront:
     empty:
       help: Create a category, then add products to it.
       category-help: Create the first product in this category.
+    inventory:
+      title: Stock
+      track: Track stock for this product
+      help-on: "Orders take stock from the location they are fulfilled from. Checkouts hold it for 15 minutes while the customer pays; canceled orders put it back."
+      help-off: Not limited. Turn on to count stock per store location and stop selling when it runs out.
+      save-first: Save the product first to set its stock.
+      available-total: "{count} available"
+      out-of-stock: Out of stock
+      only-left: "Only {count} left"
+      location: Location
+      on-hand: On hand
+      on-hand-for: "On hand at {location}"
+      held: Held
+      available: Available
+      low-at: Low at
+      low-at-for: "Low stock threshold at {location}"
+      backorder: Backorders
+      backorder-for: "Allow backorders at {location}"
+      note-placeholder: "Note for this change, e.g. delivery received"
+      save: Save stock
+      saved: Stock saved
+      no-locations: This store has no locations or food trucks to keep stock at.
+      recent: Recent changes
+      types:
+        adjustment: Adjusted
+        restock: Restocked
+        reservation: Held for a checkout
+        release: Released from a checkout
+        sale: Sold
+        cancellation: Returned (order canceled)
+        edit: Order edited
     groups:
       out-of-stock: Unavailable
+      low-stock: Low stock
       drafts: Drafts
       recommended: Recommended
       on-sale: On sale

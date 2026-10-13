@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Observers;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Notifications\StorefrontOrderActivity;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCanceled;
+use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -30,6 +31,18 @@ class OrderActivityObserver
         // Bookings have no dedicated step notifications (those speak of deliveries), so every
         // step after the request is announced here.
         $status  = (string) $order->status;
+
+        // A canceled order puts its stock back, however it was canceled.
+        if (in_array($status, ['canceled', 'order_canceled'], true)) {
+            $orderUuid = $order->uuid;
+            dispatch(function () use ($orderUuid) {
+                $canceled = Order::where('uuid', $orderUuid)->first();
+                if ($canceled) {
+                    Inventory::restoreForOrder($canceled);
+                }
+            })->afterCommit();
+        }
+
         $skipped = Storefront::isBookingOrder($order) ? ['created', 'pending'] : static::NOTIFIED_ELSEWHERE;
         if ($status === '' || in_array($status, $skipped, true)) {
             return;

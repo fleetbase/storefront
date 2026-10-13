@@ -45,6 +45,9 @@ export default class ProductModel extends Model {
     @attr('boolean') is_service;
     @attr('boolean') is_available;
     @attr('boolean') is_bookable;
+    @attr('boolean') track_inventory;
+    @attr('raw') inventory;
+    @attr('boolean') in_stock;
     @attr('string') status;
     @attr('string') slug;
 

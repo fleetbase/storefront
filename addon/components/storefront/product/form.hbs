@@ -57,6 +57,11 @@
                 </div>
             </section>
 
+            <section class="storefront-create-order__sec" id="product-section-inventory" data-test-product-section="inventory">
+                <h3 class="storefront-create-order__sec-title">{{t "storefront.products.inventory.title"}}</h3>
+                <Storefront::Product::Inventory @product={{@product}} />
+            </section>
+
             <section class="storefront-create-order__sec" id="product-section-variants" data-test-product-section="variants">
                 <h3 class="storefront-create-order__sec-title">
                     {{t "storefront.products.form.sections.variants"}}{{#if this.variantsCount}}<span class="storefront-status-tab__count">{{this.variantsCount}}</span>{{/if}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.form.variants.hint"}}</span>

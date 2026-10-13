@@ -20,6 +20,7 @@ export default class ProductsIndexIndexRoute extends StorefrontListRoute {
         updated_at: { refreshModel: true },
         status: { refreshModel: true },
         available: { refreshModel: true },
+        stock: { refreshModel: true },
         on_sale: { refreshModel: true },
         recommended: { refreshModel: true },
         uncategorized: { refreshModel: true },

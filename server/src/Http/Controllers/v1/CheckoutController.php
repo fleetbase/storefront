@@ -31,6 +31,7 @@ use Fleetbase\Storefront\Promotions\PromotionEngine;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
+use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Storefront\Support\OrderPayments;
 use Fleetbase\Storefront\Support\QPay;
 use Fleetbase\Storefront\Support\Storefront;
@@ -729,8 +730,9 @@ class CheckoutController extends Controller
             return response()->apiError('PaymentIntent belongs to another checkout.', 422);
         }
         if ($checkout) {
-            // Its promotion uses are reserved again below at the new price.
+            // Its promotion uses and stock are reserved again below at the new price.
             PromotionRedemptions::releaseFor($checkout);
+            Inventory::release($checkout);
             $checkout->update($attributes);
         } else {
             $checkout = Checkout::create([...$attributes, 'stripe_payment_intent_id' => $paymentIntent->id]);
@@ -1651,8 +1653,9 @@ class CheckoutController extends Controller
         // create order
         $order = Order::create($orderInput);
 
-        // record the promotions as used by this order
+        // record the promotions as used by this order, and the stock it sold
         PromotionRedemptions::redeem($checkout, $order);
+        Inventory::commit($checkout, $order);
 
         // notify driver if assigned
         $order->notifyDriverAssigned();
@@ -2121,8 +2124,9 @@ class CheckoutController extends Controller
             // create master order
             $order = Order::create($masterOrderInput);
 
-            // record the promotions as used by this checkout's master order
+            // record the promotions as used by this checkout's master order, and the stock it sold
             PromotionRedemptions::redeem($checkout, $order);
+            Inventory::commit($checkout, $order);
 
             // update child orders with master order id in meta
             foreach ($multipleOrders as $childOrder) {
@@ -2509,9 +2513,22 @@ class CheckoutController extends Controller
      */
     protected static function reservePromotions(Checkout $checkout, $checkoutOptions, ?Contact $customer): ?JsonResponse
     {
+        // Stock for products that track inventory is held first; a short line ends the checkout.
+        $shortages = Inventory::reserve($checkout);
+        if ($shortages) {
+            $checkout->delete();
+
+            return response()->json([
+                'errors' => ['Some items in your cart are no longer available.'],
+                'code'   => 'cart_items_unavailable',
+                'items'  => $shortages,
+            ], 422);
+        }
+
         try {
             PromotionRedemptions::reserve($checkout, PromotionResult::fromArray(data_get($checkoutOptions, 'promotions')), $customer?->uuid);
         } catch (PromotionUnavailableException $e) {
+            Inventory::release($checkout);
             $checkout->delete();
 
             return response()->apiError($e->getMessage());

@@ -138,7 +138,14 @@ class OrderEditor
 
         DB::transaction(function () use ($order, $plan, $input) {
             if (in_array('items', $plan['changes'], true)) {
+                $before = static::quantitiesByProduct(static::currentLines($order));
                 static::writeItems($order, $plan['lines']);
+                $after  = static::quantitiesByProduct($plan['lines']);
+                $deltas = [];
+                foreach (array_unique([...array_keys($before), ...array_keys($after)]) as $productId) {
+                    $deltas[$productId] = ($after[$productId] ?? 0) - ($before[$productId] ?? 0);
+                }
+                Inventory::applyEdit($order, $deltas);
             }
             if (in_array('dropoff', $plan['changes'], true)) {
                 $order->payload->setDropoff($plan['dropoff'], ['save' => true]);
@@ -555,6 +562,21 @@ class OrderEditor
 
         Entity::where('payload_uuid', $payload->uuid)->whereNotIn('uuid', $keep)->get()->each(fn ($entity) => $entity->delete());
         $payload->unsetRelation('entities');
+    }
+
+    /**
+     * @return array<string, int> product public id => quantity on the order
+     */
+    protected static function quantitiesByProduct(array $lines): array
+    {
+        $quantities = [];
+        foreach ($lines as $line) {
+            if (!empty($line['product'])) {
+                $quantities[$line['product']] = ($quantities[$line['product']] ?? 0) + (int) $line['quantity'];
+            }
+        }
+
+        return $quantities;
     }
 
     /**
