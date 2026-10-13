@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Console\Commands;
 
+use Fleetbase\Storefront\Models\Cart;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -49,6 +50,13 @@ class PurgeExpiredCarts extends Command
                 ->delete();
         } finally {
             $schema->enableForeignKeyConstraints();
+        }
+
+        // The rows were deleted through the query builder without model events and span
+        // companies, so the table wide cart cache version is advanced (which every
+        // company's cart caches read from fleetbase/core-api#301 on).
+        if ($dbDeletedCount > 0) {
+            Cart::invalidateApiCacheManually();
         }
 
         // Log output

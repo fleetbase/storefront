@@ -9,6 +9,7 @@ use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\FleetOps\Models\Zone;
 use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Storefront\Http\Resources\FoodTruck as FoodTruckResource;
+use Fleetbase\Support\ApiModelCache;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasPublicid;
@@ -50,6 +51,16 @@ class FoodTruck extends StorefrontModel
      * @var string
      */
     protected $table = 'food_trucks';
+
+    /**
+     * Tables the cached food truck lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): the relations the
+     * console and storefront lists eager load (a service area loads its zones), and the
+     * store's networks, which decide the trucks a network lists.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['store', 'store.networks', 'network', 'vehicle', 'vehicle.driver', 'serviceArea', 'serviceArea.zones', 'zone', 'catalogs'];
 
     /**
      * The attributes that are mass assignable.
@@ -214,6 +225,11 @@ class FoodTruck extends StorefrontModel
         // Only the pivot changed, so the truck fires no `updated` event; clear the cached truck lists here.
         if (($removed->isNotEmpty() || $added > 0) && method_exists($this, 'invalidateApiCache')) {
             $this->invalidateApiCache();
+        }
+
+        // Removed assignments were deleted without model events; the catalog lists embed them too.
+        if ($removed->isNotEmpty()) {
+            ApiModelCache::invalidateModelCache(new CatalogSubject(), $this->company_uuid);
         }
 
         return $this;
