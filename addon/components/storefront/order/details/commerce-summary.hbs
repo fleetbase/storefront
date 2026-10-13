@@ -2,7 +2,7 @@
     @title={{t "storefront.order.sections.order"}}
     @prefixTitleRight={{if @resource.payload.cod_amount (t "storefront.order.sections.cash") (n-a (titleize @resource.meta.gateway))}}
     @prefixTitleRightClass={{if @resource.payload.cod_amount "text-green-400" "text-blue-400"}}
-    @open={{true}}
+    @open={{not @folded}}
     @isLoading={{@isLoading}}
     @actionButtons={{@actionButtons}}
     @wrapperClass="bordered-top"

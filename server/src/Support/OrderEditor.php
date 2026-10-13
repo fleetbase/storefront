@@ -165,6 +165,11 @@ class OrderEditor
                 $order->setMeta('kitchen_changed_at', now()->toIso8601String());
             }
 
+            $request = $order->getMeta('address_change_request');
+            if (in_array('dropoff', $plan['changes'], true) && is_array($request) && ($request['status'] ?? null) === 'open') {
+                $order->setMeta('address_change_request', [...$request, 'status' => 'resolved', 'closed_at' => now()->toIso8601String()]);
+            }
+
             $edits   = $order->getMeta('edits', []);
             $edits   = is_array($edits) ? $edits : [];
             $edits[] = [

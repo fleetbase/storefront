@@ -1,0 +1,12 @@
+{{! What happens next and when the order is due. }}
+<div class="storefront-order-next {{if this.isLate 'is-late'}} {{if this.isFinished 'is-finished'}}" data-test-order-next>
+    <div class="storefront-order-next__text">
+        <div class="storefront-order-next__title" data-test-order-next-title>{{this.title}}</div>
+        {{#if this.dueLine}}
+            <div class="storefront-order-next__due" data-test-order-next-due>{{this.dueLine}}</div>
+        {{/if}}
+    </div>
+    {{#if @onPrintLabel}}
+        <Button @size="xs" @icon="print" @text={{t "storefront.order.overview.print-label"}} @isLoading={{@isPrintingLabel}} @onClick={{@onPrintLabel}} data-test-order-print-label />
+    {{/if}}
+</div>

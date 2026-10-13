@@ -1,4 +1,4 @@
-<ContentPanel @title={{t "storefront.order.tabs.route"}} @open={{true}} @isLoading={{@isLoading}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "storefront.order.tabs.route"}} @open={{not @folded}} @isLoading={{@isLoading}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
     {{#if this.hasRouteSummaryLine}}
         <div class="mb-3 flex items-center justify-between gap-3 text-xs">
             <div class="font-semibold uppercase text-gray-500 dark:text-gray-400">All Stops - {{this.routeStopsCount}}</div>

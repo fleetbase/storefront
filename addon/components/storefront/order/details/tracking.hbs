@@ -1,4 +1,4 @@
-<ContentPanel @title={{t "order.fields.tracking"}} @prefixTitleRight={{@resource.tracking}} @isLoading={{@isLoading}} @open={{true}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "order.fields.tracking"}} @prefixTitleRight={{@resource.tracking}} @isLoading={{@isLoading}} @open={{not @folded}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
     {{#if this.hasTrackerData}}
         <div class="tracking-intelligence mb-4">
             <div class="tracking-intelligence__status">

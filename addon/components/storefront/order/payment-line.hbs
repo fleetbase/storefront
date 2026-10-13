@@ -1,0 +1,10 @@
+{{! Whether the order is paid, what is still to collect or due, and what was given back. }}
+{{#if this.text}}
+    <div class="storefront-order-payment-line storefront-order-payment-line--{{this.tone}}" data-test-order-payment-line={{@payment.state}}>
+        <FaIcon @icon={{this.icon}} @size="sm" />
+        <span>{{this.text}}</span>
+        {{#if @payment.store_credit_code}}
+            <ClickToCopy @value={{@payment.store_credit_code}} class="storefront-order-payment-line__code">{{@payment.store_credit_code}}</ClickToCopy>
+        {{/if}}
+    </div>
+{{/if}}

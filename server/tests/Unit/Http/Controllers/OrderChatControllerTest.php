@@ -479,6 +479,22 @@ test('order chat waits for a driver and stays closed to new chats after the orde
         ->and(ChatChannel::query()->count())->toBe(0);
 });
 
+test('the store thread opens before a driver is assigned and stays apart from the driver thread', function () {
+    bindOrderChatRequest('chat-secret', 'store_key', ['kind' => 'customer']);
+    $controller = new OrderChatController();
+
+    $store = orderChatData($controller->show('order_waiting'));
+    $again = orderChatData($controller->show('order_waiting'));
+
+    expect($store['kind'])->toBe('customer')
+        ->and($store['status'])->toBe('open')
+        ->and($store['participants'])->toHaveCount(1)
+        ->and($store['participants'][0]['role'])->toBe('customer')
+        ->and($again['id'])->toBe($store['id'])
+        ->and(OrderChat::find(Order::where('public_id', 'order_waiting')->first(), 'customer')?->public_id)->toBe($store['id'])
+        ->and(OrderChat::find(Order::where('public_id', 'order_waiting')->first()))->toBeNull();
+});
+
 test('opening an order chat creates one channel with the customer and driver', function () {
     bindOrderChatRequest();
     $controller = new OrderChatController();

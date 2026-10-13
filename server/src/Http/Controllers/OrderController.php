@@ -9,6 +9,7 @@ use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Support\OrderActivityFlow;
+use Fleetbase\Storefront\Support\OrderChat;
 use Fleetbase\Storefront\Support\OrderEditException;
 use Fleetbase\Storefront\Support\OrderEditor;
 use Fleetbase\Storefront\Support\OrderInsights;
@@ -396,6 +397,26 @@ class OrderController extends FleetbaseOrderController
             'changes'    => $result['changes'],
             'summary'    => $result['summary'],
         ];
+    }
+
+    /**
+     * What the order panel needs beyond the order record: its payment, when it is due, what needs
+     * attention, the customer's history with the store and what an edit may still change.
+     */
+    public function overview(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'trackingNumber']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json([
+            'payment' => OrderPayments::summary($order),
+            ...OrderInsights::forOrder($order),
+            'edit'    => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order)],
+            'chat'    => ['unread' => OrderChatController::unreadFromCustomer($order), 'has_driver_thread' => OrderChat::find($order) !== null],
+        ]);
     }
 
     /**

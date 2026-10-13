@@ -1,0 +1,195 @@
+<?php
+
+namespace Fleetbase\Storefront\Http\Controllers;
+
+use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\ChatChannel;
+use Fleetbase\Models\ChatMessage;
+use Fleetbase\Models\ChatReceipt;
+use Fleetbase\Storefront\Http\Resources\OrderChat as OrderChatResource;
+use Fleetbase\Storefront\Http\Resources\OrderChatMessage;
+use Fleetbase\Storefront\Support\OrderChat;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+
+/**
+ * The store's side of an order's chats, in the console: the thread with the customer, which
+ * staff write in, and the customer's thread with the driver, which staff can read.
+ *
+ * storefront/int/v1/orders/{id}/chat/{kind}
+ */
+class OrderChatController extends Controller
+{
+    public const PAGE_SIZE = 50;
+
+    /** Replies offered under the message box when the store has not set its own. */
+    public const DEFAULT_QUICK_REPLIES = [
+        'Your order is being prepared.',
+        'Your driver is on the way.',
+        'We are running about 10 minutes late, sorry.',
+        'Can you confirm the delivery address?',
+    ];
+
+    public function show(string $id, string $kind)
+    {
+        $order = $this->findOrder($id);
+        if (!$order) {
+            return response()->error('Order not found', 404);
+        }
+
+        // Looking does not start a thread; the store's first message does.
+        $kind     = OrderChat::normalizeKind($kind);
+        $channel  = OrderChat::find($order, $kind);
+        $canWrite = $kind === OrderChat::KIND_CUSTOMER && !OrderChat::isClosed($order);
+
+        if (!$channel) {
+            return response()->json([
+                'chat'          => null,
+                'reason'        => $kind === OrderChat::KIND_DRIVER ? 'driver_not_assigned' : 'not_started',
+                'can_write'     => $canWrite,
+                'quick_replies' => $canWrite ? static::quickReplies($order) : [],
+            ]);
+        }
+
+        $messages    = $this->messageQuery($channel)->limit(static::PAGE_SIZE)->get()->reverse()->values();
+        $participant = OrderChat::participantFor($channel, session('user'));
+        $unread      = $participant ? $channel->getUnreadMessagesForParticipant($participant)->count() : 0;
+        $channel->load(['participants.user']);
+
+        return response()->json([
+            'chat'          => (new OrderChatResource($channel, $order, OrderChat::customerUserUuid($order), $messages, $unread, session('user')))->resolve(),
+            'can_write'     => $canWrite,
+            'quick_replies' => $canWrite ? static::quickReplies($order) : [],
+        ]);
+    }
+
+    /**
+     * Write to the customer as the store. Only the store thread; the driver thread is theirs.
+     */
+    public function send(Request $request, string $id, string $kind)
+    {
+        $request->validate(['content' => ['required', 'string', 'max:2000']]);
+
+        $order = $this->findOrder($id);
+        if (!$order) {
+            return response()->error('Order not found', 404);
+        }
+        if (OrderChat::normalizeKind($kind) !== OrderChat::KIND_CUSTOMER) {
+            return response()->error('Staff can only write in the thread with the customer.', 403);
+        }
+        if (OrderChat::isClosed($order)) {
+            return response()->error('This chat closed when the order finished.', 423);
+        }
+
+        $channel = OrderChat::openStore($order, session('user'));
+        if (!$channel) {
+            return response()->error('This order has no chat with the store.', 409);
+        }
+
+        $sender  = OrderChat::join($channel, session('user'), OrderChat::ROLE_STORE);
+        $message = ChatMessage::create([
+            'company_uuid'      => $channel->company_uuid,
+            'chat_channel_uuid' => $channel->uuid,
+            'sender_uuid'       => $sender->uuid,
+            'content'           => trim((string) $request->input('content')),
+        ]);
+        $message->load(['sender.user', 'attachments.file', 'receipts']);
+        $message->notifyParticipants();
+
+        return response()->json(['message' => (new OrderChatMessage($message, OrderChat::customerUserUuid($order), $channel, session('user')))->resolve()]);
+    }
+
+    public function read(string $id, string $kind)
+    {
+        $order   = $this->findOrder($id);
+        $channel = $order ? OrderChat::find($order, OrderChat::normalizeKind($kind)) : null;
+        if (!$channel) {
+            return response()->json(['read' => 0]);
+        }
+
+        $participant = OrderChat::participantFor($channel, session('user'));
+        if (!$participant) {
+            return response()->json(['read' => 0]);
+        }
+
+        $unread = $channel->getUnreadMessagesForParticipant($participant);
+        foreach ($unread as $message) {
+            ChatReceipt::create([
+                'company_uuid'      => $channel->company_uuid,
+                'chat_message_uuid' => $message->uuid,
+                'participant_uuid'  => $participant->uuid,
+            ]);
+        }
+
+        return response()->json(['read' => $unread->count()]);
+    }
+
+    /**
+     * Close the customer's "the address is wrong" request without changing the address.
+     */
+    public function dismissAddressChange(string $id)
+    {
+        $order = $this->findOrder($id);
+        if (!$order) {
+            return response()->error('Order not found', 404);
+        }
+
+        $request = $order->getMeta('address_change_request');
+        if (is_array($request)) {
+            $order->updateMeta('address_change_request', [...$request, 'status' => 'dismissed', 'closed_at' => now()->toIso8601String()]);
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Messages from the customer the store has not read: what no staff member has a receipt for.
+     */
+    public static function unreadFromCustomer(Order $order): int
+    {
+        $channel          = OrderChat::find($order, OrderChat::KIND_CUSTOMER);
+        $customerUserUuid = OrderChat::customerUserUuid($order);
+        if (!$channel || !$customerUserUuid) {
+            return 0;
+        }
+
+        $customer = OrderChat::participantFor($channel, $customerUserUuid);
+        if (!$customer) {
+            return 0;
+        }
+
+        return ChatMessage::where('chat_channel_uuid', $channel->uuid)
+            ->where('sender_uuid', $customer->uuid)
+            ->whereDoesntHave('receipts', fn ($query) => $query->where('participant_uuid', '!=', $customer->uuid))
+            ->count();
+    }
+
+    /**
+     * The store's own replies (store option `quick_replies`), else the defaults.
+     */
+    public static function quickReplies(Order $order): array
+    {
+        $store   = \Fleetbase\Storefront\Models\Store::where('public_id', $order->getMeta('storefront_id'))->first();
+        $replies = array_values(array_filter(array_map('trim', (array) data_get($store?->options, 'quick_replies', [])), fn ($reply) => is_string($reply) && $reply !== ''));
+
+        return $replies ?: static::DEFAULT_QUICK_REPLIES;
+    }
+
+    protected function findOrder(string $id): ?Order
+    {
+        try {
+            return Order::findRecordOrFail($id, ['customer', 'driverAssigned']);
+        } catch (ModelNotFoundException $exception) {
+            return null;
+        }
+    }
+
+    protected function messageQuery(ChatChannel $channel)
+    {
+        return ChatMessage::where('chat_channel_uuid', $channel->uuid)
+            ->with(['sender.user', 'attachments.file', 'receipts'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+    }
+}

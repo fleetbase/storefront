@@ -1,6 +1,6 @@
 {{! Only a checkout with more than one order has anything to show here. }}
 {{#if (or this.load.isRunning this.siblings.length)}}
-<ContentPanel @title={{t "storefront.order.other-orders-in-checkout" count=this.siblings.length}} @open={{true}} @isLoading={{this.load.isRunning}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "storefront.order.other-orders-in-checkout" count=this.siblings.length}} @open={{not @folded}} @isLoading={{this.load.isRunning}} @wrapperClass="bordered-top" ...attributes>
     {{#if this.siblings.length}}
         <div class="storefront-member-list">
             {{#each this.siblings as |order|}}

@@ -1,0 +1,220 @@
+{{! Edit a placed order. Each section says what it was and what the order's stage allows; the footer prices the change before it is saved. }}
+<div class="storefront-order-edit" {{did-insert this.focusSection}} data-test-order-edit-form>
+    <div class="storefront-create-order__steps">
+        {{#if this.stageNote}}
+            <div class="storefront-order-edit__stage storefront-order-edit__stage--{{this.overview.edit.stage}}" data-test-order-edit-stage>
+                <FaIcon @icon={{if this.isClosed "lock" "circle-info"}} />
+                <span>{{this.stageNote}}</span>
+            </div>
+        {{/if}}
+
+        {{#unless this.isPickup}}
+            <section class="storefront-create-order__sec" data-edit-section="dropoff" data-test-order-edit-section="dropoff">
+                <h3 class="storefront-create-order__sec-title">
+                    {{t "storefront.order.edit.dropoff"}}
+                    {{#if this.dropoff}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} class="ml-2" />{{/if}}
+                </h3>
+                <p class="storefront-create-order__help mt-0">{{t "storefront.order.edit.was" value=(n-a this.currentDropoff.address)}}</p>
+                {{#if this.isClosed}}
+                    <p class="storefront-order-edit__locked"><FaIcon @icon="lock" @size="xs" /> {{this.closedReason}}</p>
+                {{else}}
+                    {{#if this.placeRows.length}}
+                        <div class="storefront-create-order__places">
+                            {{#each this.placeRows as |row|}}
+                                <button type="button" class="storefront-create-order__place {{if row.isSelected 'is-selected'}}" {{on "click" (fn this.selectDropoff row.place)}} data-test-edit-dropoff={{row.place.id}}>
+                                    <span class="storefront-create-order__tile"><FaIcon @icon="house" @size="xs" /></span>
+                                    <span class="storefront-create-order__place-text">
+                                        <span class="storefront-create-order__place-name">{{n-a row.place.name (t "storefront.common.address")}}</span>
+                                        <span class="storefront-create-order__place-address">{{n-a row.place.address}}</span>
+                                    </span>
+                                </button>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+                    {{#if this.otherDropoff}}
+                        <div class="storefront-create-order__places">
+                            <div class="storefront-create-order__place is-selected is-static">
+                                <span class="storefront-create-order__tile"><FaIcon @icon="map-marker-alt" @size="xs" /></span>
+                                <span class="storefront-create-order__place-text">
+                                    <span class="storefront-create-order__place-name">{{n-a this.otherDropoff.name (t "storefront.common.address")}}</span>
+                                    <span class="storefront-create-order__place-address">{{n-a this.otherDropoff.address}}</span>
+                                </span>
+                            </div>
+                        </div>
+                    {{/if}}
+                    <div class="storefront-create-order__dropoff-row">
+                        <ModelSelect @modelName="place" @selectedModel={{this.otherDropoff}} @placeholder={{t "storefront.orders.create.other-address"}} @triggerClass="form-select form-input" @infiniteScroll={{false}} @renderInPlace={{true}} @onChange={{this.selectDropoff}} as |model|>
+                            <SelectOption::Place @option={{model}} />
+                        </ModelSelect>
+                        {{#if this.customer}}
+                            <Button @size="sm" @icon="plus" @helpText={{t "storefront.orders.create.new-address"}} @onClick={{this.newAddress}} @permission="fleet-ops create place" aria-label={{t "storefront.orders.create.new-address"}} />
+                        {{/if}}
+                    </div>
+                    {{#if this.hasDriver}}
+                        <p class="storefront-create-order__help">{{t "storefront.order.edit.dropoff-reroutes"}}</p>
+                    {{/if}}
+                {{/if}}
+            </section>
+        {{/unless}}
+
+        <section class="storefront-create-order__sec" data-edit-section="contact" data-test-order-edit-section="contact">
+            <h3 class="storefront-create-order__sec-title">
+                {{t "storefront.common.customer"}}
+                {{#if this.contactChanged}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} class="ml-2" />{{/if}}
+            </h3>
+            <div class="storefront-order-edit__contact">
+                <InputGroup @name={{t "storefront.common.name"}}>
+                    <input type="text" class="form-input w-full" value={{this.contact.name}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "name")}} />
+                </InputGroup>
+                <InputGroup @name={{t "storefront.common.phone"}}>
+                    <input type="tel" class="form-input w-full" value={{this.contact.phone}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "phone")}} />
+                </InputGroup>
+                <InputGroup @name={{t "storefront.common.email"}}>
+                    <input type="email" class="form-input w-full" value={{this.contact.email}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "email")}} />
+                </InputGroup>
+            </div>
+            {{#if this.contactChanged}}
+                <Storefront::ViewToggle
+                    @options={{array (hash id="order" label=(t "storefront.order.edit.contact-order")) (hash id="profile" label=(t "storefront.order.edit.contact-profile" name=(n-a this.originalContact.name)))}}
+                    @value={{this.contactScope}}
+                    @onChange={{this.setContactScope}}
+                    @label={{t "storefront.order.edit.contact-scope"}}
+                />
+                <p class="storefront-create-order__help">{{if (eq this.contactScope "profile") (t "storefront.order.edit.contact-profile-help") (t "storefront.order.edit.contact-order-help")}}</p>
+            {{/if}}
+        </section>
+
+        <section class="storefront-create-order__sec" data-edit-section="items" data-test-order-edit-section="items">
+            <h3 class="storefront-create-order__sec-title">
+                {{t "storefront.order.tabs.items"}}
+                {{#if this.itemsChanged}}<Badge @status="warning" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} class="ml-2" />{{/if}}
+                {{#if (and this.canAddItems (not this.showPicker))}}
+                    <Button @type="primary" @size="xs" @icon="plus" @text={{t "storefront.orders.create.add-products"}} @onClick={{this.openPicker}} class="ml-auto" data-test-edit-add-products />
+                {{/if}}
+            </h3>
+            {{#if this.itemsLock}}
+                <p class="storefront-order-edit__locked"><FaIcon @icon="lock" @size="xs" /> {{this.itemsLock.reason}}</p>
+            {{/if}}
+            <div class="storefront-create-order__table-wrap">
+                <table class="storefront-create-order__table" data-test-edit-lines>
+                    <thead>
+                        <tr>
+                            <th>{{t "storefront.orders.create.product"}}</th>
+                            <th class="storefront-create-order__th-qty">{{t "storefront.orders.create.qty"}}</th>
+                            <th class="is-right">{{t "storefront.networks.orders.columns.total"}}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each this.lineRows as |line|}}
+                            <tr class="{{if line.removed 'is-removed'}} {{if line.isNew 'is-new'}}" data-test-edit-line={{line.key}}>
+                                <td>
+                                    <span class="storefront-create-order__product">
+                                        <Image src={{line.image}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{line.name}} class="storefront-create-order__thumb" />
+                                        <span class="storefront-create-order__place-text">
+                                            <span class="storefront-create-order__place-name">{{line.name}}</span>
+                                            <span class="storefront-create-order__place-address">
+                                                {{#if line.removed}}
+                                                    {{t "storefront.order.edit.removed"}}
+                                                {{else if line.isNew}}
+                                                    {{t "storefront.order.edit.added"}}{{#if line.optionsLabel}} · {{line.optionsLabel}}{{/if}}
+                                                {{else if line.quantityChanged}}
+                                                    {{t "storefront.order.edit.qty-was" quantity=line.originalQuantity}}{{#if line.optionsLabel}} · {{line.optionsLabel}}{{/if}}
+                                                {{else}}
+                                                    {{n-a line.optionsLabel ""}}{{#if line.unavailable}} <span class="text-red-500">{{t "storefront.order.packing.unavailable"}}</span>{{/if}}
+                                                {{/if}}
+                                            </span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td>
+                                    {{#unless line.removed}}
+                                        <span class="storefront-create-order__qty">
+                                            <button type="button" aria-label={{t "storefront.orders.create.decrease"}} disabled={{not line.canDecrease}} {{on "click" (fn this.changeQuantity line -1)}}>−</button>
+                                            <span>{{line.quantity}}</span>
+                                            <button type="button" aria-label={{t "storefront.orders.create.increase"}} disabled={{not line.canIncrease}} {{on "click" (fn this.changeQuantity line 1)}}>+</button>
+                                        </span>
+                                    {{/unless}}
+                                </td>
+                                <td class="is-right font-semibold">{{format-currency line.total this.currency}}</td>
+                                <td class="is-right">
+                                    {{#if line.removed}}
+                                        <Button @size="xs" @text={{t "storefront.order.edit.undo"}} @onClick={{fn this.undoRemove line}} />
+                                    {{else if this.canRemoveItems}}
+                                        <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} aria-label={{t "common.remove"}} @onClick={{fn this.removeLine line}} />
+                                    {{/if}}
+                                </td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+            {{#if this.showPicker}}
+                <Storefront::Order::ProductPicker @products={{this.products}} @currency={{this.currency}} @onAdd={{this.addLine}} @onDone={{this.closePicker}} />
+            {{/if}}
+        </section>
+
+        <section class="storefront-create-order__sec" data-edit-section="schedule" data-test-order-edit-section="schedule">
+            <h3 class="storefront-create-order__sec-title">{{t "storefront.order.edit.when"}}</h3>
+            {{#if this.scheduleLocked}}
+                <p class="storefront-order-edit__locked"><FaIcon @icon="lock" @size="xs" /> {{this.scheduleLock.reason}}</p>
+            {{else}}
+                <div class="storefront-create-order__row">
+                    <Storefront::ViewToggle @options={{array (hash id="asap" label=(t "storefront.order.asap")) (hash id="schedule" label=(t "storefront.orders.create.schedule"))}} @value={{if this.isScheduled "schedule" "asap"}} @onChange={{this.setTiming}} @label={{t "storefront.orders.create.schedule"}} />
+                    {{#if this.isScheduled}}
+                        <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
+                    {{/if}}
+                </div>
+                {{#if (eq this.scheduleLock.rule "earlier_only")}}
+                    <p class="storefront-create-order__help">{{this.scheduleLock.reason}}</p>
+                {{/if}}
+            {{/if}}
+        </section>
+
+        <section class="storefront-create-order__sec storefront-create-order__sec--last" data-edit-section="notes" data-test-order-edit-section="notes">
+            <h3 class="storefront-create-order__sec-title">{{t "storefront.order.edit.notes"}}</h3>
+            <Textarea class="form-input w-full" rows="3" @value={{this.notes}} disabled={{this.isClosed}} aria-label={{t "storefront.order.edit.notes"}} {{on "input" this.setNotes}} />
+        </section>
+    </div>
+
+    <footer class="storefront-order-edit__footer" data-test-order-edit-footer>
+        {{#if this.preview}}
+            <div class="storefront-order-edit__summary">
+                <div class="storefront-order-edit__changes">{{this.preview.summary}}</div>
+                <div class="storefront-order-edit__total">
+                    <span>{{t "storefront.order.sections.total"}}</span>
+                    {{#if this.difference}}<s>{{format-currency this.preview.order.total this.currency}}</s>{{/if}}
+                    <strong>{{format-currency this.preview.proposed.total this.currency}}</strong>
+                </div>
+            </div>
+            {{#each this.violations as |violation|}}
+                <div class="storefront-order-edit__violation" role="alert"><FaIcon @icon="ban" @size="xs" /> {{violation}}</div>
+            {{/each}}
+            {{#each this.warnings as |warning|}}
+                <div class="storefront-order-edit__warning"><FaIcon @icon="triangle-exclamation" @size="xs" /> {{warning}}</div>
+            {{/each}}
+            {{#if this.settlementSentence}}
+                <div class="storefront-order-edit__settle">
+                    <span>{{this.settlementSentence}}</span>
+                    {{#if this.settlementOptions.length}}
+                        <Storefront::ViewToggle @options={{this.settlementOptions}} @value={{this.settlementAction}} @onChange={{this.setSettlement}} @label={{t "storefront.order.edit.settle-label"}} />
+                    {{/if}}
+                </div>
+            {{/if}}
+            <div class="storefront-order-edit__notify">
+                <label><input type="checkbox" checked={{this.notifyCustomer}} {{on "change" this.toggleNotifyCustomer}} /> {{t "storefront.order.edit.notify-customer" name=(n-a this.originalContact.name)}}</label>
+                {{#if this.hasDriver}}
+                    <label><input type="checkbox" checked={{this.notifyDriver}} {{on "change" this.toggleNotifyDriver}} /> {{t "storefront.order.edit.notify-driver"}}</label>
+                {{/if}}
+            </div>
+        {{else if this.previewError}}
+            <div class="storefront-order-edit__violation" role="alert">{{this.previewError}}</div>
+        {{else}}
+            <div class="storefront-order-edit__changes">{{if this.requote.isRunning (t "storefront.order.edit.pricing") (t "storefront.order.edit.no-changes")}}</div>
+        {{/if}}
+        <div class="storefront-order-edit__buttons">
+            <Button @text={{t "storefront.order.edit.discard"}} @onClick={{this.discard}} />
+            <Button @type="primary" @icon="check" @text={{t "storefront.order.edit.save"}} @isLoading={{or this.save.isRunning this.requote.isRunning}} @disabled={{not this.canSave}} @onClick={{perform this.save}} @permission="storefront update order" data-test-order-edit-save />
+        </div>
+    </footer>
+</div>

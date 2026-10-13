@@ -1,0 +1,43 @@
+{{! The order's chats in the panel: the store's thread with the customer (write) and the customer's thread with the driver (read). }}
+<ContentPanel
+    @title={{t "storefront.order.chat.title"}}
+    @subtitle={{this.subtitle}}
+    @open={{this.startOpen}}
+    @isLoading={{this.load.isRunning}}
+    @wrapperClass="bordered-top"
+    @onToggle={{this.toggled}}
+    data-test-order-chat
+>
+    <Storefront::ViewToggle @options={{this.kindOptions}} @value={{this.kind}} @onChange={{this.setKind}} @label={{t "storefront.order.chat.thread"}} />
+
+    <div class="storefront-order-chat__messages" role="log" aria-live="polite" {{did-insert this.scrollToEnd}} {{did-update this.scrollToEnd this.messages.length}}>
+        {{#each this.messages as |message|}}
+            <div class="storefront-order-chat__message storefront-order-chat__message--{{message.sender.role}} {{if message.is_mine 'is-mine'}}" data-test-chat-message={{message.id}}>
+                {{#unless message.is_mine}}
+                    <div class="storefront-order-chat__sender">{{message.sender.name}} · {{t (concat "storefront.order.chat.roles." message.sender.role)}}</div>
+                {{/unless}}
+                <div class="storefront-order-chat__bubble">{{message.content}}</div>
+                <div class="storefront-order-chat__time">{{format-date-fns message.created_at "d MMM HH:mm"}}</div>
+            </div>
+        {{else}}
+            <div class="storefront-order-chat__empty">{{this.emptyText}}</div>
+        {{/each}}
+    </div>
+
+    {{#if this.canWrite}}
+        {{#if this.quickReplies.length}}
+            <div class="storefront-order-chat__quick" data-test-chat-quick-replies>
+                {{#each this.quickReplies as |reply|}}
+                    <button type="button" class="storefront-order-chat__chip" {{on "click" (fn this.useQuickReply reply)}}>{{reply}}</button>
+                {{/each}}
+            </div>
+        {{/if}}
+        <form class="storefront-order-chat__composer" {{on "submit" this.submit}}>
+            <Textarea class="form-input w-full" rows="2" @value={{this.draft}} placeholder={{t "storefront.order.chat.placeholder"}} aria-label={{t "storefront.order.chat.placeholder"}} {{on "keydown" this.keydown}} data-test-chat-input />
+            <Button @type="primary" @buttonType="submit" @icon="paper-plane" @text={{t "storefront.order.chat.send"}} @isLoading={{this.send.isRunning}} @disabled={{not this.draft}} @permission="storefront update order" data-test-chat-send />
+        </form>
+        <p class="storefront-create-order__help">{{t "storefront.order.chat.delivery-help"}}</p>
+    {{else if (eq this.kind "driver")}}
+        <p class="storefront-create-order__help">{{t "storefront.order.chat.driver-readonly"}}</p>
+    {{/if}}
+</ContentPanel>

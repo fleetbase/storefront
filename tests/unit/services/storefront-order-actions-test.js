@@ -6,7 +6,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
     setupTest(hooks);
 
     test('it opens order details through the resource context panel', async function (assert) {
-        assert.expect(14);
+        assert.expect(8);
 
         class FetchStub extends Service {
             get(path, params, options) {
@@ -40,27 +40,15 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
             open(definition) {
                 assert.strictEqual(definition.resource.public_id, 'order_test');
                 assert.strictEqual(definition.header, 'storefront/order/panel-header');
-                assert.notOk(definition.content);
-                assert.strictEqual(definition.tabs.length, 7);
-                assert.strictEqual(definition.tabs[0].key, 'items');
-                assert.strictEqual(definition.tabs[0].component, 'storefront/order/details/tabs/items');
-                assert.strictEqual(definition.tabs[6].key, 'invoice');
-                assert.strictEqual(definition.tabs[6].component, 'storefront/order/details/registered-tab');
-                assert.strictEqual(definition.width, '600px');
-            }
-        }
-
-        class MenuServiceStub extends Service {
-            getMenuItems(registry) {
-                assert.strictEqual(registry, 'storefront:component:order:details');
-                return [{ title: 'Invoice', slug: 'invoice', icon: 'file-invoice-dollar' }];
+                assert.strictEqual(definition.content, 'storefront/order/overview');
+                assert.notOk(definition.tabs);
+                assert.strictEqual(definition.width, '640px');
             }
         }
 
         this.owner.register('service:fetch', FetchStub);
         this.owner.register('service:storefront', StorefrontStub);
         this.owner.register('service:resource-context-panel', ResourceContextPanelStub);
-        this.owner.register('service:universe/menu-service', MenuServiceStub);
 
         const service = this.owner.lookup('service:storefront-order-actions');
 

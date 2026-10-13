@@ -1,0 +1,42 @@
+{{! The order on one scroll, most urgent first: what to do next, what needs attention, where it goes, what is in it, then the rest folded away. }}
+<div class="storefront-order-overview" data-test-order-overview {{did-update this.reload this.order.status this.order.updated_at}}>
+    <Storefront::Order::NextStep @order={{this.order}} @overview={{this.overview}} @onPrintLabel={{perform this.printLabel}} @isPrintingLabel={{this.printLabel.isRunning}} />
+    <Storefront::Order::Alerts @order={{this.order}} @alerts={{this.overview.alerts}} @payment={{this.overview.payment}} @onEdit={{this.edit}} @refresh={{this.refresh}} />
+
+    {{#unless this.order.meta.is_pickup}}
+        <Storefront::Order::Details::Route @resource={{this.order}} @refresh={{this.refresh}} />
+    {{/unless}}
+
+    <ContentPanel
+        @title={{t "storefront.order.tabs.items"}}
+        @subtitle={{this.itemsSubtitle}}
+        @open={{true}}
+        @wrapperClass="bordered-top"
+        @actionButtons={{this.itemActions}}
+        data-test-order-items
+    >
+        <Storefront::Order::LineItems @order={{this.order}} @packing={{this.canPack}} @onPack={{this.setPacking}} />
+        <Storefront::Order::PaymentLine @order={{this.order}} @payment={{this.overview.payment}} />
+    </ContentPanel>
+
+    <Storefront::Order::Chat @order={{this.order}} @unread={{this.overview.chat.unread}} @onRead={{this.reload}} />
+    <Storefront::Order::Details::Comments @resource={{this.order}} @refresh={{this.refresh}} />
+    <Storefront::Order::Details::Activity @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    {{#if this.order.payload.dropoff}}
+        <Storefront::Order::Details::Tracking @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    {{/if}}
+    <Storefront::Order::Details::Detail @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    <Storefront::Order::Details::CustomerInsights @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    <Storefront::Order::Details::Store @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    {{#if this.order.meta.checkout_id}}
+        <Storefront::Order::Details::CheckoutSiblings @resource={{this.order}} @folded={{true}} />
+    {{/if}}
+    <Storefront::Order::Details::Metadata @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+    <Storefront::Order::Details::Documents @resource={{this.order}} @refresh={{this.refresh}} @folded={{true}} />
+
+    {{#each this.registeredSections as |section|}}
+        <ContentPanel @title={{section.title}} @open={{false}} @wrapperClass="bordered-top">
+            <Storefront::Order::Details::RegisteredTab @class={{section.slug}} @resource={{this.order}} />
+        </ContentPanel>
+    {{/each}}
+</div>

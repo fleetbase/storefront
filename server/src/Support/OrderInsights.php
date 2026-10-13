@@ -96,6 +96,7 @@ class OrderInsights
             $alerts[] = [
                 'code'    => 'address_change_requested',
                 'message' => $request['message'] ?? 'The customer asked to change the address.',
+                'address' => $request['address'] ?? null,
                 'at'      => $request['at'] ?? null,
             ];
         }

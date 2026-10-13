@@ -18,7 +18,7 @@ class OrderChat extends FleetbaseResource
     /**
      * @param iterable<\Fleetbase\Models\ChatMessage> $messages latest messages, oldest first
      */
-    public function __construct(ChatChannel $channel, public Order $order, public ?string $customerUserUuid, public iterable $messages = [], public int $unreadCount = 0)
+    public function __construct(ChatChannel $channel, public Order $order, public ?string $customerUserUuid, public iterable $messages = [], public int $unreadCount = 0, public ?string $viewerUserUuid = null)
     {
         parent::__construct($channel);
     }
@@ -33,24 +33,25 @@ class OrderChat extends FleetbaseResource
     public function toArray($request)
     {
         $closed = OrderChatSupport::isClosed($this->order);
-        $me     = $this->participants->firstWhere('user_uuid', $this->customerUserUuid);
+        $me     = $this->participants->firstWhere('user_uuid', $this->viewerUserUuid ?? $this->customerUserUuid);
 
         return [
             'id'           => $this->public_id,
             // Core broadcasts chat messages on `chat.{public_id}` (and `chat.{uuid}`).
             'channel'      => 'chat.' . $this->public_id,
             'order'        => $this->order->public_id,
+            'kind'         => OrderChatSupport::kindOf($this->resource),
             'status'       => $closed ? 'closed' : 'open',
             'me'           => data_get($me, 'public_id'),
             'participants' => $this->participants->map(fn ($participant) => [
                 'id'         => $participant->public_id,
-                'role'       => $participant->user_uuid === $this->customerUserUuid ? 'customer' : 'driver',
+                'role'       => OrderChatSupport::roleOf($this->resource, $participant, $this->customerUserUuid),
                 'name'       => data_get($participant, 'user.name'),
                 // Null without an uploaded avatar, so the app shows initials instead of a placeholder.
                 'avatar_url' => data_get($participant, 'user.avatar_uuid') ? data_get($participant, 'user.avatar_url') : null,
                 'is_online'  => (bool) $participant->is_online,
             ])->values()->all(),
-            'messages'     => OrderChatMessage::list($this->messages, $this->customerUserUuid),
+            'messages'     => OrderChatMessage::list($this->messages, $this->customerUserUuid, $this->resource, $this->viewerUserUuid),
             'unread_count' => $this->unreadCount,
         ];
     }

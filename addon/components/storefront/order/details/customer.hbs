@@ -1,4 +1,4 @@
-<ContentPanel @title={{t "storefront.common.customer"}} @open={{true}} @isLoading={{@isLoading}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "storefront.common.customer"}} @open={{not @folded}} @isLoading={{@isLoading}} @wrapperClass="bordered-top" ...attributes>
     <div class="storefront-order-customer">
         <Customer::Pill @customer={{@resource.customer}} @titleFallback="No customer" @static={{not @resource.customer.id}} data-test-order-customer-pill />
         <div class="storefront-order-facts mt-2">

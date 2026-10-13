@@ -1,1 +1,13 @@
-{{outlet}}
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="640px" @minResizeWidth={{560}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+    <Overlay::Header @onPressCancel={{this.backToOrder}} class="storefront-create-order__header">
+        <:default>
+            <div class="min-w-0">
+                <div class="storefront-create-order__title">{{t "storefront.order.edit.title"}}</div>
+                <div class="storefront-create-order__store">{{or @model.tracking_number.tracking_number @model.tracking @model.public_id}} · <Badge @status={{@model.status}} @size="xs" /></div>
+            </div>
+        </:default>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-create-order" data-test-edit-order>
+        <Storefront::Order::EditForm @order={{@model}} @focus={{this.focus}} @onSaved={{this.saved}} @onCancel={{this.backToOrder}} />
+    </Overlay::Body>
+</Overlay>

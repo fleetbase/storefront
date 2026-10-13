@@ -45,29 +45,4 @@ module('Unit | Route | orders/index/view', function (hooks) {
 
         assert.deepEqual(order, { id: 'order_test' });
     });
-
-    test('it exposes the six order tabs and appends registered ones', function (assert) {
-        assert.expect(6);
-
-        class MenuServiceStub extends Service {
-            getMenuItems(registry) {
-                assert.strictEqual(registry, 'storefront:component:order:details');
-                return [{ route: 'orders.index.view.virtual', label: 'Invoice', slug: 'invoice', icon: 'file-invoice-dollar' }];
-            }
-        }
-
-        this.owner.register('service:universe/menu-service', MenuServiceStub);
-
-        const controller = this.owner.lookup('controller:orders/index/view');
-        const tabs = controller.tabs;
-
-        assert.strictEqual(tabs.length, 7);
-        assert.deepEqual(
-            tabs.slice(0, 6).map((tab) => tab.id),
-            ['items', 'route', 'payment', 'activity', 'customer', 'data']
-        );
-        assert.strictEqual(tabs[0].component, 'storefront/order/details/tabs/items');
-        assert.strictEqual(tabs[6].label, 'Invoice');
-        assert.strictEqual(tabs[6].registeredSlug, 'invoice');
-    });
 });

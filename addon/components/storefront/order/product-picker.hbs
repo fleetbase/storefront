@@ -1,0 +1,71 @@
+{{! Search the store's products and add one, choosing its options first when it has any. }}
+{{#if this.configuring}}
+    <div class="storefront-catalog-picker" data-test-line-config>
+        <div class="storefront-catalog-picker__header">
+            <div class="min-w-0">
+                <div class="storefront-catalog-products__title">{{this.configuring.name}}</div>
+                <div class="storefront-catalog-products__meta">{{t "storefront.orders.create.choose-options"}}</div>
+            </div>
+            <span class="storefront-create-order__qty">
+                <button type="button" aria-label={{t "storefront.orders.create.decrease"}} disabled={{eq this.configQuantity 1}} {{on "click" (fn this.setConfigQuantity -1)}}>−</button>
+                <span>{{this.configQuantity}}</span>
+                <button type="button" aria-label={{t "storefront.orders.create.increase"}} {{on "click" (fn this.setConfigQuantity 1)}}>+</button>
+            </span>
+        </div>
+        <div class="storefront-catalog-picker__list storefront-create-order__options">
+            {{#each this.configVariantRows as |row|}}
+                <div class="storefront-create-order__option-group">
+                    <div class="storefront-create-order__option-title">{{row.variant.name}}{{#if row.variant.is_required}} <span class="text-red-500">*</span>{{/if}}</div>
+                    <div class="storefront-create-order__option-list">
+                        {{#each row.options as |item|}}
+                            <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleVariantOption row.variant item.option)}}>
+                                <span class="storefront-check {{unless row.variant.is_multiselect 'is-radio'}} {{if item.isSelected 'is-checked'}} mr-1" aria-hidden="true">{{#if item.isSelected}}{{#if row.variant.is_multiselect}}<FaIcon @icon="check" />{{/if}}{{/if}}</span>
+                                {{item.option.name}}{{#if item.option.additional_cost}} <span class="text-gray-500">+{{format-currency item.option.additional_cost this.currency}}</span>{{/if}}
+                            </button>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/each}}
+            {{#each this.configAddonRows as |row|}}
+                <div class="storefront-create-order__option-group">
+                    <div class="storefront-create-order__option-title">{{row.category.name}}{{#if row.category.max_selectable}} <span class="text-gray-500">{{t "storefront.orders.create.max" max=row.category.max_selectable}}</span>{{/if}}</div>
+                    <div class="storefront-create-order__option-list">
+                        {{#each row.addons as |item|}}
+                            <button type="button" class="storefront-create-order__option {{if item.isSelected 'is-selected'}}" {{on "click" (fn this.toggleAddon row.category item.addon)}}>
+                                <span class="storefront-check {{if item.isSelected 'is-checked'}} mr-1" aria-hidden="true">{{#if item.isSelected}}<FaIcon @icon="check" />{{/if}}</span>
+                                {{item.addon.name}} <span class="text-gray-500">+{{format-currency (if item.addon.is_on_sale item.addon.sale_price item.addon.price) this.currency}}</span>
+                            </button>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+        <div class="storefront-catalog-picker__footer">
+            <Button @size="sm" @text={{t "common.cancel"}} @onClick={{this.cancelConfig}} />
+            <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.orders.create.add-to-order"}} @onClick={{this.confirmConfig}} data-test-line-config-add />
+        </div>
+    </div>
+{{else}}
+    <div class="storefront-catalog-picker" data-test-product-picker>
+        <div class="storefront-catalog-picker__header">
+            <Input class="form-input form-input-sm w-full" @value={{this.pickerQuery}} placeholder={{t "storefront.catalogs.editor.search-products"}} {{on "input" this.setPickerQuery}} />
+            <span class="storefront-catalog-picker__hint">{{t "storefront.orders.create.picker-hint"}}</span>
+            {{#if this.lineRows.length}}
+                <Button @size="xs" @text={{t "common.done"}} @onClick={{this.closePicker}} data-test-picker-done />
+            {{/if}}
+        </div>
+        <div class="storefront-catalog-picker__list">
+            {{#each this.pickerProducts as |product|}}
+                <button type="button" class="storefront-catalog-picker__item" {{on "click" (fn this.pickProduct product)}} data-test-picker-product={{product.id}}>
+                    <Image src={{product.primary_image_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{product.name}} class="storefront-catalog-picker__image" />
+                    <span class="storefront-catalog-picker__name">{{product.name}}{{#if product.category.name}} <span class="text-gray-400">· {{product.category.name}}</span>{{/if}}</span>
+                    <span class="storefront-catalog-picker__price">{{format-currency (if product.is_on_sale product.sale_price product.price) product.currency}}</span>
+                    {{#if product.variants.length}}<span class="storefront-status-tab__count">{{t "storefront.catalogs.editor.variants-count" count=product.variants.length}}</span>{{/if}}
+                    <FaIcon @icon="plus" />
+                </button>
+            {{else}}
+                <div class="storefront-empty-row"><span>{{t "storefront.orders.create.no-products"}}</span></div>
+            {{/each}}
+        </div>
+    </div>
+{{/if}}

@@ -104,6 +104,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('{id}/chat/messages', 'OrderChatController@messages');
                     $router->post('{id}/chat/messages', 'OrderChatController@send');
                     $router->post('{id}/chat/read', 'OrderChatController@read');
+                    $router->post('{id}/address-change-request', 'OrderChatController@requestAddressChange');
                 });
 
                 // storefront/v1/promotions
@@ -220,6 +221,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 // Moves an order on a custom flow (e.g. a booking) to its next activity.
                                 $router->patch('update-activity/{id}', $controller('updateActivity'));
                                 $router->get('label/{id}', $controller('label'));
+                                $router->get('{id}/overview', $controller('overview'));
+                                $router->get('{id}/chat/{kind}', 'OrderChatController@show');
+                                $router->post('{id}/chat/{kind}/messages', 'OrderChatController@send');
+                                $router->post('{id}/chat/{kind}/read', 'OrderChatController@read');
+                                $router->delete('{id}/address-change-request', 'OrderChatController@dismissAddressChange');
                                 $router->get('{id}/flow', $controller('flow'));
                                 $router->get('{id}/activity', $controller('activity'));
                                 $router->patch('{id}/entities/{entityId}', $controller('updateEntity'));

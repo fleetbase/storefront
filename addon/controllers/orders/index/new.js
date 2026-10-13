@@ -1,7 +1,7 @@
 import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
-import { action, get } from '@ember/object';
+import { action } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
 
 function cents(value) {
@@ -50,11 +50,6 @@ export default class OrdersIndexNewController extends Controller {
     @tracked tipCustom = 0;
     @tracked quote = null;
     @tracked quoteError = null;
-    @tracked pickerQuery = '';
-    @tracked configuring = null;
-    @tracked configVariants = {};
-    @tracked configAddons = [];
-    @tracked configQuantity = 1;
     @tracked showPicker = false;
 
     tipModes = ['none', 'fixed', 'percent-10', 'percent-20', 'percent-30', 'custom'];
@@ -76,8 +71,6 @@ export default class OrdersIndexNewController extends Controller {
         this.tipCustom = 0;
         this.quote = null;
         this.quoteError = null;
-        this.pickerQuery = '';
-        this.configuring = null;
     }
 
     get isNetworkContext() {
@@ -104,7 +97,6 @@ export default class OrdersIndexNewController extends Controller {
     @task({ restartable: true }) *selectStore(store) {
         this.activeStore = store;
         this.lines = [];
-        this.configuring = null;
         this.quote = null;
         this.quoteError = null;
         this.locations = [];
@@ -165,7 +157,6 @@ export default class OrdersIndexNewController extends Controller {
 
     @action closePicker() {
         this.showPicker = false;
-        this.configuring = null;
     }
 
     /** The store locations as selectable cards. */
@@ -181,21 +172,6 @@ export default class OrdersIndexNewController extends Controller {
 
     get placeRows() {
         return this.customerPlaces.map((place) => ({ place, isDefault: place.id === this.defaultPlaceId, isSelected: this.dropoff?.id === place.id }));
-    }
-
-    get pickerProducts() {
-        const query = this.pickerQuery.trim().toLowerCase();
-
-        return this.products.filter(
-            (product) =>
-                !query ||
-                String(product.name ?? '')
-                    .toLowerCase()
-                    .includes(query) ||
-                String(product.sku ?? '')
-                    .toLowerCase()
-                    .includes(query)
-        );
     }
 
     get itemsCount() {
@@ -483,107 +459,7 @@ export default class OrdersIndexNewController extends Controller {
         this.requote.perform();
     }
 
-    @action setPickerQuery(event) {
-        this.pickerQuery = event.target.value;
-    }
-
-    get configuringNeedsChoices() {
-        const product = this.configuring;
-
-        return Boolean(product && ((product.variants?.length ?? 0) > 0 || (product.addon_categories?.length ?? 0) > 0));
-    }
-
-    get configVariantRows() {
-        const variants = this.configuring?.variants?.toArray?.() ?? Array.from(this.configuring?.variants ?? []);
-
-        return variants.map((variant) => ({
-            variant,
-            options: (variant.options?.toArray?.() ?? Array.from(variant.options ?? [])).map((option) => ({
-                option,
-                isSelected: (this.configVariants[variant.id] ?? []).some((selected) => selected.id === option.id),
-            })),
-        }));
-    }
-
-    get configAddonRows() {
-        const categories = this.configuring?.addon_categories?.toArray?.() ?? Array.from(this.configuring?.addon_categories ?? []);
-
-        return categories.map((category) => {
-            const excluded = new Set((get(category, 'excluded_addons') ?? []).map((id) => String(id)));
-            const available = get(category, 'category.addons');
-            const addons = (available?.toArray?.() ?? Array.from(available ?? [])).filter((addon) => !excluded.has(String(addon.id)));
-
-            return { category, addons: addons.map((addon) => ({ addon, isSelected: this.configAddons.some((selected) => selected.id === addon.id) })) };
-        });
-    }
-
-    @action pickProduct(product) {
-        if ((product.variants?.length ?? 0) > 0 || (product.addon_categories?.length ?? 0) > 0) {
-            this.configuring = product;
-            this.configVariants = {};
-            this.configAddons = [];
-            this.configQuantity = 1;
-            return;
-        }
-
-        this.addLine(product, 1, [], []);
-    }
-
-    @action toggleVariantOption(variant, option) {
-        const current = this.configVariants[variant.id] ?? [];
-        const exists = current.some((selected) => selected.id === option.id);
-        let next;
-
-        if (variant.is_multiselect) {
-            next = exists ? current.filter((selected) => selected.id !== option.id) : [...current, option];
-        } else {
-            next = exists ? [] : [option];
-        }
-
-        this.configVariants = { ...this.configVariants, [variant.id]: next };
-    }
-
-    @action toggleAddon(category, addon) {
-        const exists = this.configAddons.some((selected) => selected.id === addon.id);
-
-        if (exists) {
-            this.configAddons = this.configAddons.filter((selected) => selected.id !== addon.id);
-            return;
-        }
-
-        const max = category.max_selectable ?? 0;
-        const inCategory = this.configAddons.filter((selected) => selected.category_uuid === addon.category_uuid).length;
-
-        if (max && inCategory >= max) {
-            this.notifications.warning(this.intl.t('storefront.orders.create.max-addons', { max, category: category.name }));
-            return;
-        }
-
-        this.configAddons = [...this.configAddons, addon];
-    }
-
-    @action setConfigQuantity(delta) {
-        this.configQuantity = Math.max(1, this.configQuantity + delta);
-    }
-
-    @action confirmConfig() {
-        const product = this.configuring;
-        const missing = this.configVariantRows.filter((row) => row.variant.is_required && !(this.configVariants[row.variant.id] ?? []).length);
-
-        if (missing.length) {
-            this.notifications.warning(this.intl.t('storefront.orders.create.variant-required', { variant: missing[0].variant.name }));
-            return;
-        }
-
-        this.addLine(product, this.configQuantity, Object.values(this.configVariants).flat(), this.configAddons);
-        this.configuring = null;
-    }
-
-    @action cancelConfig() {
-        this.configuring = null;
-    }
-
-    addLine(product, quantity, variants, addons) {
+    @action addLine(product, quantity, variants, addons) {
         const key = `${product.id}:${variants.map((option) => option.id).join(',')}:${addons.map((addon) => addon.id).join(',')}`;
         const existing = this.lines.find((line) => line.key === key);
 

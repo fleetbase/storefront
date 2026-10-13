@@ -29,7 +29,7 @@ export default buildRoutes(function () {
     this.route('orders', function () {
         this.route('index', { path: '/' }, function () {
             this.route('new');
-            this.route('edit', { path: '/:public_id' });
+            this.route('edit', { path: '/:public_id/edit' });
             this.route('view', { path: '/:public_id' }, function () {
                 this.route('index', { path: '/' });
                 this.route('virtual', { path: '/:slug' });

@@ -1,0 +1,17 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="storefront-cancel-order" data-test-cancel-order>
+        <p class="storefront-create-order__help mt-0">{{t "storefront.order.cancel.body"}}</p>
+        <div class="storefront-create-order__field">
+            <label class="storefront-create-order__label" for="cancel-order-reason">{{t "storefront.order.cancel.reason"}}</label>
+            <Textarea id="cancel-order-reason" class="form-input w-full" rows="2" @value={{this.draft.reason}} placeholder={{t "storefront.order.cancel.reason-placeholder"}} data-test-cancel-order-reason />
+        </div>
+        {{#if this.paid}}
+            <label class="storefront-cancel-order__refund">
+                <input type="checkbox" checked={{this.draft.refund}} {{on "change" this.toggleRefund}} data-test-cancel-order-refund />
+                <span>{{this.refundLabel}}</span>
+            </label>
+        {{else}}
+            <p class="storefront-create-order__help">{{t "storefront.order.cancel.nothing-paid"}}</p>
+        {{/if}}
+    </div>
+</Modal::Default>

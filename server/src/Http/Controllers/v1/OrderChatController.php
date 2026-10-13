@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\ChatAttachment;
 use Fleetbase\Models\ChatChannel;
@@ -22,7 +23,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Chat between a signed-in customer and the driver delivering one of their orders.
+ * A signed-in customer's chats about one of their orders: with the driver delivering it
+ * (`kind=driver`, the default) or with the store (`kind=customer`, open before a driver is
+ * assigned). `kind` is read from the query string or the body.
  *
  * storefront/v1/orders/{id}/chat
  */
@@ -53,6 +56,55 @@ class OrderChatController extends Controller
     }
 
     /**
+     * The customer says the drop-off is wrong: the store sees an alert on the order and the
+     * message in its thread with the customer. Optional `place`: one of the customer's saved places.
+     */
+    public function requestAddressChange(Request $request, string $id)
+    {
+        $request->validate(['message' => ['nullable', 'string', 'max:1000'], 'place' => ['nullable', 'string']]);
+
+        $context = $this->contextFor($id, OrderChat::KIND_CUSTOMER);
+        if ($context instanceof JsonResponse) {
+            return $context;
+        }
+        [$order, $customer, $channel] = $context;
+
+        if (OrderChat::isClosed($order) || $order->getMeta('is_pickup')) {
+            return response()->apiError('The address of this order can no longer change.', 422);
+        }
+
+        $place = null;
+        if ($request->filled('place')) {
+            $place = Place::where('owner_uuid', $customer->uuid)->where(fn ($query) => $query->where('public_id', $request->input('place'))->orWhere('uuid', $request->input('place')))->first();
+            if (!$place) {
+                return response()->apiError('Place not found.', 404);
+            }
+        }
+
+        $message = trim((string) $request->input('message', ''));
+        $order->updateMeta('address_change_request', [
+            'status'  => 'open',
+            'message' => $message ?: null,
+            'place'   => $place?->public_id,
+            'address' => $place?->address,
+            'at'      => now()->toIso8601String(),
+        ]);
+
+        $sender = OrderChat::participantFor($channel, $customer->user_uuid);
+        if ($sender) {
+            $content    = trim('The address is wrong. ' . $message . ($place ? ' New address: ' . $place->address : ''));
+            $attributes = ['company_uuid' => $channel->company_uuid, 'chat_channel_uuid' => $channel->uuid, 'sender_uuid' => $sender->uuid, 'content' => $content];
+            if (OrderChat::hasMetaColumn('chat_messages')) {
+                $attributes['meta'] = ['kind' => 'address_change_requested'];
+            }
+            $chatMessage = ChatMessage::create($attributes);
+            $chatMessage->notifyParticipants();
+        }
+
+        return response()->json(['status' => 'ok', 'address_change_request' => $order->getMeta('address_change_request')]);
+    }
+
+    /**
      * Older messages, newest first in the query and returned oldest first.
      *
      * Query params: `before` (a message id) and `limit` (up to 100).
@@ -79,7 +131,7 @@ class OrderChatController extends Controller
 
         $messages = $query->limit($limit)->get()->reverse()->values();
 
-        return response()->json(['messages' => OrderChatMessage::list($messages, $customer->user_uuid)]);
+        return response()->json(['messages' => OrderChatMessage::list($messages, $customer->user_uuid, $channel)]);
     }
 
     /**
@@ -116,7 +168,7 @@ class OrderChatController extends Controller
         $message->load(['sender.user', 'attachments.file', 'receipts']);
         $message->notifyParticipants();
 
-        return response()->json(['message' => (new OrderChatMessage($message, $customer->user_uuid))->resolve()]);
+        return response()->json(['message' => (new OrderChatMessage($message, $customer->user_uuid, $channel))->resolve()]);
     }
 
     /**
@@ -154,6 +206,17 @@ class OrderChatController extends Controller
      */
     protected function resolveContext(string $id): array|JsonResponse
     {
+        return $this->contextFor($id, request()->input('kind'));
+    }
+
+    /**
+     * The customer, their order and its chat of the given kind.
+     *
+     * @return array{0: Order, 1: Contact, 2: ChatChannel}|JsonResponse
+     */
+    protected function contextFor(string $id, ?string $kind): array|JsonResponse
+    {
+        $kind     = OrderChat::normalizeKind($kind);
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
             return response()->apiError('Customer is not authenticated.', 401);
@@ -169,6 +232,15 @@ class OrderChatController extends Controller
         }
 
         // Once the order is finished the chat stays readable, but is not started any more.
+        if ($kind === OrderChat::KIND_CUSTOMER) {
+            $channel = OrderChat::isClosed($order) ? OrderChat::find($order, $kind) : OrderChat::openStore($order);
+            if (!$channel) {
+                return response()->json(['error' => 'This order has no chat with the store.', 'reason' => 'chat_unavailable'], 409);
+            }
+
+            return [$order, $customer, $channel];
+        }
+
         $channel = OrderChat::isClosed($order) ? OrderChat::find($order) : OrderChat::open($order);
         if (!$channel) {
             return response()->json([

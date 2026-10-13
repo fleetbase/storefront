@@ -1,5 +1,10 @@
 import Service, { inject as service } from '@ember/service';
-import { isArray } from '@ember/array';
+import { tracked } from '@glimmer/tracking';
+
+class CancelDraft {
+    @tracked reason = '';
+    @tracked refund = true;
+}
 
 export default class StorefrontOrderActionsService extends Service {
     @service hostRouter;
@@ -10,7 +15,6 @@ export default class StorefrontOrderActionsService extends Service {
     @service storefront;
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
-    @service('universe/menu-service') menuService;
 
     async viewOrder(order, options = {}) {
         const hydratedOrder = await this.fetch.get(
@@ -30,10 +34,11 @@ export default class StorefrontOrderActionsService extends Service {
             resource: hydratedOrder,
             title: hydratedOrder.public_id,
             header: 'storefront/order/panel-header',
-            tabs: this.tabsFor(hydratedOrder),
+            content: 'storefront/order/overview',
+            onChange: options.onChange,
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
             registry: 'storefront:order:details',
-            width: '600px',
+            width: '640px',
             size: 'sm',
             dismissible: false,
             bodyClass: 'scrollable',
@@ -44,31 +49,6 @@ export default class StorefrontOrderActionsService extends Service {
         return hydratedOrder;
     }
 
-    tabsFor() {
-        const registeredTabs = this.menuService.getMenuItems('storefront:component:order:details');
-
-        return [
-            { label: this.intl.t('storefront.order.tabs.items'), key: 'items', icon: 'basket-shopping', component: 'storefront/order/details/tabs/items' },
-            { label: this.intl.t('storefront.order.tabs.route'), key: 'route', icon: 'route', component: 'storefront/order/details/tabs/route' },
-            { label: this.intl.t('storefront.order.tabs.payment'), key: 'payment', icon: 'credit-card', component: 'storefront/order/details/tabs/payment' },
-            { label: this.intl.t('storefront.order.tabs.activity'), key: 'activity', icon: 'wave-square', component: 'storefront/order/details/tabs/activity' },
-            { label: this.intl.t('storefront.order.tabs.customer'), key: 'customer', icon: 'user', component: 'storefront/order/details/tabs/customer' },
-            { label: this.intl.t('storefront.order.tabs.data'), key: 'data', icon: 'database', component: 'storefront/order/details/tabs/data' },
-            ...(isArray(registeredTabs)
-                ? registeredTabs.map((tab) => ({
-                      label: tab.label ?? tab.title,
-                      key: tab.slug,
-                      icon: tab.icon,
-                      component: 'storefront/order/details/registered-tab',
-                      class: tab.slug,
-                  }))
-                : []),
-        ];
-    }
-
-    /**
-     * Header actions: the next workflow action promoted to a button, Edit, then everything else behind a menu.
-     */
     actionButtonsFor(order, callback) {
         const items = this.actionItemsFor(order, callback);
         const primary = items.find((item) => item.id === 'perform-workflow-action');
@@ -92,13 +72,16 @@ export default class StorefrontOrderActionsService extends Service {
         return buttons;
     }
 
-    editOrder(order) {
+    /**
+     * Opens the order's edit form; `focus` scrolls it to a section (dropoff, items, schedule, contact).
+     */
+    editOrder(order, { focus } = {}) {
         if (!order?.public_id) {
             return;
         }
 
         try {
-            return this.hostRouter.transitionTo('console.storefront.orders.index.edit', order.public_id);
+            return this.hostRouter.transitionTo('console.storefront.orders.index.edit', order.public_id, { queryParams: { focus: focus ?? null } });
         } catch {
             return null;
         }
@@ -276,20 +259,39 @@ export default class StorefrontOrderActionsService extends Service {
         }
     }
 
-    cancelOrder(order, callback) {
-        this.modalsManager.confirm({
-            title: this.intl.t('storefront.component.widget.orders.cancel-order-modal-title'),
-            body: this.intl.t('storefront.component.widget.orders.cancel-order-modal-body'),
-            acceptButtonText: this.intl.t('storefront.component.widget.orders.cancel-order'),
+    /**
+     * Cancel with a reason; what was paid is refunded (or credited where the gateway cannot
+     * refund it) unless the store says otherwise. The customer is told why.
+     */
+    async cancelOrder(order, callback) {
+        let payment = null;
+        try {
+            payment = (await this.fetch.get(`orders/${order.public_id}/overview`, {}, { namespace: 'storefront/int/v1' }))?.payment ?? null;
+        } catch {
+            // The dialog still cancels; it just cannot say what is refunded.
+        }
+
+        const draft = new CancelDraft();
+
+        this.modalsManager.show('modals/cancel-order', {
+            title: this.intl.t('storefront.order.cancel.title'),
+            acceptButtonText: this.intl.t('storefront.order.cancel.confirm'),
             acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'ban',
             order,
+            payment,
+            draft,
             confirm: async (modal) => {
                 modal.startLoading();
 
                 try {
-                    const response = await this.fetch.patch('orders/cancel', { order: order.id }, { namespace: 'storefront/int/v1' });
+                    const response = await this.fetch.patch(
+                        'orders/cancel',
+                        { order: order.id, reason: draft.reason?.trim() || null, refund: draft.refund },
+                        { namespace: 'storefront/int/v1' }
+                    );
                     this.setOrderStateFromResponse(order, response, 'canceled', callback);
-                    this.notifications.success(this.intl.t('storefront.component.widget.orders.cancel-order-success', { orderId: order.public_id }));
+                    this.notifications.success(this.intl.t('storefront.order.cancel.success', { orderId: order.public_id }));
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);

@@ -734,6 +734,129 @@ storefront:
       picked_up: Picked up
       completed: Completed
       canceled: Canceled
+    overview:
+      items-count: "{count, plural, one {# item} other {# items}} · {products, plural, one {# product} other {# products}}"
+      print-label: Print label
+      due-in: "Due {time} · {minutes, plural, =0 {now} one {# min left} other {# min left}}"
+      due-late: "Was due {time} · {late} late"
+      duration:
+        minutes: "{count} min"
+        hours: "{hours} h {minutes} min"
+        days: "{count, plural, one {# day} other {# days}}"
+      next:
+        accept: "Next: accept the order"
+        ready: "Next: prepare it and mark it ready"
+        hand-to-customer: "Next: hand it to the customer when they arrive"
+        hand-to-driver: "Next: hand it to {driver}"
+        assign-driver: "Next: assign a driver"
+        with-driver: "{driver} is delivering it"
+        on-the-way: On its way to the customer
+        delivered: Delivered
+        picked-up: Picked up by the customer
+        canceled: Canceled
+        canceled-because: "Canceled: {reason}"
+    alerts:
+      address-change-requested: The customer says the address is wrong
+      update-address: Update address
+      driver-not-accepted: The driver has not accepted the order
+      reassign: Reassign
+      balance-due: "{amount} is still due after an edit"
+      balance-link-sent: The customer was sent a payment link.
+      balance-collect: The driver collects it on delivery.
+      copy-link: Copy payment link
+      link-copied: Payment link copied
+      item-unavailable: "Unavailable: {items}"
+      item-unavailable-detail: Substitute it or remove it; the difference is refunded or credited.
+      substitute-or-remove: Substitute or remove
+      late: "{late} past due"
+      change-time: Change time
+      suggested-address: "Suggested: {address}"
+      dismiss: Dismiss
+    chat:
+      title: Messages
+      thread: Conversation
+      unread: "{count, plural, one {# unread from the customer} other {# unread from the customer}}"
+      with-customer: Store and customer
+      customer-and-driver: Customer and driver
+      empty: No messages yet.
+      no-driver: The customer can message the driver once one is assigned.
+      placeholder: Write to the customer…
+      send: Send
+      delivery-help: The customer gets it as a push and in the app's order chat.
+      driver-readonly: This is the customer's conversation with the driver; the store can read it.
+      roles:
+        customer: Customer
+        driver: Driver
+        store: Store
+        system: Update
+    packing:
+      packed-count: "{packed} of {total} packed"
+      mark-packed: "Packed: {item}"
+      unavailable: Unavailable
+      mark-unavailable: Mark unavailable
+      available-again: Available again
+    payment:
+      paid: "Paid {amount} by {method} · nothing to collect"
+      to-collect: "Cash on delivery · {amount} to collect"
+      unpaid: "Not paid yet · {amount}"
+      balance-due: "Paid {paid} by {method} · {amount} still due"
+      refunded: "{amount} refunded to {method}"
+      partially-refunded: "Paid {paid} by {method} · {amount} refunded"
+      credited: "Paid {paid} by {method} · {amount} given as store credit"
+    cancel:
+      title: Cancel this order?
+      body: The customer is told why. Promotions they used become available again.
+      reason: Reason
+      reason-placeholder: "For example: an item is out of stock"
+      refund: "Refund what was paid ({amount} by {method})"
+      refund-credit: "Give what was paid ({amount}) as store credit"
+      nothing-paid: Nothing was paid, so nothing is refunded.
+      confirm: Cancel order
+      success: "Order {orderId} canceled"
+    edit:
+      title: Edit order
+      edit-items: Edit items
+      changed: Changed
+      was: "Was {value}"
+      dropoff: Delivery address
+      dropoff-reroutes: The driver is rerouted to the new address and told.
+      contact-scope: Where the contact details are saved
+      contact-order: This order only
+      contact-profile: "Update {name}'s profile"
+      contact-order-help: For a gift or a different recipient; the profile stays as it is.
+      contact-profile-help: Used for this and future orders.
+      removed: Removed
+      added: Added
+      qty-was: "Quantity was {quantity}"
+      undo: Undo
+      when: When
+      notes: Notes
+      notify-customer: "Tell {name} what changed"
+      notify-driver: Tell the driver
+      pricing: Pricing the change…
+      no-changes: No changes yet.
+      discard: Discard
+      save: Save changes
+      saved: "Order {id} updated"
+      settle-label: How the difference is settled
+      settle:
+        refund: Refund
+        store_credit: Store credit
+        payment_link: Payment link
+        collect: Driver collects
+        cod_update: Update cash to collect
+      settle-sentence:
+        refund: "{amount} is refunded to {method} on save."
+        store_credit: "{amount} is given as store credit on save."
+        payment_link: "{amount} more is due; the customer is sent a payment link."
+        collect: "{amount} more is due; the driver collects it on delivery."
+        cod_update: "The cash the driver collects changes by {amount}."
+        none: ""
+      stage:
+        open: "Everything can still change. Item changes while preparing are flagged to the store."
+        ready: "The order is ready: items can only be removed and the time only moved earlier."
+        with_driver: "The driver has the order: an address change reroutes them; items and time are locked."
+        closed: "The order is finished; nothing can change. Refund it instead."
   networks:
     store-details:
       back: Stores

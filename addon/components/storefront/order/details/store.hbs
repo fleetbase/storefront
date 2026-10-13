@@ -1,4 +1,4 @@
-<ContentPanel @title={{t "storefront.common.store"}} @open={{true}} @isLoading={{or @isLoading this.isLoadingStorefront}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "storefront.common.store"}} @open={{not @folded}} @isLoading={{or @isLoading this.isLoadingStorefront}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
     <div class="storefront-store-profile" data-test-order-store>
         <div class="storefront-store-profile__banner" {{background-url this.storefrontDisplay.backdrop_url}}></div>
         <div class="storefront-store-profile__identity">

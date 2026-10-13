@@ -5,9 +5,11 @@ namespace Fleetbase\Storefront\Support;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\ChatChannel;
 use Fleetbase\Models\ChatParticipant;
+use Illuminate\Support\Facades\Schema;
 
 /**
- * The chat between a storefront customer and the driver delivering their order.
+ * The chats about a storefront order: the customer with the driver delivering it (`driver`, the
+ * original thread), and the customer with the store (`customer`, which needs no driver).
  *
  * It is an ordinary core chat channel, so the driver sees it in the Navigator app's chat list
  * and both sides receive messages over the `chat_channel.{id}` socket channel. Storefront marks
@@ -19,6 +21,23 @@ class OrderChat
 {
     public const META_ORDER_UUID = 'storefront_order_uuid';
     public const META_ORDER_ID   = 'storefront_order_id';
+    public const META_KIND       = 'kind';
+
+    /** The customer and the driver. Channels made before kinds existed are this kind. */
+    public const KIND_DRIVER = 'driver';
+
+    /** The customer and the store's staff. */
+    public const KIND_CUSTOMER = 'customer';
+
+    public const KINDS = [self::KIND_DRIVER, self::KIND_CUSTOMER];
+
+    public const ROLE_CUSTOMER = 'customer';
+    public const ROLE_DRIVER   = 'driver';
+    public const ROLE_STORE    = 'store';
+    public const ROLE_SYSTEM   = 'system';
+
+    /** @var array<string, bool> */
+    protected static array $metaColumns = [];
 
     /**
      * Order statuses after which the customer can read the chat but no longer send messages.
@@ -28,11 +47,120 @@ class OrderChat
     /**
      * The order's existing chat, if one was started.
      */
-    public static function find(Order $order): ?ChatChannel
+    public static function find(Order $order, string $kind = self::KIND_DRIVER): ?ChatChannel
     {
         return ChatChannel::where('company_uuid', $order->company_uuid)
             ->where('meta->' . static::META_ORDER_UUID, $order->uuid)
+            ->when(
+                $kind === static::KIND_DRIVER,
+                fn ($query) => $query->where(fn ($query) => $query->whereNull('meta->' . static::META_KIND)->orWhere('meta->' . static::META_KIND, static::KIND_DRIVER)),
+                fn ($query) => $query->where('meta->' . static::META_KIND, $kind)
+            )
             ->first();
+    }
+
+    public static function normalizeKind(?string $kind): string
+    {
+        return in_array($kind, static::KINDS, true) ? $kind : static::KIND_DRIVER;
+    }
+
+    public static function kindOf(ChatChannel $channel): string
+    {
+        return static::normalizeKind(data_get($channel->meta, static::META_KIND));
+    }
+
+    /**
+     * The order's thread with the store, started when needed. Works before a driver is assigned.
+     * The customer and any staff who write in it take part; staff are never removed.
+     * Null when neither the customer nor a staff user has an account to take part with.
+     */
+    public static function openStore(Order $order, ?string $staffUserUuid = null): ?ChatChannel
+    {
+        $customerUserUuid = static::customerUserUuid($order);
+        $creator          = $customerUserUuid ?? $staffUserUuid;
+        if (!$creator) {
+            return null;
+        }
+
+        $channel = static::find($order, static::KIND_CUSTOMER);
+        if (!$channel) {
+            $channel = ChatChannel::create([
+                'company_uuid'    => $order->company_uuid,
+                'created_by_uuid' => $creator,
+                'name'            => 'Order ' . $order->public_id . ' · store',
+                'meta'            => [
+                    static::META_ORDER_UUID => $order->uuid,
+                    static::META_ORDER_ID   => $order->public_id,
+                    static::META_KIND       => static::KIND_CUSTOMER,
+                ],
+            ]);
+        }
+
+        if ($customerUserUuid) {
+            static::join($channel, $customerUserUuid, static::ROLE_CUSTOMER);
+        }
+        if ($staffUserUuid && $staffUserUuid !== $customerUserUuid) {
+            static::join($channel, $staffUserUuid, static::ROLE_STORE);
+        }
+
+        return $channel;
+    }
+
+    /**
+     * Add a user to the channel when they are not in it, with their role where the participant
+     * table records roles.
+     */
+    public static function join(ChatChannel $channel, string $userUuid, string $role): ChatParticipant
+    {
+        $participant = static::participantFor($channel, $userUuid);
+        if ($participant) {
+            return $participant;
+        }
+
+        $attributes = [
+            'company_uuid'      => $channel->company_uuid,
+            'chat_channel_uuid' => $channel->uuid,
+            'user_uuid'         => $userUuid,
+        ];
+        if (static::hasMetaColumn('chat_participants')) {
+            $attributes['meta'] = ['role' => $role];
+        }
+
+        return ChatParticipant::create($attributes);
+    }
+
+    /**
+     * Who a participant is in the thread: their recorded role, else the customer, else the
+     * store in a store thread and the driver in a driver thread.
+     */
+    public static function roleOf(ChatChannel $channel, $participant, ?string $customerUserUuid): string
+    {
+        $recorded = data_get($participant, 'meta.role');
+        if (in_array($recorded, [static::ROLE_CUSTOMER, static::ROLE_DRIVER, static::ROLE_STORE, static::ROLE_SYSTEM], true)) {
+            return $recorded;
+        }
+
+        if ($customerUserUuid && data_get($participant, 'user_uuid') === $customerUserUuid) {
+            return static::ROLE_CUSTOMER;
+        }
+
+        return static::kindOf($channel) === static::KIND_CUSTOMER ? static::ROLE_STORE : static::ROLE_DRIVER;
+    }
+
+    /**
+     * Whether a chat table has the `meta` column (core-api 1.6.69 adds it).
+     */
+    public static function hasMetaColumn(string $table): bool
+    {
+        if (!array_key_exists($table, static::$metaColumns)) {
+            try {
+                static::$metaColumns[$table] = Schema::connection((new ChatParticipant())->getConnectionName())->hasColumn($table, 'meta');
+            } catch (\Throwable $e) {
+                static::$metaColumns[$table] = false;
+            }
+        }
+
+        return static::$metaColumns[$table];
     }
 
     /**
@@ -58,6 +186,7 @@ class OrderChat
                 'meta'            => [
                     static::META_ORDER_UUID => $order->uuid,
                     static::META_ORDER_ID   => $order->public_id,
+                    static::META_KIND       => static::KIND_DRIVER,
                 ],
             ]);
         }
