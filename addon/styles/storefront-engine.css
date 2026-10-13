@@ -6171,6 +6171,20 @@ body[data-theme='dark'] .storefront-create-order__sec-title {
     text-transform: none;
 }
 
+.storefront-create-order__sec-title .storefront-status-tab__count {
+    flex: 0 0 auto;
+}
+
+.storefront-create-order__sec-subtitle {
+    margin: -0.25rem 0 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+body[data-theme='dark'] .storefront-create-order__sec-subtitle {
+    color: #9ca3af;
+}
+
 .storefront-create-order__row {
     display: flex;
     align-items: center;
@@ -6229,6 +6243,11 @@ body[data-theme='dark'] .storefront-create-order__picked {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
+}
+
+/* Whatever follows a list of place cards (another address select, Change address) sits clear of it */
+.storefront-create-order__places + * {
+    margin-top: 0.5rem;
 }
 
 .storefront-create-order__places--grid {
@@ -10268,7 +10287,7 @@ body[data-theme='dark'] .storefront-option-group__meta {
 }
 
 .storefront-option-group__table th {
-    padding: 0.375rem 0.75rem;
+    padding: 0.375rem;
     color: #6b7280;
     font-size: 0.6875rem;
     font-weight: 600;
@@ -10282,9 +10301,18 @@ body[data-theme='dark'] .storefront-option-group__table th {
 }
 
 .storefront-option-group__table td {
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.375rem;
     border-top: 1px solid #f3f4f6;
     vertical-align: middle;
+}
+
+/* Tight gutters between the inputs; the row keeps its 0.75rem inset at both ends */
+.storefront-option-group__table :is(th, td):first-child {
+    padding-left: 0.75rem;
+}
+
+.storefront-option-group__table :is(th, td):last-child {
+    padding-right: 0.75rem;
 }
 
 body[data-theme='dark'] .storefront-option-group__table td {
@@ -10292,11 +10320,12 @@ body[data-theme='dark'] .storefront-option-group__table td {
 }
 
 .storefront-option-group__cost {
-    width: 9rem;
+    width: 10.5rem;
 }
 
+/* Wide enough for the remove button plus the row's end inset, so it is never clipped */
 .storefront-option-group__remove {
-    width: 2.75rem;
+    width: 3.5rem;
     text-align: right;
 }
 
@@ -10777,5 +10806,25 @@ body[data-theme='dark'] .storefront-incoming-order__note {
 
     .storefront-incoming-order__chips {
         justify-content: flex-start;
+    }
+}
+
+/* New customer modal: name across, then email and phone side by side */
+.storefront-new-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.25rem 1.25rem 1rem;
+}
+
+.storefront-new-customer__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+@media (width <= 639px) {
+    .storefront-new-customer__row {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

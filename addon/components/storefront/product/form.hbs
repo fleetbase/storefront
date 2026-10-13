@@ -89,8 +89,10 @@
 
             <section class="storefront-create-order__sec" id="product-section-translations" data-test-product-section="translations">
                 <h3 class="storefront-create-order__sec-title">
-                    {{t "storefront.products.form.sections.translations"}}{{#if this.translationLanguages.length}}<span class="storefront-status-tab__count">{{this.translationLanguages.length}}</span>{{/if}}<span class="storefront-create-order__sec-hint">{{t "storefront.products.form.translations.hint"}}</span>
+                    {{t "storefront.products.form.sections.translations"}}{{#if this.translationLanguages.length}}<span class="storefront-status-tab__count">{{this.translationLanguages.length}}</span>{{/if}}
                 </h3>
+                {{! The hint is long, so it sits under the title rather than squeezing the count beside it. }}
+                <p class="storefront-create-order__sec-subtitle" data-test-translations-hint>{{t "storefront.products.form.translations.hint"}}</p>
                 <Storefront::Product::Form::Translations
                     @languages={{this.translationLanguages}}
                     @languageOptions={{this.translationLanguageOptions}}
