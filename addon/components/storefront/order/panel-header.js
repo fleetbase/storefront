@@ -107,8 +107,12 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
     }
 
     /** A booking not yet under way can move to another free slot (the edit form, at its time). */
+    get isBooking() {
+        return Boolean(this.order?.meta?.is_booking);
+    }
+
     get canReschedule() {
-        return this.canEdit && Boolean(this.order?.meta?.is_booking) && !['in_progress', 'completed', 'canceled', 'order_canceled'].includes(this.order?.status);
+        return this.storefrontOrderActions.canReschedule(this.order, this.panel.overview);
     }
 
     @action reschedule() {

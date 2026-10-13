@@ -69,6 +69,7 @@ export default class StorefrontOrderActionsService extends Service {
     @service notifications;
     @service fetch;
     @service modalsManager;
+    @service abilities;
     @service storefront;
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
@@ -434,6 +435,16 @@ export default class StorefrontOrderActionsService extends Service {
                 this.panel.openChat('customer', this.intl.t('storefront.order.panel.alerts.link-message', { amount: formatCurrency(amount, payment.currency), link }));
             },
         });
+    }
+
+    /** A booking can move until its job is under way, by whoever may edit the order. */
+    canReschedule(order, overview) {
+        return (
+            Boolean(order?.meta?.is_booking) &&
+            this.abilities.can('storefront update order') &&
+            overview?.edit?.stage !== 'closed' &&
+            !['in_progress', 'completed', 'canceled', 'order_canceled'].includes(order?.status)
+        );
     }
 
     /**

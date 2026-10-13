@@ -11954,8 +11954,32 @@ body[data-theme='dark'] .sfop-head__meta {
 
 .sfop-head__actions {
     display: flex;
+    flex: none;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+}
+
+/* The ⋯ dropdown's trigger lines up with the plain buttons (its block wrapper was a pixel taller) */
+.sfop-head__dd {
+    display: inline-flex;
+}
+
+/* Icon-only header buttons: ⋯ and × are squares; a booking's Message is its icon and unread count */
+.sfop-head__icon-btn .btn {
+    min-width: 26px;
+    padding-right: 7px;
+    padding-left: 7px;
+    justify-content: center;
+}
+
+.sfop-head__icon-btn.is-square .btn {
+    width: 26px;
+    padding-right: 0;
+    padding-left: 0;
+}
+
+.sfop-head__icon-btn.is-square .btn .truncate:empty {
+    display: none;
 }
 
 /* Next step and steps */

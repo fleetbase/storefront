@@ -4,7 +4,16 @@
         <div class="sfop-next__text">
             <span class="sfop-next__title" data-test-order-next-title>{{this.title}}</span>
             {{#if this.dueLine}}<span class="sfop-next__due" data-test-order-next-due>{{this.dueLine}}</span>{{/if}}
-            {{#if this.bookingLine}}<span class="sfop-next__booking" data-test-order-booking-line><FaIcon @icon="calendar-check" @size="xs" /> {{this.bookingLine}}</span>{{/if}}
+            {{#if this.bookingLine}}
+                <span class="sfop-next__booking" data-test-order-booking-line>
+                    <FaIcon @icon="calendar-check" @size="xs" />
+                    <span>{{this.bookingLine}}</span>
+                    {{#if this.canReschedule}}
+                        <span aria-hidden="true">·</span>
+                        <button type="button" class="sfop-link" {{on "click" this.reschedule}} data-test-order-booking-reschedule>{{t "storefront.order.panel.reschedule"}}</button>
+                    {{/if}}
+                </span>
+            {{/if}}
         </div>
         <div class="sfop-next__actions">
             {{#unless (or this.isFinished this.isBooking)}}

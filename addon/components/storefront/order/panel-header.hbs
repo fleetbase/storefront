@@ -6,15 +6,19 @@
                 <span class="sfop-mono" data-test-order-panel-title>{{this.trackingNumber}}</span>
                 <Button @size="xs" @icon="copy" @helpText={{t "storefront.order.panel.copy-tracking"}} aria-label={{t "storefront.order.panel.copy-tracking"}} @onClick={{this.copyTracking}} @wrapperClass="sfop-head__copy" />
             </div>
-            <div class="sfop-head__badges" data-test-order-panel-badges>
-                <Badge @status={{this.order.status}} @size="xs" />
-                <Badge @status="violet" @text={{this.fulfillmentLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
-                <Badge @status="gray" @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
-                {{#if this.storeName}}<Badge @status="blue" @text={{this.storeName}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />{{/if}}
-            </div>
         </div>
         <div class="sfop-head__actions">
-            <Button @size="xs" @icon="comment" @text={{t "storefront.order.panel.message"}} @onClick={{this.openMessages}} data-test-order-panel-message>
+            {{! A booking has Reschedule beside Edit, so Message is its icon and unread count. }}
+            <Button
+                @size="xs"
+                @icon="comment"
+                @text={{unless this.isBooking (t "storefront.order.panel.message")}}
+                @helpText={{if this.isBooking (t "storefront.order.panel.message")}}
+                @wrapperClass={{if this.isBooking (concat "sfop-head__icon-btn" (unless this.panel.unreadTotal " is-square"))}}
+                aria-label={{t "storefront.order.panel.message"}}
+                @onClick={{this.openMessages}}
+                data-test-order-panel-message
+            >
                 {{#if this.panel.unreadTotal}}<span class="sfop-count ml-1" aria-label={{t "storefront.order.chat.unread" count=this.panel.unreadTotal}}>{{this.panel.unreadTotal}}</span>{{/if}}
             </Button>
             {{#if this.canReschedule}}
@@ -23,7 +27,15 @@
             {{#if this.canEdit}}
                 <Button @size="xs" @icon="pen" @text={{t "common.edit"}} @onClick={{this.edit}} @permission="storefront update order" data-test-order-panel-edit />
             {{/if}}
-            <DropdownButton @icon="ellipsis-h" @size="xs" @renderInPlace={{false}} aria-label={{t "storefront.order.panel.more"}} as |dd|>
+            <DropdownButton
+                @icon="ellipsis-h"
+                @size="xs"
+                @renderInPlace={{false}}
+                @triggerClass="sfop-head__dd"
+                @buttonWrapperClass="sfop-head__icon-btn is-square"
+                aria-label={{t "storefront.order.panel.more"}}
+                as |dd|
+            >
                 <div class="next-dd-menu mt-1 mx-0">
                     {{#each this.moreItems as |item|}}
                         {{#if item.separator}}
@@ -38,9 +50,15 @@
                 </div>
             </DropdownButton>
             {{#if @onPressCancel}}
-                <Button @size="xs" @icon="times" aria-label={{t "common.close"}} @onClick={{@onPressCancel}} data-test-order-panel-close />
+                <Button @size="xs" @icon="times" aria-label={{t "common.close"}} @wrapperClass="sfop-head__icon-btn is-square" @onClick={{@onPressCancel}} data-test-order-panel-close />
             {{/if}}
         </div>
+    </div>
+    <div class="sfop-head__badges" data-test-order-panel-badges>
+        <Badge @status={{this.order.status}} @size="xs" />
+        <Badge @status="violet" @text={{this.fulfillmentLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
+        <Badge @status="gray" @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
+        {{#if this.storeName}}<Badge @status="blue" @text={{this.storeName}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />{{/if}}
     </div>
     <div class="sfop-head__meta" data-test-order-panel-meta>
         {{this.order.public_id}}{{#if this.placedLine}} · {{this.placedLine}}{{/if}}{{#if this.order.meta.checkout_id}} · {{t "storefront.order.panel.part-of-checkout" checkout=this.order.meta.checkout_id}}{{/if}}

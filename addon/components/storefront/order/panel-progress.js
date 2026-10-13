@@ -299,6 +299,14 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
         return [when, relative, this.driverName].filter(Boolean).join(' · ');
     }
 
+    get canReschedule() {
+        return this.storefrontOrderActions.canReschedule(this.order, this.overview);
+    }
+
+    @action reschedule() {
+        return this.storefrontOrderActions.rescheduleBooking(this.order, () => this.reload());
+    }
+
     get dueAt() {
         return parse(this.overview?.due_at);
     }
