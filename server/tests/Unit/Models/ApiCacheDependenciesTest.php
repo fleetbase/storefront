@@ -56,6 +56,6 @@ test('cached models declare cache dependencies that are relation paths or storef
     'catalog'        => [Catalog::class, ['categories', 'categories.products', 'hours', 'assignments', 'stores', 'food_trucks']],
     'store'          => [Store::class, ['reviews', 'networks']],
     'food truck'     => [FoodTruck::class, ['store', 'store.networks', 'network', 'vehicle', 'vehicle.driver', 'serviceArea', 'serviceArea.zones', 'zone', 'catalogs']],
-    'product'        => [Product::class, ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'files', 'store', 'store.networks', 'catalogCategories']],
+    'product'        => [Product::class, ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'store', 'store.networks', 'catalogCategories']],
     'addon category' => [AddonCategory::class, ['addons']],
 ]);

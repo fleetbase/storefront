@@ -11,6 +11,8 @@ use Fleetbase\Storefront\Models\Catalog;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Observers\CatalogObserver;
+use Fleetbase\Storefront\Observers\FileObserver;
+use Fleetbase\Storefront\Providers\StorefrontServiceProvider;
 use Illuminate\Database\Eloquent\Model;
 
 function createApiCacheInvalidationSchema(): void
@@ -160,4 +162,37 @@ test('discarding a failed capture invalidates the cached lists embedding its tra
 
     expect($connection->table('transaction_items')->whereNull('deleted_at')->count())->toBe(0)
         ->and(apiQueryCacheVersion('transaction_items', 'company_checkout'))->toBe($before + 1);
+});
+
+test('product image changes invalidate the cached product lists, while other uploads leave them cached', function () {
+    $observer = new FileObserver();
+    $before   = apiQueryCacheVersion('products', 'company_files');
+
+    // An upload for anything else in the company
+    $upload = new Fleetbase\Models\File();
+    $upload->forceFill(['uuid' => 'file_other', 'company_uuid' => 'company_files', 'subject_uuid' => 'user_uuid', 'subject_type' => Fleetbase\Models\User::class]);
+    $observer->saved($upload);
+    expect(apiQueryCacheVersion('products', 'company_files'))->toBe($before);
+
+    // A product image attached, then deleted
+    $image = new Fleetbase\Models\File();
+    $image->forceFill(['uuid' => 'file_image', 'company_uuid' => 'company_files', 'subject_uuid' => 'product_uuid', 'subject_type' => Fleetbase\Storefront\Models\Product::class]);
+    $observer->saved($image);
+    expect(apiQueryCacheVersion('products', 'company_files'))->toBe($before + 1);
+
+    $observer->deleted($image);
+    expect(apiQueryCacheVersion('products', 'company_files'))->toBe($before + 2);
+
+    // An image moved off a product
+    $image->syncOriginal();
+    $image->forceFill(['subject_uuid' => 'user_uuid', 'subject_type' => Fleetbase\Models\User::class]);
+    $observer->saved($image);
+    expect(apiQueryCacheVersion('products', 'company_files'))->toBe($before + 3);
+});
+
+test('the storefront service provider observes files for product images', function () {
+    $observers = (new ReflectionProperty(StorefrontServiceProvider::class, 'observers'))->getDefaultValue();
+
+    expect($observers)->toHaveKey(Fleetbase\Models\File::class)
+        ->and($observers[Fleetbase\Models\File::class])->toBe(FileObserver::class);
 });
