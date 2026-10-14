@@ -291,7 +291,11 @@ if (!trait_exists('Illuminate\Foundation\Validation\ValidatesRequests')) {
 }
 
 if (!class_exists('Illuminate\Foundation\Http\FormRequest') && class_exists('Illuminate\Http\Request')) {
-    eval('namespace Illuminate\Foundation\Http; class FormRequest extends \Illuminate\Http\Request { public function authorize() { return true; } public function rules() { return []; } public function responseWithErrors(\Illuminate\Contracts\Validation\Validator $validator) { return $validator; } }');
+    // Enough of the real FormRequest for a controller to build one from a plain request and
+    // validate it the way the router does: setContainer(), setRedirector() and
+    // validateResolved(), which asks the bound validator factory and throws the usual
+    // ValidationException on failure.
+    eval('namespace Illuminate\Foundation\Http; class FormRequest extends \Illuminate\Http\Request { protected $container; public function authorize() { return true; } public function rules() { return []; } public function responseWithErrors(\Illuminate\Contracts\Validation\Validator $validator) { return $validator; } public function setContainer($container) { $this->container = $container; return $this; } public function setRedirector($redirector) { return $this; } public function validateResolved(): void { if (method_exists($this, "prepareForValidation")) { $this->prepareForValidation(); } if (!$this->authorize()) { throw new \Illuminate\Auth\Access\AuthorizationException(); } $factory = $this->container ? $this->container->make("validator") : null; if (!$factory) { return; } $validator = $factory->make($this->all(), $this->rules(), method_exists($this, "messages") ? $this->messages() : [], method_exists($this, "attributes") ? $this->attributes() : []); if ($validator->fails()) { if (method_exists($this, "failedValidation")) { $this->failedValidation($validator); } throw new \Illuminate\Validation\ValidationException($validator); } } }');
 }
 
 if (!class_exists('Illuminate\Validation\Rules\RequiredIf')) {
