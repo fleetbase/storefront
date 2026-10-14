@@ -487,10 +487,12 @@ test('authenticated customer endpoints register devices and scope orders and pla
     // the text itself: record what the provider was given and read the code back from it.
     $twilio = new class {
         public array $messages = [];
+        public array $to       = [];
 
         public function message(string $to, string $message, array $media = [], array $params = []): object
         {
             $this->messages[] = $message;
+            $this->to[]       = $to;
 
             return (object) ['sid' => 'sms_test'];
         }
@@ -525,12 +527,17 @@ test('authenticated customer endpoints register devices and scope orders and pla
     );
     $closureDeliveryFailure = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
     $connection->statement('DROP TRIGGER fail_closure_verification_insert');
-    // Core texts the code to the phone on file, so the customer needs one for the text
-    // (and its plain code) to exist at all.
+    // The code goes to the number being verified, whether or not one is on file.
+    $connection->table('users')->where('uuid', 'user_uuid')->update(['phone' => null]);
+    $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
+        'phone' => '97699112255',
+    ]));
+    $connection->table('verification_codes')->where('meta', 'like', '%97699112255%')->update(['created_at' => now()->subHour()]);
     $connection->table('users')->where('uuid', 'user_uuid')->update(['phone' => '+97699112200']);
     $phoneConflict       = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
         'phone' => '97699112233',
     ]));
+    $phoneTextedTo    = $twilio->to;
     $invalidPhoneCode = $controller->verifyPhoneNumber(Request::create('/customer/phone/verify', 'POST', [
         'code' => 'invalid-code',
     ]));
@@ -605,12 +612,13 @@ test('authenticated customer endpoints register devices and scope orders and pla
             'error' => 'This phone number is already associated with another account.',
         ])
         ->and($phoneConflict->getData(true))->toBe(['status' => 'ok'])
-        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->count())->toBe(1)
+        ->and(array_slice($phoneTextedTo, -2))->toBe(['+97699112255', '+97699112233'])
+        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->count())->toBe(2)
         ->and($invalidPhoneCode->getData(true))->toBe(['error' => 'Invalid verification code!'])
         ->and($verifiedPhone)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone'))->toBe('+97699112233')
         ->and($connection->table('contacts')->where('uuid', $customerUuid)->value('phone'))->toBe('+97699112233')
-        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->value('status'))->toBe('used')
+        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->where('meta', 'like', '%97699112233%')->value('status'))->toBe('used')
         ->and(json_encode($closureStarted->getData(true)))->toBe('{"status":"OK"}')
         ->and($phoneDeliveryFailure->getData(true))->toHaveKey('error')
         ->and($invalidClosure->getData(true))->toBe(['error' => 'Invalid verification code provided!'])

@@ -1560,8 +1560,10 @@ class CustomerController extends Controller
         }
 
         try {
+            // Text the number being verified, not the one on file (which may be none).
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
                 'hashed'          => true,
+                'phone'           => $phone,
                 'messageCallback' => function ($verification) use ($about) {
                     return "Your {$about->name} verification code is {$verification->code}";
                 },
