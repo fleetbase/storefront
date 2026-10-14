@@ -237,14 +237,25 @@ class OrderChatController extends Controller
      */
     public static function quickReplies(Order $order, string $kind = OrderChat::KIND_CUSTOMER): array
     {
+        $isBooking = (bool) $order->isMeta('is_booking');
         if ($kind === OrderChat::KIND_DISPATCH) {
-            return static::DEFAULT_DRIVER_REPLIES;
+            return $isBooking ? static::DEFAULT_BOOKING_DRIVER_REPLIES : static::DEFAULT_DRIVER_REPLIES;
         }
 
+        // The store's own replies (`options.booking_quick_replies` for bookings, else
+        // `options.quick_replies`), else the defaults for the kind of order.
         $store   = \Fleetbase\Storefront\Models\Store::where('public_id', $order->getMeta('storefront_id'))->first();
-        $replies = array_values(array_filter(array_map('trim', (array) data_get($store?->options, 'quick_replies', [])), fn ($reply) => is_string($reply) && $reply !== ''));
+        $own     = fn (string $option) => array_values(array_filter(array_map(fn ($reply) => is_string($reply) ? trim($reply) : '', (array) data_get($store?->options, $option, [])), fn ($reply) => $reply !== ''));
+        $replies = $isBooking ? $own('booking_quick_replies') : $own('quick_replies');
+        if ($replies) {
+            return $replies;
+        }
 
-        return $replies ?: static::DEFAULT_QUICK_REPLIES;
+        if ($isBooking) {
+            return $order->isMeta('is_pickup') ? static::DEFAULT_BOOKING_AT_STORE_REPLIES : static::DEFAULT_BOOKING_REPLIES;
+        }
+
+        return static::DEFAULT_QUICK_REPLIES;
     }
 
     /** Replies offered when writing to the driver. */
@@ -253,6 +264,30 @@ class OrderChatController extends Controller
         'The drop-off address changed, please check the app.',
         'Please call the customer on arrival.',
         'How long until you reach the store?',
+    ];
+
+    /** Replies offered to the customer of a booking at their address (the provider goes to them). */
+    public const DEFAULT_BOOKING_REPLIES = [
+        'Your booking is confirmed.',
+        'Your provider is on the way.',
+        'We are running about 10 minutes late, sorry.',
+        'Can you confirm the address and how to get in?',
+    ];
+
+    /** Replies offered to the customer of a booking at the store (they come in). */
+    public const DEFAULT_BOOKING_AT_STORE_REPLIES = [
+        'Your booking is confirmed.',
+        'We are ready for you.',
+        'We are running about 10 minutes behind, sorry.',
+        'Would you like to change your time?',
+    ];
+
+    /** Replies offered when writing to the provider (the driver) of a booking. */
+    public const DEFAULT_BOOKING_DRIVER_REPLIES = [
+        'The booking is confirmed, please head to the customer.',
+        'The booking time changed, please check the app.',
+        'Please call the customer on arrival.',
+        'How long until you reach the customer?',
     ];
 
     protected function findOrder(string $id): ?Order
