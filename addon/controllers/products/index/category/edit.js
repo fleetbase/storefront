@@ -8,9 +8,9 @@ import { filterHasManyForNewRecords } from '../../../../serializers/product';
 export default class ProductsIndexCategoryEditController extends ProductsIndexCategoryNewController {
     @service intl;
     @tracked product;
-    @tracked overlayActionButtonTitle = 'Save Changes';
+    @tracked overlayActionButtonTitle = this.intl.t('storefront.products.form.save');
     @tracked overlayActionButtonIcon = 'save';
-    @tracked overlayExitButtonTitle = 'Done';
+    @tracked overlayExitButtonTitle = this.intl.t('common.done');
     abilityPermission = 'storefront update product';
 
     get overlayTitle() {

@@ -5,18 +5,23 @@ import { isArray } from '@ember/array';
 
 export default class OrdersIndexViewController extends BaseController {
     @service storefrontOrderActions;
+    @service intl;
     @service('universe/menu-service') menuService;
 
+    /**
+     * The order's own view, then tabs other extensions register on `storefront:component:order:details`.
+     */
     get tabs() {
-        const registeredTabs = this.menuService.getMenuItems('storefront:component:order:details');
+        const registered = this.menuService.getMenuItems('storefront:component:order:details');
 
         return [
-            {
-                route: 'orders.index.view.index',
-                label: 'Overview',
-                icon: 'folder-open',
-            },
-            ...(isArray(registeredTabs) ? registeredTabs : []),
+            { id: 'details', label: this.intl.t('storefront.order.panel.details-tab'), icon: 'receipt' },
+            ...(isArray(registered) ? registered : []).map((item) => ({
+                id: `registered:${item.slug ?? item.id}`,
+                label: item.title ?? item.label,
+                icon: item.icon,
+                registeredSlug: item.slug ?? item.id,
+            })),
         ];
     }
 
@@ -24,8 +29,9 @@ export default class OrdersIndexViewController extends BaseController {
         return this.storefrontOrderActions.actionButtonsFor(this.model, this.refreshOrder);
     }
 
+    /** The order and the list behind it, in place: the panel stays open while they reload. */
     @action refreshOrder() {
-        return this.hostRouter.refresh();
+        return this.hostRouter.refresh('console.storefront.orders.index');
     }
 
     /**

@@ -232,7 +232,8 @@ test('action controller reports scoped order customer store and earnings metrics
 });
 
 test('public catalog and food truck queries are empty without a storefront store context', function () {
-    session(['storefront_store' => null]);
+    // A network context also scopes food trucks now, so neither may leak in from an earlier test.
+    session(['storefront_store' => null, 'storefront_network' => null]);
 
     $catalogs   = (new CatalogController())->query(Request::create('/catalogs'));
     $foodTrucks = (new FoodTruckController())->query(Request::create('/food-trucks'));
@@ -294,14 +295,43 @@ test('public food truck lookup reports an unknown resource', function () {
 test('public food truck query and lookup return records for the active store', function () {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
-    $schema->dropIfExists('food_trucks');
+    foreach (['food_trucks', 'stores', 'catalogs', 'catalog_subjects'] as $tableName) {
+        $schema->dropIfExists($tableName);
+    }
     $schema->create('food_trucks', function ($table) {
         $table->increments('id');
         $table->string('uuid');
         $table->string('public_id')->nullable();
-        $table->string('store_uuid');
+        $table->string('store_uuid')->nullable();
+        $table->string('network_uuid')->nullable();
         $table->string('vehicle_uuid')->nullable();
         $table->string('status')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    // Trucks are served with their store and the catalogs they sell.
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('name')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    $schema->create('catalogs', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('public_id')->nullable();
+        $table->string('name')->nullable();
+        $table->timestamps();
+        $table->softDeletes();
+    });
+    $schema->create('catalog_subjects', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('catalog_uuid');
+        $table->string('subject_uuid');
+        $table->string('subject_type');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -310,7 +340,16 @@ test('public food truck query and lookup return records for the active store', f
         ['uuid' => 'truck_second', 'public_id' => 'food_truck_second', 'store_uuid' => 'store_uuid', 'status' => 'offline'],
         ['uuid' => 'truck_other', 'public_id' => 'food_truck_other', 'store_uuid' => 'other_store', 'status' => 'online'],
     ]);
-    session(['storefront_store' => 'store_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_uuid', 'public_id' => 'store_abcdefgh', 'name' => 'Taco Stand'],
+    ]);
+    $connection->table('catalogs')->insert([
+        ['uuid' => 'catalog_lunch', 'public_id' => 'catalog_lunch', 'name' => 'Lunch'],
+    ]);
+    $connection->table('catalog_subjects')->insert([
+        ['catalog_uuid' => 'catalog_lunch', 'subject_uuid' => 'truck_second', 'subject_type' => Fleetbase\Storefront\Models\FoodTruck::class],
+    ]);
+    session(['storefront_store' => 'store_uuid', 'storefront_network' => null]);
     $request = Request::create('/food-trucks', 'GET', ['limit' => 1, 'offset' => 1]);
     $request->setLaravelSession(request()->session());
     $controller = new FoodTruckController();
@@ -320,6 +359,8 @@ test('public food truck query and lookup return records for the active store', f
 
     expect($results->resource)->toHaveCount(1)
         ->and($results->resource->first()->uuid)->toBe('truck_second')
+        ->and($results->resource->first()->store->name)->toBe('Taco Stand')
+        ->and($results->resource->first()->catalogs->pluck('name')->all())->toBe(['Lunch'])
         ->and($found->resource->uuid)->toBe('truck_first');
 });
 
@@ -413,7 +454,7 @@ test('store controller returns a stable error when no store or network matches l
             $table->timestamp('deleted_at')->nullable();
         });
     }
-    session(['company' => 'company_uuid']);
+    session(['company' => 'company_uuid', 'storefront_store' => null, 'storefront_network' => null]);
 
     $response = (new StoreController())->lookup('missing_public_id');
 
@@ -460,6 +501,7 @@ test('network storefront lookup and location access are limited to member stores
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -689,6 +731,7 @@ test('store controller searches direct and category products across store and ne
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -829,6 +872,7 @@ test('network controller resolves public IDs and invitation codes to their netwo
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->softDeletes();
     });
@@ -879,6 +923,7 @@ test('network controller persists and sends an email invitation with its request
         $table->increments('id');
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
         $table->string('name')->nullable();
         $table->timestamps();
         $table->softDeletes();
@@ -896,15 +941,17 @@ test('network controller persists and sends an email invitation with its request
         $table->string('reason')->nullable();
         $table->string('uri')->nullable();
         $table->string('code')->nullable();
+        $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
         $table->softDeletes();
     });
     $connection->table('networks')->insert([
-        'id'        => 1,
-        'uuid'      => 'network_uuid',
-        'public_id' => 'network_abcdefgh',
-        'name'      => 'Delivery network',
+        'id'           => 1,
+        'uuid'         => 'network_uuid',
+        'public_id'    => 'network_abcdefgh',
+        'company_uuid' => 'company_uuid',
+        'name'         => 'Delivery network',
     ]);
     session(['company' => 'company_uuid', 'user' => 'user_uuid']);
     $sender = new User();
@@ -939,7 +986,17 @@ test('network controller persists and sends an email invitation with its request
     $response = (new NetworkController())->sendInvites('network_uuid', $request);
     $invite   = Invite::query()->firstOrFail();
 
-    expect($response->getData(true))->toBe(['status' => 'ok'])
+    $data = $response->getData(true);
+
+    expect($data['status'])->toBe('ok')
+        ->and($data['invitations'])->toHaveCount(1)
+        ->and($data['invitations'][0])->toMatchArray([
+            'email'            => 'store@example.test',
+            'status'           => 'pending',
+            'require_approval' => false,
+            'via'              => 'email',
+        ])
+        ->and($invite->meta)->toBe(['status' => 'pending', 'require_approval' => false])
         ->and($invite->company_uuid)->toBe('company_uuid')
         ->and($invite->created_by_uuid)->toBe('user_uuid')
         ->and($invite->subject_uuid)->toBe('network_uuid')
@@ -956,9 +1013,18 @@ test('network controller adds removes and categorizes store assignments', functi
     $schema     = $connection->getSchemaBuilder();
     $schema->dropIfExists('networks');
     $schema->dropIfExists('network_stores');
+    $schema->dropIfExists('stores');
     $schema->dropIfExists('categories');
     $schema->create('networks', function ($table) {
         $table->string('uuid')->primary();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('company_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('network_stores', function ($table) {
@@ -966,6 +1032,7 @@ test('network controller adds removes and categorizes store assignments', functi
         $table->string('uuid')->nullable();
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
@@ -977,7 +1044,12 @@ test('network controller adds removes and categorizes store assignments', functi
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
-    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'company_uuid' => 'company_uuid']);
+    session(['company' => 'company_uuid']);
+    $connection->table('stores')->insert([
+        ['uuid' => 'store_a', 'company_uuid' => 'company_uuid'],
+        ['uuid' => 'store_b', 'company_uuid' => 'company_uuid'],
+    ]);
     $connection->table('categories')->insert([
         'uuid'       => 'category_uuid',
         'owner_uuid' => 'network_uuid',
@@ -1018,8 +1090,17 @@ test('network controller add stores removes requested stale assignments in the s
     $schema     = $connection->getSchemaBuilder();
     $schema->dropIfExists('networks');
     $schema->dropIfExists('network_stores');
+    $schema->dropIfExists('stores');
     $schema->create('networks', function ($table) {
         $table->string('uuid')->primary();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('company_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('network_stores', function ($table) {
@@ -1027,17 +1108,20 @@ test('network controller add stores removes requested stale assignments in the s
         $table->string('uuid')->nullable();
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
-    $connection->table('networks')->insert(['uuid' => 'network_uuid']);
+    $connection->table('networks')->insert(['uuid' => 'network_uuid', 'company_uuid' => 'company_uuid']);
+    session(['company' => 'company_uuid']);
     $connection->table('network_stores')->insert([
         'network_uuid' => 'network_uuid',
         'store_uuid'   => 'store_old',
         'created_at'   => now(),
         'updated_at'   => now(),
     ]);
+    $connection->table('stores')->insert(['uuid' => 'store_new', 'company_uuid' => 'company_uuid']);
 
     $request = NetworkActionRequest::create('/network', 'POST', [
         'stores' => ['store_new'],
@@ -1048,4 +1132,47 @@ test('network controller add stores removes requested stale assignments in the s
     expect($response->getData(true))->toBe(['status' => 'ok'])
         ->and($connection->table('network_stores')->where('store_uuid', 'store_new')->whereNull('deleted_at')->exists())->toBeTrue()
         ->and($connection->table('network_stores')->where('store_uuid', 'store_old')->whereNotNull('deleted_at')->exists())->toBeTrue();
+});
+
+test('network controller add stores removes a store from this network only', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('networks');
+    $schema->dropIfExists('network_stores');
+    $schema->dropIfExists('stores');
+    $schema->create('networks', function ($table) {
+        $table->string('uuid')->primary();
+        $table->string('public_id')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid');
+        $table->string('company_uuid')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('network_stores', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('network_uuid');
+        $table->string('store_uuid');
+        $table->string('status')->default('active');
+        $table->string('category_uuid')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('networks')->insert([['uuid' => 'network_uuid', 'company_uuid' => 'company_uuid'], ['uuid' => 'other_network_uuid', 'company_uuid' => 'company_uuid']]);
+    session(['company' => 'company_uuid']);
+    $connection->table('network_stores')->insert([
+        ['network_uuid' => 'network_uuid', 'store_uuid' => 'shared_store', 'created_at' => now(), 'updated_at' => now()],
+        ['network_uuid' => 'other_network_uuid', 'store_uuid' => 'shared_store', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $request  = NetworkActionRequest::create('/network', 'POST', ['remove' => ['shared_store']]);
+    $response = (new NetworkController())->addStores('network_uuid', $request);
+
+    expect($response->getData(true))->toBe(['status' => 'ok'])
+        ->and($connection->table('network_stores')->where('network_uuid', 'network_uuid')->value('deleted_at'))->not->toBeNull()
+        ->and($connection->table('network_stores')->where('network_uuid', 'other_network_uuid')->value('deleted_at'))->toBeNull();
 });

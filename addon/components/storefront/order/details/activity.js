@@ -4,6 +4,7 @@ import { inject as service } from '@ember/service';
 import { task } from 'ember-concurrency';
 
 export default class StorefrontOrderDetailsActivityComponent extends Component {
+    @service intl;
     @service appCache;
     @service notifications;
     @service storefrontOrderActions;
@@ -48,7 +49,7 @@ export default class StorefrontOrderDetailsActivityComponent extends Component {
                 items: [
                     ...this.updateActivityItems,
                     {
-                        text: 'Reload activity',
+                        text: this.intl.t('storefront.order.reload-activity'),
                         icon: 'refresh',
                         onClick: () => {
                             this.loadActivity.perform();

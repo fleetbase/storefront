@@ -31,6 +31,8 @@ export default class SettingsIndexRoute extends Route {
 
     async setupController(controller) {
         super.setupController(...arguments);
+        controller.locations = this.modelFor('settings').locations;
+        controller.snapshotOptions();
         controller.orderConfigs = await this.store.findAll('order-config');
     }
 }

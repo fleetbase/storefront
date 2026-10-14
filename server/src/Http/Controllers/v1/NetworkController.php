@@ -8,12 +8,35 @@ use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Store as StorefrontStore;
 use Fleetbase\Storefront\Http\Resources\StoreLocation as StorefrontStoreLocation;
+use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Illuminate\Http\Request;
 
 class NetworkController extends Controller
 {
+    /**
+     * The point to measure store distances from, or null when the request has no usable location.
+     *
+     * The coordinate parser falls back to (0, 0) for missing or invalid input. Treating that as a
+     * location made every store's distance be measured from the Gulf of Guinea, filtered out every
+     * store when maximum_distance was set, and loaded the whole network for in-memory sorting.
+     */
+    protected static function resolveReferencePoint($location): ?Point
+    {
+        if (blank($location)) {
+            return null;
+        }
+
+        $point = Utils::getPointFromCoordinates($location);
+
+        if ((float) $point->getLat() === 0.0 && (float) $point->getLng() === 0.0) {
+            return null;
+        }
+
+        return $point;
+    }
+
     /**
      * Returns all stores within the network.
      *
@@ -34,7 +57,7 @@ class NetworkController extends Controller
         $location                       = $request->input('location');
         $maxDistance                    = $request->input('maximum_distance', null);
         $exclude                        = $request->input('exclude', []);
-        $coordinates                    = Utils::getPointFromCoordinates($location);
+        $coordinates                    = static::resolveReferencePoint($location);
         $requiresDistancePostProcessing = $coordinates instanceof Point && ($sort === 'nearest' || is_numeric($maxDistance));
 
         if (is_string($tagged)) {
@@ -52,9 +75,11 @@ class NetworkController extends Controller
         /** @var \Illuminate\Database\Query\Builder $query */
         $query = Store::select('*')
             ->with(['logo', 'backdrop', 'media', 'locations.place'])
+            ->withAvg('reviews', 'rating')
             ->whereHas('locations')
             ->whereHas('networks', function ($q) use ($request) {
-                $q->where('network_uuid', session('storefront_network'));
+                $q->where('network_uuid', session('storefront_network'))
+                    ->where('network_stores.status', NetworkStore::STATUS_ACTIVE);
 
                 // Query stores without a category
                 if ($request->filled('without_category')) {
@@ -114,10 +139,10 @@ class NetworkController extends Controller
 
         switch ($sort) {
             case 'highest_rated':
-                $query->withAvg('reviews', 'rating')->orderByDesc('reviews_avg_rating');
+                $query->orderByDesc('reviews_avg_rating');
                 break;
             case 'lowest_rated':
-                $query->withAvg('reviews', 'rating')->orderBy('reviews_avg_rating');
+                $query->orderBy('reviews_avg_rating');
                 break;
             case 'newest':
                 $query->orderByDesc('created_at');
@@ -221,7 +246,7 @@ class NetworkController extends Controller
                 if ($storeUuid) {
                     $q->where('uuid', $storeUuid);
                 } else {
-                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                    $q->activeInNetwork($networkUuid);
                 }
 
                 if (!empty($tagged)) {
@@ -292,7 +317,7 @@ class NetworkController extends Controller
             ->whereHas('locations')
             ->when($storeUuid, fn ($query) => $query->where('uuid', $storeUuid))
             ->when($networkUuid, function ($query) use ($networkUuid) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid));
+                $query->activeInNetwork($networkUuid);
             })
             ->get();
 

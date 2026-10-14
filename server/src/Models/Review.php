@@ -2,6 +2,7 @@
 
 namespace Fleetbase\Storefront\Models;
 
+use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
@@ -45,6 +46,7 @@ class Review extends StorefrontModel
     protected $fillable = [
         'created_by_uuid',
         'customer_uuid',
+        'order_uuid',
         'subject_uuid',
         'subject_type',
         'rating',
@@ -57,7 +59,9 @@ class Review extends StorefrontModel
      *
      * @var array
      */
-    protected $casts = [];
+    protected $casts = [
+        'rating' => 'integer',
+    ];
 
     /**
      * Dynamic attributes that are appended to object.
@@ -87,6 +91,14 @@ class Review extends StorefrontModel
     public function customer()
     {
         return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Customer::class);
+    }
+
+    /**
+     * The completed order this review was written for.
+     */
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_uuid', 'uuid');
     }
 
     /**

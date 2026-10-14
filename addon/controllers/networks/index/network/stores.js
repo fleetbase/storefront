@@ -4,9 +4,9 @@ import { inject as service } from '@ember/service';
 import { action, set } from '@ember/object';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
-import createShareableLink from '../../../../utils/create-shareable-link';
-import isEmail from '@fleetbase/ember-core/utils/is-email';
 import isModel from '@fleetbase/ember-core/utils/is-model';
+import { buildIdentityStub } from '@fleetbase/fleetops-data/utils/identity-stub';
+import { formatDistanceToNow } from 'date-fns';
 
 export default class NetworksIndexNetworkStoresController extends BaseController {
     @service notifications;
@@ -16,6 +16,7 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @service fetch;
     @service store;
     @service hostRouter;
+    @service networkCategories;
 
     /**
      * Queryable parameters for this controller's model
@@ -94,115 +95,328 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @tracked categoryModel;
 
     /**
+     * Invitations this network has sent, loaded by the route.
+     *
+     * @var {Array}
+     */
+    @tracked invitations = [];
+
+    /**
+     * Which membership state the table shows: all, online, offline or invited.
+     *
+     * @var {String}
+     */
+    @tracked statusTab = 'all';
+
+    /**
+     * The table instance, for bulk actions on the selected rows.
+     *
+     * @var {Object}
+     */
+    @tracked table;
+
+    /**
+     * Whether the invite panel is open and which tab it starts on.
+     */
+    @tracked isInvitePanelOpen = false;
+    @tracked invitePanelTab = 'email';
+
+    get openInvitations() {
+        return this.invitations
+            .filter((invitation) => ['pending', 'declined', 'expired'].includes(invitation.status))
+            .map((invitation) => ({ ...invitation, sentAgo: this.sentAgo(invitation) }));
+    }
+
+    get pendingInvitations() {
+        return this.openInvitations.filter((invitation) => invitation.status === 'pending');
+    }
+
+    get members() {
+        const members = this.model?.toArray?.() ?? Array.from(this.model ?? []);
+        members.forEach((store) => {
+            set(store, 'isSuspended', store.network_status === 'suspended');
+            set(store, 'isPendingApproval', store.network_status === 'pending');
+            set(store, 'status_label', store.isPendingApproval ? 'awaiting_approval' : store.isSuspended ? 'suspended' : store.online ? 'active' : 'offline');
+        });
+
+        return members;
+    }
+
+    get activeMembers() {
+        return this.members.filter((store) => !store.isSuspended && !store.isPendingApproval && store.online);
+    }
+
+    get offlineMembers() {
+        return this.members.filter((store) => !store.isSuspended && !store.isPendingApproval && !store.online);
+    }
+
+    get pendingMembers() {
+        return this.members.filter((store) => store.isPendingApproval);
+    }
+
+    get suspendedMembers() {
+        return this.members.filter((store) => store.isSuspended);
+    }
+
+    get statusTabs() {
+        return [
+            { id: 'all', label: this.intl.t('storefront.common.all'), count: this.members.length + this.openInvitations.length },
+            { id: 'online', label: this.intl.t('storefront.common.active'), count: this.activeMembers.length },
+            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: this.offlineMembers.length },
+            { id: 'invited', label: this.intl.t('storefront.networks.invitations.invited'), count: this.openInvitations.length },
+            { id: 'suspended', label: this.intl.t('storefront.networks.index.network.stores.suspended'), count: this.suspendedMembers.length },
+            { id: 'approval', label: this.intl.t('storefront.networks.index.network.stores.awaiting-approval'), count: this.pendingMembers.length },
+        ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
+    }
+
+    get visibleStores() {
+        switch (this.statusTab) {
+            case 'online':
+                return this.activeMembers;
+            case 'offline':
+                return this.offlineMembers;
+            case 'suspended':
+                return this.suspendedMembers;
+            case 'approval':
+                return this.pendingMembers;
+            case 'invited':
+                return this.invitationRows;
+            default:
+                return [...this.members, ...this.invitationRows];
+        }
+    }
+
+    /**
+     * Open invitations shown as rows of the same table: an invited store is a member in waiting.
+     */
+    get invitationRows() {
+        return this.openInvitations.map((invitation) => ({
+            ...invitation,
+            isInvitation: true,
+            name: invitation.email ?? invitation.store_name ?? this.intl.t('storefront.networks.invitations.via-link'),
+            status_label: invitation.status === 'pending' ? 'invited' : invitation.status,
+            orders_7d: null,
+            share: null,
+            currency: null,
+            createdAtShort: null,
+        }));
+    }
+
+    get selectedStores() {
+        const table = this.table;
+
+        // The table is torn down and rebuilt between routes; a destroyed one must not be read.
+        if (!table || table.isDestroying || table.isDestroyed) {
+            return [];
+        }
+
+        return (table.selectedRows ?? []).filter((row) => !row.isInvitation);
+    }
+
+    get hasSelection() {
+        return this.selectedStores.length > 0;
+    }
+
+    sentAgo(invitation) {
+        const sentAt = invitation.resent_at ?? invitation.created_at;
+
+        return sentAt ? formatDistanceToNow(new Date(sentAt), { addSuffix: true }) : null;
+    }
+
+    /**
      * All columns applicable for network stores
      *
      * @var {Array}
      */
-    @tracked columns = [
-        {
-            id: 'name',
-            label: this.intl.t('storefront.networks.index.network.stores.store'),
-            valuePath: 'name',
-            width: '130px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-            showOnlineIndicator: true,
-            cellClassNames: 'network-store-name-column',
-        },
-        {
-            id: 'public-id',
-            label: this.intl.t('storefront.common.id'),
-            valuePath: 'public_id',
-            cellComponent: 'click-to-copy',
-            width: '120px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'category-name',
-            label: this.intl.t('storefront.common.category'),
-            valuePath: 'category.name',
-            cellComponent: 'table/cell/base',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'currency',
-            label: this.intl.t('storefront.common.currency'),
-            valuePath: 'currency',
-            cellComponent: 'table/cell/base',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/string',
-        },
-        {
-            id: 'created-at-short',
-            label: this.intl.t('storefront.networks.index.network.stores.created-at'),
-            valuePath: 'createdAtShort',
-            sortParam: 'created_at',
-            width: '100px',
-            resizable: true,
-            sortable: true,
-            filterable: true,
-            filterComponent: 'filter/date',
-        },
-        {
-            id: 'row-actions',
-            label: '',
-            cellComponent: 'table/cell/dropdown',
-            ddButtonText: false,
-            ddButtonIcon: 'ellipsis-h',
-            ddButtonIconPrefix: 'fas',
-            ddMenuLabel: 'Store Actions',
-            cellClassNames: 'overflow-visible',
-            wrapperClass: 'flex items-center justify-end mx-2',
-            width: '50px',
-            actions: [
-                {
-                    id: 'view-store-details',
-                    label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
-                    fn: this.viewStoreDetails,
-                },
-                {
-                    id: 'edit-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
-                    fn: this.editStore,
-                },
-                {
-                    id: 'assign-store-to-category',
-                    label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
-                    fn: this.assignStoreToCategory,
-                },
-                {
-                    id: 'remove-store-category',
-                    label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
-                    fn: this.removeStoreCategory,
-                    isVisible: (store) => store.category,
-                },
-                {
-                    separator: true,
-                },
-                {
-                    id: 'remove-store',
-                    label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
-                    fn: this.removeStore,
-                },
-            ],
-            sortable: false,
-            filterable: false,
-            resizable: false,
-            searchable: false,
-        },
-    ];
+    /** A member's name opens its details inside the network; invitations have no store yet. */
+    @action viewStoreDetails(row) {
+        if (!row || row.isInvitation || !row.public_id) {
+            return;
+        }
+
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.store', this.network.public_id, row.public_id);
+    }
+
+    get columns() {
+        return [
+            {
+                id: 'name',
+                label: this.intl.t('storefront.networks.index.network.stores.store'),
+                valuePath: 'name',
+                cellComponent: 'table/cell/identity',
+                resourceType: 'store',
+                resourcePath: (row) => (row.isInvitation ? buildIdentityStub(row, { type: 'store', nameKey: 'email', icon: 'at' }) : row),
+                popover: true,
+                action: this.viewStoreDetails,
+                width: '160px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/string',
+                showOnlineIndicator: true,
+                cellClassNames: 'network-store-name-column',
+            },
+            {
+                id: 'category-name',
+                label: this.intl.t('storefront.common.category'),
+                valuePath: 'category.name',
+                cellComponent: 'storefront/network/category-cell',
+                categories: this.categories,
+                onAssign: this.assignCategoryInline,
+                onRemove: this.removeStoreCategory,
+                width: '150px',
+                resizable: true,
+                sortable: false,
+                filterable: false,
+            },
+            {
+                id: 'status',
+                label: this.intl.t('storefront.common.status'),
+                valuePath: 'status_label',
+                cellComponent: 'table/cell/status',
+                width: '110px',
+                sortable: false,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'orders-7d',
+                label: this.intl.t('storefront.networks.index.network.stores.orders-7d'),
+                valuePath: 'orders_7d',
+                cellComponent: 'table/cell/base',
+                width: '100px',
+                sortable: true,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'share',
+                label: this.intl.t('storefront.networks.index.network.stores.share'),
+                valuePath: 'share',
+                cellComponent: 'storefront/network/share-cell',
+                width: '150px',
+                sortable: true,
+                filterable: false,
+                resizable: true,
+            },
+            {
+                id: 'currency',
+                label: this.intl.t('storefront.common.currency'),
+                valuePath: 'currency',
+                cellComponent: 'table/cell/base',
+                width: '100px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/string',
+            },
+            {
+                id: 'created-at-short',
+                label: this.intl.t('storefront.networks.index.network.stores.joined'),
+                valuePath: 'createdAtShort',
+                sortParam: 'created_at',
+                width: '100px',
+                resizable: true,
+                sortable: true,
+                filterable: true,
+                filterComponent: 'filter/date',
+            },
+            {
+                id: 'row-actions',
+                label: '',
+                cellComponent: 'table/cell/dropdown',
+                ddButtonText: false,
+                ddButtonIcon: 'ellipsis-h',
+                ddButtonIconPrefix: 'fas',
+                ddMenuLabel: 'Store Actions',
+                cellClassNames: 'overflow-visible',
+                wrapperClass: 'flex items-center justify-end mx-2',
+                width: '50px',
+                actions: [
+                    {
+                        id: 'resend-invitation',
+                        label: this.intl.t('storefront.networks.invitations.resend'),
+                        fn: this.resendInvitation,
+                        isVisible: (row) => row.isInvitation && row.status === 'pending',
+                    },
+                    {
+                        id: 'invite-again',
+                        label: this.intl.t('storefront.networks.invitations.invite-again'),
+                        fn: this.resendInvitation,
+                        isVisible: (row) => row.isInvitation && row.status !== 'pending',
+                    },
+                    {
+                        id: 'revoke-invitation',
+                        label: this.intl.t('storefront.networks.invitations.revoke'),
+                        fn: this.revokeInvitation,
+                        isVisible: (row) => row.isInvitation && row.status === 'pending',
+                    },
+                    {
+                        id: 'view-store-details',
+                        label: this.intl.t('storefront.networks.index.network.stores.view-store-details'),
+                        fn: this.viewStoreDetails,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'edit-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.edit-store'),
+                        fn: this.editStore,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'assign-store-to-category',
+                        label: this.intl.t('storefront.networks.index.network.stores.assign-category'),
+                        fn: this.assignStoreToCategory,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'remove-store-category',
+                        label: this.intl.t('storefront.networks.index.network.stores.remove-category'),
+                        fn: this.removeStoreCategory,
+                        isVisible: (row) => !row.isInvitation && row.category,
+                    },
+                    {
+                        separator: true,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                    {
+                        id: 'approve-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.approve'),
+                        fn: this.approveStore,
+                        isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                    },
+                    {
+                        id: 'reject-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.reject'),
+                        fn: this.rejectStore,
+                        isVisible: (row) => !row.isInvitation && row.isPendingApproval,
+                    },
+                    {
+                        id: 'suspend-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.suspend'),
+                        fn: this.suspendStore,
+                        isVisible: (row) => !row.isInvitation && !row.isSuspended && !row.isPendingApproval,
+                    },
+                    {
+                        id: 'reinstate-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.reinstate'),
+                        fn: this.reinstateStore,
+                        isVisible: (row) => !row.isInvitation && row.isSuspended,
+                    },
+                    {
+                        id: 'remove-store',
+                        label: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+                        fn: this.removeStore,
+                        isVisible: (row) => !row.isInvitation,
+                    },
+                ],
+                sortable: false,
+                filterable: false,
+                resizable: false,
+                searchable: false,
+            },
+        ];
+    }
 
     /**
      * The search task.
@@ -226,6 +440,147 @@ export default class NetworksIndexNetworkStoresController extends BaseController
 
         // update the query param
         this.storeQuery = value;
+    }
+
+    /**
+     * Suspending hides the store from the network's app and carts without removing it;
+     * reinstating brings it back with its category and history intact.
+     */
+    /**
+     * Memberships awaiting approval: approving makes the store an active member,
+     * rejecting removes the membership and closes its invitation.
+     */
+    @action approveStore(store) {
+        return this.setMembershipStatus([store], 'approve');
+    }
+
+    @action approveSelected() {
+        const pending = this.selectedStores.filter((store) => store.isPendingApproval);
+
+        return pending.length ? this.setMembershipStatus(pending, 'approve') : null;
+    }
+
+    @action rejectStore(store) {
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.index.network.stores.reject-title', { name: store.name }),
+            body: this.intl.t('storefront.networks.index.network.stores.reject-body', { networkName: this.network.name }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.reject'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'ban',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.setMembershipStatus([store], 'reject');
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    get hasPendingSelection() {
+        return this.selectedStores.some((store) => store.isPendingApproval);
+    }
+
+    @action suspendStore(store) {
+        return this.suspendStores([store]);
+    }
+
+    @action reinstateStore(store) {
+        return this.setMembershipStatus([store], 'reinstate');
+    }
+
+    @action suspendSelected() {
+        return this.suspendStores(this.selectedStores);
+    }
+
+    suspendStores(stores) {
+        if (!stores.length) {
+            return;
+        }
+
+        const names = stores.map((store) => store.name).join(', ');
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.index.network.stores.suspend-title', { count: stores.length, names }),
+            body: this.intl.t('storefront.networks.index.network.stores.suspend-body', { networkName: this.network.name }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.suspend'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'ban',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.setMembershipStatus(stores, 'suspend');
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    async setMembershipStatus(stores, action) {
+        await this.fetch.post(`networks/${this.network.id}/${action}-stores`, { stores: stores.map((store) => store.id) }, { namespace: 'storefront/int/v1' });
+        this.notifications.success(this.intl.t(`storefront.networks.index.network.stores.${action}-done`, { count: stores.length }));
+        this.clearSelection?.();
+
+        return this.hostRouter.refresh();
+    }
+
+    @tracked categories = [];
+    @tracked filterCategory = null;
+
+    /** The header's meta line: members and open invitations, as the board draws it. */
+    get headerMeta() {
+        const members = this.intl.t('storefront.networks.overview.members-count', { count: this.members.length });
+        const pending = this.intl.t('storefront.networks.invitations.pending-count', { count: this.pendingInvitations.length });
+
+        return `${members} · ${pending}`;
+    }
+
+    get filterOptions() {
+        return {
+            statuses: this.statusTabs,
+            categories: this.categories,
+        };
+    }
+
+    get hasActiveFilters() {
+        return this.statusTab !== 'all' || Boolean(this.category);
+    }
+
+    @action setCategoryFilter(categoryId) {
+        this.category = categoryId || null;
+        this.filterCategory = categoryId || null;
+    }
+
+    @action clearFilters() {
+        this.statusTab = 'all';
+        this.category = null;
+        this.filterCategory = null;
+    }
+
+    /** Inline category change from the Category column; the table reloads after. */
+    @action async assignCategoryInline(store, category) {
+        try {
+            await this.addStoreToCategory(store, category);
+            this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-stores-update'));
+            await this.hostRouter.refresh();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    /** Client-side "Showing x to y of z" for the stores list, which is not paginated by the API. */
+    get showingLabel() {
+        const count = this.visibleStores.length;
+
+        return this.intl.t('storefront.networks.index.network.stores.showing', { from: count ? 1 : 0, to: count, total: count });
     }
 
     @action setCategoryPickerContext(context) {
@@ -257,17 +612,10 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      * @param {CategoryModel} category - The category object containing the ID to be deleted.
      */
     @action deleteCategory(category) {
-        this.modalsManager.confirm({
-            title: this.intl.t('storefront.networks.index.network.stores.delete-network-category'),
-            body: this.intl.t('storefront.networks.index.network.stores.deleting-category-move-all-stores-inside-on-top-level'),
-            confirm: (modal) => {
-                modal.startLoading();
-
-                this.fetch.delete(`networks/${this.network.id}/remove-category`, { category: category.id }, { namespace: 'storefront/int/v1' }).then(() => {
-                    this.categories.removeObject(category);
-                    this.leaveCategory();
-                    modal.done();
-                });
+        return this.networkCategories.remove(this.network, category, {
+            onDeleted: () => {
+                this.categories?.removeObject?.(category);
+                this.leaveCategory?.();
             },
         });
     }
@@ -377,112 +725,16 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      * @returns {Promise} A promise that resolves when the category is created.
      */
     @action createNewCategory(networkCategoriesPicker, parentCategory, options = {}) {
-        const categoryAttrs = {
-            owner_uuid: this.network.id,
-            owner_type: 'storefront:network',
-            for: 'storefront_network',
-        };
-
-        if (isModel(parentCategory)) {
-            categoryAttrs.parent_uuid = parentCategory.id;
-            categoryAttrs.owner_uuid = parentCategory.owner_uuid;
-        }
-
-        const category = this.store.createRecord('category', categoryAttrs);
-
-        return this.editCategory(category, {
-            title: this.intl.t('storefront.networks.index.network.stores.add-new-network-category'),
-            acceptButtonIcon: 'check',
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.create-new-category'),
-            successMessage: this.intl.t('storefront.networks.index.network.stores.new-category-created'),
-            parentCategory,
-            category,
-            confirm: (modal) => {
-                modal.startLoading();
-
-                category
-                    .save()
-                    .then((category) => {
-                        this.notifications.success(this.intl.t('storefront.networks.index.network.stores.network-category-create'));
-                        networkCategoriesPicker.categories.pushObject(category);
-                        modal.done();
-                    })
-                    .catch((error) => {
-                        this.notifications.serverError(error);
-                    });
-            },
+        return this.networkCategories.create(this.network, parentCategory, {
+            onCreated: (category) => networkCategoriesPicker?.categories?.pushObject?.(category),
             ...options,
         });
     }
 
-    /**
-     * Displays a modal to edit a specified category.
-     * Allows the user to set or clear the parent category, upload an icon, and confirm the changes.
-     *
-     * @action
-     * @param {CategoryModel} category - The category object to be edited.
-     * @param {Object} [options={}] - Additional options for the modal.
-     */
     @action editCategory(category, options = {}) {
-        this.modalsManager.show('modals/create-network-category', {
-            title: this.intl.t('storefront.networks.index.network.stores.edit-category', { categoryName: category.name }),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.save-change'),
-            acceptButtonIcon: 'save',
-            iconType: category.icon_file_uuid ? 'image' : 'svg',
-            network: this.network,
-            category,
-            parentCategory: null,
-            setParentCategory: (parentCategory) => {
-                this.modalsManager.setOption('parentCategory', parentCategory);
-
-                // update on category
-                category.setProperties({
-                    parent_uuid: parentCategory.id,
-                });
-            },
-            clearImage: () => {
-                category.setProperties({
-                    icon_file_uuid: null,
-                    icon_url: null,
-                    icon_file: null,
-                });
-            },
-            uploadIcon: (file) => {
-                this.fetch.uploadFile.perform(
-                    file,
-                    {
-                        path: `uploads/${category.company_uuid}/icons/${category.slug}`,
-                        key_uuid: category.id,
-                        key_type: `category`,
-                        type: `category_icon`,
-                    },
-                    (uploadedFile) => {
-                        category.setProperties({
-                            icon_file_uuid: uploadedFile.id,
-                            icon_url: uploadedFile.url,
-                            icon_file: uploadedFile,
-                        });
-                    }
-                );
-            },
-            confirm: (modal) => {
-                modal.startLoading();
-
-                return category.save().then(() => {
-                    this.notifications.success(options.successMessage ?? 'Category changes saved.');
-                });
-            },
-            ...options,
-        });
+        return this.networkCategories.edit(this.network, category, options);
     }
 
-    /**
-     * Displays a loader and shows a modal to add stores to the network.
-     * Allows the user to select stores, update the selection, and confirm the addition.
-     *
-     * @action
-     * @returns {Promise} A promise that resolves when the stores are added.
-     */
     @action async addStores() {
         this.modalsManager.displayLoader();
 
@@ -528,8 +780,10 @@ export default class NetworksIndexNetworkStoresController extends BaseController
     @action async removeStore(store) {
         this.modalsManager.confirm({
             title: this.intl.t('storefront.networks.index.network.stores.remove-this-store', { storeName: store.name, networkName: this.network.name }),
-            body: this.intl.t('storefront.networks.index.network.stores.longer-findable-by-this-network'),
-            acceptButtonIcon: 'check',
+            body: this.intl.t('storefront.networks.invitations.remove-body'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'trash',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
@@ -545,24 +799,6 @@ export default class NetworksIndexNetworkStoresController extends BaseController
                     this.notifications.serverError(error);
                 }
             },
-        });
-    }
-
-    /**
-     * Displays a modal to view the details of a specified store.
-     * The modal includes the store's name and a "Done" button.
-     *
-     * @action
-     * @param {StoreModel} store - The store object whose details are to be viewed.
-     * @param {Object} [options={}] - Additional options for the modal.
-     */
-    @action viewStoreDetails(store, options = {}) {
-        this.modalsManager.show('modals/store-details', {
-            title: this.intl.t('storefront.networks.index.network.stores.viewing-storefront', { storeName: store.name }),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.done'),
-            hideDeclineButton: true,
-            store,
-            ...options,
         });
     }
 
@@ -603,59 +839,141 @@ export default class NetworksIndexNetworkStoresController extends BaseController
      *
      * @action
      */
-    @action invite() {
-        const shareableLink = createShareableLink(`join/network/${this.network.public_id}`);
+    @action invite(network, tab = 'email') {
+        if (isModel(network) && network !== this.network) {
+            this.network = network;
+        }
 
-        this.modalsManager.show('modals/share-network', {
-            title: this.intl.t('storefront.networks.index.network.stores.add-stores-to-network'),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.send-invitations'),
-            acceptButtonIcon: 'paper-plane',
-            acceptButtonDisabled: true,
-            shareableLink,
-            recipients: [],
-            network: this.network,
-            addRecipient: (email) => {
-                const recipients = this.modalsManager.getOption('recipients');
-                recipients.pushObject(email);
+        this.invitePanelTab = typeof tab === 'string' ? tab : 'email';
+        this.isInvitePanelOpen = true;
+    }
 
-                if (recipients.length === 0) {
-                    this.modalsManager.setOption('acceptButtonDisabled', true);
-                } else {
-                    this.modalsManager.setOption('acceptButtonDisabled', false);
-                }
-            },
-            removeRecipient: (index) => {
-                const recipients = this.modalsManager.getOption('recipients');
-                recipients.removeAt(index);
+    @action closeInvitePanel() {
+        this.isInvitePanelOpen = false;
+    }
 
-                if (recipients.length === 0) {
-                    this.modalsManager.setOption('acceptButtonDisabled', true);
-                } else {
-                    this.modalsManager.setOption('acceptButtonDisabled', false);
-                }
-            },
-            toggleShareableLink: (enabled) => {
-                set(this.network, 'options.shareable_link_enabled', enabled);
-                this.network.save();
-            },
-            confirm: (modal) => {
+    @action selectStatusTab(tab) {
+        this.statusTab = tab.id ?? tab;
+    }
+
+    @action async refreshInvitations() {
+        try {
+            this.invitations = await this.network.loadInvitations();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action async afterInvitationsSent() {
+        await this.refreshInvitations();
+        return this.hostRouter.refresh();
+    }
+
+    @action async resendInvitation(invitation) {
+        try {
+            await this.network.resendInvitation(invitation);
+            this.notifications.success(this.intl.t('storefront.networks.invitations.resent', { email: invitation.email }));
+            await this.refreshInvitations();
+        } catch (error) {
+            this.notifications.serverError(error);
+        }
+    }
+
+    @action revokeInvitation(invitation) {
+        return this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.invitations.revoke-title', { email: invitation.email }),
+            body: this.intl.t('storefront.networks.invitations.revoke-body'),
+            acceptButtonText: this.intl.t('storefront.networks.invitations.revoke'),
+            acceptButtonScheme: 'danger',
+            confirm: async (modal) => {
                 modal.startLoading();
 
-                const recipients = modal.getOption('recipients');
-                const isValid = recipients.every((email) => isEmail(email));
-
-                if (!isValid) {
+                try {
+                    await this.network.revokeInvitation(invitation);
+                    await this.refreshInvitations();
+                    modal.done();
+                } catch (error) {
                     modal.stopLoading();
-
-                    return this.notifications.error(this.intl.t('storefront.networks.index.network.stores.invalid-emails-provided-error'));
+                    this.notifications.serverError(error);
                 }
-
-                return this.network.sendInvites(recipients).then(() => {
-                    modal.stopLoading();
-                    this.notifications.success(this.intl.t('storefront.networks.index.network.stores.invitation-sent-recipients'));
-                });
             },
         });
+    }
+
+    /**
+     * Assign one category to every selected store.
+     */
+    @action assignCategoryToSelected() {
+        const stores = this.selectedStores;
+
+        if (!stores.length) {
+            return;
+        }
+
+        this.modalsManager.show('modals/add-store-to-category', {
+            title: this.intl.t('storefront.networks.invitations.assign-category-count', { count: stores.length }),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.assign-category'),
+            acceptButtonIcon: 'check',
+            network: this.network,
+            store: stores[0],
+            category: null,
+            setCategory: (category) => this.modalsManager.setOption('category', category),
+            confirm: async (modal) => {
+                const category = modal.getOption('category');
+
+                if (!category) {
+                    return this.notifications.warning(this.intl.t('storefront.networks.invitations.pick-a-category'));
+                }
+
+                modal.startLoading();
+
+                try {
+                    for (const store of stores) {
+                        await this.fetch.post(`networks/${this.network.id}/set-store-category`, { store: store.id, category: category.id }, { namespace: 'storefront/int/v1' });
+                    }
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    /**
+     * Remove every selected store from the network.
+     */
+    @action removeSelected() {
+        const stores = this.selectedStores;
+
+        if (!stores.length) {
+            return;
+        }
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.networks.invitations.remove-count-title', { count: stores.length, networkName: this.network.name }),
+            body: this.intl.t('storefront.networks.invitations.remove-body'),
+            acceptButtonText: this.intl.t('storefront.networks.index.network.stores.remove-store-from-network'),
+            acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'trash',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.network.removeStores(stores);
+                    await this.hostRouter.refresh();
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    @action clearSelection() {
+        this.selectedStores.forEach((row) => set(row, 'checked', false));
     }
 
     /**

@@ -294,3 +294,37 @@ test('promotion codes are normalized, generated without ambiguous characters and
         ->and($cart->setPromotionCodes([])->discount_code)->toBeNull()
         ->and($cart->getPromotionCodes())->toBe([]);
 });
+
+test('a promotion targeting a segment applies only to customers in it once the customer is known', function () {
+    createCampaignSchema();
+    seedPromotionStores();
+    promotionDb()->table('contacts')->insert([
+        ['uuid' => 'customer_in', 'public_id' => 'contact_in', 'company_uuid' => 'company_uuid', 'type' => 'customer', 'name' => 'In', 'created_at' => now(), 'updated_at' => now()],
+        ['uuid' => 'customer_out', 'public_id' => 'contact_out', 'company_uuid' => 'company_uuid', 'type' => 'customer', 'name' => 'Out', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+    $segment = tap(new Fleetbase\Storefront\Models\CustomerSegment())->forceFill(['uuid' => 'segment_uuid', 'company_uuid' => 'company_uuid', 'owner_uuid' => 'store_a_uuid', 'owner_type' => 'storefront:store', 'name' => 'VIPs', 'rules' => ['customers' => ['customer_in']]]);
+    $segment->save();
+    $promotion = makePromotion(['value' => 10, 'applies_to' => ['segment' => 'segment_uuid']]);
+    $coded     = makePromotion(['value' => 20, 'trigger' => Promotion::TRIGGER_CODE, 'applies_to' => ['segment' => 'segment_uuid']]);
+    makePromotionCode($coded, 'VIP20');
+
+    $preview = promotionEngine()->evaluate(promotionContext());
+    $member  = promotionEngine()->evaluate(promotionContext(['customer' => promotionCustomer('customer_in')]));
+    $other   = promotionEngine()->evaluate(promotionContext(['customer' => promotionCustomer('customer_out')]), ['VIP20']);
+
+    expect(array_column($preview->applied, 'promotion_uuid'))->toBe([$promotion->uuid])
+        ->and(array_column($member->applied, 'promotion_uuid'))->toBe([$promotion->uuid])
+        ->and($other->applied)->toBe([])
+        ->and($other->rejected)->toBe([['code' => 'VIP20', 'reason' => PromotionEngine::REASON_NOT_IN_SEGMENT]]);
+});
+
+test('a promotion targeting a missing segment applies to nobody', function () {
+    createCampaignSchema();
+    seedPromotionStores();
+    promotionDb()->table('contacts')->insert([['uuid' => 'customer_in', 'public_id' => 'contact_in', 'company_uuid' => 'company_uuid', 'type' => 'customer', 'name' => 'In', 'created_at' => now(), 'updated_at' => now()]]);
+    makePromotion(['value' => 10, 'applies_to' => ['segment' => 'gone_segment']]);
+
+    $result = promotionEngine()->evaluate(promotionContext(['customer' => promotionCustomer('customer_in')]));
+
+    expect($result->applied)->toBe([]);
+});

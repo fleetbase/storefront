@@ -1,7 +1,7 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 
-export default class PromotionsIndexRoute extends Route {
+export default class PromotionsIndexRoute extends StorefrontListRoute {
     @service store;
     @service storefront;
     @service intl;
@@ -11,8 +11,10 @@ export default class PromotionsIndexRoute extends Route {
 
     queryParams = {
         query: { refreshModel: true },
-        status: { refreshModel: true },
+        // Filtered in the controller: the tabs switch without a reload.
+        status: { refreshModel: false },
         page: { refreshModel: true },
+        view: { refreshModel: false },
     };
 
     beforeModel() {
@@ -23,6 +25,11 @@ export default class PromotionsIndexRoute extends Route {
     }
 
     model(params) {
-        return this.store.query('promotion', { ...params, owner: this.storefront.getActiveStore('id'), sort: '-created_at' });
+        // `view` is a UI-only query param (cards or table).
+        const query = { ...params, limit: 100 };
+        delete query.view;
+        delete query.status;
+
+        return this.store.query('promotion', { ...query, owner: this.storefront.getContextOwner('id'), sort: '-created_at' });
     }
 }

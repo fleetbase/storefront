@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/ApiCacheTestHelpers.php';
+
 use Fleetbase\FleetOps\Models\OrderConfig;
 use Fleetbase\FleetOps\Models\Vehicle;
 use Fleetbase\Storefront\Models\Catalog;
@@ -40,6 +42,7 @@ test('catalog synchronizes category updates removals and additions', function ()
         $table->string('owner_type')->nullable();
         $table->string('name');
         $table->string('for')->nullable();
+        $table->integer('order')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -47,6 +50,8 @@ test('catalog synchronizes category updates removals and additions', function ()
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid')->nullable();
         $table->string('product_uuid')->nullable();
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -112,6 +117,8 @@ test('catalog category synchronizes valid unique product assignments', function 
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid');
         $table->string('product_uuid');
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -522,7 +529,7 @@ test('addon categories create and update their addon rows deterministically', fu
 
     session(['user' => 'user_test']);
     $category = new Fleetbase\Storefront\Models\AddonCategory();
-    $category->forceFill(['uuid' => 'category_test']);
+    $category->forceFill(['uuid' => 'category_test', 'company_uuid' => 'company_test']);
     $category->setAddons([[
         'name'         => 'Gift wrap',
         'description'  => 'Wrapped carefully',
@@ -544,6 +551,7 @@ test('addon categories create and update their addon rows deterministically', fu
         ->and($created->price)->toBe(1250)
         ->and($created->sale_price)->toBe(1000);
 
+    $addonsVersion = apiQueryCacheVersion('product_addons', 'company_test');
     $category->setAddons([[
         'uuid'        => $addonUuid,
         'name'        => 'Premium gift wrap',
@@ -551,6 +559,9 @@ test('addon categories create and update their addon rows deterministically', fu
         'sale_price'  => 1500,
         'is_on_sale'  => false,
     ]]);
+
+    // The update goes through the query builder, so the cached lists are invalidated by hand
+    expect(apiQueryCacheVersion('product_addons', 'company_test'))->toBe($addonsVersion + 1);
 
     $updated = Fleetbase\Storefront\Models\ProductAddon::query()
         ->where('uuid', $addonUuid)

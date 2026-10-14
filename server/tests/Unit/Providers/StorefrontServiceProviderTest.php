@@ -27,7 +27,8 @@ test('storefront provider registers its required Fleetbase providers', function 
 
 test('storefront provider boot wires commands schedules observers middleware and package files', function () {
     $provider = new class(new Fleetbase\TestSupport\ApplicationContainer()) extends StorefrontServiceProvider {
-        public array $calls = [];
+        public array $calls         = [];
+        public array $overlapGuards = [];
 
         public function registerCommands(): void
         {
@@ -62,13 +63,28 @@ test('storefront provider boot wires commands schedules observers middleware and
                     return $this;
                 }
 
+                public function everyFiveMinutes(): self
+                {
+                    return $this;
+                }
+
+                public array $guards = [];
+
+                public function withoutOverlapping(int $expiresAt = 1440): self
+                {
+                    $this->guards[end($this->commands)] = $expiresAt;
+
+                    return $this;
+                }
+
                 public function storeOutputInDb(): self
                 {
                     return $this;
                 }
             };
             $callback($schedule);
-            $this->calls = [...$this->calls, ...$schedule->commands];
+            $this->calls         = [...$this->calls, ...$schedule->commands];
+            $this->overlapGuards = $schedule->guards;
         }
 
         public function registerObservers(): void
@@ -100,6 +116,11 @@ test('storefront provider boot wires commands schedules observers middleware and
         {
             $this->calls[] = $key;
         }
+
+        public function registerStorefrontSocketChannels(): void
+        {
+            $this->calls[] = 'socket-channels';
+        }
     };
 
     $provider->boot();
@@ -110,6 +131,8 @@ test('storefront provider boot wires commands schedules observers middleware and
         'storefront:notify-order-nearby',
         'storefront:purge-carts',
         'storefront:release-promotion-reservations',
+        'storefront:release-inventory',
+        'storefront:check-balance-payments',
         'storefront:dispatch-campaigns',
         'observers',
         'middleware',
@@ -119,5 +142,28 @@ test('storefront provider boot wires commands schedules observers middleware and
         'database.connections',
         'storefront',
         'storefront.api',
+        'socket-channels',
     ]);
+
+    // Every scheduled command skips a run while the last one is still going, with a lock that
+    // expires in minutes, not the default day.
+    expect($provider->overlapGuards)->toBe([
+        'storefront:notify-order-nearby'             => 5,
+        'storefront:purge-carts'                     => 60,
+        'storefront:release-promotion-reservations'  => 15,
+        'storefront:release-inventory'               => 5,
+        'storefront:check-balance-payments'          => 10,
+        'storefront:dispatch-campaigns'              => 5,
+    ]);
+});
+
+test('storefront provider registers its socket channel resolvers with the core registry', function () {
+    $app      = new Fleetbase\TestSupport\ApplicationContainer();
+    $registry = new Fleetbase\Support\SocketCluster\SocketChannelRegistry();
+    $app->instance(Fleetbase\Support\SocketCluster\SocketChannelRegistry::class, $registry);
+
+    (new StorefrontServiceProvider($app))->registerStorefrontSocketChannels();
+
+    expect($registry->resolve('storefront'))->toBeInstanceOf(Closure::class)
+        ->and($registry->resolve('checkout'))->toBeInstanceOf(Closure::class);
 });

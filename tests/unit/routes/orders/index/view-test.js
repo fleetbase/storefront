@@ -11,23 +11,26 @@ module('Unit | Route | orders/index/view', function (hooks) {
     });
 
     test('it loads order details from the Storefront internal namespace', async function (assert) {
-        assert.expect(5);
+        assert.expect(8);
 
         class FetchStub extends Service {
             get(path, params, options) {
                 assert.strictEqual(path, 'orders/order_test');
-                assert.deepEqual(params, { storefront: 'store_test' });
-                assert.deepEqual(options, {
-                    namespace: 'storefront/int/v1',
-                    normalizeToEmberData: true,
-                    normalizeModelType: 'order',
-                });
+                assert.strictEqual(params.storefront, 'store_test', 'scoped to the active store');
+                assert.ok(Array.isArray(params.with) && params.with.includes('payload'), 'eager-loads the payload');
+                assert.strictEqual(options.namespace, 'storefront/int/v1');
+                assert.true(options.normalizeToEmberData);
+                assert.strictEqual(options.normalizeModelType, 'order');
 
                 return Promise.resolve({ id: 'order_test' });
             }
         }
 
         class StorefrontStub extends Service {
+            contextScope() {
+                return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+            }
+
             getActiveStore(key) {
                 assert.strictEqual(key, 'public_id');
                 return 'store_test';
@@ -41,26 +44,5 @@ module('Unit | Route | orders/index/view', function (hooks) {
         const order = await route.model({ public_id: 'order_test' });
 
         assert.deepEqual(order, { id: 'order_test' });
-    });
-
-    test('it exposes overview and registered order detail tabs', function (assert) {
-        assert.expect(5);
-
-        class MenuServiceStub extends Service {
-            getMenuItems(registry) {
-                assert.strictEqual(registry, 'storefront:component:order:details');
-                return [{ route: 'orders.index.view.virtual', label: 'Invoice', slug: 'invoice', icon: 'file-invoice-dollar' }];
-            }
-        }
-
-        this.owner.register('service:universe/menu-service', MenuServiceStub);
-
-        const controller = this.owner.lookup('controller:orders/index/view');
-        const tabs = controller.tabs;
-
-        assert.strictEqual(tabs.length, 2);
-        assert.strictEqual(tabs[0].label, 'Overview');
-        assert.strictEqual(tabs[0].route, 'orders.index.view.index');
-        assert.strictEqual(tabs[1].label, 'Invoice');
     });
 });

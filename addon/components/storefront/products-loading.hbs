@@ -1,0 +1,62 @@
+{{#if @hideHeader}}
+    {{! Under the products toolbar: the list in the view the user chose. }}
+    <Skeleton::Page @hideHeader={{true}} @label={{t "storefront.common.loading"}} class="storefront-loading {{@class}}" data-test-storefront-loading={{if this.isList "products-list" "products-grid"}} data-test-products-loading-view={{if this.isList "list" "grid"}}>
+        {{#if this.isList}}
+            <Skeleton::Table @rows={{10}} @columns={{7}} @checkbox={{true}} @class="storefront-skeleton-products-table" />
+        {{else}}
+            <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @lines={{4}} @footerActions={{2}} @class="storefront-skeleton-product-grid" />
+        {{/if}}
+    </Skeleton::Page>
+{{else}}
+    {{! The whole products page: header, the category rail, the tabs and sort, then the list. }}
+    <Skeleton::Page
+        @hideAvatar={{true}}
+        @actions={{4}}
+        @bodyClass="storefront-skeleton-products"
+        @label={{t "storefront.common.loading"}}
+        class="storefront-loading {{@class}}"
+        data-test-storefront-loading={{if this.isList "products-list" "products-grid"}}
+        data-test-products-loading-view={{if this.isList "list" "grid"}}
+    >
+        <div class="storefront-skeleton-products__rail">
+            <div class="storefront-skeleton-products__rail-head">
+                <span class="storefront-skeleton-stack">
+                    <Skeleton @variant="title" @width="6rem" />
+                    <Skeleton @variant="text" @width="80%" @height="0.625rem" />
+                </span>
+                <Skeleton @variant="button" @width="1.75rem" @height="1.625rem" />
+            </div>
+            {{#each (array 0 1 2 3 4)}}
+                <div class="storefront-skeleton-row">
+                    <Skeleton @variant="rect" @width="1.75rem" @height="1.75rem" />
+                    <span class="storefront-skeleton-stack">
+                        <Skeleton @variant="text" @width="60%" />
+                        <Skeleton @variant="text" @width="40%" @height="0.625rem" />
+                    </span>
+                    <Skeleton @variant="badge" @width="1.25rem" />
+                </div>
+            {{/each}}
+            <Skeleton @variant="text" @width="6rem" @height="0.625rem" class="storefront-skeleton-products__group" />
+            {{#each (array 0 1 2 3 4)}}
+                <div class="storefront-skeleton-row">
+                    <Skeleton @variant="circle" @width="1rem" @height="1rem" />
+                    <Skeleton @variant="text" @width="50%" />
+                    <Skeleton @variant="badge" @width="1.25rem" />
+                </div>
+            {{/each}}
+        </div>
+        <div class="storefront-skeleton-products__main">
+            <div class="storefront-skeleton-products__toolbar">
+                <Skeleton::Tabs @count={{4}} @counts={{true}} class="storefront-skeleton-inline-tabs" />
+                <Skeleton @variant="button" @width="9rem" @height="1.625rem" />
+            </div>
+            <div class="storefront-skeleton-products__list">
+                {{#if this.isList}}
+                    <Skeleton::Table @rows={{10}} @columns={{7}} @checkbox={{true}} @class="storefront-skeleton-products-table" />
+                {{else}}
+                    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @mediaFirst={{true}} @hideHeader={{true}} @lines={{4}} @footerActions={{2}} @class="storefront-skeleton-product-grid" />
+                {{/if}}
+            </div>
+        </div>
+    </Skeleton::Page>
+{{/if}}

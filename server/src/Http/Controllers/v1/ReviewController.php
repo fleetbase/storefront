@@ -8,9 +8,11 @@ use Fleetbase\Http\Controllers\Controller;
 use Fleetbase\Models\File;
 use Fleetbase\Storefront\Http\Requests\CreateReviewRequest;
 use Fleetbase\Storefront\Http\Resources\Review as StorefrontReview;
+use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Support\ReviewEligibility;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -23,7 +25,7 @@ class ReviewController extends Controller
         return Store::where('public_id', $id)
             ->when(session('storefront_store'), fn ($query) => $query->where('uuid', session('storefront_store')))
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->activeInNetwork(session('storefront_network'));
             })
             ->first();
     }
@@ -41,8 +43,7 @@ class ReviewController extends Controller
                 });
             })
             ->when(session('storefront_network'), function ($query) {
-                $memberStoreUuids = Store::select('uuid')
-                    ->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $memberStoreUuids = Store::select('uuid')->activeInNetwork(session('storefront_network'));
                 $memberProductUuids = Product::select('uuid')->whereIn('store_uuid', clone $memberStoreUuids);
                 $query->where(function ($subjectQuery) use ($memberStoreUuids, $memberProductUuids) {
                     $subjectQuery->whereIn('subject_uuid', $memberStoreUuids)
@@ -62,12 +63,29 @@ class ReviewController extends Controller
             return Product::where('uuid', $subject->uuid)
                 ->when(session('storefront_store'), fn ($query) => $query->where('store_uuid', session('storefront_store')))
                 ->when(session('storefront_network'), function ($query) {
-                    $query->whereHas('store.networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                    $query->whereHas('store', fn ($storeQuery) => $storeQuery->activeInNetwork(session('storefront_network')));
                 })
                 ->exists();
         }
 
         return false;
+    }
+
+    /**
+     * Whether reviews are switched off for this storefront. A network's setting covers all of
+     * its stores and reviews are only on when it is switched on; a single store's app keeps
+     * reviews unless the store switches them off.
+     */
+    protected static function reviewsDisabled(): bool
+    {
+        $about = Storefront::about();
+        if (!$about) {
+            return false;
+        }
+
+        $enabled = data_get($about->options, 'reviews_enabled');
+
+        return $about instanceof Network ? $enabled !== true : $enabled === false;
     }
 
     /**
@@ -77,6 +95,10 @@ class ReviewController extends Controller
      */
     public function query(Request $request)
     {
+        if (static::reviewsDisabled()) {
+            return StorefrontReview::collection([]);
+        }
+
         $results = [];
         $limit   = $request->input('limit', false);
         $offset  = $request->input('offset', false);
@@ -128,28 +150,30 @@ class ReviewController extends Controller
     public function applySort($request, $sort)
     {
         if ($sort) {
+            // Core's query builder reads the direction from a "-" prefix on each column (it has no
+            // sort_direction parameter). Equal ratings list the newest review first.
             switch ($sort) {
                 case 'highest':
                 case 'highest rated':
-                    $request->merge(['sort' => 'rating', 'sort_direction' => 'desc']);
+                    $request->merge(['sort' => ['-rating', '-created_at']]);
 
                     break;
 
                 case 'lowest':
                 case 'lowest rated':
-                    $request->merge(['sort' => 'rating', 'sort_direction' => 'asc']);
+                    $request->merge(['sort' => ['rating', '-created_at']]);
 
                     break;
 
                 case 'newest':
                 case 'newest first':
-                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'desc']);
+                    $request->merge(['sort' => ['-created_at']]);
 
                     break;
 
                 case 'oldest':
                 case 'oldest first':
-                    $request->merge(['sort' => 'created_at', 'sort_direction' => 'asc']);
+                    $request->merge(['sort' => ['created_at']]);
 
                     break;
 
@@ -169,6 +193,10 @@ class ReviewController extends Controller
     {
         $counts = [];
         $range  = range(1, 5);
+
+        if (static::reviewsDisabled()) {
+            return response()->json(array_fill_keys($range, 0));
+        }
 
         if (session('storefront_store')) {
             foreach ($range as $rating) {
@@ -217,6 +245,33 @@ class ReviewController extends Controller
     }
 
     /**
+     * Whether the signed-in customer can review a store or product, and why not.
+     *
+     * The app calls this before showing "Write a review", so a customer who has not completed
+     * an order, or has already reviewed every completed one, sees an explanation instead.
+     */
+    public function eligibility(Request $request)
+    {
+        $subjectId = $request->input('subject');
+        if (!is_string($subjectId) || $subjectId === '') {
+            return response()->error('A subject is required.');
+        }
+
+        $subject = Utils::resolveSubject($subjectId);
+        if (!$subject || !$this->subjectBelongsToContext($subject)) {
+            return response()->error('Invalid subject for review');
+        }
+
+        if (static::reviewsDisabled()) {
+            return response()->json(['can_review' => false, 'reason' => 'reviews_disabled', 'message' => 'Reviews are turned off.', 'order' => null, 'review' => null]);
+        }
+
+        $eligibility = ReviewEligibility::check(Storefront::getCustomerFromToken(), $subject, $request->input('order'));
+
+        return response()->json($eligibility->toArray());
+    }
+
+    /**
      * Create a review.
      *
      * @return \Fleetbase\Http\Response
@@ -232,15 +287,25 @@ class ReviewController extends Controller
             return response()->error('Not authorized to create reviews');
         }
 
+        if (static::reviewsDisabled()) {
+            return response()->json(['error' => 'Reviews are turned off.', 'reason' => 'reviews_disabled'], 403);
+        }
+
         $subject = Utils::resolveSubject($request->input('subject'));
 
         if (!$subject || !$this->subjectBelongsToContext($subject)) {
             return response()->error('Invalid subject for review');
         }
 
+        $eligibility = ReviewEligibility::check($customer, $subject, $request->input('order'));
+        if (!$eligibility->allowed) {
+            return response()->json(['error' => $eligibility->message(), 'reason' => $eligibility->reason], 403);
+        }
+
         $review = Review::create([
             'created_by_uuid' => $customer->user_uuid,
             'customer_uuid'   => $customer->uuid,
+            'order_uuid'      => $eligibility->order->uuid,
             'subject_uuid'    => $subject->uuid,
             'subject_type'    => Utils::getMutationType($subject),
             'rating'          => $request->input('rating'),
@@ -258,8 +323,8 @@ class ReviewController extends Controller
                 $extension  = File::getExtensionFromMimeType($mimeType);
                 $bucketPath = 'hyperstore/' . $about->public_id . '/review-photos/' . $review->uuid . '/' . File::randomFileName($extension);
 
-                // upload file to path
-                $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data), 'public');
+                // upload file to path; no 'public' ACL, the S3 media bucket is private and rejects ACLs
+                $upload = Storage::disk($disk)->put($bucketPath, base64_decode($data));
 
                 // create the file
                 $uploadedFiles->push(File::create([

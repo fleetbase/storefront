@@ -1,18 +1,59 @@
-<Layout::Section::Header @title={{t "storefront.common.orders"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+<Storefront::PageHeader @title={{t "storefront.common.orders"}} @subtitle={{t "storefront.networks.orders.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.networks.orders.search"}} data-test-network-orders-header>
+    <DropdownButton @text={{t "storefront.common.filters"}} @icon="filter" @size="sm" @buttonClass={{if this.hasActiveFilters "storefront-filter-button is-active" "storefront-filter-button"}} @renderInPlace={{false}} data-test-order-filters as |dd|>
+        <div class="next-dd-menu mt-1 mx-0 storefront-filter-menu">
+            <div class="storefront-filter-menu__group">
+                <div class="storefront-filter-menu__label">{{t "storefront.common.status"}}</div>
+                {{#each this.statusTabs as |tab|}}
+                    <a href="javascript:;" class="next-dd-item {{if tab.isActive 'is-active'}}" {{on "click" (dropdown-fn dd this.selectStatusTab tab)}}>{{#if tab.isActive}}<FaIcon @icon="check" class="mr-2" />{{/if}}{{tab.label}}</a>
+                {{/each}}
+            </div>
+            <div class="storefront-filter-menu__group">
+                <div class="storefront-filter-menu__label">{{t "storefront.networks.orders.columns.fulfillment"}}</div>
+                <a href="javascript:;" class="next-dd-item {{unless this.fulfillmentFilter 'is-active'}}" {{on "click" (dropdown-fn dd this.setFulfillmentFilter null)}}>{{t "storefront.common.all"}}</a>
+                <a href="javascript:;" class="next-dd-item {{if (eq this.fulfillmentFilter 'delivery') 'is-active'}}" {{on "click" (dropdown-fn dd this.setFulfillmentFilter "delivery")}}>{{t "storefront.networks.orders.delivery"}}</a>
+                <a href="javascript:;" class="next-dd-item {{if (eq this.fulfillmentFilter 'pickup') 'is-active'}}" {{on "click" (dropdown-fn dd this.setFulfillmentFilter "pickup")}}>{{t "storefront.common.pickup"}}</a>
+            </div>
+            {{#if this.stores.length}}
+                <div class="storefront-filter-menu__group">
+                    <div class="storefront-filter-menu__label">{{t "storefront.common.store"}}</div>
+                    <a href="javascript:;" class="next-dd-item {{unless this.storeFilter 'is-active'}}" {{on "click" (dropdown-fn dd this.setStoreFilter null)}}>{{t "storefront.common.all"}}</a>
+                    {{#each this.stores as |store|}}
+                        <a href="javascript:;" class="next-dd-item {{if (eq this.storeFilter store.public_id) 'is-active'}}" {{on "click" (dropdown-fn dd this.setStoreFilter store.public_id)}}>{{store.name}}</a>
+                    {{/each}}
+                </div>
+            {{/if}}
+            {{#if this.hasActiveFilters}}
+                <div class="storefront-filter-menu__group">
+                    <a href="javascript:;" class="next-dd-item text-red-500" {{on "click" (dropdown-fn dd this.clearFilters)}}>{{t "storefront.promotions.common.reset-filters"}}</a>
+                </div>
+            {{/if}}
+        </div>
+    </DropdownButton>
+    <VisibleColumnPicker @columns={{this.columns}} @onChange={{this.setColumns}} @size="sm" @renderInPlace={{false}} data-test-order-columns />
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.createOrder}} @permission="storefront create order" data-test-network-new-order />
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
-<Layout::Section::Body>
-    <Table
-        @wrapperClass="overscroll-y-none"
-        @rows={{@model}}
-        @columns={{this.registeredColumns}}
-        @selectable={{true}}
-        @canSelectAll={{true}}
-        @onSetup={{fn (mut this.table)}}
-        @pagination={{true}}
-        @paginationMeta={{@model.meta}}
-        @page={{this.page}}
-        @onPageChange={{fn (mut this.page)}}
-    />
+{{outlet}}
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page">
+        <div class="storefront-table-card" data-test-network-orders-card>
+            <div class="storefront-table-card__toolbar">
+                <div class="storefront-status-tabs" role="tablist" data-test-order-status-tabs>
+                    {{#each this.statusTabs as |tab|}}
+                        <button type="button" role="tab" aria-selected={{if tab.isActive "true" "false"}} class="storefront-status-tab {{if tab.isActive 'is-active'}}" {{on "click" (fn this.selectStatusTab tab)}} data-test-status-tab={{tab.id}}>
+                            {{tab.label}}
+                        </button>
+                    {{/each}}
+                </div>
+                <Storefront::ViewToggle @options={{array (hash id="grouped" label=(t "storefront.networks.orders.group-by-checkout")) (hash id="flat" label=(t "storefront.networks.orders.flat"))}} @value={{if this.isGrouped "grouped" "flat"}} @onChange={{this.setView}} @label={{t "storefront.common.view"}} />
+            </div>
+            <Table @wrapperClass="storefront-table-card__table storefront-network-orders-table" @rows={{this.rows}} @columns={{this.registeredColumns}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
+            <div class="storefront-table-card__footer">
+                <span class="storefront-table-card__note">{{t "storefront.networks.orders.group-note"}}</span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
+        </div>
+    </div>
 </Layout::Section::Body>

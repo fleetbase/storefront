@@ -26,6 +26,13 @@ class FoodTruck extends FleetbaseResource
             'company_uuid'                   => $this->when(Http::isInternalRequest(), $this->company_uuid),
             'created_by_uuid'                => $this->when(Http::isInternalRequest(), $this->created_by_uuid),
             'store_uuid'                     => $this->when(Http::isInternalRequest(), $this->store_uuid),
+            'network_uuid'                   => $this->when(Http::isInternalRequest(), $this->network_uuid),
+            'network'                        => $this->whenLoaded('network', fn () => $this->network ? [
+                'id'       => $this->network->public_id,
+                'uuid'     => $this->network->uuid,
+                'name'     => $this->network->name,
+                'logo_url' => $this->network->logo_url,
+            ] : null),
             'service_area_uuid'              => $this->when(Http::isInternalRequest(), $this->service_area_uuid),
             'zone_uuid'                      => $this->when(Http::isInternalRequest(), $this->zone_uuid),
             'vehicle_uuid'                   => $this->when(Http::isInternalRequest(), $this->vehicle_uuid),
@@ -36,6 +43,19 @@ class FoodTruck extends FleetbaseResource
             'location'                       => $this->vehicle ? $this->vehicle->location : null,
             'online'                         => $this->vehicle ? $this->vehicle->online : false,
             'status'                         => $this->status,
+            // Today's orders, revenue and prep time for the console's truck card and panel.
+            'today'                          => $this->when(Http::isInternalRequest(), fn () => $this->todayStats()),
+            // The store the truck belongs to, so a network can name it and order from it.
+            'store'                          => $this->whenLoaded('store', fn () => $this->store ? [
+                'id'          => $this->store->public_id,
+                'name'        => $this->store->name,
+                'logo_url'    => $this->store->logo_url,
+                'currency'    => $this->store->currency,
+                'options'     => $this->store->options,
+                // The clock the truck's hours are read on.
+                'timezone'    => \Fleetbase\Storefront\Support\BookingSlots::timezone($this->store),
+                'utc_offset'  => \Fleetbase\Storefront\Support\BookingSlots::utcOffset($this->store),
+            ] : null),
             'created_at'                     => $this->created_at,
             'updated_at'                     => $this->updated_at,
         ];

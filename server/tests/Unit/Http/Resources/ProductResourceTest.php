@@ -53,6 +53,8 @@ function storefrontProductResourceFixture(): ProductModel
         'category_uuid'   => 'addon_category_uuid',
         'name'            => 'Packaging',
         'excluded_addons' => [],
+        'is_required'     => 1,
+        'max_selectable'  => '2',
         'category'        => (object) [
             'public_id'  => 'addon_category_123',
             'description'=> 'Packaging choices',
@@ -112,9 +114,12 @@ function storefrontProductResourceFixture(): ProductModel
         'slug'               => 'cold-brew-kit',
         'translations'       => ['mn' => ['name' => 'Cold Brew']],
         'youtube_urls'       => ['https://youtube.test/demo'],
+        // As selected by Product::catalogsCountQuery() on a console product list.
+        'catalogs_count'     => 2,
         'created_at'         => '2026-01-01',
         'updated_at'         => '2026-01-02',
     ]);
+    $product->setRelation('store', null);
     $product->setRelation('category', (object) ['public_id' => 'category_123']);
     $product->setRelation('primaryImage', $image);
     $product->setRelation('addonCategories', collect([$addonCategory]));
@@ -154,10 +159,13 @@ test('public product resource exposes purchasable shape and filters media types'
             'store_uuid',
             'files',
             'type',
+            'catalogs_count',
         ])->and($data['addon_categories'][0])->toMatchArray([
-            'id'          => 'addon_category_123',
-            'name'        => 'Packaging',
-            'description' => 'Packaging choices',
+            'id'             => 'addon_category_123',
+            'name'           => 'Packaging',
+            'description'    => 'Packaging choices',
+            'is_required'    => true,
+            'max_selectable' => 2,
         ])->and($data['addon_categories'][0]['addons'][0])->toMatchArray([
             'id'   => 'addon_123',
             'name' => 'Gift wrap',
@@ -179,20 +187,23 @@ test('internal product resource includes database identities and raw files', fun
     $data    = (new ProductResource(storefrontProductResourceFixture()))->resolve($request);
 
     expect($data)->toMatchArray([
-        'id'           => 10,
-        'uuid'         => 'product_uuid',
-        'public_id'    => 'product_123',
-        'company_uuid' => 'company_uuid',
-        'store_uuid'   => 'store_uuid',
-        'type'         => 'product',
+        'id'             => 10,
+        'uuid'           => 'product_uuid',
+        'public_id'      => 'product_123',
+        'company_uuid'   => 'company_uuid',
+        'store_uuid'     => 'store_uuid',
+        'catalogs_count' => 2,
+        'type'           => 'product',
     ])->and($data)->toHaveKey('files')
         ->and($data)->not->toHaveKeys(['images', 'videos'])
         ->and($data['addon_categories'][0])->toMatchArray([
-            'id'            => 20,
-            'uuid'          => 'product_addon_category_uuid',
-            'product_uuid'  => 'product_uuid',
-            'category_uuid' => 'addon_category_uuid',
-            'public_id'     => 'addon_category_123',
+            'id'             => 20,
+            'uuid'           => 'product_addon_category_uuid',
+            'product_uuid'   => 'product_uuid',
+            'category_uuid'  => 'addon_category_uuid',
+            'public_id'      => 'addon_category_123',
+            'is_required'    => true,
+            'max_selectable' => '2',
         ])->and($data['addon_categories'][0])->not->toHaveKey('addons')
         ->and($data['variants'][0])->toMatchArray([
             'id'        => 40,
@@ -242,5 +253,23 @@ test('product mapping helpers accept arrays collections exclusions and empty inp
         'uuid'      => 'addon_uuid',
         'public_id' => 'addon_123',
         'name'      => 'Gift wrap',
+    ]);
+});
+
+test('public add-on categories report optional unlimited choices when limits are unset', function () {
+    setStorefrontResourceRoute('v1/storefront/products');
+
+    $category = (object) [
+        'name'            => 'Extras',
+        'excluded_addons' => null,
+        'is_required'     => null,
+        'max_selectable'  => null,
+        'category'        => (object) ['public_id' => 'addon_category_456', 'description' => null, 'addons' => collect()],
+    ];
+
+    expect((new ProductResource((object) []))->mapAddonCategories([$category])->first())->toMatchArray([
+        'id'             => 'addon_category_456',
+        'is_required'    => false,
+        'max_selectable' => null,
     ]);
 });

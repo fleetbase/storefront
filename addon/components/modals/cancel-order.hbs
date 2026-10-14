@@ -1,0 +1,69 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="storefront-cancel-order" data-test-cancel-order>
+        <p class="storefront-create-order__help mt-0">{{t "storefront.order.cancel.body"}}</p>
+
+        <div class="storefront-cancel-order__step">
+            <div class="storefront-cancel-order__step-title"><span class="storefront-cancel-order__step-number">1</span>{{t "storefront.order.cancel.why"}}</div>
+            <div class="storefront-cancel-order__reasons" role="group" aria-label={{t "storefront.order.cancel.common-reasons"}}>
+                {{#each this.reasons as |reason|}}
+                    <Button
+                        @size="xs"
+                        @type={{if (eq this.draft.reason reason) "primary" "default"}}
+                        @text={{reason}}
+                        @onClick={{fn this.pickReason reason}}
+                        data-test-cancel-order-reason-option
+                    />
+                {{/each}}
+            </div>
+            <label class="sr-only" for="cancel-order-reason">{{t "storefront.order.cancel.reason"}}</label>
+            <Textarea
+                id="cancel-order-reason"
+                class="form-input w-full"
+                rows="2"
+                @value={{this.draft.reason}}
+                placeholder={{t "storefront.order.cancel.reason-placeholder"}}
+                data-test-cancel-order-reason
+            />
+        </div>
+
+        <div class="storefront-cancel-order__step">
+            <div class="storefront-cancel-order__step-title"><span class="storefront-cancel-order__step-number">2</span>{{t "storefront.order.cancel.money-back"}}</div>
+            {{#if this.refundable}}
+                <div class="storefront-cancel-order__paid">{{this.paidLine}}</div>
+                <Storefront::ViewToggle
+                    @options={{this.giveBackOptions}}
+                    @value={{this.draft.giveBack}}
+                    @onChange={{this.setGiveBack}}
+                    @label={{t "storefront.order.cancel.money-back"}}
+                    data-test-cancel-order-give-back
+                />
+                {{#unless (eq this.draft.giveBack "none")}}
+                    <div class="storefront-cancel-order__amount">
+                        <label class="storefront-create-order__label" for="cancel-order-amount">{{t "storefront.order.cancel.amount"}}</label>
+                        {{#if this.amountLocked}}
+                            <div id="cancel-order-amount" class="storefront-cancel-order__fixed-amount">{{this.money this.draft.amount}}</div>
+                        {{else}}
+                            <MoneyInput
+                                id="cancel-order-amount"
+                                class="w-full"
+                                @currency={{this.plan.currency}}
+                                @value={{this.draft.amount}}
+                                @canSelectCurrency={{false}}
+                                @onChange={{this.setAmount}}
+                                data-test-cancel-order-amount
+                            />
+                        {{/if}}
+                        {{#if this.amountHelp}}<p class="storefront-create-order__help">{{this.amountHelp}}</p>{{/if}}
+                    </div>
+                {{/unless}}
+            {{else}}
+                <p class="storefront-create-order__help">{{this.nothingPaidLine}}</p>
+            {{/if}}
+        </div>
+
+        <div class="storefront-cancel-order__review" data-test-cancel-order-review>
+            <FaIcon @icon="circle-info" @size="sm" />
+            <span>{{this.reviewLine}}</span>
+        </div>
+    </div>
+</Modal::Default>

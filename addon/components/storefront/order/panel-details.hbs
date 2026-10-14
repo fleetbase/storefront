@@ -1,0 +1,68 @@
+{{! IDs, the order's metadata and its files, as three tabs: small type, flush with the panel. }}
+<div class="sfop-details" data-test-order-details>
+    <TabNavigation @tabs={{this.tabs}} @size="sm" @containerClass="sfop-details__tabs" @contentClass="sfop-details__pane" as |activeTab|>
+        {{#if (eq activeTab.id "metadata")}}
+            <MetadataViewer @metadata={{@order.meta}} class="sfop-metadata" data-test-order-metadata />
+        {{else if (eq activeTab.id "files")}}
+            <div class="sfop-files" data-test-order-files>
+                {{#let (file-queue name="order-files" onFileAdded=(perform this.queueFile) accept=(join "," this.acceptedFileTypes)) as |queue|}}
+                    <FileDropzone @queue={{queue}} class="dropzone file-dropzone sfop-dropzone" @disabled={{cannot-write @order}} as |dropzone|>
+                        {{#if dropzone.active}}
+                            <span class="sfop-dropzone__title">{{if dropzone.valid (t "dropzone.drop-to-upload") (t "dropzone.invalid")}}</span>
+                        {{else}}
+                            <FaIcon @icon="folder-open" class="text-indigo-500" />
+                            <span class="sfop-dropzone__title">{{t "dropzone.upload-documents-files"}}</span>
+                            <FileUpload
+                                @name="order-files"
+                                @for="order-files"
+                                @accept={{join "," this.acceptedFileTypes}}
+                                @multiple={{true}}
+                                @onFileAdded={{perform this.queueFile}}
+                                @disabled={{cannot-write @order}}
+                            >
+                                <a tabindex={{0}} class="btn btn-magic btn-xs cursor-pointer">{{t "dropzone.or-select-button-text"}}</a>
+                            </FileUpload>
+                        {{/if}}
+                    </FileDropzone>
+                {{/let}}
+                {{#each this.uploadQueue as |file|}}
+                    <div class="sfop-file is-uploading">
+                        <Spinner />
+                        <span class="sfop-file__name">{{truncate-filename file.name 48}}</span>
+                        <span class="sfop-muted">{{round file.progress}}%</span>
+                    </div>
+                {{/each}}
+                {{#if this.files.length}}
+                    <div class="sfop-files__grid">
+                        {{#each this.files as |file|}}
+                            {{#if (cannot-write @order)}}
+                                <File @file={{file}} data-test-order-file={{file.id}} />
+                            {{else}}
+                                <File @file={{file}} @onDelete={{perform this.removeFile}} data-test-order-file={{file.id}} />
+                            {{/if}}
+                        {{/each}}
+                    </div>
+                {{else}}
+                    {{#unless this.uploadQueue.length}}<div class="sfop-muted sfop-small">{{t "storefront.order.panel.no-files"}}</div>{{/unless}}
+                {{/if}}
+            </div>
+        {{else}}
+            <div class="sfop-facts sfop-facts--details">
+                {{#each this.identifiers as |row|}}
+                    <div class="sfop-fact">
+                        <div class="sfop-fact__label">{{row.label}}</div>
+                        <div class="sfop-fact__value {{if row.mono 'sfop-mono'}}">
+                            {{#if row.href}}
+                                <a href={{row.href}} target="_blank" rel="noopener noreferrer">{{row.value}}</a>
+                            {{else if row.copy}}
+                                <ClickToCopy @value={{row.value}}>{{row.value}}</ClickToCopy>
+                            {{else}}
+                                {{row.value}}
+                            {{/if}}
+                        </div>
+                    </div>
+                {{/each}}
+            </div>
+        {{/if}}
+    </TabNavigation>
+</div>

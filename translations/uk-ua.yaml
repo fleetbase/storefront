@@ -386,6 +386,7 @@ storefront:
               enable-tips: Увімкнути чайові
               enable-delivery-tips: Увімкнути чайові кур'єру
               enable-multi-cart-checkout: Увімкнути оформлення з кількох кошиків
+              split-tips-across-stores: "Розподіляти чайові між магазинами в замовленнях із кількох магазинів"
               enable-user-reviews: Увімкнути відгуки користувачів
           api-panel:
             panel-title: API

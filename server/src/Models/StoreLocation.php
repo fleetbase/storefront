@@ -8,6 +8,7 @@ use Fleetbase\Models\User;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StoreLocation extends StorefrontModel
 {
@@ -102,10 +103,7 @@ class StoreLocation extends StorefrontModel
         return $this->belongsTo(Store::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function hours()
+    public function hours(): HasMany
     {
         return $this->hasMany(StoreHour::class);
     }

@@ -1,0 +1,3 @@
+{{#let (if @row.isGroup @row.is_pickup @row.meta.is_pickup) as |isPickup|}}
+    <Badge @status={{if isPickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if isPickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} data-test-order-fulfillment />
+{{/let}}

@@ -1,0 +1,22 @@
+{{! Inline category assignment in the Stores table: a dropdown of the network's categories. }}
+{{#if @row.isInvitation}}
+    <span class="storefront-table__muted">—</span>
+{{else}}
+    <DropdownButton @text={{or @row.category.name (t "storefront.networks.index.network.stores.assign-category")}} @size="xs" @buttonClass="storefront-category-cell__button {{unless @row.category.name 'is-empty'}}" @icon="caret-down" @iconClass="ml-1 order-last" @renderInPlace={{false}} data-test-category-cell as |dd|>
+        <div class="next-dd-menu mt-1 mx-0">
+            <div class="px-1">
+                {{#each @column.categories as |category|}}
+                    <a href="javascript:;" class="next-dd-item {{if (eq category.id @row.category.id) 'is-active'}}" {{on "click" (dropdown-fn dd @column.onAssign @row category)}}>
+                        {{#if (eq category.id @row.category.id)}}<FaIcon @icon="check" class="mr-2" />{{/if}}{{category.name}}
+                    </a>
+                {{else}}
+                    <span class="next-dd-item opacity-60">{{t "storefront.networks.index.network.stores.no-categories"}}</span>
+                {{/each}}
+                {{#if @row.category.id}}
+                    <div class="next-dd-menu-seperator"></div>
+                    <a href="javascript:;" class="next-dd-item text-red-500" {{on "click" (dropdown-fn dd @column.onRemove @row)}}>{{t "storefront.networks.index.network.stores.remove-category"}}</a>
+                {{/if}}
+            </div>
+        </div>
+    </DropdownButton>
+{{/if}}

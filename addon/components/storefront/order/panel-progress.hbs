@@ -1,0 +1,62 @@
+{{! What to do next (blue bar with the flow's primary action) and the steps of the order with their times. }}
+<div class="sfop-progress" data-test-order-progress>
+    <div class="sfop-next {{if this.isLate 'is-late'}} {{if this.isFinished 'is-finished'}}" data-test-order-next>
+        <div class="sfop-next__text">
+            <span class="sfop-next__title" data-test-order-next-title>{{this.title}}</span>
+            {{#if this.dueLine}}<span class="sfop-next__due" data-test-order-next-due>{{this.dueLine}}</span>{{/if}}
+            {{#if this.bookingLine}}
+                <span class="sfop-next__booking" data-test-order-booking-line>
+                    <FaIcon @icon="calendar-check" @size="xs" />
+                    <span>{{this.bookingLine}}</span>
+                    {{#if this.canReschedule}}
+                        <span aria-hidden="true">·</span>
+                        <button type="button" class="sfop-link" {{on "click" this.reschedule}} data-test-order-booking-reschedule>{{t "storefront.order.panel.reschedule"}}</button>
+                    {{/if}}
+                </span>
+            {{/if}}
+        </div>
+        <div class="sfop-next__actions">
+            {{#unless (or this.isFinished this.isBooking)}}
+                <Button @size="sm" @icon="print" @text={{t "storefront.order.overview.print-label"}} @isLoading={{@isPrintingLabel}} @onClick={{@onPrintLabel}} data-test-order-print-label />
+            {{/unless}}
+            {{#if this.primary}}
+                <Button @size="sm" @type="primary" @text={{this.primary.text}} @icon={{this.primary.icon}} @permission="storefront update order" @onClick={{this.primary.fn}} data-test-order-next-action />
+            {{/if}}
+            {{#if this.moreOptions.length}}
+                <DropdownButton
+                    @icon="chevron-down"
+                    @size="sm"
+                    @renderInPlace={{false}}
+                    @horizontalPosition="right"
+                    @permission="storefront update order"
+                    aria-label={{t "storefront.order.panel.more-steps"}}
+                    data-test-order-more-steps
+                    as |dd|
+                >
+                    <div class="next-dd-menu mt-1 mx-0">
+                        {{#each this.moreOptions as |item|}}
+                            <a href="javascript:;" class="next-dd-item" {{on "click" (fn this.moveTo item.option dd)}} data-test-order-step-option={{item.option.code}}>
+                                <span class="mr-2"><FaIcon @icon={{if item.option.complete "check" "forward"}} @size="xs" /></span>
+                                {{item.text}}
+                            </a>
+                        {{/each}}
+                    </div>
+                </DropdownButton>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#if this.isCanceled}}
+        <div class="sfop-canceled"><FaIcon @icon="ban" @size="xs" /> {{t "storefront.order.flow.canceled"}}</div>
+    {{else}}
+        <ol class="sfop-steps" aria-label={{t "storefront.order.panel.steps"}}>
+            {{#each this.timedSteps as |step|}}
+                <li class="sfop-step {{if step.isComplete 'is-done'}} {{if step.isCurrent 'is-now'}}" aria-current={{if step.isCurrent "step"}} data-test-flow-step={{step.code}}>
+                    <span class="sfop-step__n">{{#if step.isComplete}}<FaIcon @icon="check" @size="xs" />{{else}}{{step.number}}{{/if}}</span>
+                    <span class="sfop-step__label">{{step.label}}</span>
+                    {{#if step.time}}<span class="sfop-step__time">{{step.time}}</span>{{/if}}
+                </li>
+            {{/each}}
+        </ol>
+    {{/if}}
+</div>

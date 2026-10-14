@@ -452,6 +452,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
     });
     $failedEphemeralKey = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
     $failedSetupIntent  = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
+    // Creating the Stripe customer fails too (e.g. the gateway's key is refused): an error, not an exception.
+    $connection->table('contacts')->where('uuid', $customerUuid)->update(['meta' => '{}']);
+    $failedCreateEphemeralKey = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
+    $failedCreateSetupIntent  = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
     $connection->table('gateways')->delete();
     $missingEphemeralGateway = $controller->getStripeEphemeralKey(Request::create('/customer/stripe/key'));
     $missingSetupGateway     = $controller->getStripeSetupIntent(Request::create('/customer/stripe/setup'));
@@ -479,6 +483,27 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ],
     ]);
     bindCustomerNotificationDispatcher();
+    // Codes sent by SMS are stored hashed (core-api 1.6.69), so the plain code is only in
+    // the text itself: record what the provider was given and read the code back from it.
+    $twilio = new class {
+        public array $messages = [];
+        public array $to       = [];
+
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            $this->messages[] = $message;
+            $this->to[]       = $to;
+
+            return (object) ['sid' => 'sms_test'];
+        }
+    };
+    app()->instance('twilio', $twilio);
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    $lastSmsCode = function () use ($twilio): ?string {
+        $message = $twilio->messages ? $twilio->messages[array_key_last($twilio->messages)] : '';
+
+        return preg_match('/(\d{6})$/', trim($message), $match) ? $match[1] : null;
+    };
     $sentry = new class {
         public array $exceptions = [];
 
@@ -502,19 +527,26 @@ test('authenticated customer endpoints register devices and scope orders and pla
     );
     $closureDeliveryFailure = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
     $connection->statement('DROP TRIGGER fail_closure_verification_insert');
+    // The code goes to the number being verified, whether or not one is on file.
+    $connection->table('users')->where('uuid', 'user_uuid')->update(['phone' => null]);
+    $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
+        'phone' => '97699112255',
+    ]));
+    $connection->table('verification_codes')->where('meta', 'like', '%97699112255%')->update(['created_at' => now()->subHour()]);
+    $connection->table('users')->where('uuid', 'user_uuid')->update(['phone' => '+97699112200']);
     $phoneConflict       = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
         'phone' => '97699112233',
     ]));
+    $phoneTextedTo    = $twilio->to;
     $invalidPhoneCode = $controller->verifyPhoneNumber(Request::create('/customer/phone/verify', 'POST', [
         'code' => 'invalid-code',
     ]));
-    $generatedCode = $connection->table('verification_codes')
-        ->where('for', 'storefront_verify_phone')
-        ->value('code');
+    $generatedCode = $lastSmsCode();
     $verifiedPhone = $controller->verifyPhoneNumber(Request::create('/customer/phone/verify', 'POST', [
         'code' => $generatedCode,
     ]));
     $closureStarted = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
+    $closureCode    = $lastSmsCode();
     $connection->statement(
         "CREATE TRIGGER fail_phone_verification_insert BEFORE INSERT ON verification_codes BEGIN SELECT RAISE(ABORT, 'verification insert failed'); END"
     );
@@ -523,10 +555,6 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'phone' => '+97699112234',
     ]));
     $connection->statement('DROP TRIGGER fail_phone_verification_insert');
-    $closureCode    = $connection->table('verification_codes')
-        ->where('for', 'storefront_account_closure')
-        ->where('meta', 'like', '%+97699112233%')
-        ->value('code');
     $invalidClosure = $controller->confirmAccountClosure(Request::create('/customer/closure/confirm', 'POST', [
         'code' => 'invalid-code',
     ]));
@@ -537,8 +565,11 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'code' => $closureCode,
     ]));
     $connection->statement('DROP TRIGGER fail_customer_user_delete');
+    // A code is used up by the check that accepted it, so the failed deletion burned this
+    // one and the customer asks for a new code to try again.
+    $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
     $closed = $controller->confirmAccountClosure(Request::create('/customer/closure/confirm', 'POST', [
-        'code' => $closureCode,
+        'code' => $lastSmsCode(),
     ]));
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
     app()->forgetInstance('sentry');
@@ -559,6 +590,10 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ->and($createdSetupIntent->getData(true)['customerId'])->toBe('cus_created_customer')
         ->and($failedEphemeralKey->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
         ->and($failedSetupIntent->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
+        ->and($failedCreateEphemeralKey->getStatusCode())->toBe(400)
+        ->and($failedCreateEphemeralKey->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
+        ->and($failedCreateSetupIntent->getStatusCode())->toBe(400)
+        ->and($failedCreateSetupIntent->getData(true))->toBe(['error' => 'Stripe customer endpoint unavailable'])
         ->and($missingEphemeralGateway->getData(true))->toBe(['error' => 'Stripe not setup.'])
         ->and($missingSetupGateway->getData(true))->toBe(['error' => 'Stripe not setup.'])
         ->and($closureStart->getData(true))->toBe(['error' => 'Customer user account not found.'])
@@ -577,12 +612,13 @@ test('authenticated customer endpoints register devices and scope orders and pla
             'error' => 'This phone number is already associated with another account.',
         ])
         ->and($phoneConflict->getData(true))->toBe(['status' => 'ok'])
-        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->count())->toBe(1)
+        ->and(array_slice($phoneTextedTo, -2))->toBe(['+97699112255', '+97699112233'])
+        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->count())->toBe(2)
         ->and($invalidPhoneCode->getData(true))->toBe(['error' => 'Invalid verification code!'])
         ->and($verifiedPhone)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone'))->toBe('+97699112233')
         ->and($connection->table('contacts')->where('uuid', $customerUuid)->value('phone'))->toBe('+97699112233')
-        ->and($connection->table('verification_codes')->where('code', $generatedCode)->value('deleted_at'))->not->toBeNull()
+        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->where('meta', 'like', '%97699112233%')->value('status'))->toBe('used')
         ->and(json_encode($closureStarted->getData(true)))->toBe('{"status":"OK"}')
         ->and($phoneDeliveryFailure->getData(true))->toHaveKey('error')
         ->and($invalidClosure->getData(true))->toBe(['error' => 'Invalid verification code provided!'])
@@ -896,8 +932,10 @@ test('customer creation rejects unverified identities before creating users or c
     $schema->dropIfExists('verification_codes');
     $schema->create('verification_codes', function ($table) {
         $table->increments('id');
+        $table->string('uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
@@ -928,8 +966,10 @@ test('customer creation falls back to the payload email when no identity is sent
     $schema->dropIfExists('verification_codes');
     $schema->create('verification_codes', function ($table) {
         $table->increments('id');
+        $table->string('uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
@@ -963,6 +1003,54 @@ test('customer creation falls back to the payload email when no identity is sent
     // "Invalid verification code provided!".
     expect(data_get($matched->getData(true), 'error'))->not->toBe('Invalid verification code provided!')
         ->and($missing->getData(true))->toBe(['error' => 'An identity is required to create a customer.']);
+});
+
+test('verify code for customer creation validates a plain http request instead of throwing a type error', function () {
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('contacts');
+    $schema->create('contacts', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('email')->nullable();
+        $table->string('phone')->nullable();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $connection->table('verification_codes')->insert([
+        'uuid'       => 'verification_uuid',
+        'code'       => '123456',
+        'for'        => 'storefront_create_customer',
+        'status'     => 'pending',
+        'meta'       => json_encode(['identity' => 'buyer@example.test']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    session(['company' => 'company_uuid', 'storefront_key' => 'store_key']);
+
+    // The router hands verifyCode() a plain Request; this is what used to reach create().
+    $validator = new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(), 'en'), app());
+    $validator->setPresenceVerifier(new Illuminate\Validation\DatabasePresenceVerifier(Model::getConnectionResolver()));
+    app()->instance(Illuminate\Contracts\Validation\Factory::class, $validator);
+    app()->instance('validator', $validator);
+
+    $refusal = null;
+    try {
+        (new CustomerController())->verifyCode(Request::create('/customer/verify-code', 'POST', [
+            'identity' => 'buyer@example.test',
+            'code'     => '999999',
+            'for'      => 'storefront_create_customer',
+            'name'     => 'Verified Buyer',
+            'email'    => 'buyer@example.test',
+        ]));
+    } catch (Illuminate\Validation\ValidationException $exception) {
+        $refusal = $exception;
+    }
+
+    expect($refusal)->not->toBeNull()
+        ->and($refusal->errors())->toHaveKey('code')
+        ->and($refusal->getResponse()?->getStatusCode())->toBe(422);
 });
 
 test('customer creation persists a verified storefront identity and issues an access token', function () {
@@ -1685,6 +1773,7 @@ test('customer password login reuses the storefront contact and issues an access
         $table->string('subject_uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
@@ -1979,13 +2068,19 @@ test('customer code verification rejects identities without a user account', fun
     expect($response->getData(true))->toBe(['error' => 'Unable to verify code.']);
 });
 
-test('customer query scopes records to customer type and active company', function () {
+test('customer query returns only the customer signed in with the customer token', function () {
     createCustomerControllerContactsSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('contacts')->insert([
         [
             'uuid'         => 'customer_one',
             'public_id'    => 'contact_one',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'customer_two',
+            'public_id'    => 'contact_two',
             'company_uuid' => 'company_uuid',
             'type'         => 'customer',
         ],
@@ -2005,10 +2100,61 @@ test('customer query scopes records to customer type and active company', functi
     session(['company' => 'company_uuid']);
     $request = bindUnauthenticatedCustomerRequest();
 
-    $resource = (new CustomerController())->query($request);
+    $controller                        = new AuthenticatedCustomerControllerStub();
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'customer_one')->firstOrFail();
+    $resource                          = $controller->query($request);
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('customer_one');
+});
+
+test('customer query refuses a storefront key without a customer token', function () {
+    createCustomerControllerContactsSchema();
+    Model::getConnectionResolver()->connection('mysql')->table('contacts')->insert([
+        'uuid'         => 'customer_one',
+        'public_id'    => 'contact_one',
+        'company_uuid' => 'company_uuid',
+        'type'         => 'customer',
+    ]);
+    session(['company' => 'company_uuid']);
+
+    $response = (new AuthenticatedCustomerControllerStub())->query(bindUnauthenticatedCustomerRequest());
+
+    expect($response->getStatusCode())->toBe(401)
+        ->and($response->getData(true))->toBe(['error' => 'Not authorized to view customers.']);
+});
+
+test('customer find refuses without a customer token and for another customer', function () {
+    createCustomerControllerContactsSchema();
+    Model::getConnectionResolver()->connection('mysql')->table('contacts')->insert([
+        [
+            'uuid'         => 'customer_one',
+            'public_id'    => 'contact_one',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+        [
+            'uuid'         => 'customer_two',
+            'public_id'    => 'contact_two',
+            'company_uuid' => 'company_uuid',
+            'type'         => 'customer',
+        ],
+    ]);
+    session(['company' => 'company_uuid']);
+    $controller = new AuthenticatedCustomerControllerStub();
+
+    $anonymous = $controller->find('customer_one');
+
+    $controller->authenticatedCustomer = Fleetbase\FleetOps\Models\Contact::where('uuid', 'customer_one')->firstOrFail();
+    $other                             = $controller->find('customer_two');
+    $own                               = $controller->find('customer_one');
+
+    expect($anonymous->getStatusCode())->toBe(401)
+        ->and($anonymous->getData(true))->toBe(['error' => 'Not authorized to view customer.'])
+        ->and($other->getStatusCode())->toBe(403)
+        ->and($other->getData(true))->toBe(['error' => 'Not authorized to view customer.'])
+        ->and($own)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($own->resource->uuid)->toBe('customer_one');
 });
 
 test('customer authentication seam resolves the token customer from the storefront request', function () {

@@ -1,0 +1,14 @@
+{{#if this.invitations.length}}
+    <div class="storefront-invitation-banner" data-test-invitation-banner ...attributes>
+        {{#each this.invitations as |invitation|}}
+            <div class="storefront-invitation-banner__item" data-test-invitation-banner-item={{invitation.id}}>
+                <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="network-wired" /></div>
+                <div class="storefront-invitation-banner__body">
+                    <div class="storefront-invitation-banner__title">{{t "storefront.networks.join.banner-title" network=invitation.network.name}}</div>
+                    <div class="storefront-invitation-banner__meta">{{#if invitation.expires_at}}{{t "storefront.networks.join.expires" when=(format-date-fns invitation.expires_at "d MMM")}} · {{/if}}{{#if invitation.message}}“{{invitation.message}}”{{/if}}</div>
+                </div>
+                <Button @type="primary" @size="xs" @icon="arrow-right" @text={{t "storefront.networks.join.review"}} @onClick={{fn this.review invitation}} />
+            </div>
+        {{/each}}
+    </div>
+{{/if}}

@@ -8,6 +8,14 @@ import { timeout, task } from 'ember-concurrency';
 
 export default class NetworksIndexController extends BaseController {
     /**
+     * Whether the networks list itself is on screen. A network page (and its loading state) only
+     * renders the outlet, so the list never flashes in while a network loads.
+     */
+    get isListRoute() {
+        return this.hostRouter.currentRouteName === 'console.storefront.networks.index.index';
+    }
+
+    /**
      * Inject the `NetworksIndexNetworkStoresController` controller
      *
      * @memberof NetworksIndexController
@@ -78,11 +86,19 @@ export default class NetworksIndexController extends BaseController {
     @service hostRouter;
 
     /**
+     * Inject the `storefront` service
+     *
+     * @var {Service}
+     */
+    @service storefront;
+
+    /**
      * Queryable parameters for this controller's model
      *
      * @var {Array}
      */
-    queryParams = ['page', 'limit', 'sort', 'query'];
+    // Prefixed so the pages nested under a network can keep the plain keys (`page`, `query`).
+    queryParams = [{ page: 'n_page' }, { limit: 'n_limit' }, { sort: 'n_sort' }, { query: 'n_query' }];
 
     /**
      * The current page of data being viewed.
@@ -165,27 +181,8 @@ export default class NetworksIndexController extends BaseController {
      * @public
      */
     @action createNetwork() {
-        const network = this.store.createRecord('network');
-        const currency = this.currentUser.getWhoisProperty('currency.code');
-
-        if (currency) {
-            network.setProperties({ currency });
-        }
-
-        this.modalsManager.show('modals/create-network', {
-            title: this.intl.t('storefront.networks.index.create-new-network'),
-            network,
-            confirm: (modal) => {
-                modal.startLoading();
-
-                return network.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
-                    return this.hostRouter.refresh();
-                });
-            },
-            decline: () => {
-                return network.destroyRecord();
-            },
+        return this.storefront.createNewNetwork({
+            onSuccess: () => this.hostRouter.refresh(),
         });
     }
 

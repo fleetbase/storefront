@@ -71,9 +71,32 @@ return [
     |--------------------------------------------------------------------------
     | Throttle/Rate-Limiting
     |--------------------------------------------------------------------------
+    |
+    | Requests a single device (store key + client IP) may make to the public
+    | Storefront API per decay window. A customer app browsing, carting and
+    | checking out stays well under 120 a minute; raise it per deployment with
+    | STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE if an integration needs more.
     */
     'throttle' => [
-        'max_attempts' => env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', 600),
-        'decay_minutes' => env('STOREFRONT_THROTTLE_DECAY_MINUTES', 1),
+        'max_attempts'  => (int) env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', 120),
+        'decay_minutes' => (int) env('STOREFRONT_THROTTLE_DECAY_MINUTES', 1),
+
+        // The endpoints that send a text message (creation code, SMS login, phone
+        // verification, account closure) get their own, much smaller bucket on top.
+        'sms_max_attempts'  => (int) env('STOREFRONT_THROTTLE_SMS_REQUESTS_PER_MINUTE', 5),
+        'sms_decay_minutes' => (int) env('STOREFRONT_THROTTLE_SMS_DECAY_MINUTES', 1),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verification Codes
+    |--------------------------------------------------------------------------
+    |
+    | resend_seconds: a creation-code request for an identity that was sent a
+    | code this recently answers "ok" without sending another message. The first
+    | code is still valid; a second one would only cost money. 0 disables it.
+    */
+    'verification' => [
+        'resend_seconds' => (int) env('STOREFRONT_VERIFICATION_RESEND_SECONDS', 60),
     ],
 ];

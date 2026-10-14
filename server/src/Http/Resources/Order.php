@@ -3,6 +3,9 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\FleetOps\Http\Resources\v1\Order as FleetOpsOrderResource;
+use Fleetbase\Storefront\Support\OrderInsights;
+use Fleetbase\Storefront\Support\OrderPayments;
+use Fleetbase\Support\Http;
 use Illuminate\Contracts\Support\Arrayable;
 
 class Order extends FleetOpsOrderResource
@@ -34,6 +37,12 @@ class Order extends FleetOpsOrderResource
             ];
         }
 
+        // What was paid, refunded or is still due, and (console) what needs a dispatcher's attention.
+        $data['payment'] = OrderPayments::summary($this->resource);
+        if (Http::isInternalRequest()) {
+            $data = array_merge($data, OrderInsights::forOrder($this->resource));
+        }
+
         return $data;
     }
 
@@ -48,10 +57,25 @@ class Order extends FleetOpsOrderResource
             'delivery_fee',
             'tip',
             'delivery_tip',
+            'tip_amount',
+            'delivery_tip_amount',
             'total',
+            'discount',
+            'promotions',
+            'payment_status',
+            'payment',
+            'payment_adjustments',
+            'amount_paid',
+            'balance_due',
+            'address_change_request',
             'currency',
             'gateway',
             'is_pickup',
+            'is_booking',
+            'booking_at',
+            'booking',
+            'cancel_reason',
+            'booking_has_items',
             'is_master_order',
             'related_orders',
             'master_order_id',

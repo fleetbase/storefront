@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\Http\Resources\FleetbaseResource;
+use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Support\Http;
 use Fleetbase\Support\Utils;
 use Illuminate\Support\Arr;
@@ -43,6 +44,9 @@ class Product extends FleetbaseResource
             'is_service'         => $this->is_service,
             'is_bookable'        => $this->is_bookable,
             'is_available'       => $this->is_available,
+            'track_inventory'    => (bool) $this->track_inventory,
+            'inventory'          => $inventory = Inventory::summary($this->resource),
+            'in_stock'           => $this->is_available !== false && $inventory['in_stock'],
             'tags'               => $this->tags ?? [],
             'status'             => $this->status,
             'meta'               => data_get($this, 'meta', Utils::createObject()),
@@ -50,6 +54,7 @@ class Product extends FleetbaseResource
             'translations'       => $this->translations ?? [],
             'addon_categories'   => $this->mapAddonCategories($this->addonCategories),
             'variants'           => $this->mapVariants($this->variants),
+            'catalogs_count'     => $this->when(Http::isInternalRequest(), fn () => $this->catalogs_count),
             'files'              => $this->when(Http::isInternalRequest(), $this->files),
             'images'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files)),
             'videos'             => $this->when(!Http::isInternalRequest(), $this->mapFiles($this->files, 'video')),
@@ -110,6 +115,8 @@ class Product extends FleetbaseResource
                     'id'                      => $addonCategory->id,
                     'name'                    => $addonCategory->name,
                     'excluded_addons'         => $addonCategory->excluded_addons,
+                    'is_required'             => (bool) $addonCategory->is_required,
+                    'max_selectable'          => $addonCategory->max_selectable,
                     'category'                => $addonCategory->category,
                     'created_at'              => $addonCategory->created_at,
                     'updated_at'              => $addonCategory->updated_at,
@@ -121,6 +128,8 @@ class Product extends FleetbaseResource
                 'name'            => data_get($addonCategory, 'name'),
                 'description'     => data_get($addonCategory, 'category.description'),
                 'excluded_addons' => $addonCategory->excluded_addons,
+                'is_required'     => (bool) $addonCategory->is_required,
+                'max_selectable'  => $addonCategory->max_selectable ? (int) $addonCategory->max_selectable : null,
                 'addons'          => $this->mapProductAddons($addons, $addonCategory->excluded_addons),
             ];
 

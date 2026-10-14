@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Promotions;
 
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Storefront\Models\CustomerSegment;
 use Fleetbase\Storefront\Models\Promotion;
 use Fleetbase\Storefront\Models\PromotionCode;
 use Fleetbase\Storefront\Models\PromotionRedemption;
@@ -28,6 +29,7 @@ class PromotionEngine
     public const REASON_CUSTOMER_USAGE_LIMIT   = 'customer_usage_limit_reached';
     public const REASON_BUDGET_EXHAUSTED       = 'budget_exhausted';
     public const REASON_NOT_COMBINABLE         = 'not_combinable';
+    public const REASON_NOT_IN_SEGMENT         = 'not_in_segment';
 
     public function __construct(protected PromotionCalculator $calculator)
     {
@@ -204,9 +206,35 @@ class PromotionEngine
             if ($promotion->first_order_only && $this->customerHasOrdered($context)) {
                 return self::REASON_FIRST_ORDER_ONLY;
             }
+
+            $segmentUuid = data_get($promotion->applies_to, 'segment');
+            if ($segmentUuid && !$this->customerInSegment((string) $segmentUuid, $promotion, $context)) {
+                return self::REASON_NOT_IN_SEGMENT;
+            }
         }
 
         return null;
+    }
+
+    /**
+     * Whether the customer matches the segment a promotion targets (`applies_to.segment`).
+     * A segment that no longer exists targets nobody.
+     */
+    protected function customerInSegment(string $segmentUuid, Promotion $promotion, PromotionContext $context): bool
+    {
+        $segment = CustomerSegment::where('uuid', $segmentUuid)->orWhere('public_id', $segmentUuid)->first();
+        if (!$segment) {
+            return false;
+        }
+
+        $owner = $segment->owner ?? $promotion->owner;
+        if (!$owner) {
+            return false;
+        }
+
+        return (new SegmentResolver())->query($owner, (array) ($segment->rules ?? []), $context->now)
+            ->where('uuid', $context->customer->uuid)
+            ->exists();
     }
 
     protected function codeRejection(PromotionCode $code, PromotionContext $context): ?string
@@ -219,7 +247,7 @@ class PromotionEngine
             return self::REASON_INVALID_CODE;
         }
 
-        if ($code->usage_limit !== null && PromotionRedemption::counting()->where('promotion_code_uuid', $code->uuid)->count() >= $code->usage_limit) {
+        if ($code->usage_limit !== null && static::countingFor($context)->where('promotion_code_uuid', $code->uuid)->count() >= $code->usage_limit) {
             return self::REASON_USAGE_LIMIT;
         }
 
@@ -289,7 +317,7 @@ class PromotionEngine
             return [];
         }
 
-        $rows = PromotionRedemption::counting()
+        $rows = static::countingFor($context)
             ->whereIn('promotion_uuid', $promotionUuids)
             ->groupBy('promotion_uuid')
             ->selectRaw('promotion_uuid, COUNT(*) as uses, COALESCE(SUM(amount), 0) as spent, SUM(CASE WHEN customer_uuid = ? THEN 1 ELSE 0 END) as customer_uses', [$context->customer?->uuid])
@@ -313,7 +341,16 @@ class PromotionEngine
         return Order::where('customer_uuid', $context->customer->uuid)
             ->where('type', 'storefront')
             ->where('status', '!=', 'canceled')
+            ->when($context->excludeOrderUuid, fn ($query, $uuid) => $query->where('uuid', '!=', $uuid))
             ->exists();
+    }
+
+    /**
+     * Redemptions that count towards limits, without the order being re-priced.
+     */
+    protected static function countingFor(PromotionContext $context)
+    {
+        return PromotionRedemption::counting()->when($context->excludeOrderUuid, fn ($query, $uuid) => $query->where(fn ($query) => $query->whereNull('order_uuid')->orWhere('order_uuid', '!=', $uuid)));
     }
 
     /**

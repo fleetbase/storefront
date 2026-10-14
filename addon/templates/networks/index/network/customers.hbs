@@ -1,18 +1,15 @@
-<Layout::Section::Header @title={{t "storefront.common.customers"}} @searchQuery={{this.query}} @onSearch={{perform this.search}}>
+<Storefront::PageHeader @title={{t "storefront.common.customers"}} @subtitle={{t "storefront.networks.customers.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.networks.customers.search"}} data-test-network-customers-header>
     <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
-</Layout::Section::Header>
+</Storefront::PageHeader>
 
-<Layout::Section::Body>
-    <Table
-        @wrapperClass="overscroll-y-none"
-        @rows={{@model}}
-        @columns={{this.registeredColumns}}
-        @selectable={{false}}
-        @canSelectAll={{false}}
-        @onSetup={{fn (mut this.table)}}
-        @pagination={{true}}
-        @paginationMeta={{@model.meta}}
-        @page={{this.page}}
-        @onPageChange={{fn (mut this.page)}}
-    />
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page">
+        <div class="storefront-table-card" data-test-network-customers-card>
+            <Table @wrapperClass="storefront-table-card__table" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @canSelectAll={{false}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
+            <div class="storefront-table-card__footer">
+                <span class="storefront-table-card__note">{{t "storefront.networks.customers.note"}}</span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
+        </div>
+    </div>
 </Layout::Section::Body>

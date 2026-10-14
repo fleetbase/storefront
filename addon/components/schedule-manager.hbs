@@ -1,33 +1,33 @@
-<div class="schedule-manager-wrapper" ...attributes>
-    {{#each-in this.schedule as |day hours|}}
-        <div class="next-content-panel-wrapper bordered-classic is-open">
-            <div class="next-content-panel-container is-open">
-                <div class="next-content-panel {{@contentPanelClass}} shadow-sm">
-                    <div class="next-content-panel-header items-center {{@contentPanelHeaderClass}}">
-                        <h4 class="font-semibold text-sm dark:text-gray-100">{{day}}</h4>
-                        <div>
-                            <Button
-                                @icon="calendar-week"
-                                @text={{t "storefront.component.schedule-manager.add-hours"}}
-                                @textClass="truncate text-xs"
-                                @size="xs"
-                                @onClick={{fn this.addHours @subject day}}
-                                class="{{@addHoursButtonClass}}"
-                            />
-                        </div>
-                    </div>
-                    <div class="next-content-panel-body {{@contentPanelBodyClass}}">
-                        {{#each hours as |hour|}}
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="dark:text-gray-100">{{hour.humanReadableHours}}</div>
-                                <div>
-                                    <Button @iconPrefix="fas" @type="danger" @size="xs" @icon="times" @onClick={{fn this.removeHours hour}} class="{{@removeHoursButtonClass}}" />
-                                </div>
-                            </div>
-                        {{/each}}
-                    </div>
+{{! A week of opening hours: one row per day, its time slots as removable chips, and Add hours. }}
+<div class="storefront-schedule" data-test-schedule-manager ...attributes>
+    {{#if (and @emptyText (not this.hasHours))}}
+        <p class="storefront-schedule__empty">{{@emptyText}}</p>
+    {{/if}}
+    <div class="storefront-schedule__week">
+        {{#each this.days as |day|}}
+            <div class="storefront-schedule__day {{if day.hours.length 'has-hours'}}" data-test-schedule-day={{day.name}}>
+                <div class="storefront-schedule__name">{{day.label}}</div>
+                <div class="storefront-schedule__slots">
+                    {{#each day.hours as |hour|}}
+                        <span class="storefront-schedule__slot">
+                            {{hour.humanReadableHours}}
+                            {{#unless @disabled}}
+                                <button type="button" class="storefront-schedule__remove" aria-label={{t "common.remove"}} {{on "click" (fn this.removeHours hour)}}>
+                                    <FaIcon @icon="times" @size="xs" />
+                                </button>
+                            {{/unless}}
+                        </span>
+                    {{else}}
+                        <span class="storefront-schedule__none">{{or @noHoursText (t "storefront.component.schedule-manager.no-hours")}}</span>
+                    {{/each}}
                 </div>
+                {{#unless @disabled}}
+                    <button type="button" class="storefront-schedule__add" {{on "click" (fn this.addHours @subject day.name)}} data-test-schedule-add={{day.name}}>
+                        <FaIcon @icon="plus" @size="xs" />
+                        {{t "storefront.component.schedule-manager.add-hours"}}
+                    </button>
+                {{/unless}}
             </div>
-        </div>
-    {{/each-in}}
+        {{/each}}
+    </div>
 </div>

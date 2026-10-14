@@ -3,10 +3,12 @@ import { format, formatDistanceToNow } from 'date-fns';
 
 export default class FoodTruckModel extends Model {
     /** @ids */
+    @attr('string') public_id;
     @attr('string') company_uuid;
     @attr('string') created_by_uuid;
     @attr('string') vehicle_uuid;
     @attr('string') store_uuid;
+    @attr('string') network_uuid;
 
     /** @relationships */
     @belongsTo('vehicle') vehicle;
@@ -17,7 +19,11 @@ export default class FoodTruckModel extends Model {
     /** @attributes */
     @attr('string', { defaultValue: 'storefront:store' }) subject_type;
     @attr('raw') meta;
+    @attr('raw') store_summary;
+    @attr('raw') network;
     @attr('string') status;
+    @attr('boolean') online;
+    @attr('raw') today;
 
     /** @dates */
     @attr('date') created_at;
@@ -29,6 +35,14 @@ export default class FoodTruckModel extends Model {
     }
 
     /** @computed */
+    get ownerName() {
+        return this.network?.name ?? this.store_summary?.name ?? null;
+    }
+
+    get isNetworkOwned() {
+        return Boolean(this.network_uuid);
+    }
+
     get updatedAgo() {
         return formatDistanceToNow(this.updated_at);
     }

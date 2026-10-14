@@ -136,6 +136,7 @@ function createProductApiControllerSchema(): void
         $table->string('uuid')->nullable();
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -602,6 +603,34 @@ test('product query applies a known storefront category filter', function () {
 
     expect($resource->resource)->toHaveCount(1)
         ->and($resource->resource->first()->uuid)->toBe('drink_uuid');
+});
+
+test('product category filter takes a uuid on the console and leaves the public id to the public API', function () {
+    $filtered = function (string $uri) {
+        $request = productApiRequest('/' . $uri, 'GET', ['category' => 'category_drinks']);
+        $request->setRouteResolver(fn () => new class($uri) {
+            public array $action = [];
+
+            public function __construct(private string $routeUri)
+            {
+            }
+
+            public function uri(): string
+            {
+                return $this->routeUri;
+            }
+        });
+
+        return (new Fleetbase\Storefront\Http\Filter\ProductFilter($request))->apply((new Fleetbase\Storefront\Models\Product())->newQuery());
+    };
+
+    $internal = $filtered('int/v1/storefront/products');
+    $public   = $filtered('v1/storefront/products');
+
+    expect($internal->toSql())->toContain('"category_uuid" = ?')
+        ->and($internal->getBindings())->toContain('category_drinks')
+        ->and($public->toSql())->not->toContain('"category_uuid" = ?')
+        ->and($public->getBindings())->not->toContain('category_drinks');
 });
 
 test('product update find and delete expose stable not-found responses', function () {

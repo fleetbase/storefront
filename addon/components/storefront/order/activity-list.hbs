@@ -13,7 +13,7 @@
                 </div>
             </div>
             <div class="flex flex-col">
-                <div class="text-xs text-gray-400 dark:text-gray-500">{{format-date-fns trackingStatus.created_at "d MMM yyyy HH:mm"}}</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{store-time trackingStatus.created_at "d MMM yyyy HH:mm" order=(or @order @resource)}}</div>
             </div>
         </div>
     {{else}}

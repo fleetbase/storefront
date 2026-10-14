@@ -53,7 +53,7 @@ class StoreController extends Controller
 
         $store = Store::where('public_id', $id)
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->activeInNetwork(session('storefront_network'));
             })
             ->when(session('storefront_store'), function ($query) {
                 $activeStore = session('storefront_store');
@@ -91,7 +91,7 @@ class StoreController extends Controller
                 $q->where('public_id', $request->input('store'));
 
                 if (session('storefront_network')) {
-                    $q->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                    $q->activeInNetwork(session('storefront_network'));
                 }
 
                 if (session('storefront_store')) {
@@ -121,7 +121,7 @@ class StoreController extends Controller
             $query->where('public_id', $storeId)->orWhere('uuid', $storeId);
         })
             ->when(session('storefront_network'), function ($query) {
-                $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', session('storefront_network')));
+                $query->activeInNetwork(session('storefront_network'));
             })
             ->when(session('storefront_store'), function ($query) {
                 $activeStore = session('storefront_store');

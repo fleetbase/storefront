@@ -7,6 +7,16 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Http\Resources\Index\Order as StorefrontOrderIndexResource;
 use Fleetbase\Storefront\Http\Resources\Order as StorefrontOrderResource;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
+use Fleetbase\Storefront\Notifications\StorefrontOrderItemUnavailable;
+use Fleetbase\Storefront\Promotions\PromotionRedemptions;
+use Fleetbase\Storefront\Support\OrderActivityFlow;
+use Fleetbase\Storefront\Support\OrderChat;
+use Fleetbase\Storefront\Support\OrderEditException;
+use Fleetbase\Storefront\Support\OrderEditor;
+use Fleetbase\Storefront\Support\OrderInsights;
+use Fleetbase\Storefront\Support\OrderPayments;
+use Fleetbase\Storefront\Support\OrderSettlement;
+use Fleetbase\Storefront\Support\OrderTimeline;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -76,6 +86,11 @@ class OrderController extends FleetbaseOrderController
 
     protected function notifyOrderAccepted(Order $order): void
     {
+        // A booking's confirmation is announced as its activity ("Booking confirmed").
+        if (Storefront::isBookingOrder($order)) {
+            return;
+        }
+
         $order->customer->notify(new StorefrontOrderAccepted($order));
     }
 
@@ -172,6 +187,13 @@ class OrderController extends FleetbaseOrderController
         // Patch order config
         $this->patchOrderConfig($order);
 
+        // A booking at the store starts when the customer comes in; nobody is dispatched.
+        if (Storefront::isBookingOrder($order) && $order->isMeta('is_pickup')) {
+            $order->updateStatus('in_progress');
+
+            return $this->orderResponse($order);
+        }
+
         if ($order->isMeta('is_pickup')) {
             $order->updateStatus('pickup_ready');
 
@@ -188,9 +210,12 @@ class OrderController extends FleetbaseOrderController
             $order->assignDriver($driver);
         }
 
-        // Dispatch the order and move Storefront delivery orders into preparation.
+        // Dispatch the order and move Storefront delivery orders into preparation. A booking
+        // is dispatched to its provider; there is nothing to prepare.
         $order->dispatchWithActivity();
-        $order->updateStatus('preparing');
+        if (!Storefront::isBookingOrder($order)) {
+            $order->updateStatus('preparing');
+        }
 
         return $this->orderResponse($order);
     }
@@ -247,6 +272,7 @@ class OrderController extends FleetbaseOrderController
         $this->patchOrderConfig($order);
 
         $order->updateStatus($order->isMeta('is_pickup') ? 'picked_up' : 'completed');
+        OrderPayments::settleCollected($order);
 
         return $this->orderResponse($order);
     }
@@ -275,13 +301,15 @@ class OrderController extends FleetbaseOrderController
     }
 
     /**
-     * Reject order and notify customer order is rejected/canceled.
+     * Cancel an order: say why, release its promotion uses and give the money back (a refund to the
+     * gateway, or store credit where the gateway cannot refund it). The refund happens first, so a
+     * refund the gateway refuses leaves the order as it was for staff to choose store credit.
      *
      * @return \Illuminate\Http\Response
      */
     public function rejectOrder(Request $request)
     {
-        $order = $this->findOrderForAction($request->order, ['customer']);
+        $order = $this->findOrderForAction($request->order, ['customer', 'payload', 'transaction']);
 
         if (!$order) {
             return response()->json([
@@ -289,11 +317,348 @@ class OrderController extends FleetbaseOrderController
             ], 400);
         }
 
+        if (OrderInsights::isFinished($order)) {
+            return response()->error('This order is already ' . str_replace('_', ' ', $order->status) . '.');
+        }
+
+        $reason = trim((string) $request->input('reason')) ?: null;
+        $refund = null;
+
+        if ($request->boolean('refund', true)) {
+            $plan = OrderSettlement::cancelPlan($order);
+            if ($plan['refundable'] > 0) {
+                $method = $request->input('settlement') ?: $plan['default'];
+                if (!in_array($method, $plan['options'], true)) {
+                    return response()->error('This payment cannot be given back that way.');
+                }
+
+                // Part of it only where the gateway refunds part of a payment, or as store credit.
+                $amount = $request->filled('amount') ? (int) $request->input('amount') : $plan['refundable'];
+                if ($amount < 1 || $amount > $plan['refundable']) {
+                    return response()->error('The amount given back must be more than nothing and no more than what was paid.');
+                }
+                if ($amount < $plan['refundable'] && $method === OrderSettlement::METHOD_REFUND && !$plan['supports_partial_refund']) {
+                    return response()->error('This payment can only be refunded in full; give store credit for part of it.');
+                }
+
+                try {
+                    $refund = OrderSettlement::refund($order, $amount, $method, $reason ?? 'Order canceled');
+                } catch (\Throwable $e) {
+                    return response()->error($e->getMessage());
+                }
+            }
+        }
+
+        if ($reason) {
+            $order->updateMeta('cancel_reason', $reason);
+        }
+
+        $this->releasePromotions($order);
+
         // Patch order config
         $this->patchOrderConfig($order);
 
         $order->updateStatus('canceled');
 
-        return $this->orderResponse($order);
+        return [...$this->orderResponse($order), 'refund' => $refund];
+    }
+
+    /**
+     * A canceled order gives its promotion uses back.
+     */
+    protected function releasePromotions(Order $order): int
+    {
+        return PromotionRedemptions::releaseForOrder($order);
+    }
+
+    /**
+     * Price an edit without making it: new totals, the difference and how it would be settled,
+     * and what the order's stage does not allow.
+     */
+    public function previewEdit(string $id, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'payload.dropoff', 'payload.pickup']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(OrderEditor::preview($order, $request->all()));
+    }
+
+    /**
+     * Change a placed order (items, drop-off, contact, time, notes), settle the difference and
+     * tell the driver and the customer.
+     */
+    public function edit(string $id, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'payload.dropoff', 'payload.pickup', 'driverAssigned']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            $result = OrderEditor::apply($order, $request->all());
+        } catch (OrderEditException $e) {
+            return response()->json(['errors' => [$e->getMessage()], ...$e->context], $e->status());
+        }
+
+        return [
+            ...$this->orderResponse($result['order']),
+            'settlement' => $result['settlement'],
+            'changes'    => $result['changes'],
+            'summary'    => $result['summary'],
+        ];
+    }
+
+    /**
+     * What the order panel needs beyond the order record: its payment, when it is due, what needs
+     * attention, the customer's history with the store and what an edit may still change.
+     */
+    public function overview(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload.entities', 'trackingNumber']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json([
+            'payment' => OrderPayments::summary($order),
+            ...OrderInsights::forOrder($order),
+            'edit'              => ['stage' => OrderEditor::stage($order), 'locked' => OrderEditor::locks($order), 'hours' => OrderEditor::hoursToday($order)],
+            'cancel'            => OrderSettlement::cancelPlan($order),
+            'chat'              => static::chatSummary($order),
+            'source'            => $order->getMeta('placed_via') === 'console' ? 'console' : 'app',
+            'payment_reference' => static::paymentReference($order),
+            'delivery'          => [
+                'distance_m'   => $order->distance !== null ? (int) $order->distance : null,
+                'duration_s'   => $order->time !== null ? (int) $order->time : null,
+                'delivered_at' => OrderInsights::finishedAt($order),
+                'proofs'       => static::proofCount($order),
+                'proof_items'  => static::proofItems($order),
+            ],
+        ]);
+    }
+
+    /**
+     * Issue (or reissue) the payment link for the order's balance due.
+     */
+    public function issueBalanceLink(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            OrderSettlement::issueBalanceLink($order);
+        } catch (\Throwable $e) {
+            return response()->error($e->getMessage());
+        }
+
+        return response()->json(['payment' => OrderPayments::snapshot($order)]);
+    }
+
+    /**
+     * Ask the gateway whether the customer paid the balance through its link.
+     */
+    public function checkBalancePayment(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['customer', 'transaction', 'payload']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        try {
+            $charge = OrderSettlement::checkBalancePayment($order);
+        } catch (\Throwable $e) {
+            return response()->error($e->getMessage());
+        }
+
+        return response()->json(['paid' => (bool) $charge, 'charge' => $charge, 'payment' => OrderPayments::snapshot($order)]);
+    }
+
+    protected static function chatSummary(Order $order): array
+    {
+        $unread  = OrderChatController::unread($order, session('user'));
+        $threads = [
+            'customer' => OrderChat::find($order, OrderChat::KIND_CUSTOMER),
+            'dispatch' => OrderChat::find($order, OrderChat::KIND_DISPATCH),
+            'group'    => OrderChat::find($order),
+        ];
+
+        return [
+            'unread'       => $unread,
+            'unread_total' => array_sum($unread),
+            'threads'      => array_map(fn ($channel) => $channel !== null, $threads),
+            // The threads' chat channels, which the panel listens on (`chat.{uuid}`) for new messages.
+            'channels'     => array_map(fn ($channel) => $channel ? ['uuid' => $channel->uuid, 'public_id' => $channel->public_id] : null, $threads),
+        ];
+    }
+
+    /**
+     * What identifies the payment: the capture transaction, the gateway's reference and when it was paid.
+     */
+    protected static function paymentReference(Order $order): ?array
+    {
+        $transaction = $order->relationLoaded('transaction') ? $order->transaction : $order->transaction()->first();
+        if (!$transaction) {
+            return null;
+        }
+
+        $checkout = \Fleetbase\Storefront\Models\Checkout::where('order_uuid', $order->uuid)->first();
+
+        return [
+            'transaction' => $transaction->public_id,
+            'reference'   => $transaction->gateway_transaction_id,
+            'invoice'     => $checkout?->getOption('qpay_invoice_id'),
+            'paid_at'     => optional($transaction->settled_at ?? (in_array(OrderPayments::summary($order)['state'], [OrderPayments::STATE_TO_COLLECT, OrderPayments::STATE_UNPAID], true) ? null : $transaction->created_at))->toIso8601String(),
+        ];
+    }
+
+    /**
+     * The proof captured for the order (photos, signatures, scanned codes), newest first, for
+     * the panel to show. Proof taken at a stop or on an item counts as the order's too.
+     */
+    protected static function proofItems(Order $order): array
+    {
+        try {
+            $proofs = \Fleetbase\FleetOps\Models\Proof::where(fn ($query) => $query->where('order_uuid', $order->uuid)->orWhere('subject_uuid', $order->uuid))
+                ->with('file')
+                ->latest()
+                ->limit(24)
+                ->get();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return $proofs->map(function ($proof) {
+            $remarks = (string) $proof->remarks;
+            $type    = data_get($proof, 'data.type')
+                ?? (!$proof->file_uuid ? 'scan' : (stripos($remarks, 'signature') !== false ? 'signature' : 'photo'));
+
+            return [
+                'id'           => $proof->public_id ?? $proof->uuid,
+                'type'         => $type,
+                'url'          => $proof->file_url,
+                'content_type' => data_get($proof, 'file.content_type'),
+                'remarks'      => $remarks ?: null,
+                'code'         => $proof->file_uuid ? null : ($proof->raw_data ?: null),
+                'at'           => optional($proof->created_at)->toIso8601String(),
+            ];
+        })->values()->all();
+    }
+
+    protected static function proofCount(Order $order): int
+    {
+        try {
+            return $order->proofs()->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Move the order to an activity of its own order config (the default Storefront flow or a
+     * custom one). The console sends the activity's code; the activity itself comes from the
+     * config, so its status, details and proof rules are the config's. An order finished this
+     * way without a driver is still finished properly (cash settled, customer told).
+     */
+    public function updateActivity(string $id, Request $request)
+    {
+        $order = Order::where('company_uuid', session('company'))->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))->first();
+        if (!$order) {
+            return response()->error('Order not found', 404);
+        }
+
+        $code       = strtolower(trim((string) data_get($request->input('activity'), 'code')));
+        $configured = $code !== '' ? $order->config()?->getActivityByCode($code) : null;
+        if ($configured) {
+            $request->merge(['activity' => $configured->toArray()]);
+        }
+
+        $previous = $order->status;
+        $response = parent::updateActivity($id, $request);
+
+        $order->refresh();
+        if ($configured && $configured->completesOrder() && $previous !== $order->status && !$order->driver_assigned_uuid && $order->status === $configured->code) {
+            $order->notifyCompleted();
+        }
+
+        return $response;
+    }
+
+    /**
+     * The order's steps on its flow: done, current and expected next.
+     */
+    public function flow(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(OrderActivityFlow::forOrder($order));
+    }
+
+    /**
+     * Everything that happened to the order, newest first: its steps, notes, payment changes,
+     * edits and chat messages.
+     */
+    public function activity(string $id)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['trackingStatuses', 'comments.author']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        return response()->json(['activity' => OrderTimeline::forOrder($order)]);
+    }
+
+    /**
+     * Mark one item of the order unavailable (or available again), or note something about it.
+     * Everything else on the order is taken as packed and delivered. The customer is told when an
+     * item becomes unavailable.
+     */
+    public function updateEntity(string $id, string $entityId, Request $request)
+    {
+        try {
+            $order = Order::findRecordOrFail($id, ['payload.entities', 'customer']);
+        } catch (ModelNotFoundException $exception) {
+            return response()->error('Order not found', 404);
+        }
+
+        $entity = collect(data_get($order, 'payload.entities', []))->first(fn ($entity) => in_array($entityId, [$entity->public_id, $entity->uuid], true));
+        if (!$entity) {
+            return response()->error('Item not found on this order', 404);
+        }
+
+        $becameUnavailable = false;
+        if ($request->has('unavailable')) {
+            $becameUnavailable = $request->boolean('unavailable') && !data_get($entity, 'meta.unavailable');
+            $entity->setMeta('unavailable', $request->boolean('unavailable'));
+        }
+        if ($request->has('note')) {
+            $entity->setMeta('note', trim((string) $request->input('note')) ?: null);
+        }
+        $entity->save();
+
+        $customerTold = false;
+        if ($becameUnavailable && $order->customer) {
+            try {
+                $order->customer->notify(new StorefrontOrderItemUnavailable($order, (string) $entity->name));
+                $customerTold = true;
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return [...$this->orderResponse($order), 'customer_told' => $customerTold];
     }
 }

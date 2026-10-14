@@ -1,1 +1,26 @@
-{{outlet}}
+<Overlay @position="right" @isResizable={{true}} @noBackdrop={{true}} @width="640px" @minResizeWidth={{560}} @fullHeight={{true}} @containerClass="border-l border-transparent dark:border-gray-700">
+    <Overlay::Header class="sfoe-head">
+        <:default>
+            <div class="sfoe-head__main">
+                <div class="sfoe-head__title">
+                    <span class="sfoe-head__name">{{t "storefront.order.edit.title"}}</span>
+                    <span class="sfoe-head__id">{{or @model.tracking_number.tracking_number @model.tracking @model.public_id}}</span>
+                    <Badge @status={{@model.status}} @size="xs" />
+                </div>
+                <div class="sfoe-head__sub">{{t "storefront.order.edit.applies-to-order"}}</div>
+            </div>
+            {{#if this.stageNote}}
+                <div class="sfoe-head__stage sfoe-head__stage--{{this.stage}}" data-test-order-edit-stage>
+                    <FaIcon @icon={{if (eq this.stage "closed") "lock" "circle-info"}} />
+                    <span>{{this.stageNote}}</span>
+                </div>
+            {{/if}}
+        </:default>
+        <:actions>
+            <Button @size="sm" @icon="arrow-left" @text={{t "storefront.order.edit.back"}} @onClick={{this.backToOrder}} data-test-edit-back />
+        </:actions>
+    </Overlay::Header>
+    <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="sfoe-body" data-test-edit-order>
+        <Storefront::Order::EditForm @order={{@model}} @focus={{this.focus}} @onSaved={{this.saved}} @onCancel={{this.backToOrder}} />
+    </Overlay::Body>
+</Overlay>

@@ -8,12 +8,14 @@ use Fleetbase\FleetOps\Support\Utils;
 use Fleetbase\Models\Category;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
+use Fleetbase\Support\ApiModelCache;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasMetaAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
@@ -50,6 +52,21 @@ class Product extends StorefrontModel
      * @var string
      */
     protected $table = 'products';
+
+    /**
+     * Tables the cached product lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): what the storefront
+     * list eager loads (addon categories with their addons, variants with their options,
+     * the store), the store's networks a network storefront filters by, and the catalog
+     * categories `catalogs_count` counts. The images (`files`, and the store's logo) are
+     * left out: every upload in a company writes the files table, which would keep
+     * product lists from ever being served from cache. FileObserver invalidates product
+     * lists when a product's own files change instead, and a new store logo is written
+     * to the store row.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'store', 'store.networks', 'catalogCategories'];
 
     /**
      * The default database connection to use.
@@ -91,6 +108,7 @@ class Product extends StorefrontModel
         'is_service',
         'is_bookable',
         'is_available',
+        'track_inventory',
         'is_on_sale',
         'is_recommended',
         'can_pickup',
@@ -104,16 +122,17 @@ class Product extends StorefrontModel
      * @var array
      */
     protected $casts = [
-        'is_service'     => 'boolean',
-        'is_bookable'    => 'boolean',
-        'is_on_sale'     => 'boolean',
-        'is_available'   => 'boolean',
-        'is_recommended' => 'boolean',
-        'can_pickup'     => 'boolean',
-        'tags'           => 'array',
-        'meta'           => Json::class,
-        'translations'   => Json::class,
-        'youtube_urls'   => Json::class,
+        'is_service'      => 'boolean',
+        'is_bookable'     => 'boolean',
+        'is_on_sale'      => 'boolean',
+        'is_available'    => 'boolean',
+        'track_inventory' => 'boolean',
+        'is_recommended'  => 'boolean',
+        'can_pickup'      => 'boolean',
+        'tags'            => 'array',
+        'meta'            => Json::class,
+        'translations'    => Json::class,
+        'youtube_urls'    => Json::class,
     ];
 
     /**
@@ -170,18 +189,53 @@ class Product extends StorefrontModel
         return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Category::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function addonCategories()
+    public function addonCategories(): HasMany
     {
         return $this->hasMany(ProductAddonCategory::class);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * Products that cannot be sold now: switched off, or tracking stock with none available at
+     * any location (and no backorders).
      */
-    public function variants()
+    public function scopeOutOfStock($query)
+    {
+        return $query->where(function ($query) {
+            $query->where('is_available', false)->orWhere(function ($query) {
+                $query->where('track_inventory', true)->whereNotExists(function ($stock) {
+                    $stock->selectRaw('1')
+                        ->from('product_inventories')
+                        ->whereColumn('product_inventories.product_uuid', 'products.uuid')
+                        ->whereNull('product_inventories.deleted_at')
+                        ->where(fn ($sellable) => $sellable->whereRaw('product_inventories.quantity - product_inventories.reserved > 0')->orWhere('product_inventories.allow_backorder', true));
+                });
+            });
+        });
+    }
+
+    /**
+     * Products tracking stock with a location at or under its low stock threshold (but not out).
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->where('track_inventory', true)->whereExists(function ($stock) {
+            $stock->selectRaw('1')
+                ->from('product_inventories')
+                ->whereColumn('product_inventories.product_uuid', 'products.uuid')
+                ->whereNull('product_inventories.deleted_at')
+                ->whereNotNull('product_inventories.low_stock_threshold')
+                ->whereRaw('product_inventories.quantity - product_inventories.reserved > 0')
+                ->whereRaw('product_inventories.quantity - product_inventories.reserved <= product_inventories.low_stock_threshold');
+        });
+    }
+
+    /** Stock per store location or food truck, when the product tracks inventory. */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(ProductInventory::class, 'product_uuid', 'uuid');
+    }
+
+    public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
     }
@@ -194,16 +248,13 @@ class Product extends StorefrontModel
         return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(File::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function files()
+    public function files(): HasMany
     {
         return $this->setConnection(config('fleetbase.connection.db'))->hasMany(File::class, 'subject_uuid');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function reviews()
     {
@@ -211,17 +262,14 @@ class Product extends StorefrontModel
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function votes()
     {
         return $this->hasMany(Vote::class, 'subject_uuid');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function hours()
+    public function hours(): HasMany
     {
         return $this->hasMany(ProductHour::class);
     }
@@ -241,12 +289,50 @@ class Product extends StorefrontModel
     {
         return $this->belongsToMany(
             CatalogCategory::class,
-            'catalog_category_product',
+            'catalog_category_products',
             'product_uuid',
             'catalog_category_uuid'
         )
         ->using(CatalogProduct::class)
         ->withTimestamps();
+    }
+
+    /**
+     * Correlated subselect counting the distinct catalogs a product is sold in, for
+     * `addSelect(['catalogs_count' => Product::catalogsCountQuery()])` on a product list.
+     * Catalog categories live in the core `categories` table (one catalog per category);
+     * the pivot lives in the storefront database, so the join is database-qualified.
+     */
+    public static function catalogsCountQuery(): \Illuminate\Database\Query\Builder
+    {
+        $categoriesTable = (new Category())->getConnection()->getDatabaseName() . '.categories';
+
+        return CatalogProduct::query()
+            ->getQuery()
+            ->selectRaw('count(distinct catalog_category.owner_uuid)')
+            ->from('catalog_category_products', 'catalog_product')
+            ->join($categoriesTable . ' as catalog_category', 'catalog_category.uuid', '=', 'catalog_product.catalog_category_uuid')
+            ->whereColumn('catalog_product.product_uuid', 'products.uuid')
+            ->whereNull('catalog_product.deleted_at');
+    }
+
+    /**
+     * Distinct catalogs this product is sold in: the value selected by
+     * `catalogsCountQuery()` when present, otherwise looked up for this one product.
+     */
+    public function getCatalogsCountAttribute($value): int
+    {
+        if ($value !== null) {
+            return (int) $value;
+        }
+
+        $categoryUuids = CatalogProduct::query()->where('product_uuid', $this->uuid)->whereNull('deleted_at')->pluck('catalog_category_uuid');
+
+        if ($categoryUuids->isEmpty()) {
+            return 0;
+        }
+
+        return Category::query()->whereIn('uuid', $categoryUuids)->distinct()->count('owner_uuid');
     }
 
     /**
@@ -326,6 +412,7 @@ class Product extends StorefrontModel
      */
     public function setAddonCategories(array $addonCategories = []): Product
     {
+        $updatedQuietly = false;
         foreach ($addonCategories as $addonCategory) {
             // get uuid if set
             $id = data_get($addonCategory, 'uuid');
@@ -341,11 +428,17 @@ class Product extends StorefrontModel
             // update product addon category
             if (Str::isUuid($id)) {
                 ProductAddonCategory::where('uuid', $id)->update($upsertableAddonCategory);
+                $updatedQuietly = true;
                 continue;
             }
 
             // create new product addon category
             ProductAddonCategory::create($upsertableAddonCategory);
+        }
+
+        // Builder updates raise no model events, so the cached product lists are invalidated here
+        if ($updatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductAddonCategory(), $this->company_uuid);
         }
 
         return $this;
@@ -366,6 +459,8 @@ class Product extends StorefrontModel
      */
     public function setProductVariants(array $variants = []): Product
     {
+        $variantsUpdatedQuietly = false;
+        $optionsUpdatedQuietly  = false;
         foreach ($variants as $variant) {
             $id = data_get($variant, 'uuid');
 
@@ -381,6 +476,7 @@ class Product extends StorefrontModel
                     'min'            => data_get($variant, 'min') ?? 0,
                     'max'            => data_get($variant, 'max') ?? 100,
                 ]);
+                $variantsUpdatedQuietly = true;
 
                 // Update product variant options if applicable
                 if (is_array($variant['options'])) {
@@ -400,6 +496,7 @@ class Product extends StorefrontModel
 
                             $productVariantOptionInput = Arr::except($option, ['uuid', 'created_at', 'updated_at']);
                             ProductVariantOption::where('uuid', $option['uuid'])->update($productVariantOptionInput);
+                            $optionsUpdatedQuietly = true;
                             continue;
                         }
 
@@ -426,6 +523,14 @@ class Product extends StorefrontModel
             }
         }
 
+        // Builder updates raise no model events, so the cached product lists are invalidated here
+        if ($variantsUpdatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductVariant(), $this->company_uuid);
+        }
+        if ($optionsUpdatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductVariantOption(), $this->company_uuid);
+        }
+
         return $this;
     }
 
@@ -448,9 +553,7 @@ class Product extends StorefrontModel
                 $query->where('public_id', $store);
             }
 
-            $query->whereHas('networks', function ($networksQuery) use ($network) {
-                $networksQuery->where('network_uuid', $network);
-            });
+            $query->activeInNetwork($network);
         })
             ->search($search)
             ->whereIsAvailable(1)

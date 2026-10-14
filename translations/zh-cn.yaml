@@ -382,6 +382,7 @@ storefront:
               enable-tips: 启用小费
               enable-delivery-tips: 启用配送小费
               enable-multi-cart-checkout: 启用多购物车结账
+              split-tips-across-stores: "在多店铺订单中将小费分配给各店铺"
               enable-user-reviews: 启用用户评价
           api-panel:
             panel-title: API

@@ -1,0 +1,73 @@
+{{! What is in the order: quantity first, options as chips, the customer's note, and "Mark unavailable" for what the store cannot supply; then the totals and the payment in one line. }}
+<div class="sfop-section" data-test-order-items>
+    <div class="sfop-section__head">
+        <h3 class="sfop-h3">{{if this.isBooking (t "storefront.orders.booking.services-products") (t "storefront.order.tabs.items")}}</h3>
+        <span class="sfop-muted sfop-small">{{this.countLine}}</span>
+    </div>
+    <div class="sfop-items">
+        {{#each this.mainRows as |row|}}
+            <div class="sfop-item {{if row.unavailable 'is-unavailable'}}" data-test-order-item={{row.id}}>
+                <span class="sfop-qty {{if row.single 'is-one'}}">{{row.quantity}}×</span>
+                <Image src={{row.image}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt="" class="sfop-thumb" />
+                <span class="sfop-item__body">
+                    <strong class="sfop-item__name">{{row.name}}</strong>
+                    {{#if row.options.length}}
+                        <span class="sfop-chips">{{#each row.options as |option|}}<span class="sfop-chip">{{option}}</span>{{/each}}</span>
+                    {{/if}}
+                    {{#if row.note}}<span class="sfop-item__note">“{{row.note}}”</span>{{/if}}
+                    {{#if row.unavailable}}
+                        <span class="sfop-small sfop-item__flag">
+                        {{t "storefront.order.panel.out-of-stock"}}
+                        {{#if @canEdit}}<button type="button" class="sfop-link" {{on "click" this.substitute}}>{{t "storefront.order.panel.substitute-or-remove"}}</button>{{/if}}
+                        {{#if @canMarkUnavailable}}· <button type="button" class="sfop-link" {{on "click" (fn @onMarkUnavailable row.entity false)}}>{{t "storefront.order.packing.available-again"}}</button>{{/if}}
+                    </span>
+                    {{else if @canMarkUnavailable}}
+                        <button type="button" class="sfop-link sfop-small sfop-item__toggle" {{on "click" (fn @onMarkUnavailable row.entity true)}}>{{t "storefront.order.packing.mark-unavailable"}}</button>
+                    {{/if}}
+                </span>
+                <span class="sfop-item__price">
+                    <strong>{{format-currency row.total this.currency}}</strong>
+                    {{#unless row.single}}<span class="sfop-muted sfop-tiny">{{t "storefront.order.panel.each" price=(format-currency row.unit this.currency)}}</span>{{/unless}}
+                </span>
+            </div>
+        {{else}}
+            <div class="sfop-muted sfop-small">{{t "storefront.order.sections.no-items"}}</div>
+        {{/each}}
+    </div>
+    {{#if this.bringRows.length}}
+        <div class="sfop-bring" data-test-order-bring>
+            <div class="sfop-lbl">{{if this.order.meta.is_pickup (t "storefront.order.panel.hand-over") (t "storefront.order.panel.bring-to-job")}}</div>
+            {{#each this.bringRows as |row|}}
+                <div class="sfop-bring__row {{if row.unavailable 'is-unavailable'}}" data-test-order-item={{row.id}}>
+                    <span class="sfop-qty {{if row.single 'is-one'}}">{{row.quantity}}×</span>
+                    <span class="sfop-bring__name">{{row.name}}{{#if row.options.length}} <span class="sfop-muted">· {{join " · " row.options}}</span>{{/if}}</span>
+                    {{#if row.unavailable}}
+                        <span class="sfop-small sfop-item__flag">{{t "storefront.order.panel.out-of-stock"}}</span>
+                    {{else if @canMarkUnavailable}}
+                        <button type="button" class="sfop-link sfop-small" {{on "click" (fn @onMarkUnavailable row.entity true)}}>{{t "storefront.order.packing.mark-unavailable"}}</button>
+                    {{/if}}
+                    <span class="sfop-item__price"><strong>{{format-currency row.total this.currency}}</strong></span>
+                </div>
+            {{/each}}
+        </div>
+    {{/if}}
+    <div class="sfop-totals">
+        <div class="sfop-row"><span class="sfop-muted">{{t "storefront.order.sections.subtotal"}}</span><span>{{format-currency this.meta.subtotal this.currency}}</span></div>
+        {{#each this.promotions as |promotion|}}
+            <div class="sfop-row"><span class="sfop-muted">{{promotion.label}}</span><span class="sfop-green">−{{format-currency promotion.amount this.currency}}</span></div>
+        {{/each}}
+        {{#unless this.order.meta.is_pickup}}
+            <div class="sfop-row"><span class="sfop-muted">{{if this.isBooking (t "storefront.orders.booking.travel-fee") (t "storefront.orders.create.delivery-fee")}}</span><span>{{format-currency this.meta.delivery_fee this.currency}}</span></div>
+        {{/unless}}
+        {{#if this.tip}}<div class="sfop-row"><span class="sfop-muted">{{t "storefront.order.sections.tip"}}</span><span>{{format-currency this.tip this.currency}}</span></div>{{/if}}
+        {{#if this.deliveryTip}}<div class="sfop-row"><span class="sfop-muted">{{t "storefront.order.sections.delivery-tip"}}</span><span>{{format-currency this.deliveryTip this.currency}}</span></div>{{/if}}
+        <div class="sfop-row sfop-total"><span>{{t "storefront.order.sections.total"}}</span><span>{{format-currency (or this.meta.total this.order.transaction_amount 0) this.currency}}</span></div>
+        {{#if this.payment}}
+            <div class="sfop-paid sfop-paid--{{this.payment.tone}}" data-test-order-payment-line={{this.payment.state}}>
+                <FaIcon @icon={{this.payment.icon}} @size="sm" />
+                <span><strong>{{this.payment.headline}}</strong> {{this.payment.detail}}</span>
+                {{#if this.payment.code}}<ClickToCopy @value={{this.payment.code}} class="sfop-mono sfop-push">{{this.payment.code}}</ClickToCopy>{{/if}}
+            </div>
+        {{/if}}
+    </div>
+</div>

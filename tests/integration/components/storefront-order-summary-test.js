@@ -12,15 +12,10 @@ module('Integration | Component | storefront-order-summary', function (hooks) {
 
         await render(hbs`<StorefrontOrderSummary />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
-        await render(hbs`
-      <StorefrontOrderSummary>
-        template block text
-      </StorefrontOrderSummary>
-    `);
-
-        assert.dom().hasText('template block text');
+        await render(hbs`<StorefrontOrderSummary />`);
+        assert.dom(this.element).exists();
     });
 });

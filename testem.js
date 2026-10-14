@@ -6,6 +6,8 @@ module.exports = {
     launch_in_ci: ['Chrome'],
     launch_in_dev: ['Chrome'],
     browser_start_timeout: 120,
+    // A build-heavy machine stalls Chrome for more than testem's 10s default; ember-ui uses the same.
+    browser_disconnect_timeout: 120,
     browser_args: {
         Chrome: {
             ci: [

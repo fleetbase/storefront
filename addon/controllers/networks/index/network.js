@@ -9,8 +9,8 @@ export default class NetworksIndexNetworkController extends BaseController {
     get tabs() {
         return [
             {
-                label: this.intl.t('storefront.networks.index.network.settings'),
-                icon: 'cog',
+                label: this.intl.t('storefront.networks.index.network.overview'),
+                icon: 'gauge-high',
                 route: 'networks.index.network.index',
             },
             {
@@ -28,15 +28,24 @@ export default class NetworksIndexNetworkController extends BaseController {
                 icon: 'users',
                 route: 'networks.index.network.customers',
             },
+            {
+                label: this.intl.t('storefront.networks.index.network.settings'),
+                icon: 'cog',
+                route: 'networks.index.network.settings',
+            },
         ];
     }
 
-    @action transitionBack({ closeOverlay }) {
+    get storesCount() {
+        return this.model?.stores_count ?? this.model?.stores?.length ?? 0;
+    }
+
+    @action transitionBack({ closeOverlay } = {}) {
         if (this.model.hasDirtyAttributes) {
             // warn user about unsaved changes
             return this.modalsManager.confirm({
-                title: this.intl.t('storefront.controllers.networks.index.network.Network-changes-not-save'),
-                body: this.intl.t('storefront.controllers.networks.index.network.going-back-will-rollback-all-unsaved-changes'),
+                title: this.intl.t('storefront.networks.index.network.unsaved-title'),
+                body: this.intl.t('storefront.networks.index.network.unsaved-body'),
                 confirm: (modal) => {
                     modal.done();
                     return this.exit(closeOverlay);
@@ -48,8 +57,12 @@ export default class NetworksIndexNetworkController extends BaseController {
     }
 
     @action exit(closeOverlay) {
-        return closeOverlay(() => {
-            return this.transitionToRoute('networks.index');
-        });
+        const leave = () => this.transitionToRoute('networks.index');
+
+        if (typeof closeOverlay === 'function') {
+            return closeOverlay(leave);
+        }
+
+        return leave();
     }
 }

@@ -17,7 +17,7 @@
                 <Chart @type="bar" @labels={{this.data.labels}} @datasets={{this.data.datasets}} @options={{this.chartOptions}} />
             </div>
         {{else}}
-            <div class="storefront-widget-empty">No order activity yet.</div>
+            <div class="storefront-widget-empty">{{t "storefront.dashboard.widgets.no-order-activity"}}</div>
         {{/if}}
     </div>
 </div>

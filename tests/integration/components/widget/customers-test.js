@@ -5,6 +5,10 @@ import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 
 class StorefrontStubService extends Service {
+    contextScope() {
+        return this.isNetworkContext ? { network: this.activeNetwork?.public_id } : { storefront: this.activeStore?.public_id };
+    }
+
     activeStore = { public_id: 'store_1' };
     on() {}
 }
@@ -26,6 +30,14 @@ class FetchStubService extends Service {
 }
 
 class IntlStubService extends Service {
+    exists() {
+        return false;
+    }
+
+    onLocaleChanged() {
+        return () => {};
+    }
+
     t(key) {
         if (key === 'storefront.component.widget.customers.widget-title') {
             return 'Recent Customers';
@@ -57,7 +69,7 @@ module('Integration | Component | widget/customers', function (hooks) {
         assert.dom('.storefront-widget-count').hasText('1');
         assert.dom('.storefront-customers-table').exists();
         assert.dom('.storefront-customer-id').hasText('contact_1');
-        assert.dom('.storefront-customers-table').includesText('Ava Chen');
+        assert.dom('.storefront-customers-table [data-test-identity-cell]').includesText('Ava Chen', 'the customer renders as the identity cell the orders page uses');
         assert.dom('.storefront-customers-table').includesText('ava.chen@example.test');
     });
 });

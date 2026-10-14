@@ -5,6 +5,7 @@ import { isArray } from '@ember/array';
 import { inject as service } from '@ember/service';
 
 export default class AddProductAsEntityButtonComponent extends Component {
+    @service intl;
     @service modalsManager;
     @service fetch;
     @service notifications;
@@ -19,7 +20,7 @@ export default class AddProductAsEntityButtonComponent extends Component {
 
     @action promptProductSelection() {
         this.modalsManager.show('modals/select-product', {
-            title: 'Select Product to Add to Order',
+            title: this.intl.t('storefront.orders.create.select-product-title'),
             modalClass: 'modal-lg',
             acceptButtonText: 'Add Products',
             acceptButtonDisabled: true,

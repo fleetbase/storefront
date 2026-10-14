@@ -1,34 +1,31 @@
-<SettingsContainer>
-    <form>
-        <div class="space-y-6">
-            <div class="flex justify-between">
-                <div class="w-3/4">
-                    <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                        {{t "storefront.settings.notification.notification-settings"}}
-                    </h1>
-                    <p class="mt-1 text-sm text-gray-500">
-                        {{t "storefront.settings.notification.notification-storefront"}}
-                    </p>
-                </div>
-                <div>
-                    <Button @icon="plus" @iconPrefix="fas" @type="primary" @text={{t "storefront.settings.notification.new-channel"}} @onClick={{this.createChannel}} />
-                </div>
+<div class="storefront-settings-page" data-test-settings-notifications>
+    <section class="storefront-settings-section">
+        <ContentPanel @title={{t "storefront.settings.sections.notification-channels"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <div class="storefront-settings-section__toolbar">
+                <p class="storefront-settings-section__lede">{{t "storefront.settings.notification.notification-storefront"}}</p>
+                <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.settings.notification.new-channel"}} @onClick={{this.createChannel}} @permission="storefront create notification-channel" data-test-create-channel />
             </div>
-
-            <div class="space-y-3">
-                {{#each @model as |notificationChannel|}}
-                    <div class="flex px-4 py-2 items-center justify-between shadow-sm rounded-md dark:bg-gray-900 bg-gray-200 border border-gray-200 dark:border-gray-700">
-                        <div>
-                            <span class="dark:text-gray-50">{{notificationChannel.name}}</span>
+            {{#if @model.length}}
+                <div class="storefront-member-list" data-test-channels-list>
+                    {{#each @model as |notificationChannel|}}
+                        <div class="storefront-member-row" data-test-channel={{notificationChannel.id}}>
+                            <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="bell-concierge" /></div>
+                            <div class="storefront-member-row__identity">
+                                <div class="storefront-member-row__name">{{notificationChannel.name}}</div>
+                                <div class="storefront-member-row__meta">{{smart-humanize notificationChannel.scheme}}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <Button @size="xs" @icon="paper-plane" @text={{t "storefront.settings.notification.send-test"}} @onClick={{fn this.testChannel notificationChannel}} />
+                                <Button @size="xs" @icon="pencil" @text={{t "storefront.common.edit"}} @onClick={{fn this.editChannel notificationChannel}} @permission="storefront update notification-channel" />
+                                <Button @size="xs" @icon="trash" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} @permission="storefront delete notification-channel" />
+                            </div>
                         </div>
-                        <div class="flex items-center">
-                            <Button @size="xs" @type="default" @text={{t "storefront.settings.notification.send-test"}} @wrapperClass="mr-2" @onClick={{fn this.testChannel notificationChannel}} />
-                            <Button @size="xs" @type="default" @text={{t "storefront.common.edit"}} @wrapperClass="mr-2" @onClick={{fn this.editChannel notificationChannel}} />
-                            <Button @size="xs" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} />
-                        </div>
-                    </div>
-                {{/each}}
-            </div>
-        </div>
-    </form>
-</SettingsContainer>
+                    {{/each}}
+                </div>
+            {{else}}
+                <p class="storefront-settings-section__note mt-0">{{t "storefront.settings.notification.empty"}}</p>
+            {{/if}}
+        </ContentPanel>
+    </section>
+    <Spacer @height="120px" />
+</div>

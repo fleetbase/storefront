@@ -1,0 +1,67 @@
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-join" data-test-network-join>
+        <div class="storefront-join__card">
+            <div class="storefront-join__header">
+                <Image src={{this.network.logo_url}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{this.network.name}} class="storefront-join__logo" />
+                <div class="min-w-0">
+                    <div class="storefront-join__eyebrow">{{t "storefront.networks.join.eyebrow"}}</div>
+                    <h2 class="storefront-join__title">{{this.network.name}}</h2>
+                    <div class="storefront-join__meta">
+                        <span>{{this.network.currency}}</span>
+                        {{#if this.network.timezone}}<span>{{this.network.timezone}}</span>{{/if}}
+                        <span>{{t "storefront.networks.card.stores-count" count=this.network.stores_count}}</span>
+                        {{#if this.model.sender}}<span>{{t "storefront.networks.join.sent-by" name=(or this.model.sender.company this.model.sender.name)}}</span>{{/if}}
+                        {{#if this.expiresIn}}<span>{{t "storefront.networks.join.expires" when=this.expiresIn}}</span>{{/if}}
+                    </div>
+                </div>
+            </div>
+
+            {{#if this.network.description}}
+                <p class="storefront-join__description">{{this.network.description}}</p>
+            {{/if}}
+            {{#if this.invitation.message}}
+                <blockquote class="storefront-join__message">“{{this.invitation.message}}”</blockquote>
+            {{/if}}
+
+            {{#if this.done}}
+                <div class="storefront-join__result" data-test-join-result>
+                    {{#if this.result.declined}}
+                        <FaIcon @icon="ban" class="text-gray-400 mr-2" />{{t "storefront.networks.join.declined"}}
+                    {{else if this.result.awaiting_approval}}
+                        <FaIcon @icon="hourglass-half" class="text-amber-500 mr-2" />{{t "storefront.networks.join.awaiting-approval" network=this.network.name}}
+                    {{else}}
+                        <FaIcon @icon="check" class="text-green-500 mr-2" />{{t "storefront.networks.join.joined" network=this.network.name store=this.result.store.name}}
+                    {{/if}}
+                </div>
+                <div class="storefront-join__actions">
+                    <Button @type="primary" @text={{t "storefront.networks.join.go-to-dashboard"}} @onClick={{this.goHome}} />
+                </div>
+            {{else if this.isOpen}}
+                <div class="storefront-join__review">
+                    <div class="storefront-join__row"><span>{{t "storefront.networks.join.what-happens"}}</span><strong>{{t "storefront.networks.join.what-happens-body"}}</strong></div>
+                    <div class="storefront-join__row"><span>{{t "storefront.common.currency"}}</span><strong>{{this.network.currency}}</strong></div>
+                    <div class="storefront-join__row"><span>{{t "storefront.common.category"}}</span><strong>{{if this.model.category this.model.category.name (t "storefront.networks.join.category-later")}}</strong></div>
+                    {{#if this.invitation.require_approval}}
+                        <div class="storefront-join__row"><span>{{t "storefront.networks.join.approval"}}</span><strong>{{t "storefront.networks.join.approval-body"}}</strong></div>
+                    {{/if}}
+                </div>
+                <InputGroup @name={{t "storefront.networks.join.which-store"}} @helpText={{t "storefront.networks.join.which-store-help"}}>
+                    <PowerSelect @options={{this.stores}} @selected={{this.selectedStore}} @searchEnabled={{true}} @searchField="name" @onChange={{this.selectStore}} @triggerClass="form-select form-input" @renderInPlace={{true}} as |store|>
+                        <SelectOption::Store @model={{store}} />
+                    </PowerSelect>
+                </InputGroup>
+                <div class="storefront-join__actions">
+                    <Button @text={{t "storefront.networks.join.decline"}} @onClick={{perform this.decline}} @isLoading={{this.decline.isRunning}} data-test-join-decline />
+                    <Button @type="primary" @icon="check" @text={{t "storefront.networks.join.accept"}} @onClick={{perform this.accept}} @disabled={{not this.canAccept}} @isLoading={{this.accept.isRunning}} data-test-join-accept />
+                </div>
+            {{else}}
+                <div class="storefront-join__result" data-test-join-result>
+                    <FaIcon @icon="circle-info" class="text-gray-400 mr-2" />{{t (concat "storefront.networks.join.closed." this.invitation.status)}}
+                </div>
+                <div class="storefront-join__actions">
+                    <Button @text={{t "storefront.networks.index.network.all-networks"}} @onClick={{this.goToNetworks}} />
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</Layout::Section::Body>

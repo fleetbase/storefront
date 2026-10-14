@@ -12,13 +12,13 @@ use Fleetbase\Models\File;
 use Fleetbase\Models\Invite;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Traits\HasStorefrontKey;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
-use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -30,6 +30,7 @@ class Network extends StorefrontModel
     use HasApiModelCache;
     use HasOptionsAttributes;
     use HasSlug;
+    use HasStorefrontKey;
     use Searchable;
 
     /**
@@ -38,6 +39,11 @@ class Network extends StorefrontModel
      * @var string
      */
     protected $publicIdType = 'network';
+
+    /**
+     * The prefix of the storefront key, which SetStorefrontSession resolves the key by.
+     */
+    public const KEY_PREFIX = 'network_';
 
     /**
      * The database table used by the model.
@@ -95,15 +101,6 @@ class Network extends StorefrontModel
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
-    }
-
-    /** on boot generate key */
-    public static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            $model->key = 'network_' . md5(Str::random(14) . time());
-        });
     }
 
     /**
@@ -169,8 +166,17 @@ class Network extends StorefrontModel
     {
         return $this->belongsToMany(Store::class, 'network_stores', 'network_uuid', 'store_uuid')
             ->using(NetworkStore::class)
-            ->withPivot(['category_uuid', 'deleted_at'])
+            ->withPivot(['category_uuid', 'status', 'deleted_at'])
             ->wherePivotNull('deleted_at');
+    }
+
+    /**
+     * Members that sell through the network: everything the app and carts see.
+     * Suspended and not-yet-approved memberships stay in `stores()` for the console.
+     */
+    public function activeStores()
+    {
+        return $this->stores()->wherePivot('status', NetworkStore::STATUS_ACTIVE);
     }
 
     /**

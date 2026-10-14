@@ -17,7 +17,15 @@ export default class CustomersIndexViewController extends BaseController {
      * @type {String[]}
      * @tracked
      */
-    @tracked queryParams = ['view'];
+    @tracked queryParams = ['view', 'editing'];
+
+    /**
+     * Whether the panel opens on the details form.
+     *
+     * @type {Boolean}
+     * @tracked
+     */
+    @tracked editing = false;
 
     /**
      * Transitions back to the "customers.index" route.
@@ -39,5 +47,15 @@ export default class CustomersIndexViewController extends BaseController {
      */
     @action onTabChanged(tab) {
         this.view = tab;
+    }
+
+    /**
+     * Leaves the details form for the tabs.
+     *
+     * @method
+     * @action
+     */
+    @action onDoneEditing() {
+        this.editing = false;
     }
 }

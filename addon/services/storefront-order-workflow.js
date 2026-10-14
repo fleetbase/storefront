@@ -1,4 +1,4 @@
-import Service from '@ember/service';
+import Service, { inject as service } from '@ember/service';
 import toBoolean from '@fleetbase/ember-core/utils/to-boolean';
 
 const DEFAULT_STOREFRONT_CONFIG_NAMESPACE = 'system:order-config:storefront';
@@ -11,12 +11,18 @@ const DEFAULT_STOREFRONT_QUICK_ACTIONS = {
 };
 
 export default class StorefrontOrderWorkflowService extends Service {
+    @service intl;
     statusFor(order) {
         return String(order?.status ?? '').toLowerCase();
     }
 
     isPickupOrder(order) {
         return toBoolean(order?.meta?.is_pickup) === true;
+    }
+
+    /** A service booking (at the customer's address, or at the store when it is a pickup). */
+    isBookingOrder(order) {
+        return toBoolean(order?.meta?.is_booking) === true;
     }
 
     isDefaultStorefrontConfig(order) {
@@ -26,7 +32,8 @@ export default class StorefrontOrderWorkflowService extends Service {
             return orderConfig.namespace === DEFAULT_STOREFRONT_CONFIG_NAMESPACE || orderConfig.key === 'storefront';
         }
 
-        return order?.type === 'storefront';
+        // Every order this engine lists is a storefront order; without an explicit config or type, use the storefront flow.
+        return !order?.type || order.type === 'storefront';
     }
 
     isTerminal(orderOrStatus) {
@@ -89,6 +96,12 @@ export default class StorefrontOrderWorkflowService extends Service {
         }
 
         if (status === 'accepted') {
+            // An at-store booking starts when the customer comes in; a home visit is dispatched to the provider.
+            if (this.isBookingOrder(order) && this.isPickupOrder(order)) {
+                const flow = order?.order_config?.flow ?? {};
+                return [this.descriptorFor('update_activity', order, flow.in_progress ?? { code: 'in_progress', key: 'in_progress', status: 'Service in progress' })];
+            }
+
             return [this.descriptorFor('mark_ready', order)];
         }
 
@@ -101,6 +114,10 @@ export default class StorefrontOrderWorkflowService extends Service {
                 }
 
                 if (['completed', 'picked_up'].includes(code)) {
+                    if (this.isBookingOrder(order)) {
+                        return this.descriptorFor('mark_completed', order);
+                    }
+
                     return this.descriptorFor(this.isPickupOrder(order) ? 'mark_picked_up' : 'mark_completed', order);
                 }
 
@@ -114,15 +131,19 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'accept':
                 return {
                     action,
-                    text: 'Accept order',
+                    text: this.isBookingOrder(order) ? 'Confirm booking' : 'Accept order',
                     icon: 'check',
                     type: 'success',
                 };
 
             case 'mark_ready':
+                if (this.isBookingOrder(order)) {
+                    return { action, text: this.intl.t('storefront.order.workflow.dispatch-provider'), icon: 'paper-plane', type: 'magic' };
+                }
+
                 return {
                     action,
-                    text: 'Mark as Ready',
+                    text: this.intl.t('storefront.order.workflow.mark-as-ready'),
                     icon: this.isPickupOrder(order) ? 'bell-concierge' : 'paper-plane',
                     type: this.isPickupOrder(order) ? 'success' : 'magic',
                 };
@@ -130,7 +151,7 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'mark_picked_up':
                 return {
                     action: 'mark_completed',
-                    text: 'Mark Picked Up',
+                    text: this.intl.t('storefront.order.workflow.mark-picked-up'),
                     icon: 'check',
                     type: 'success',
                 };
@@ -138,7 +159,7 @@ export default class StorefrontOrderWorkflowService extends Service {
             case 'mark_completed':
                 return {
                     action,
-                    text: 'Complete order',
+                    text: this.isBookingOrder(order) ? 'Complete booking' : 'Complete order',
                     icon: 'check',
                     type: 'success',
                 };

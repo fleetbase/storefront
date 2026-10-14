@@ -1,8 +1,10 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
+import { setupIntl } from 'ember-intl/test-support';
 
 module('Unit | Controller | customers/index', function (hooks) {
     setupTest(hooks);
+    setupIntl(hooks, 'en-us');
 
     test('it exists', function (assert) {
         let controller = this.owner.lookup('controller:customers/index');
@@ -16,5 +18,14 @@ module('Unit | Controller | customers/index', function (hooks) {
 
         assert.true(nameColumn.sticky, 'name column is sticky');
         assert.strictEqual(actionColumn.sticky, 'right', 'action column is sticky on the right');
+    });
+
+    test('the name column is a customer identity cell that opens the storefront customer', function (assert) {
+        let controller = this.owner.lookup('controller:customers/index');
+        let [nameColumn] = controller.columns;
+
+        assert.strictEqual(nameColumn.cellComponent, 'table/cell/identity');
+        assert.strictEqual(nameColumn.resourceType, 'customer');
+        assert.strictEqual(nameColumn.action, controller.viewCustomer);
     });
 });

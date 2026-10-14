@@ -1,0 +1,300 @@
+{{! 11b: the order panel swapped to its edit form. Each section shows what it was and what the order's stage allows; the sticky footer counts and prices the change before Save. }}
+<div class="sfoe" {{did-insert this.focusSection}} data-test-order-edit-form>
+    {{#unless this.isPickup}}
+        <section class="sfoe-sec" data-edit-section="dropoff" data-test-order-edit-section="dropoff">
+            <div class="sfoe-sec__head">
+                <h3>{{t "storefront.order.edit.dropoff"}}</h3>
+                {{#if this.dropoffChanged}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} />{{/if}}
+            </div>
+            {{#if this.dropoffChanged}}
+                <div class="sfoe-was">{{t "storefront.order.edit.was-prefix"}} <s>{{n-a this.currentDropoff.address}}</s></div>
+            {{/if}}
+            {{#if this.dropoffLocked}}
+                <p class="sfoe-locked"><FaIcon @icon="lock" @size="xs" /> {{this.dropoffLocked.reason}}</p>
+                <div class="sfoe-address-static">{{n-a this.currentDropoff.address}}</div>
+            {{else}}
+                <div class="sfoe-field">
+                    <label class="sfoe-label" for="sfoe-address">{{t "storefront.order.edit.address"}}</label>
+                    <AutocompleteInput
+                        id="sfoe-address"
+                        @value={{this.addressQuery}}
+                        @onSelect={{this.pickAddress}}
+                        placeholder={{t "storefront.order.edit.address-placeholder"}}
+                        class="w-full {{if this.dropoffChanged 'is-changed'}}"
+                        data-test-edit-address
+                        as |result|
+                    >
+                        {{result.address}}
+                    </AutocompleteInput>
+                    {{#if this.savedPlaces.length}}
+                        <div class="sfoe-suggestions" role="group" aria-label={{t "storefront.order.edit.saved-places" name=this.customerFirstName}}>
+                            <div class="sfoe-suggestions__title">{{t "storefront.order.edit.saved-places" name=this.customerFirstName}}</div>
+                            {{#each this.savedPlaces as |row|}}
+                                <button
+                                    type="button"
+                                    class="sfoe-suggestion {{if row.isSelected 'is-selected'}}"
+                                    aria-pressed={{if row.isSelected "true" "false"}}
+                                    {{on "click" (fn this.pickSaved row.place)}}
+                                    data-test-edit-saved-place={{row.place.id}}
+                                >
+                                    <strong>{{n-a row.place.name row.place.street1}}</strong>
+                                    <span class="sfoe-muted">{{row.place.address}}</span>
+                                </button>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+                </div>
+                <div class="sfoe-grid2">
+                    <div class="sfoe-field">
+                        <label class="sfoe-label" for="sfoe-unit">{{t "storefront.order.edit.unit"}}</label>
+                        <input id="sfoe-unit" type="text" class="form-input w-full" placeholder={{t "storefront.order.edit.unit-placeholder"}} value={{this.address.street2}} {{on "input" (fn this.setAddressField "street2")}} />
+                    </div>
+                    <div class="sfoe-field">
+                        <label class="sfoe-label" for="sfoe-door-phone">{{t "storefront.order.edit.door-contact"}}</label>
+                        <input id="sfoe-door-phone" type="tel" class="form-input w-full" placeholder={{t "storefront.order.edit.door-contact-placeholder"}} value={{this.address.phone}} {{on "input" (fn this.setAddressField "phone")}} />
+                    </div>
+                </div>
+                <div class="sfoe-field">
+                    <label class="sfoe-label" for="sfoe-instructions">{{t "storefront.order.edit.instructions"}}</label>
+                    <textarea id="sfoe-instructions" class="form-input w-full" rows="2" placeholder={{t "storefront.order.edit.instructions-placeholder"}} {{on "input" (fn this.setAddressField "instructions")}}>{{this.address.instructions}}</textarea>
+                </div>
+            {{/if}}
+            <div class="sfoe-map-wrap">
+                <div class="sfoe-map" role="img" aria-label={{t "storefront.order.edit.map-label"}} {{did-insert this.drawMap}} {{will-destroy this.removeMap}}></div>
+                {{#unless this.dropoffLocked}}
+                    <span class="sfoe-map__hint">{{t "storefront.order.edit.drag-pin"}}</span>
+                {{/unless}}
+            </div>
+            {{#if (or this.distanceLine this.canSavePlace)}}
+                <div class="sfoe-row">
+                    {{#if this.distanceLine}}<span data-test-edit-distance>{{this.distanceLine}}</span>{{/if}}
+                    {{#if this.canSavePlace}}
+                        <Checkbox @value={{this.savePlace}} @onToggle={{this.toggleSavePlace}} @wrapperClass="sfoe-row__end" data-test-edit-save-place>
+                            {{t "storefront.order.edit.save-place" name=this.customerFirstName}}
+                        </Checkbox>
+                    {{/if}}
+                </div>
+            {{/if}}
+            {{#if (and this.hasDriver this.dropoffChanged)}}
+                <p class="sfoe-help">{{t "storefront.order.edit.dropoff-reroutes"}}</p>
+            {{/if}}
+        </section>
+    {{/unless}}
+
+    <section class="sfoe-sec" data-edit-section="contact" data-test-order-edit-section="contact">
+        <div class="sfoe-sec__head">
+            <h3>{{t "storefront.common.customer"}}</h3>
+            {{#if this.contactChanged}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} />{{/if}}
+            {{#if this.order.customer.public_id}}
+                <a href="javascript:;" class="sfoe-sec__link" {{on "click" this.openCustomer}}>{{t "storefront.order.edit.open-profile" name=this.customerFirstName}}</a>
+            {{/if}}
+        </div>
+        <div class="sfoe-grid2">
+            <div class="sfoe-field">
+                <label class="sfoe-label" for="sfoe-name">{{t "storefront.common.name"}}</label>
+                <input id="sfoe-name" type="text" class="form-input w-full" placeholder={{t "storefront.order.edit.name-placeholder"}} value={{this.contact.name}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "name")}} />
+            </div>
+            <div class="sfoe-field">
+                <label class="sfoe-label" for="sfoe-phone">{{t "storefront.common.phone"}}</label>
+                <input id="sfoe-phone" type="tel" class="form-input w-full" placeholder={{t "storefront.order.edit.phone-placeholder"}} value={{this.contact.phone}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "phone")}} />
+            </div>
+            <div class="sfoe-field">
+                <label class="sfoe-label" for="sfoe-email">{{t "storefront.common.email"}}</label>
+                <input id="sfoe-email" type="email" class="form-input w-full" placeholder={{t "storefront.order.edit.email-placeholder"}} value={{this.contact.email}} disabled={{this.isClosed}} {{on "input" (fn this.setContact "email")}} />
+            </div>
+        </div>
+        <div class="sfoe-opts sfoe-opts--stacked" role="radiogroup" aria-label={{t "storefront.order.edit.contact-scope"}}>
+            <RadioButton @value="profile" @groupValue={{this.contactScope}} @name="sfoe-contact-scope" @radioId="sfoe-contact-scope-profile" @changed={{this.setContactScope}} @classNames="sfoe-opt" @checkedClass="is-on" @disabled={{this.isClosed}}>
+                <span class="sfoe-opt__text"><strong>{{t "storefront.order.edit.contact-profile" name=this.customerFirstName}}</strong><span class="sfoe-muted">{{t "storefront.order.edit.contact-profile-help"}}</span></span>
+            </RadioButton>
+            <RadioButton @value="order" @groupValue={{this.contactScope}} @name="sfoe-contact-scope" @radioId="sfoe-contact-scope-order" @changed={{this.setContactScope}} @classNames="sfoe-opt" @checkedClass="is-on" @disabled={{this.isClosed}}>
+                <span class="sfoe-opt__text"><strong>{{t "storefront.order.edit.contact-order"}}</strong><span class="sfoe-muted">{{t "storefront.order.edit.contact-order-help"}}</span></span>
+            </RadioButton>
+        </div>
+    </section>
+
+    <section class="sfoe-sec" data-edit-section="items" data-test-order-edit-section="items">
+        <div class="sfoe-sec__head">
+            <h3>{{t "storefront.order.tabs.items"}}</h3>
+            <span class="sfoe-muted sfoe-small">{{t "storefront.order.edit.items-source"}}</span>
+            {{#if (and this.canAddItems (not this.picker))}}
+                <span class="sfoe-sec__end">
+                    <Button @type="primary" @size="xs" @icon="plus" @text={{t "storefront.order.edit.add-product"}} @onClick={{this.openPicker}} data-test-edit-add-products />
+                </span>
+            {{/if}}
+        </div>
+        {{#if this.itemsLock}}
+            <p class="sfoe-locked"><FaIcon @icon="lock" @size="xs" /> {{this.itemsLock.reason}}</p>
+        {{/if}}
+        <div class="sfoe-items" data-test-edit-lines>
+            {{#each this.lineRows as |line|}}
+                <div class="sfoe-item {{if line.removed 'is-removed'}} {{if line.isNew 'is-added'}} {{if line.isChanged 'is-changed'}}" data-test-edit-line={{line.key}}>
+                    <Image src={{line.image}} @fallbackSrc={{config "defaultValues.placeholderImage"}} alt={{line.name}} class="sfoe-item__thumb" />
+                    <span class="sfoe-item__main">
+                        <span class="sfoe-item__name">{{line.name}}</span>
+                        <span class="sfoe-item__meta">
+                            {{#if line.removed}}
+                                <span class="sfoe-muted">{{if line.unavailable (t "storefront.order.edit.removed-out-of-stock") (t "storefront.order.edit.removed")}}</span>
+                            {{else}}
+                                {{#if line.substituteFor}}
+                                    <Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.substitute"}} />
+                                    <span class="sfoe-muted">{{t "storefront.order.edit.substitute-for" name=line.substituteFor}}</span>
+                                {{else if line.isNew}}
+                                    <Badge @status="success" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.added"}} />
+                                {{/if}}
+                                {{#each line.options as |option|}}<span class="sfoe-chip">{{option}}</span>{{/each}}
+                                {{#if line.quantityChanged}}<span class="sfoe-was">{{t "storefront.order.edit.qty-was" quantity=line.originalQuantity}}</span>{{/if}}
+                                {{#if line.optionsChanged}}<span class="sfoe-was">{{t "storefront.order.edit.options-changed"}}</span>{{/if}}
+                                {{#if (and line.unavailable (not line.isNew))}}<span class="sfoe-out">{{t "storefront.order.edit.out-of-stock"}}</span>{{/if}}
+                                {{#if line.canChangeOptions}}
+                                    <a href="javascript:;" class="sfoe-item__link" {{on "click" (fn this.openOptions line)}} data-test-edit-change-options>{{t "storefront.order.edit.change-options"}}</a>
+                                {{/if}}
+                            {{/if}}
+                        </span>
+                    </span>
+                    {{#if line.removed}}
+                        <span class="sfoe-item__price">{{format-currency line.total this.currency}}</span>
+                        <Button @size="xs" @text={{t "storefront.order.edit.undo"}} @onClick={{fn this.undoRemove line}} data-test-edit-undo />
+                    {{else}}
+                        {{#if line.canSubstitute}}
+                            <Button @size="xs" @icon="right-left" @text={{t "storefront.order.edit.substitute"}} @onClick={{fn this.openSubstitute line}} data-test-edit-substitute />
+                        {{/if}}
+                        <span class="sfoe-stepper" role="group" aria-label={{t "storefront.order.edit.quantity-of" name=line.name}}>
+                            <Button @size="xs" @icon="minus" @disabled={{not line.canDecrease}} @onClick={{fn this.changeQuantity line -1}} aria-label={{t "storefront.order.edit.decrease" name=line.name}} />
+                            <span class="sfoe-stepper__value">{{line.quantity}}</span>
+                            <Button @size="xs" @icon="plus" @disabled={{not line.canIncrease}} @onClick={{fn this.changeQuantity line 1}} aria-label={{t "storefront.order.edit.increase" name=line.name}} />
+                        </span>
+                        <span class="sfoe-item__price"><strong>{{format-currency line.total this.currency}}</strong></span>
+                        {{#if this.canRemoveItems}}
+                            <Button @size="xs" @icon="times" @onClick={{fn this.removeLine line}} aria-label={{t "storefront.order.edit.remove" name=line.name}} data-test-edit-remove />
+                        {{/if}}
+                    {{/if}}
+                </div>
+            {{/each}}
+        </div>
+        {{#if this.picker}}
+            <div class="sfoe-picker">
+                {{#if (eq this.picker.mode "substitute")}}
+                    <div class="sfoe-picker__title">{{t "storefront.order.edit.substitute-title" name=this.picker.line.name}}</div>
+                {{/if}}
+                <Storefront::Order::ProductPicker
+                    @products={{this.pickerProducts}}
+                    @currency={{this.currency}}
+                    @configure={{if (eq this.picker.mode "options") this.picker.product}}
+                    @quantity={{if (eq this.picker.mode "options") this.picker.line.quantity}}
+                    @onAdd={{this.addLine}}
+                    @onDone={{this.closePicker}}
+                />
+            </div>
+        {{/if}}
+        {{#each this.promotionNotes as |note|}}
+            <div class="sfoe-promo {{if (eq note.tone 'warn') 'is-warn'}}" data-test-edit-promotion>{{note.text}}</div>
+        {{/each}}
+    </section>
+
+    <section class="sfoe-sec" data-edit-section="schedule" data-test-order-edit-section="schedule">
+        <div class="sfoe-sec__head">
+            <h3>{{t "storefront.order.edit.when"}}</h3>
+            {{#if this.scheduleChanged}}<Badge @status="info" @size="xs" @hideStatusDot={{true}} @text={{t "storefront.order.edit.changed"}} />{{/if}}
+        </div>
+        {{#if this.scheduleLocked}}
+            <p class="sfoe-locked"><FaIcon @icon="lock" @size="xs" /> {{or this.scheduleLock.reason this.closedReason}}</p>
+        {{else if this.isBooking}}
+            {{#if this.bookedLabel}}<div class="sfoe-was">{{t "storefront.order.edit.booked-for"}} {{#if this.scheduleChanged}}<s>{{this.bookedLabel}}</s>{{else}}<strong>{{this.bookedLabel}}</strong>{{/if}}</div>{{/if}}
+            {{#if this.bookedService}}
+                <Storefront::Order::BookingSlots @product={{this.bookedService}} @value={{this.scheduledAt}} @current={{this.originalTime}} @order={{this.order}} @onSelect={{this.pickSlot}} />
+            {{else if this.load.isRunning}}
+                <Spinner @size="sm" />
+            {{else}}
+                <p class="sfoe-help">{{t "storefront.order.edit.no-booked-service"}}</p>
+            {{/if}}
+        {{else}}
+            <div class="sfoe-opts" role="radiogroup" aria-label={{t "storefront.order.edit.when"}}>
+                <RadioButton @value="asap" @groupValue={{if this.isScheduled "schedule" "asap"}} @name="sfoe-when" @radioId="sfoe-when-asap" @changed={{this.setTiming}} @classNames="sfoe-opt" @checkedClass="is-on">
+                    <span class="sfoe-opt__text"><strong>{{t "storefront.order.asap"}}</strong><span class="sfoe-muted">{{this.dueLabel}}</span></span>
+                </RadioButton>
+                <RadioButton @value="schedule" @groupValue={{if this.isScheduled "schedule" "asap"}} @name="sfoe-when" @radioId="sfoe-when-schedule" @changed={{this.setTiming}} @classNames="sfoe-opt" @checkedClass="is-on">
+                    <span class="sfoe-opt__text"><strong>{{t "storefront.orders.create.schedule"}}</strong><span class="sfoe-muted">{{this.hoursLabel}}</span></span>
+                </RadioButton>
+            </div>
+            {{#if this.isScheduled}}
+                <DateTimeInput role="group" aria-label={{t "storefront.orders.create.schedule"}} class="form-input" @value={{this.scheduledAt}} @onUpdate={{this.setScheduledAt}} />
+            {{/if}}
+            {{#if (eq this.scheduleLock.rule "earlier_only")}}
+                <p class="sfoe-help">{{this.scheduleLock.reason}}</p>
+            {{/if}}
+        {{/if}}
+    </section>
+
+    <section class="sfoe-sec" data-edit-section="notes" data-test-order-edit-section="notes">
+        <div class="sfoe-sec__head"><h3>{{t "storefront.order.edit.notes"}}</h3></div>
+        <div class="sfoe-field">
+            <label class="sfoe-label" for="sfoe-notes">{{t "storefront.order.edit.customer-note"}}</label>
+            <textarea id="sfoe-notes" class="form-input w-full" rows="2" placeholder={{t "storefront.order.edit.notes-placeholder"}} disabled={{this.isClosed}} {{on "input" this.setNotes}}>{{this.notes}}</textarea>
+        </div>
+    </section>
+
+    <footer class="sfoe-foot" data-test-order-edit-footer>
+        {{#if this.preview}}
+            <div class="sfoe-foot__summary">
+                <strong>{{t "storefront.order.edit.changes-count" count=this.changeList.length}}</strong>
+                <span class="sfoe-muted sfoe-small">{{this.preview.summary}}</span>
+                <span class="sfoe-foot__total">
+                    {{t "storefront.order.sections.total"}}
+                    {{#if this.difference}}<s class="sfoe-muted">{{format-currency this.preview.order.total this.currency}}</s>{{/if}}
+                    <strong>{{format-currency this.preview.proposed.total this.currency}}</strong>
+                </span>
+            </div>
+            {{#each this.violations as |violation|}}
+                <div class="sfoe-foot__bar is-bad" role="alert"><FaIcon @icon="ban" @size="sm" /><span>{{violation}}</span></div>
+            {{/each}}
+            {{#each this.warnings as |warning|}}
+                <div class="sfoe-foot__bar is-warn"><FaIcon @icon="triangle-exclamation" @size="sm" /><span>{{warning}}</span></div>
+            {{/each}}
+            {{#if this.settlementSentence}}
+                <div class="sfoe-foot__bar is-money" data-test-edit-settlement>
+                    <FaIcon @icon="credit-card" @size="sm" />
+                    <span>{{this.settlementSentence}}</span>
+                    {{#if this.settlementOptions.length}}
+                        <Select
+                            class="sfoe-foot__select"
+                            @options={{this.settlementOptions}}
+                            @optionValue="id"
+                            @optionLabel="label"
+                            @value={{this.settlementAction}}
+                            @onSelect={{this.setSettlement}}
+                            aria-label={{t "storefront.order.edit.settle-label"}}
+                        />
+                    {{/if}}
+                </div>
+            {{/if}}
+        {{else if this.previewError}}
+            <div class="sfoe-foot__bar is-bad" role="alert"><FaIcon @icon="ban" @size="sm" /><span>{{this.previewError}}</span></div>
+        {{else}}
+            <div class="sfoe-foot__summary"><span class="sfoe-muted sfoe-small">{{if this.requote.isRunning (t "storefront.order.edit.pricing") (t "storefront.order.edit.no-changes")}}</span></div>
+        {{/if}}
+        <div class="sfoe-foot__actions">
+            {{#if this.preview}}
+                <Checkbox @value={{this.notifyCustomer}} @onToggle={{this.toggleNotifyCustomer}} data-test-edit-notify-customer>
+                    {{t "storefront.order.edit.notify-customer" name=this.customerFirstName}}
+                </Checkbox>
+                {{#if this.hasDriver}}
+                    <Checkbox @value={{this.notifyDriver}} @onToggle={{this.toggleNotifyDriver}} data-test-edit-notify-driver>{{this.notifyDriverLabel}}</Checkbox>
+                {{/if}}
+            {{/if}}
+            <span class="sfoe-foot__buttons">
+                <Button @text={{t "storefront.order.edit.discard"}} @onClick={{this.discard}} />
+                <Button
+                    @type="primary"
+                    @icon="check"
+                    @text={{t "storefront.order.edit.save"}}
+                    @isLoading={{or this.save.isRunning this.requote.isRunning}}
+                    @disabled={{not this.canSave}}
+                    @onClick={{perform this.save}}
+                    @permission="storefront update order"
+                    data-test-order-edit-save
+                />
+            </span>
+        </div>
+    </footer>
+</div>

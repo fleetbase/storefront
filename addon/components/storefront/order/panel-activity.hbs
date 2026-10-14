@@ -1,0 +1,12 @@
+{{! The order's history in one list: steps, notes, edits, payments, messages. }}
+<Storefront::Order::PanelFold @title={{t "storefront.order.tabs.activity"}} @summary={{this.summary}} @onToggle={{this.opened}} data-test-order-activity>
+    {{#if this.load.isRunning}}
+        <Spinner @size="sm" />
+    {{else}}
+        {{#each this.rows as |row|}}
+            <div class="sfop-row sfop-activity-row"><span>{{row.text}}</span><span class="sfop-muted">{{row.time}}</span></div>
+        {{else}}
+            <div class="sfop-muted sfop-small">{{t "storefront.order.panel.no-activity"}}</div>
+        {{/each}}
+    {{/if}}
+</Storefront::Order::PanelFold>

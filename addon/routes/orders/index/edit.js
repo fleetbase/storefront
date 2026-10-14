@@ -1,11 +1,11 @@
-import Route from '@ember/routing/route';
-import { inject as service } from '@ember/service';
+import OrdersIndexViewRoute from './view';
 
-export default class OrdersIndexEditRoute extends Route {
-    @service intl;
-    @service abilities;
-    @service hostRouter;
-    @service notifications;
+/**
+ * Edit a placed order: the same order the panel shows, opened in the edit form. Only users who
+ * may update orders get here.
+ */
+export default class OrdersIndexEditRoute extends OrdersIndexViewRoute {
+    queryParams = { focus: { refreshModel: false } };
 
     beforeModel() {
         if (this.abilities.cannot('storefront update order')) {

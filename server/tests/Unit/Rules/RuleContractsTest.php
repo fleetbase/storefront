@@ -41,6 +41,7 @@ test('cart validation accepts either the public id or browser identifier and rej
     $schema->dropIfExists('carts');
     $schema->create('carts', function (Illuminate\Database\Schema\Blueprint $table) {
         $table->increments('id');
+        $table->string('status')->nullable();
         $table->string('public_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->timestamp('expires_at')->nullable();

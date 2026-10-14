@@ -1,0 +1,9 @@
+<nav class="storefront-settings-rail" aria-label={{t "storefront.common.settings"}} data-test-settings-rail ...attributes>
+    {{#each @items as |item|}}
+        <button type="button" class="storefront-settings-rail__item {{if item.isActive 'is-active'}}" {{on "click" (fn @onSelect item)}} data-test-rail-item={{item.id}}>
+            <FaIcon @icon={{item.icon}} @size="xs" class="storefront-settings-rail__icon" />
+            <span class="storefront-settings-rail__label">{{item.label}}</span>
+            {{#if item.badge}}<span class="storefront-settings-rail__badge">{{item.badge}}</span>{{/if}}
+        </button>
+    {{/each}}
+</nav>

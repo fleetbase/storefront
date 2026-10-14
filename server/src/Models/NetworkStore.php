@@ -33,7 +33,12 @@ class NetworkStore extends Pivot
      *
      * @var array
      */
-    protected $fillable = ['network_uuid', 'store_uuid', 'category_uuid'];
+    public const STATUS_ACTIVE    = 'active';
+    public const STATUS_SUSPENDED = 'suspended';
+    /** Accepted an invitation that requires the network operator's approval. */
+    public const STATUS_PENDING = 'pending';
+
+    protected $fillable = ['network_uuid', 'store_uuid', 'category_uuid', 'status'];
 
     /**
      * The attributes that should be cast to native types.

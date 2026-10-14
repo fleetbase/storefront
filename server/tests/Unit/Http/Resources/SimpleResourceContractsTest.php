@@ -158,27 +158,33 @@ test('media and review resources map customer-facing file shapes', function () {
         'name'      => 'Ada Lovelace',
     ]);
     $review = storefrontResourceModel([
-        'id'         => 4,
-        'uuid'       => 'review_uuid',
-        'public_id'  => 'review_123',
+        'id'            => 4,
+        'uuid'          => 'review_uuid',
+        'public_id'     => 'review_123',
+        'customer_uuid' => 'customer_uuid',
+        'order_uuid'    => 'order_uuid',
         'rating'     => 5,
         'content'    => 'Excellent service',
         'slug'       => 'excellent-service',
         'created_at' => '2026-01-01',
         'updated_at' => '2026-01-02',
     ], [
-        'subject'  => storefrontResourceModel(['id' => 99]),
+        'subject'  => storefrontResourceModel(['id' => 99, 'public_id' => 'store_123']),
         'customer' => $customer,
         'photos'   => collect([$photo]),
     ]);
 
     $reviewData = (new ReviewResource($review))->toArray(setSimpleStorefrontResourceRoute('v1/storefront/reviews'));
 
+    // Public responses name the subject by its public id, never the internal row id.
     expect($reviewData)->toMatchArray([
-        'id'         => 'review_123',
-        'subject_id' => 99,
-        'rating'     => 5,
-        'content'    => 'Excellent service',
+        'id'           => 'review_123',
+        'subject_id'   => 'store_123',
+        'subject_type' => 'store',
+        'verified'     => true,
+        'is_mine'      => false,
+        'rating'       => 5,
+        'content'      => 'Excellent service',
     ])->and($reviewData['photos'][0])->toBe([
         'id'       => 'file_123',
         'filename' => 'receipt.jpg',
@@ -362,5 +368,15 @@ test('network resource includes requested related collections and storefront fla
         'is_network' => true,
         'is_store'   => false,
     ])->and($data)->toHaveKeys(['stores', 'categories'])
-        ->and($data)->not->toHaveKeys(['gateways', 'notification_channels', 'uuid']);
+        ->and($data)->not->toHaveKeys(['gateways', 'notification_channels', 'uuid', 'stores_count']);
+
+    // The console reads the member store count, taken from a selected count when present.
+    $network->forceFill(['stores_count' => '3']);
+    $internal = (new NetworkResource($network))->resolve(setSimpleStorefrontResourceRoute('int/v1/storefront/networks'));
+
+    expect($internal)->toMatchArray([
+        'id'           => 7,
+        'uuid'         => 'network_uuid',
+        'stores_count' => 3,
+    ]);
 });

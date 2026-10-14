@@ -1,0 +1,47 @@
+{{! The store dashboard: attention strip, KPI tiles, the revenue chart beside top products, recent orders. }}
+<Skeleton::Page @hideAvatar={{true}} @hideSubtitle={{true}} @hideSearch={{true}} @actions={{4}} @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="home">
+    <div class="ui-skeleton-table-card storefront-skeleton-attention">
+        <div class="storefront-skeleton-attention__head">
+            <Skeleton @variant="text" @width="9rem" />
+            <Skeleton @variant="button" @width="1.75rem" @height="1.625rem" />
+        </div>
+        <div class="storefront-skeleton-attention__cells">
+            {{#each (array 0 1 2 3)}}
+                <div class="storefront-skeleton-row">
+                    <Skeleton @variant="rect" @width="1.5rem" @height="1.5rem" />
+                    <span class="storefront-skeleton-stack">
+                        <Skeleton @variant="text" @width="70%" />
+                        <Skeleton @variant="text" @width="40%" @height="0.625rem" />
+                    </span>
+                </div>
+            {{/each}}
+        </div>
+    </div>
+    <Skeleton::StatTiles @count={{4}} />
+    <div class="storefront-skeleton-split">
+        <div class="ui-skeleton-table-card storefront-skeleton-panel">
+            <Skeleton @variant="text" @width="7rem" />
+            <Skeleton @variant="rect" @width="100%" @height="12rem" />
+        </div>
+        <div class="ui-skeleton-table-card storefront-skeleton-panel">
+            <Skeleton @variant="text" @width="7rem" />
+            {{#each (array 0 1 2 3)}}
+                <div class="storefront-skeleton-row">
+                    <Skeleton @variant="rect" @width="1.75rem" @height="1.75rem" />
+                    <span class="storefront-skeleton-stack">
+                        <Skeleton @variant="text" @width="55%" />
+                        <Skeleton @variant="text" @width="30%" @height="0.625rem" />
+                    </span>
+                    <Skeleton @variant="text" @width="3.5rem" />
+                </div>
+            {{/each}}
+        </div>
+    </div>
+    <div class="ui-skeleton-table-card">
+        <div class="ui-skeleton-table-card-toolbar">
+            <Skeleton @variant="text" @width="7rem" />
+            <Skeleton @variant="text" @width="9rem" />
+        </div>
+        <Skeleton::Table @rows={{5}} @columns={{8}} @identityColumn={{1}} />
+    </div>
+</Skeleton::Page>

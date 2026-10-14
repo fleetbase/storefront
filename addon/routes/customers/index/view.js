@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
+import findContact from '@fleetbase/storefront-engine/utils/find-contact';
 
 export default class CustomersIndexViewRoute extends Route {
     @service store;
@@ -20,6 +21,6 @@ export default class CustomersIndexViewRoute extends Route {
     }
 
     model({ public_id }) {
-        return this.store.findRecord('contact', public_id);
+        return findContact(this.store, public_id);
     }
 }

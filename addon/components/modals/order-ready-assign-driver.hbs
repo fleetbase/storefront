@@ -29,6 +29,7 @@
                     <InputGroup class="mt-4" @name={{t "storefront.component.modals.order-ready-assign-driver.select-driver"}}>
                         <ModelSelect
                             @modelName="driver"
+                            @selectedItemComponent={{component "select-option/driver" compact=true}}
                             @selectedModel={{@options.driver}}
                             @placeholder={{t "storefront.component.modals.order-ready-assign-driver.select-driver-to-assign"}}
                             @triggerClass="form-select form-input"
@@ -37,7 +38,7 @@
                             @onChange={{fn (mut @options.driver)}}
                             as |model|
                         >
-                            {{model.name}}
+                            <SelectOption::Driver @option={{model}} />
                         </ModelSelect>
                     </InputGroup>
                 {{/unless}}

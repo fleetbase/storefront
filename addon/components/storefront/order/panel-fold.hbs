@@ -1,0 +1,11 @@
+{{! A folded row: title and a one-line summary; opens to its content. }}
+<div class="sfop-fold" ...attributes>
+    <button type="button" class="sfop-fold__toggle" aria-expanded={{if this.isOpen "true" "false"}} {{on "click" this.toggle}}>
+        <span>{{@title}}</span>
+        {{#if @summary}}<span class="sfop-fold__summary">{{@summary}}</span>{{/if}}
+        <FaIcon @icon={{if this.isOpen "chevron-down" "chevron-right"}} @size="xs" class="sfop-fold__chevron" />
+    </button>
+    {{#if this.isOpen}}
+        <div class="sfop-fold__body {{@bodyClass}}">{{yield}}</div>
+    {{/if}}
+</div>

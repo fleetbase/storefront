@@ -1,0 +1,21 @@
+<Storefront::PageHeader @title={{t "storefront.networks.categories.title"}} @subtitle={{t "storefront.networks.categories.subtitle" count=this.rows.length}} data-test-network-categories-header>
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.networks.categories.new-category"}} @onClick={{this.createCategory}} @permission="storefront update network" data-test-new-network-category />
+</Storefront::PageHeader>
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page">
+        <div class="storefront-table-card" data-test-network-categories-card>
+            {{#if this.rows.length}}
+                <Table @wrapperClass="storefront-table-card__table" @rows={{this.rows}} @columns={{this.columns}} @selectable={{false}} @onSetup={{fn (mut this.table)}} @tfoot={{false}} />
+                <div class="storefront-table-card__footer">
+                    <span class="storefront-table-card__note">{{t "storefront.networks.categories.note"}}</span>
+                </div>
+            {{else}}
+                <div class="storefront-empty-row m-4">
+                    <span>{{t "storefront.networks.categories.empty"}}</span>
+                    <Button @size="xs" @icon="plus" @text={{t "storefront.networks.categories.new-category"}} @onClick={{this.createCategory}} @permission="storefront update network" />
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</Layout::Section::Body>

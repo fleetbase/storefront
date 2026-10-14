@@ -1,16 +1,28 @@
-<Layout::Resource::Tabular
-    @registry="storefront:customer:table"
-    @resource="customer"
-    @title={{t "storefront.common.customers"}}
-    @searchQuery={{this.query}}
-    @onSearch={{perform this.search}}
-    @data={{@model}}
-    @columns={{this.columns}}
-    @page={{this.page}}
-    @onPageChange={{fn (mut this.page)}}
-    @setupTable={{fn (mut this.table)}}
-    @actionButtons={{this.actionButtons}}
-    @controller={{this}}
-/>
+<Storefront::PageHeader @title={{t "storefront.common.customers"}} @subtitle={{t "storefront.customers.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.customers.index.search"}} data-test-customers-header>
+    <Storefront::ViewToggle @options={{array (hash id="cards" icon="th-large" title=(t "storefront.customers.index.view-cards")) (hash id="table" icon="list" title=(t "storefront.customers.index.view-table"))}} @value={{this.viewMode}} @onChange={{this.setViewMode}} @label={{t "storefront.common.view"}} data-test-customers-view-toggle />
+    {{#unless this.isCards}}
+        <FiltersPicker @columns={{this.registeredColumns}} @onApply={{fn this.filters.apply this}} @onClear={{fn this.filters.reset this}} @onFilterClear={{this.filters.clear}} @onChange={{this.filters.set}} @size="sm" @renderInPlace={{false}} data-test-customers-filters />
+        <VisibleColumnPicker @columns={{this.columns}} @onChange={{this.setColumns}} @size="sm" @renderInPlace={{false}} data-test-customers-columns />
+    {{/unless}}
+    <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
+</Storefront::PageHeader>
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    {{#if this.isCards}}
+        <Layout::Resource::CardsGrid @resource="customer" @data={{@model}} @columns="4" @containerClass="p-5" @showPagination={{true}} @paginationMeta={{@model.meta}} @page={{this.page}} @onPageChange={{fn (mut this.page)}} @emptyStateText={{t "storefront.customers.index.empty"}} class="h-full" as |Item|>
+            <Storefront::CustomerCard @customer={{Item.model}} @onView={{this.viewCustomer}} @onNewOrder={{this.newOrderFor}} />
+        </Layout::Resource::CardsGrid>
+    {{else}}
+        <div class="storefront-page">
+            <div class="storefront-table-card" data-test-customers-card>
+                <Table @wrapperClass="storefront-table-card__table" @rows={{@model}} @columns={{this.registeredColumns}} @selectable={{false}} @onSetup={{fn (mut this.table)}} @onSort={{this.handleSort}} @tfoot={{false}} @emptyStateTitle={{t "storefront.customers.index.empty"}} />
+                <div class="storefront-table-card__footer">
+                    <span></span>
+                    <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+                </div>
+            </div>
+        </div>
+    {{/if}}
+</Layout::Section::Body>
 
 {{outlet}}

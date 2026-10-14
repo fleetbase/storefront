@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Models;
 
 use Fleetbase\Casts\Money as MoneyCast;
 use Fleetbase\Models\Category;
+use Fleetbase\Support\ApiModelCache;
 use Illuminate\Support\Str;
 
 class AddonCategory extends Category
@@ -14,6 +15,14 @@ class AddonCategory extends Category
      * @var array
      */
     protected $with = ['addons'];
+
+    /**
+     * Tables the cached addon category lists embed: the addons loaded with every category
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on).
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['addons'];
 
     /**
      * The key to use in the payload responses.
@@ -42,6 +51,7 @@ class AddonCategory extends Category
 
     public function setAddons(array $addons = []): AddonCategory
     {
+        $updatedQuietly = false;
         foreach ($addons as $addon) {
             // get uuid if set
             $id = data_get($addon, 'uuid');
@@ -60,6 +70,7 @@ class AddonCategory extends Category
             // update product addon category
             if (Str::isUuid($id)) {
                 ProductAddon::where('uuid', $id)->update($upsertableProductAddon);
+                $updatedQuietly = true;
                 continue;
             }
 
@@ -68,6 +79,11 @@ class AddonCategory extends Category
                 ...$upsertableProductAddon,
                 'created_by_uuid' => session('user'),
             ]);
+        }
+
+        // Builder updates raise no model events, so the cached addon category and product lists are invalidated here
+        if ($updatedQuietly) {
+            ApiModelCache::invalidateModelCache(new ProductAddon(), $this->company_uuid);
         }
 
         return $this;

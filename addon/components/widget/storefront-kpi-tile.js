@@ -6,6 +6,7 @@ import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 export default class WidgetStorefrontKpiTileComponent extends Component {
     @service fetch;
+    @service intl;
     @service storefront;
     @service storefrontDashboard;
 
@@ -35,7 +36,30 @@ export default class WidgetStorefrontKpiTileComponent extends Component {
     }
 
     get title() {
-        return this.args.title ?? 'Metric';
+        return this.args.title ?? this.intl.t('storefront.dashboard.kpi.metric');
+    }
+
+    /**
+     * The API reports `delta_percent: 100` whenever the previous period is empty, which
+     * is not a trend. A trend needs a non-zero previous value (or, from an older API
+     * without `previous`, a numeric delta).
+     */
+    get hasPreviousPeriod() {
+        const { previous, delta_percent } = this.metric;
+
+        if (previous === undefined) {
+            return typeof delta_percent === 'number';
+        }
+
+        return typeof previous === 'number' && previous !== 0;
+    }
+
+    get periodText() {
+        if (this.args.period) {
+            return this.args.period;
+        }
+
+        return this.intl.t(this.hasPreviousPeriod ? 'storefront.dashboard.kpi.vs-previous-period' : 'storefront.dashboard.kpi.no-previous-period');
     }
 
     get formattedValue() {
@@ -63,7 +87,7 @@ export default class WidgetStorefrontKpiTileComponent extends Component {
 
     get deltaDirection() {
         const delta = this.metric.delta_percent ?? 0;
-        if (delta === 0) {
+        if (delta === 0 || !this.hasPreviousPeriod) {
             return 'neutral';
         }
 
@@ -89,7 +113,7 @@ export default class WidgetStorefrontKpiTileComponent extends Component {
             this.data = yield this.fetch.get('analytics/overview', this.storefrontDashboard.withStore(this.storeId), { namespace: 'storefront/int/v1' });
             this.error = null;
         } catch (error) {
-            this.error = error?.message ?? 'Unable to load metric';
+            this.error = error?.message ?? this.intl.t('storefront.dashboard.kpi.load-error');
         }
     }
 }

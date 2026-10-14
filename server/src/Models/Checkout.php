@@ -10,6 +10,7 @@ use Fleetbase\Support\Utils;
 use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class Checkout extends StorefrontModel
@@ -75,12 +76,20 @@ class Checkout extends StorefrontModel
         });
     }
 
+    /*
+     * The related models (Company, Order, Contact, ServiceQuote) choose the Fleetbase
+     * database themselves (Fleetbase\Models\Model::getConnectionName()). These relations
+     * used to call $this->setConnection(...), which switched the checkout itself to that
+     * database, so any later refresh or save of the checkout failed (checkouts lives in
+     * the storefront database) — e.g. after a QPay payment, before the order was created.
+     */
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function company()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Company::class);
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -88,7 +97,7 @@ class Checkout extends StorefrontModel
      */
     public function order()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(Order::class);
+        return $this->belongsTo(Order::class);
     }
 
     /**
@@ -96,7 +105,7 @@ class Checkout extends StorefrontModel
      */
     public function owner()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->morphTo(__FUNCTION__, 'owner_type', 'owner_uuid')->withoutGlobalScopes();
+        return $this->morphTo(__FUNCTION__, 'owner_type', 'owner_uuid')->withoutGlobalScopes();
     }
 
     /**
@@ -104,7 +113,7 @@ class Checkout extends StorefrontModel
      */
     public function serviceQuote()
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->belongsTo(ServiceQuote::class);
+        return $this->belongsTo(ServiceQuote::class);
     }
 
     /**
@@ -163,7 +172,31 @@ class Checkout extends StorefrontModel
         $cart = $this->cart;
 
         if ($cart) {
-            $this->cart->update(['checkout_uuid' => $this->uuid]);
+            $this->cart->update(['checkout_uuid' => $this->uuid, 'status' => Cart::STATUS_CHECKED_OUT]);
         }
+    }
+
+    /**
+     * The cart as it was when this checkout was created (cart_state): the items and prices
+     * that were priced and charged. Orders are created from it, so a cart changed or
+     * cleared between payment and order creation can't change the order. Null for older
+     * checkouts saved without it. The returned cart is a read-only copy, never saved.
+     */
+    public function cartAtCheckout(): ?Cart
+    {
+        $state = json_decode(json_encode($this->cart_state ?? null), true);
+        if (!is_array($state) || !array_key_exists('items', $state) || !is_array($state['items'])) {
+            return null;
+        }
+
+        $attributes           = Arr::only($state, ['uuid', 'public_id', 'company_uuid', 'user_uuid', 'checkout_uuid', 'status', 'customer_id', 'unique_identifier', 'currency', 'discount_code', 'expires_at', 'created_at', 'updated_at']);
+        $attributes['uuid']   = $attributes['uuid'] ?? $this->cart_uuid;
+        $attributes['items']  = json_encode($state['items']);
+        $attributes['events'] = json_encode($state['events'] ?? []);
+
+        $cart = new Cart();
+        $cart->setRawAttributes($attributes, true);
+
+        return $cart;
     }
 }

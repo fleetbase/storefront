@@ -16,7 +16,7 @@
                 <Chart @type="line" @labels={{this.data.labels}} @datasets={{this.chartDatasets}} @options={{this.chartOptions}} />
             </div>
         {{else}}
-            <div class="storefront-widget-empty">No revenue data yet.</div>
+            <div class="storefront-widget-empty">{{t "storefront.dashboard.widgets.no-revenue"}}</div>
         {{/if}}
     </div>
 </div>

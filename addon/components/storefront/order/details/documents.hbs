@@ -1,4 +1,4 @@
-<ContentPanel @title={{t "order.fields.documents-panel-title"}} @open={{true}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
+<ContentPanel @title={{t "order.fields.documents-panel-title"}} @open={{not @folded}} @actionButtons={{@actionButtons}} @wrapperClass="bordered-top" ...attributes>
     <div class="space-y-2">
         {{#if this.queueFile.isRunning}}
             <div

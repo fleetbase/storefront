@@ -1,0 +1,5 @@
+{{! Catalogs: a borderless header without a subtitle, status tabs, then catalog cards without media. }}
+<Skeleton::Page @hideAvatar={{true}} @hideSubtitle={{true}} @borderlessHeader={{true}} @actions={{2}} @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="catalogs">
+    <Skeleton::Tabs @count={{3}} @counts={{true}} />
+    <Skeleton::CardsGrid @count={{8}} @columns={{4}} @hideMedia={{true}} @subtitle={{true}} @status="badge" @lines={{3}} @footerActions={{2}} @footerLines={{1}} />
+</Skeleton::Page>

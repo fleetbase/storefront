@@ -14,6 +14,8 @@ use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Fleetbase\Storefront\Support\NotificationPreferences;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -21,9 +23,10 @@ use Illuminate\Notifications\Notification;
 /**
  * Base class for order lifecycle notifications sent to storefront customers.
  */
-abstract class StorefrontOrderNotification extends Notification implements SendsPushNotification
+abstract class StorefrontOrderNotification extends Notification implements SendsPushNotification, ShouldQueue
 {
     use Queueable;
+    use SerializesModels;
 
     /**
      * The order instance this notification is for.

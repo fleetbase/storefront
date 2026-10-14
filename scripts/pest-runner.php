@@ -50,7 +50,7 @@ if (!is_file($bootstrap)) {
     exit(1);
 }
 
-$args = array_slice($argv, 1);
+$args             = array_slice($argv, 1);
 $hasConfiguration = false;
 foreach ($args as $arg) {
     if (str_starts_with($arg, '--configuration')) {
@@ -72,6 +72,9 @@ $command = array_merge([
     'error_reporting=8191',
     '-d',
     'auto_prepend_file=' . $bootstrap,
+    // The full suite (and the coverage run on top of it) needs more than the default 128M.
+    '-d',
+    'memory_limit=1G',
     $pest,
 ], $args);
 

@@ -25,6 +25,7 @@ export default class ProductModel extends Model {
     @hasMany('product-addon-category', { async: false }) addon_categories;
     @hasMany('product-hour') hours;
     @hasMany('catalog-category', { inverse: 'products' }) catalogCategories;
+    @attr('number') catalogs_count;
 
     /** @attributes */
     @attr('string', { defaultValue: '' }) name;
@@ -44,6 +45,9 @@ export default class ProductModel extends Model {
     @attr('boolean') is_service;
     @attr('boolean') is_available;
     @attr('boolean') is_bookable;
+    @attr('boolean') track_inventory;
+    @attr('raw') inventory;
+    @attr('boolean') in_stock;
     @attr('string') status;
     @attr('string') slug;
 
@@ -133,7 +137,9 @@ export default class ProductModel extends Model {
             serialized[underscore(label)] = value;
         }
 
-        setProperties(this, { meta: serialized });
+        // The service settings of a bookable product live in meta too, edited apart from the free-form fields.
+        const service = this.meta?.service;
+        setProperties(this, { meta: service ? { service, ...serialized } : serialized });
 
         return this;
     }

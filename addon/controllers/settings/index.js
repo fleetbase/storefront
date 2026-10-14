@@ -6,13 +6,21 @@ import { action } from '@ember/object';
 import { isArray } from '@ember/array';
 import getPodMethods from '@fleetbase/console/utils/get-pod-methods';
 
+// Options that belong to the Order messages section (the rest are checkout rules).
+const MESSAGE_OPTIONS = ['quick_replies', 'booking_quick_replies'];
+
 export default class SettingsIndexController extends Controller {
     @service notifications;
     @service fetch;
     @service storefront;
     @service intl;
+    @service hostRouter;
+    @service modalsManager;
+    @service store;
 
     @alias('storefront.activeStore') activeStore;
+    /** The store's locations with their hours, handed over by the settings shell route. */
+    @tracked locations = [];
     queryParams = ['query'];
 
     @tracked query;
@@ -21,6 +29,188 @@ export default class SettingsIndexController extends Controller {
     @tracked uploadQueue = [];
     @tracked uploadedFiles = [];
     @tracked orderConfigs = [];
+    @tracked optionsRevision = 0;
+    optionsSnapshot = '{}';
+    alertableSnapshot = '{}';
+
+    /** IANA zones the browser knows, with the store's current zone kept even when the list lacks it. */
+    get timezones() {
+        let zones = [];
+
+        try {
+            zones = Intl.supportedValuesOf('timeZone');
+        } catch {
+            zones = ['UTC'];
+        }
+
+        const current = this.model?.timezone;
+
+        return current && !zones.includes(current) ? [current, ...zones] : zones;
+    }
+
+    sectionLabels = {
+        name: 'general',
+        description: 'general',
+        tags: 'general',
+        currency: 'general',
+        timezone: 'general',
+        order_config_uuid: 'general',
+        phone: 'general',
+        email: 'general',
+        website: 'general',
+        facebook: 'general',
+        instagram: 'general',
+        twitter: 'general',
+        logo_uuid: 'branding',
+        backdrop_uuid: 'branding',
+        online: 'checkout-rules',
+        pod_method: 'checkout-rules',
+    };
+
+    get memberNetworks() {
+        return this.model?.networks ?? [];
+    }
+
+    get optionsChanged() {
+        // read so the getter recomputes after setOption / touch
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.options ?? {}) !== this.optionsSnapshot;
+    }
+
+    /** The options that differ from the saved ones. */
+    get changedOptionKeys() {
+        this.optionsRevision;
+
+        let saved = {};
+        try {
+            saved = JSON.parse(this.optionsSnapshot) ?? {};
+        } catch {
+            // snapshots are JSON we wrote ourselves
+        }
+        const current = this.model?.options ?? {};
+
+        return [...new Set([...Object.keys(saved), ...Object.keys(current)])].filter((key) => JSON.stringify(saved[key] ?? null) !== JSON.stringify(current[key] ?? null));
+    }
+
+    get alertableChanged() {
+        this.optionsRevision;
+
+        return JSON.stringify(this.model?.alertable ?? {}) !== this.alertableSnapshot;
+    }
+
+    get changedAttributeNames() {
+        const changed = this.model?.changedAttributes?.() ?? {};
+
+        return Object.keys(changed).filter((key) => !['options', 'alertable'].includes(key));
+    }
+
+    get isDirty() {
+        return Boolean(this.model?.isNew) || this.changedAttributeNames.length > 0 || this.optionsChanged || this.alertableChanged;
+    }
+
+    get dirtyCount() {
+        return this.changedAttributeNames.length + (this.optionsChanged ? 1 : 0) + (this.alertableChanged ? 1 : 0);
+    }
+
+    get dirtySections() {
+        const sections = new Set(this.changedAttributeNames.map((key) => this.sectionLabels[key] ?? 'general'));
+
+        if (this.optionsChanged) {
+            this.changedOptionKeys.forEach((key) => sections.add(MESSAGE_OPTIONS.includes(key) ? 'messages' : 'checkout-rules'));
+        }
+
+        if (this.alertableChanged) {
+            sections.add('alerts');
+        }
+
+        return [...sections].map((section) => this.intl.t(`storefront.settings.sections.${section}`));
+    }
+
+    snapshotOptions() {
+        this.optionsSnapshot = JSON.stringify(this.model?.options ?? {});
+        this.alertableSnapshot = JSON.stringify(this.model?.alertable ?? {});
+        this.optionsRevision++;
+    }
+
+    /** How stores show on the app's map: an icon (store, warehouse, factory) or the store's logo. */
+    get mapMarkers() {
+        return ['store', 'warehouse', 'factory', 'logo'].map((value) => ({ value, name: this.intl.t(`storefront.settings.index.map-marker-${value}`) }));
+    }
+
+    get mapMarker() {
+        return this.mapMarkers.find((option) => option.value === (this.model?.options?.map_marker ?? 'store'));
+    }
+
+    @action touch() {
+        this.optionsRevision++;
+    }
+
+    @action setOption(key, value) {
+        if (!this.model.options || typeof this.model.options !== 'object') {
+            this.model.set('options', {});
+        }
+
+        this.model.set(`options.${key}`, value);
+        this.optionsRevision++;
+    }
+
+    /** What is typed in the quick replies boxes, kept as typed until saved or discarded. */
+    @tracked repliesDrafts = {};
+
+    /** A list of quick replies as the text box shows it: one per line. */
+    repliesText(key) {
+        if (key in this.repliesDrafts) {
+            return this.repliesDrafts[key];
+        }
+        const replies = this.model?.options?.[key];
+
+        return isArray(replies) ? replies.join('\n') : '';
+    }
+
+    get quickRepliesText() {
+        return this.repliesText('quick_replies');
+    }
+
+    get bookingQuickRepliesText() {
+        return this.repliesText('booking_quick_replies');
+    }
+
+    /** One reply per line; blank lines dropped, and none at all keeps the defaults. */
+    @action setReplies(key, event) {
+        const text = String(event?.target?.value ?? '');
+        this.repliesDrafts = { ...this.repliesDrafts, [key]: text };
+        const replies = text
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+        this.setOption(key, replies.length ? replies : null);
+    }
+
+    /** The store's timezone; the select does not fire the form's change event, so mark the page changed. */
+    @action setTimezone(zone) {
+        this.model.set('timezone', zone);
+        this.optionsRevision++;
+    }
+
+    @action setMapMarker(option) {
+        this.setOption('map_marker', (option?.value ?? option) || 'store');
+    }
+
+    @action discardChanges() {
+        this.repliesDrafts = {};
+        this.model.rollbackAttributes();
+
+        try {
+            this.model.set('options', JSON.parse(this.optionsSnapshot));
+            this.model.set('alertable', JSON.parse(this.alertableSnapshot));
+        } catch {
+            // snapshots are JSON we wrote ourselves
+        }
+
+        this.optionsRevision++;
+    }
 
     @action addTag(tag) {
         if (!isArray(this.model.tags)) {
@@ -34,13 +224,60 @@ export default class SettingsIndexController extends Controller {
         this.model.tags?.removeAt(index);
     }
 
-    @action saveSettings() {
+    @action editHours() {
+        return this.hostRouter.transitionTo('console.storefront.settings.locations');
+    }
+
+    /**
+     * Deletes the store after confirmation, then lands on the next store the
+     * organisation has or on the first-store flow when none is left.
+     */
+    @action deleteStore() {
+        const store = this.model;
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.settings.danger.confirm-title', { name: store.name }),
+            body: this.intl.t('storefront.settings.danger.confirm-body'),
+            acceptButtonText: this.intl.t('storefront.settings.danger.delete-button'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'trash',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await store.destroyRecord();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                    return;
+                }
+
+                this.notifications.success(this.intl.t('storefront.settings.danger.deleted', { name: store.name }));
+
+                const remaining = this.store.peekAll('store').filter((record) => !record.isDeleted && record.id !== store.id);
+
+                if (remaining.length) {
+                    this.storefront.setActiveStorefront(remaining[0]);
+                    await this.hostRouter.transitionTo('console.storefront.home');
+                    return this.hostRouter.refresh();
+                }
+
+                await this.hostRouter.transitionTo('console.storefront.home');
+                return this.storefront.createFirstStore();
+            },
+        });
+    }
+
+    @action saveSettings(event) {
+        event?.preventDefault?.();
         this.isLoading = true;
 
         this.model
             .save()
             .then(() => {
-                this.notifications.success('Changes saved');
+                this.repliesDrafts = {};
+                this.snapshotOptions();
+                this.notifications.success(this.intl.t('storefront.settings.save-bar.saved-toast'));
             })
             .catch((error) => {
                 this.notifications.serverError(error);
@@ -114,5 +351,6 @@ export default class SettingsIndexController extends Controller {
         });
 
         this.model.set(`alertable.${reason}`, serializedModels);
+        this.optionsRevision++;
     }
 }

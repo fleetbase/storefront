@@ -26,6 +26,7 @@ module('Integration | Component | storefront/product/card', function (hooks) {
             category: { name: 'Lunch' },
             variants: [{ name: 'Size' }],
             addon_categories: [{ name: 'Sides' }],
+            catalogs_count: 2,
         });
         this.set('deleteProduct', () => {});
 
@@ -41,8 +42,9 @@ module('Integration | Component | storefront/product/card', function (hooks) {
         assert.dom('[data-test-storefront-product-card]').includesText('Signature Bento');
         assert.dom('[data-test-storefront-product-card]').includesText('Lunch');
         assert.dom('[data-test-storefront-product-card]').includesText('BENTO-1');
-        assert.dom('[data-test-storefront-product-card]').includesText('1 variants');
-        assert.dom('[data-test-storefront-product-card]').includesText('1 add-ons');
+        assert.dom('[data-test-storefront-product-card]').includesText('1 variant');
+        assert.dom('[data-test-storefront-product-card]').includesText('1 add-on');
+        assert.dom('[data-test-product-catalogs]').hasText('in 2 catalogs');
         assert.dom('[data-test-storefront-product-card]').includesText('Recommended');
     });
 
@@ -72,5 +74,6 @@ module('Integration | Component | storefront/product/card', function (hooks) {
 
         assert.dom('[data-test-storefront-product-card]').includesText('Published');
         assert.dom('[data-test-storefront-product-card]').doesNotIncludeText('Available');
+        assert.dom('[data-test-product-chips]').doesNotExist('no chips row when there are no variants or add-ons');
     });
 });

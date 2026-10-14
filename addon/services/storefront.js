@@ -4,10 +4,27 @@ import { inject as service } from '@ember/service';
 import { get } from '@ember/object';
 import { getOwner } from '@ember/application';
 import { tracked } from '@glimmer/tracking';
+import Point from '@fleetbase/fleetops-data/utils/geojson/point';
 
 /**
  * Service to manage storefront operations.
  */
+
+/** The New customer modal's fields; tracked so the inputs and the save check see each change. */
+class CustomerDraft {
+    @tracked name = '';
+    @tracked email = '';
+    @tracked phone = '';
+
+    get payload() {
+        return {
+            name: this.name.trim(),
+            email: this.email.trim() || null,
+            phone: this.phone?.trim?.() || null,
+        };
+    }
+}
+
 export default class StorefrontService extends Service.extend(Evented) {
     @service store;
     @service intl;
@@ -18,6 +35,10 @@ export default class StorefrontService extends Service.extend(Evented) {
     @service abilities;
     @service socket;
     @tracked activeStoreId;
+    @tracked activeNetworkId;
+    @tracked pendingInvitations = [];
+    /** The store's "needs attention" counts (orders to confirm, pickups ready, ...), shared by the dashboard strip and the sidebar badge. */
+    @tracked attention = null;
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -36,6 +57,39 @@ export default class StorefrontService extends Service.extend(Evented) {
     }
 
     /**
+     * Gets the active network. A network is active only while the user is inside a
+     * network page: the context is derived from the route, not persisted.
+     * @returns {Object|null} The active network record.
+     */
+    get activeNetwork() {
+        return this.activeNetworkId ? (this.store.peekRecord('network', this.activeNetworkId) ?? null) : null;
+    }
+
+    /**
+     * Whether the console is scoped to a network instead of a store.
+     * @returns {boolean}
+     */
+    get isNetworkContext() {
+        return Boolean(this.activeNetwork);
+    }
+
+    /**
+     * The active context type: a store or a network, never both at once.
+     * @returns {'store'|'network'}
+     */
+    get activeContextType() {
+        return this.isNetworkContext ? 'network' : 'store';
+    }
+
+    /**
+     * The record the console is currently scoped to.
+     * @returns {Object|null} the active network, otherwise the active store
+     */
+    get activeContext() {
+        return this.activeNetwork ?? this.activeStore;
+    }
+
+    /**
      * Sets the active storefront.
      * @param {Object} store - The store to set as active.
      */
@@ -46,10 +100,74 @@ export default class StorefrontService extends Service.extend(Evented) {
     }
 
     /**
+     * Enters the network context for a network, or leaves it when given nothing.
+     * @param {Object|null} network - The network to scope the console to.
+     */
+    setActiveNetwork(network = null) {
+        const nextNetworkId = network?.id ?? null;
+
+        if ((this.activeNetworkId ?? null) === nextNetworkId) {
+            return;
+        }
+
+        this.activeNetworkId = nextNetworkId;
+        this.trigger('storefront.context.changed', this.activeContextType, this.activeContext);
+    }
+
+    /**
+     * Leaves the network context and returns to the active store.
+     */
+    clearActiveNetwork() {
+        this.setActiveNetwork(null);
+    }
+
+    /**
+     * Gets the active network or a specific property of it.
+     * @param {string|null} property - The property to retrieve from the active network.
+     * @returns {Object|null} The active network or its specific property.
+     */
+    getActiveNetwork(property = null) {
+        if (this.activeNetwork) {
+            if (typeof property === 'string') {
+                return get(this.activeNetwork, property);
+            }
+
+            return this.activeNetwork;
+        }
+
+        return null;
+    }
+
+    /**
      * Gets the active store or a specific property of it.
      * @param {string|null} property - The property to retrieve from the active store.
      * @returns {Object|null} The active store or its specific property.
      */
+    /**
+     * Query scope for the active context: `{ network }` inside a network, `{ storefront }` for a store.
+     * Every list and panel that can open in either context should take its scope from here.
+     */
+    /**
+     * Whoever owns the records of the active context: the network, or else the store.
+     * @param {String|null} property - a property to read off the owner, or nothing for the record
+     */
+    getContextOwner(property = null) {
+        return this.isNetworkContext ? this.getActiveNetwork(property) : this.getActiveStore(property);
+    }
+
+    /** The morph type stored on owner-scoped records (promotions, campaigns, segments). */
+    get contextOwnerType() {
+        return this.isNetworkContext ? 'storefront:network' : 'storefront:store';
+    }
+
+    contextScope() {
+        if (this.isNetworkContext) {
+            return { network: this.getActiveNetwork('public_id') };
+        }
+
+        return { storefront: this.getActiveStore('public_id') };
+    }
+
     getActiveStore(property = null) {
         if (this.activeStore) {
             if (typeof property === 'string') {
@@ -91,6 +209,26 @@ export default class StorefrontService extends Service.extend(Evented) {
     }
 
     /**
+     * Loads the active store's attention counts from the analytics endpoint.
+     */
+    async loadAttention() {
+        const storeId = this.activeStore?.public_id ?? this.activeStore?.id;
+
+        if (!storeId) {
+            this.attention = null;
+            return null;
+        }
+
+        try {
+            this.attention = await this.fetch.get('analytics/attention', { storefront: storeId }, { namespace: 'storefront/int/v1' });
+        } catch {
+            this.attention = null;
+        }
+
+        return this.attention;
+    }
+
+    /**
      * Alerts about an incoming order.
      * @param {string} orderId - The ID of the incoming order.
      * @param {Object} store - The store associated with the order.
@@ -110,6 +248,7 @@ export default class StorefrontService extends Service.extend(Evented) {
         this.modalsManager.show('modals/incoming-order', {
             title: this.intl.t('storefront.service.storefront.new-incoming-order'),
             acceptButtonText: alreadyAccepted ? this.intl.t('common.ok') : this.intl.t('storefront.service.storefront.accept-order'),
+            acceptButtonScheme: alreadyAccepted ? 'primary' : 'success',
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             hideDeclineButton: alreadyAccepted,
@@ -117,7 +256,7 @@ export default class StorefrontService extends Service.extend(Evented) {
             declineButtonScheme: 'danger',
             closeButton: false,
             backdropClose: false,
-            modalClass: 'scrollable-height-dialog',
+            modalClass: 'scrollable-height-dialog storefront-incoming-order-modal',
             order,
             store,
             confirm: async (modal) => {
@@ -255,6 +394,69 @@ export default class StorefrontService extends Service.extend(Evented) {
     }
 
     /**
+     * Open network invitations addressed to the active store, for the dashboard banner and the switcher badge.
+     */
+    async loadPendingInvitations() {
+        const storeId = this.getActiveStore('public_id');
+
+        if (!storeId) {
+            this.pendingInvitations = [];
+            return [];
+        }
+
+        try {
+            const invitations = await this.fetch.get('networks/invitations/pending', { storefront: storeId }, { namespace: 'storefront/int/v1' });
+            this.pendingInvitations = Array.isArray(invitations) ? invitations : [];
+        } catch {
+            this.pendingInvitations = [];
+        }
+
+        return this.pendingInvitations;
+    }
+
+    /**
+     * Creates a new network with given options.
+     * @param {Object} [options={}] - Options for creating the network; `onSuccess(network)` runs after it saves.
+     */
+    createNewNetwork(options = {}) {
+        const network = this.store.createRecord('network');
+        const currency = this.currentUser.getWhoisProperty('currency.code');
+
+        if (currency) {
+            network.setProperties({ currency });
+        }
+
+        this.modalsManager.show('modals/create-network', {
+            title: this.intl.t('storefront.networks.index.create-new-network'),
+            acceptButtonIcon: 'check',
+            acceptButtonIconPrefix: 'fas',
+            declineButtonIcon: 'times',
+            declineButtonIconPrefix: 'fas',
+            network,
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await network.save();
+                    this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
+                    if (typeof options?.onSuccess === 'function') {
+                        options.onSuccess(network);
+                    }
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+            decline: (modal) => {
+                network.destroyRecord();
+                modal.done();
+            },
+            ...options,
+        });
+    }
+
+    /**
      * Plays an alert sound.
      */
     playAlert() {
@@ -266,5 +468,150 @@ export default class StorefrontService extends Service.extend(Evented) {
         } catch (error) {
             // do nothing with error
         }
+    }
+
+    /**
+     * Opens the New customer modal and saves through Storefront's own customers endpoint
+     * (Fleet-Ops has no customer create route). The saved customer is handed to `onSaved`.
+     *
+     * @param {Object} [options]
+     * @param {Function} [options.onSaved] called with the new customer record
+     */
+    createCustomer({ onSaved } = {}) {
+        const draft = new CustomerDraft();
+
+        this.modalsManager.show('modals/new-customer', {
+            title: this.intl.t('storefront.customers.create.title'),
+            acceptButtonText: this.intl.t('storefront.customers.create.save'),
+            acceptButtonIcon: 'check',
+            keepOpen: true,
+            draft,
+            confirm: async (modal) => {
+                if (!draft.name.trim()) {
+                    this.notifications.warning(this.intl.t('storefront.customers.panel.name-required'));
+                    return;
+                }
+
+                modal.startLoading();
+
+                try {
+                    const response = await this.fetch.post('customers', { customer: draft.payload }, { namespace: 'storefront/int/v1' });
+                    const customer = this.store.push(this.store.normalize('customer', response.customer));
+
+                    this.notifications.success(this.intl.t('storefront.customers.create.saved', { name: customer.name }));
+                    modal.done();
+                    onSaved?.(customer);
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    /**
+     * Opens the address form for a customer and saves the address as a Fleet-Ops place they own,
+     * so it is one of their saved places from then on. `onSaved` receives the new place.
+     */
+    addCustomerAddress(customer, { onSaved } = {}) {
+        if (!customer?.id) {
+            return;
+        }
+
+        const place = this.store.createRecord('place', {});
+        const discard = () => {
+            if (place.isNew && !place.isDestroyed) {
+                place.unloadRecord();
+            }
+        };
+
+        this.modalsManager.show('modals/store-location-form', {
+            title: this.intl.t('storefront.customers.addresses.new-title', { name: customer.name }),
+            acceptButtonText: this.intl.t('storefront.customers.addresses.save'),
+            acceptButtonIcon: 'check',
+            keepOpen: true,
+            place,
+            autocomplete: (selected = {}) => {
+                const name = place.name;
+                place.setProperties({ ...selected, name: name || selected.name });
+
+                const coordinatesInput = this.modalsManager.getOption('coordinatesInputComponent');
+                const coordinates = selected.location?.coordinates;
+                if (coordinatesInput && Array.isArray(coordinates)) {
+                    const [longitude, latitude] = coordinates;
+                    coordinatesInput.updateCoordinates(latitude, longitude);
+                }
+            },
+            setCoordinatesInput: (coordinatesInput) => {
+                this.modalsManager.setOption('coordinatesInputComponent', coordinatesInput);
+            },
+            updatePlaceCoordinates: ({ latitude, longitude }) => {
+                place.setProperties({ location: new Point(longitude, latitude) });
+            },
+            decline: (modal) => {
+                discard();
+                modal.done();
+            },
+            confirm: async (modal) => {
+                if (!String(place.street1 ?? '').trim()) {
+                    this.notifications.warning(this.intl.t('storefront.customers.addresses.street-required'));
+                    return;
+                }
+
+                modal.startLoading();
+
+                try {
+                    const attributes = place.serialize();
+                    const response = await this.fetch.post('places', {
+                        place: { ...attributes, owner_uuid: customer.id, owner_type: 'fleet-ops:contact' },
+                    });
+                    const saved = this.store.push(this.store.normalize('place', response?.place ?? response));
+
+                    discard();
+                    customer.places?.pushObject?.(saved);
+                    this.notifications.success(this.intl.t('storefront.customers.addresses.saved', { name: customer.name }));
+                    await onSaved?.(saved);
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
+    }
+
+    /**
+     * Issue a store or network a new storefront key after confirming that apps using the
+     * old key stop working at once. The new key is pushed into the record without making
+     * it dirty, so every place that shows the key updates and no save is pending.
+     */
+    rotateKey(record) {
+        const type = record?.constructor?.modelName;
+
+        if (!record?.id || !['store', 'network'].includes(type)) {
+            return;
+        }
+
+        this.modalsManager.confirm({
+            title: this.intl.t('storefront.settings.rotate-key.title', { type }),
+            body: this.intl.t('storefront.settings.rotate-key.body', { type, name: record.name }),
+            acceptButtonText: this.intl.t('storefront.settings.rotate-key.confirm'),
+            acceptButtonType: 'danger',
+            acceptButtonIcon: 'rotate',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    const { key } = await this.fetch.post(`${type}s/${record.id}/rotate-key`, {}, { namespace: 'storefront/int/v1' });
+
+                    this.store.push({ data: { id: record.id, type, attributes: { key } } });
+                    this.notifications.success(this.intl.t('storefront.settings.rotate-key.done', { type }));
+                    modal.done();
+                } catch (error) {
+                    modal.stopLoading();
+                    this.notifications.serverError(error);
+                }
+            },
+        });
     }
 }

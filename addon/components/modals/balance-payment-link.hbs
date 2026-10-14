@@ -1,0 +1,41 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="modal-body-container">
+        <div class="sfpl" data-test-balance-payment-link>
+            <div class="sfpl__due">
+                <span class="sfpl__due-icon"><FaIcon @icon="credit-card" /></span>
+                <span class="sfpl__due-text">
+                    <span class="sfpl__due-label">{{t "storefront.order.payment-link.due-label"}}</span>
+                    <span class="sfpl__due-amount">{{this.amount}}</span>
+                </span>
+                <span class="sfpl__due-status">
+                    <Badge @status="warning" @size="xs" @text={{t "storefront.order.payment-link.waiting"}} />
+                    {{#if this.gatewayLabel}}<span class="sfpl__gateway">{{t "storefront.order.payment-link.via" gateway=this.gatewayLabel}}</span>{{/if}}
+                </span>
+            </div>
+
+            <div class="sfpl__field">
+                <div class="sfpl__label">{{t "storefront.order.payment-link.link-label" name=this.name}}</div>
+                <div class="sfpl__link">
+                    <FaIcon @icon="link" @size="sm" class="sfpl__link-icon" />
+                    <ClickToCopy @value={{this.link}} class="sfpl__url">{{this.link}}</ClickToCopy>
+                    <a class="btn btn-default btn-xs" href={{this.link}} target="_blank" rel="noopener noreferrer"><FaIcon @icon="arrow-up-right-from-square" @size="xs" class="mr-1" />{{t "storefront.order.payment-link.open"}}</a>
+                </div>
+            </div>
+
+            <ol class="sfpl__steps">
+                <li class="sfpl__step">
+                    <span class="sfpl__step-icon"><FaIcon @icon="paper-plane" @size="xs" /></span>
+                    <span><strong>{{t "storefront.order.payment-link.step-send" name=this.name}}</strong><span class="sfpl__muted">{{t "storefront.order.payment-link.step-send-help" name=this.name}}</span></span>
+                </li>
+                <li class="sfpl__step">
+                    <span class="sfpl__step-icon"><FaIcon @icon="mobile-screen" @size="xs" /></span>
+                    <span><strong>{{t "storefront.order.payment-link.step-pay" name=this.name}}</strong><span class="sfpl__muted">{{t "storefront.order.payment-link.step-pay-help" name=this.name}}</span></span>
+                </li>
+                <li class="sfpl__step">
+                    <span class="sfpl__step-icon is-done"><FaIcon @icon="check" @size="xs" /></span>
+                    <span><strong>{{t "storefront.order.payment-link.step-paid"}}</strong><span class="sfpl__muted">{{if (eq this.gateway "stripe") (t "storefront.order.payment-link.how-stripe") (t "storefront.order.payment-link.how-qpay")}}</span></span>
+                </li>
+            </ol>
+        </div>
+    </div>
+</Modal::Default>

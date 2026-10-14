@@ -7,6 +7,7 @@ use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Http\Resources\Category as StorefrontCategory;
 use Fleetbase\Storefront\Http\Resources\Product as ProductResource;
 use Fleetbase\Storefront\Models\Product;
+use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,9 +67,7 @@ class CategoryController extends Controller
             if ($request->filled('store')) {
                 $store = Store::where([
                     'public_id'    => $request->input('store'),
-                ])->whereHas('networks', function ($q) {
-                    $q->where('network_uuid', session('storefront_network'));
-                })->first();
+                ])->activeInNetwork(session('storefront_network'))->first();
 
                 if ($store) {
                     $results = Category::queryWithRequestCached($request, function (&$query) use ($store, $request) {
@@ -132,6 +131,7 @@ class CategoryController extends Controller
                     $categoryIds = $results->pluck('uuid');
                     $stores      = Store::whereHas('networks', function ($q) use ($categoryIds) {
                         $q->where('network_uuid', session('storefront_network'));
+                        $q->where('network_stores.status', NetworkStore::STATUS_ACTIVE);
                         $q->whereIn('category_uuid', $categoryIds);
                     })->with(['networks' => function ($q) use ($categoryIds) {
                         $q->where('network_uuid', session('storefront_network'));

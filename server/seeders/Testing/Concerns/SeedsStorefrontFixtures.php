@@ -8,6 +8,7 @@ use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Payload;
 use Fleetbase\FleetOps\Models\Place;
 use Fleetbase\FleetOps\Models\ServiceQuote;
+use Fleetbase\FleetOps\Models\ServiceRate;
 use Fleetbase\FleetOps\Support\Utils as FleetOpsUtils;
 use Fleetbase\LaravelMysqlSpatial\Types\Point;
 use Fleetbase\Models\Category;
@@ -15,11 +16,13 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\Transaction;
 use Fleetbase\Models\TransactionItem;
 use Fleetbase\Storefront\Models\AddonCategory;
+use Fleetbase\Storefront\Models\Campaign;
 use Fleetbase\Storefront\Models\Cart;
 use Fleetbase\Storefront\Models\Catalog;
 use Fleetbase\Storefront\Models\CatalogCategory;
 use Fleetbase\Storefront\Models\CatalogProduct;
 use Fleetbase\Storefront\Models\Checkout;
+use Fleetbase\Storefront\Models\CustomerSegment;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NetworkStore;
@@ -29,12 +32,15 @@ use Fleetbase\Storefront\Models\ProductAddonCategory;
 use Fleetbase\Storefront\Models\ProductStatus;
 use Fleetbase\Storefront\Models\ProductVariant;
 use Fleetbase\Storefront\Models\ProductVariantOption;
+use Fleetbase\Storefront\Models\Promotion;
+use Fleetbase\Storefront\Models\PromotionCode;
 use Fleetbase\Storefront\Models\Review;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreHour;
 use Fleetbase\Storefront\Models\StoreLocation;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -54,7 +60,7 @@ use Illuminate\Support\Str;
  *     'description' => '...',
  *     'email'       => '...', 'phone' => '...', 'website' => '...',
  *     'tags'        => ['groceries'],
- *     'currency'    => 'USD', 'timezone' => 'Asia/Singapore', 'pod_method' => 'scan',
+ *     'currency'    => 'SGD', 'timezone' => 'Asia/Singapore', 'pod_method' => 'scan',
  *     'options'     => ['auto_accept_orders' => false, ...],
  *     'gateway'     => 'stripe' | null,
  *     'location'    => ['name' => ..., 'street1' => ..., 'city' => ..., 'country' => 'SG', 'postal_code' => ..., 'lat' => 1.28, 'lng' => 103.85],
@@ -62,6 +68,7 @@ use Illuminate\Support\Str;
  *     'categories'  => ['produce' => ['name' => 'Fresh Produce', 'description' => '...']],
  *     'addon_categories' => ['gift' => ['name' => ..., 'description' => ..., 'max_selectable' => 2, 'is_required' => false, 'addons' => [['Gift Wrap', 'desc', 350]]]],
  *     'products'    => ['orchard-box' => ['name' => ..., 'description' => ..., 'price' => 2850, 'category' => 'produce', 'tags' => [], 'recommended' => true,
+ *                                          'is_service' => false, 'is_bookable' => false, 'meta' => ['duration' => 60],  // services: duration in minutes
  *                                          'variants' => [['name' => 'Box Size', 'required' => true, 'multiselect' => false, 'options' => [['Small', 0], ['Family', 1200]]]],
  *                                          'addon_categories' => ['gift']]],
  *     'catalog'     => ['name' => ..., 'description' => ..., 'categories' => ['Fresh Picks' => ['orchard-box', 'market-veg']]],
@@ -73,6 +80,24 @@ trait SeedsStorefrontFixtures
 
     /** @var array<string, Place> dropoff place per seeded customer uuid */
     protected array $customerPlaces = [];
+
+    /**
+     * uuid, public id and key of the stores, networks, products and vehicles this seeder
+     * created before, by class and seed id, so re-seeding keeps them. Apps are built against
+     * a storefront key, so a new key would need an app rebuild, and carts left open in an
+     * app point at products by id.
+     *
+     * @var array<string, array<string, array{uuid: string, public_id: ?string, key: ?string}>>
+     */
+    protected array $seededIdentities = [];
+
+    /**
+     * Config (Stripe keys) of the gateways this seeder created before, by seed id, so real
+     * keys set on a seeded gateway survive re-seeding.
+     *
+     * @var array<string, array>
+     */
+    protected array $seededGatewayConfigs = [];
 
     /*
     |--------------------------------------------------------------------------
@@ -86,6 +111,8 @@ trait SeedsStorefrontFixtures
      */
     protected function purgeStorefrontFixtures(): void
     {
+        $this->rememberSeededIdentities();
+
         $storeUuids           = $this->seededUuids(Store::class);
         $networkUuids         = $this->seededUuids(Network::class);
         $productUuids         = $this->seededUuids(Product::class);
@@ -97,9 +124,17 @@ trait SeedsStorefrontFixtures
         $orderUuids           = $this->seededUuids(Order::class);
         $transactionUuids     = $this->seededUuids(Transaction::class);
         $customerUuids        = $this->seededUuids(Contact::class);
+        $promotionUuids       = $this->seededUuids(Promotion::class);
         $storeLocationUuids   = Schema::connection($this->storefrontConnection())->hasTable('store_locations')
             ? DB::connection($this->storefrontConnection())->table('store_locations')->whereIn('store_uuid', $storeUuids)->pluck('uuid')->all()
             : [];
+
+        // Marketing: campaigns point at segments and promotions; codes and redemptions at promotions
+        $this->purgeModel(Campaign::class);
+        $this->deleteFrom($this->storefrontConnection(), 'promotion_redemptions', fn ($query) => $query->whereIn('promotion_uuid', $promotionUuids));
+        $this->deleteFrom($this->storefrontConnection(), 'promotion_codes', fn ($query) => $query->whereIn('promotion_uuid', $promotionUuids)->orWhereIn('meta->seed', $this->seedNames()));
+        $this->purgeModel(Promotion::class);
+        $this->purgeModel(CustomerSegment::class);
 
         // Orders, payments and logistics records
         $this->purgeSeededLedgerJournals($orderUuids);
@@ -133,8 +168,9 @@ trait SeedsStorefrontFixtures
         $this->purgeModel(AddonCategory::class);
         $this->purgeModel(Category::class);
 
-        // Payments
+        // Payments and delivery pricing
         $this->purgeModel(Gateway::class);
+        $this->purgeModel(ServiceRate::class);
         $this->deleteFrom($this->storefrontConnection(), 'payment_methods', fn ($query) => $query->whereIn('owner_uuid', $customerUuids));
 
         // Stores, locations and networks
@@ -145,6 +181,66 @@ trait SeedsStorefrontFixtures
         $this->purgeModel(Network::class);
 
         $this->customerPlaces = [];
+    }
+
+    /**
+     * Record the identity of every store and network this seeder created, before purging.
+     */
+    protected function rememberSeededIdentities(): void
+    {
+        $this->seededIdentities = [];
+
+        // Products and vehicles too: open carts point at products, and food trucks at vehicles.
+        // Customers too, with the app account they signed in with, so a signed-in app keeps its customer.
+        foreach ([Store::class => 'meta', Network::class => 'options', Product::class => 'meta', \Fleetbase\FleetOps\Models\Vehicle::class => 'meta', Contact::class => 'meta'] as $modelClass => $column) {
+            foreach ($this->seededQuery($modelClass)->get() as $model) {
+                $tag    = (array) $model->{$column};
+                $seedId = $tag['seed_id'] ?? null;
+                if (!$seedId || ($tag['seed'] ?? null) !== $this->seedName()) {
+                    continue;
+                }
+
+                $this->seededIdentities[$modelClass][$seedId] = [
+                    'uuid'      => $model->uuid,
+                    'public_id' => $model->public_id,
+                    'key'       => $model->key,
+                    'user_uuid' => $modelClass === Contact::class ? $model->user_uuid : null,
+                ];
+            }
+        }
+
+        $this->seededGatewayConfigs = [];
+        foreach ($this->seededQuery(Gateway::class)->get() as $gateway) {
+            $tag = (array) $gateway->meta;
+            if (($tag['seed'] ?? null) === $this->seedName() && !empty($tag['seed_id'])) {
+                $this->seededGatewayConfigs[$tag['seed_id']] = (array) $gateway->config;
+            }
+        }
+    }
+
+    /**
+     * Create a store or network, keeping the uuid, public id and key it had when this
+     * seeder last created it. The models generate a new key on every create, so the
+     * remembered key and public id are written back straight after the insert.
+     */
+    protected function createWithSeededIdentity(string $modelClass, string $seedId, array $attributes): Model
+    {
+        $previous = $this->seededIdentities[$modelClass][$seedId] ?? null;
+        if ($previous) {
+            $attributes['uuid'] = $previous['uuid'];
+        }
+
+        $model = $this->createRecord($modelClass, $attributes);
+
+        if ($previous) {
+            $identity = array_filter(['public_id' => $previous['public_id'], 'key' => $previous['key'] ?? null, 'user_uuid' => $previous['user_uuid'] ?? null]);
+            if ($identity) {
+                $model->getConnection()->table($model->getTable())->where('uuid', $model->uuid)->update($identity);
+                $model->forceFill($identity)->syncOriginal();
+            }
+        }
+
+        return $model;
     }
 
     protected function purgeSeededLedgerJournals(array $orderUuids): void
@@ -177,14 +273,14 @@ trait SeedsStorefrontFixtures
      * a location with opening hours, product categories, products with variants and
      * addons, a published catalog and (optionally) a Stripe gateway.
      *
-     * @return array{store: Store, location: StoreLocation|null, place: Place|null, products: array<string, Product>, gateway: Gateway|null}
+     * @return array{store: Store, location: StoreLocation|null, place: Place|null, products: array<string, Product>, categories: array<string, Category>, gateway: Gateway|null}
      */
     protected function seedStore(Company $company, array $definition): array
     {
         $storeKey = $definition['key'];
         $seedId   = 'store:' . $storeKey;
 
-        $store = $this->createRecord(Store::class, [
+        $store = $this->createWithSeededIdentity(Store::class, $seedId, [
             'company_uuid'      => $company->uuid,
             'created_by_uuid'   => session('user'),
             'order_config_uuid' => Storefront::getOrderConfig($company)->uuid,
@@ -195,7 +291,7 @@ trait SeedsStorefrontFixtures
             'phone'             => $definition['phone'] ?? null,
             'website'           => $definition['website'] ?? null,
             'tags'              => $definition['tags'] ?? [],
-            'currency'          => $definition['currency'] ?? 'USD',
+            'currency'          => $definition['currency'] ?? $this->seedCurrency(),
             'timezone'          => $definition['timezone'] ?? 'Asia/Singapore',
             'pod_method'        => $definition['pod_method'] ?? 'scan',
             'options'           => array_merge([
@@ -248,11 +344,12 @@ trait SeedsStorefrontFixtures
         }
 
         return [
-            'store'    => $store,
-            'location' => $location,
-            'place'    => $place,
-            'products' => $products,
-            'gateway'  => $gateway,
+            'store'      => $store,
+            'location'   => $location,
+            'place'      => $place,
+            'products'   => $products,
+            'categories' => $categories,
+            'gateway'    => $gateway,
         ];
     }
 
@@ -297,7 +394,8 @@ trait SeedsStorefrontFixtures
 
             $this->createRecord(StoreHour::class, [
                 'store_location_uuid' => $storeLocation->uuid,
-                'day_of_week'         => $day,
+                // Capitalised like the console writes them ("Monday"); clients match on it.
+                'day_of_week'         => ucfirst($day),
                 'start'               => $start,
                 'end'                 => $end,
             ]);
@@ -314,6 +412,62 @@ trait SeedsStorefrontFixtures
      * are stored so the gateway is selectable and the "missing secret" checkout path
      * can be exercised.
      */
+    /**
+     * Stripe keys for a seeded gateway: SEED_STRIPE_* when set, else the real keys already on
+     * this gateway from an earlier run (set in the console), else placeholders.
+     */
+    protected function stripeGatewayConfig(string $seedId): array
+    {
+        $placeholder = ['secret_key' => 'sk_test_storefront_seed_placeholder', 'publishable_key' => 'pk_test_storefront_seed_placeholder'];
+        if (env('SEED_STRIPE_SECRET_KEY')) {
+            return ['secret_key' => env('SEED_STRIPE_SECRET_KEY'), 'publishable_key' => env('SEED_STRIPE_PUBLISHABLE_KEY') ?: $placeholder['publishable_key']];
+        }
+
+        $previous = $this->seededGatewayConfigs[$seedId] ?? [];
+        $secret   = $previous['secret_key'] ?? null;
+        if (is_string($secret) && $secret !== '' && $secret !== $placeholder['secret_key']) {
+            return $previous;
+        }
+
+        return $placeholder;
+    }
+
+    /**
+     * The test stores and network are in Singapore, so everything they sell, quote and
+     * charge is in Singapore dollars. Rates only quote carts in their own currency.
+     */
+    protected function seedCurrency(): string
+    {
+        return 'SGD';
+    }
+
+    /**
+     * A storefront delivery rate for the company, without a service area so every address
+     * gets a quote: a base fee plus a fee per kilometre, in the seeded stores' currency.
+     */
+    protected function createDeliveryServiceRate(Company $company, string $seedId, ?string $currency = null): ServiceRate
+    {
+        $currency ??= $this->seedCurrency();
+        $orderConfig = Storefront::getOrderConfig($company);
+
+        return $this->createRecord(ServiceRate::class, [
+            '_key'                    => $this->fixtureKey($seedId),
+            'company_uuid'            => $company->uuid,
+            'created_by_uuid'         => session('user'),
+            'order_config_uuid'       => $orderConfig?->uuid,
+            'service_name'            => 'Storefront Delivery',
+            'service_type'            => data_get($orderConfig, 'key', 'storefront'),
+            'rate_calculation_method' => 'per_meter',
+            'base_fee'                => 299,
+            'per_meter_flat_rate_fee' => 60,
+            'per_meter_unit'          => 'km',
+            'currency'                => $currency,
+            'duration_terms'          => 'Delivered within the hour',
+            'estimated_days'          => 0,
+            'has_cod_fee'             => false,
+        ]);
+    }
+
     protected function createStripeGateway(Company $company, Store|Network $owner, string $ownerType, string $seedId): Gateway
     {
         return $this->createRecord(Gateway::class, [
@@ -326,10 +480,7 @@ trait SeedsStorefrontFixtures
             'code'            => 'stripe',
             'type'            => 'stripe',
             'sandbox'         => true,
-            'config'          => [
-                'secret_key'      => env('SEED_STRIPE_SECRET_KEY') ?: 'sk_test_storefront_seed_placeholder',
-                'publishable_key' => env('SEED_STRIPE_PUBLISHABLE_KEY') ?: 'pk_test_storefront_seed_placeholder',
-            ],
+            'config'          => $this->stripeGatewayConfig($seedId),
             'return_url'      => null,
             'callback_url'    => null,
             'meta'            => $this->meta($seedId),
@@ -361,7 +512,8 @@ trait SeedsStorefrontFixtures
     {
         $salePrice = (int) ($product['sale_price'] ?? 0);
 
-        return $this->createRecord(Product::class, [
+        // Same id as last time, so carts left open in an app still find the product.
+        return $this->createWithSeededIdentity(Product::class, 'product:' . $storeKey . ':' . $productKey, [
             'company_uuid'    => $company->uuid,
             'created_by_uuid' => session('user'),
             'store_uuid'      => $store->uuid,
@@ -369,7 +521,7 @@ trait SeedsStorefrontFixtures
             'name'            => $product['name'],
             'description'     => $product['description'] ?? null,
             'tags'            => $product['tags'] ?? [],
-            'meta'            => $this->meta('product:' . $storeKey . ':' . $productKey),
+            'meta'            => $this->meta('product:' . $storeKey . ':' . $productKey, $product['meta'] ?? []),
             'sku'             => $product['sku'] ?? 'SF-' . Str::upper(Str::slug($storeKey . '-' . $productKey)),
             'price'           => (int) $product['price'],
             'currency'        => $product['currency'] ?? $store->currency,
@@ -495,13 +647,185 @@ trait SeedsStorefrontFixtures
 
     /*
     |--------------------------------------------------------------------------
+    | Marketing
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Seed promotions (with their codes), customer segments and campaigns for a store or
+     * network. Product and category references are "<store key>:<product or category key>"
+     * against the seeded store bundles; dates are relative to now:
+     *
+     * [
+     *     'promotions' => ['welcome' => ['name' => ..., 'type' => 'percentage', 'value' => 15, 'trigger' => 'code', 'code' => 'WELCOME15',
+     *                                     'starts_in_days' => -30, 'ends_in_days' => 30, 'applies_to' => ['products' => ['store:product']], ...]],
+     *     'segments'   => ['loyal' => ['name' => ..., 'description' => ..., 'rules' => ['min_orders' => 3]]],
+     *     'campaigns'  => ['launch' => ['name' => ..., 'title' => ..., 'body' => ..., 'status' => 'sent', 'segment' => 'loyal', 'promotion' => 'welcome',
+     *                                    'action' => ['type' => 'promotion'], 'sent_days_ago' => 2]],
+     * ]
+     *
+     * @param array<int, array{store: Store, products: array<string, Product>, categories: array<string, Category>}> $bundles
+     *
+     * @return array{promotions: array<string, Promotion>, segments: array<string, CustomerSegment>, campaigns: array<string, Campaign>}
+     */
+    protected function seedMarketing(Company $company, Store|Network $owner, string $ownerKey, array $definition, array $bundles): array
+    {
+        $ownerType = $owner instanceof Network ? 'storefront:network' : 'storefront:store';
+        $refs      = $this->marketingReferences($bundles);
+
+        $promotions = [];
+        foreach ($definition['promotions'] ?? [] as $key => $promotion) {
+            $promotions[$key] = $this->createPromotion($company, $owner, $ownerType, $ownerKey, $key, $promotion, $refs);
+        }
+
+        $segments = [];
+        foreach ($definition['segments'] ?? [] as $key => $segment) {
+            $segments[$key] = $this->createRecord(CustomerSegment::class, [
+                'company_uuid'    => $company->uuid,
+                'created_by_uuid' => session('user'),
+                'owner_uuid'      => $owner->uuid,
+                'owner_type'      => $ownerType,
+                'name'            => $segment['name'],
+                'description'     => $segment['description'] ?? null,
+                'rules'           => $segment['rules'] ?? [],
+                'meta'            => $this->meta('segment:' . $ownerKey . ':' . $key),
+            ]);
+        }
+
+        $campaigns = [];
+        foreach ($definition['campaigns'] ?? [] as $key => $campaign) {
+            $campaigns[$key] = $this->createCampaign($company, $owner, $ownerType, $ownerKey, $key, $campaign, $promotions, $segments, $refs);
+        }
+
+        return ['promotions' => $promotions, 'segments' => $segments, 'campaigns' => $campaigns];
+    }
+
+    /**
+     * Seeded stores, products and categories by reference ("<store key>" and "<store key>:<key>").
+     *
+     * @return array{stores: array<string, Store>, products: array<string, Product>, categories: array<string, Category>}
+     */
+    protected function marketingReferences(array $bundles): array
+    {
+        $refs = ['stores' => [], 'products' => [], 'categories' => []];
+        foreach ($bundles as $storeKey => $bundle) {
+            $refs['stores'][$storeKey] = $bundle['store'];
+            foreach ($bundle['products'] ?? [] as $key => $product) {
+                $refs['products'][$storeKey . ':' . $key] = $product;
+            }
+            foreach ($bundle['categories'] ?? [] as $key => $category) {
+                $refs['categories'][$storeKey . ':' . $key] = $category;
+            }
+        }
+
+        return $refs;
+    }
+
+    protected function createPromotion(Company $company, Store|Network $owner, string $ownerType, string $ownerKey, string $key, array $promotion, array $refs): Promotion
+    {
+        $uuids = fn (string $kind, array $keys) => array_values(array_filter(array_map(fn ($ref) => ($refs[$kind][$ref] ?? null)?->uuid, $keys)));
+
+        $appliesTo = [];
+        foreach (['products' => 'products', 'categories' => 'categories', 'stores' => 'stores', 'exclude_products' => 'products', 'exclude_categories' => 'categories'] as $field => $kind) {
+            if (!empty($promotion['applies_to'][$field])) {
+                $appliesTo[$field] = $uuids($kind, (array) $promotion['applies_to'][$field]);
+            }
+        }
+
+        $record = $this->createRecord(Promotion::class, [
+            'company_uuid'             => $company->uuid,
+            'created_by_uuid'          => session('user'),
+            'owner_uuid'               => $owner->uuid,
+            'owner_type'               => $ownerType,
+            'name'                     => $promotion['name'],
+            'description'              => $promotion['description'] ?? null,
+            'status'                   => $promotion['status'] ?? Promotion::STATUS_ACTIVE,
+            'trigger'                  => isset($promotion['code']) ? Promotion::TRIGGER_CODE : Promotion::TRIGGER_AUTOMATIC,
+            'type'                     => $promotion['type'],
+            'value'                    => $promotion['value'] ?? null,
+            'max_discount_amount'      => $promotion['max_discount_amount'] ?? null,
+            'currency'                 => $promotion['currency'] ?? $owner->currency ?? $this->seedCurrency(),
+            'min_subtotal'             => $promotion['min_subtotal'] ?? null,
+            'min_items'                => $promotion['min_items'] ?? null,
+            'applies_to'               => $appliesTo ?: null,
+            'bogo_config'              => $promotion['bogo_config'] ?? null,
+            'first_order_only'         => $promotion['first_order_only'] ?? false,
+            'usage_limit'              => $promotion['usage_limit'] ?? null,
+            'usage_limit_per_customer' => $promotion['usage_limit_per_customer'] ?? null,
+            'budget_amount'            => $promotion['budget_amount'] ?? null,
+            'stackable'                => $promotion['stackable'] ?? false,
+            'priority'                 => $promotion['priority'] ?? 0,
+            'is_public'                => $promotion['is_public'] ?? true,
+            'starts_at'                => isset($promotion['starts_in_days']) ? now()->addDays($promotion['starts_in_days'])->startOfDay() : null,
+            'ends_at'                  => isset($promotion['ends_in_days']) ? now()->addDays($promotion['ends_in_days'])->endOfDay() : null,
+            'schedule'                 => $promotion['schedule'] ?? null,
+            'timezone'                 => $promotion['timezone'] ?? $owner->timezone ?? null,
+            'meta'                     => $this->meta('promotion:' . $ownerKey . ':' . $key),
+        ]);
+
+        if (isset($promotion['code'])) {
+            $this->createRecord(PromotionCode::class, [
+                'company_uuid'   => $company->uuid,
+                'promotion_uuid' => $record->uuid,
+                'code'           => $promotion['code'],
+                'status'         => 'active',
+                'meta'           => $this->meta('promotion-code:' . $ownerKey . ':' . $key),
+            ]);
+        }
+
+        return $record;
+    }
+
+    /**
+     * A campaign in any state. Sent campaigns get `sent_at` and stats; scheduled ones are
+     * due `send_in_days` from now, far enough out that the scheduler leaves them alone.
+     */
+    protected function createCampaign(Company $company, Store|Network $owner, string $ownerType, string $ownerKey, string $key, array $campaign, array $promotions, array $segments, array $refs): Campaign
+    {
+        $status    = $campaign['status'] ?? Campaign::STATUS_DRAFT;
+        $promotion = isset($campaign['promotion']) ? ($promotions[$campaign['promotion']] ?? null) : null;
+        $action    = $campaign['action'] ?? null;
+        if ($action) {
+            $target = match ($action['type'] ?? null) {
+                'promotion' => $promotion,
+                'store'     => $refs['stores'][$action['ref'] ?? ''] ?? null,
+                'product'   => $refs['products'][$action['ref'] ?? ''] ?? null,
+                default     => null,
+            };
+            $action = array_filter(['type' => $action['type'], 'id' => $target?->public_id, 'url' => $action['url'] ?? null]);
+        }
+        $sentAt = $status === Campaign::STATUS_SENT ? now()->subDays($campaign['sent_days_ago'] ?? 1)->setTime(10, 0) : null;
+
+        return $this->createRecord(Campaign::class, [
+            'company_uuid'    => $company->uuid,
+            'created_by_uuid' => session('user'),
+            'owner_uuid'      => $owner->uuid,
+            'owner_type'      => $ownerType,
+            'segment_uuid'    => isset($campaign['segment']) ? ($segments[$campaign['segment']] ?? null)?->uuid : null,
+            'promotion_uuid'  => $promotion?->uuid,
+            'name'            => $campaign['name'],
+            'status'          => $status,
+            'channels'        => $campaign['channels'] ?? [Campaign::CHANNEL_PUSH, Campaign::CHANNEL_INBOX],
+            'title'           => $campaign['title'],
+            'body'            => $campaign['body'],
+            'action'          => $action ?: null,
+            'send_at'         => $status === Campaign::STATUS_SCHEDULED ? now()->addDays($campaign['send_in_days'] ?? 7)->setTime(10, 0) : $sentAt,
+            'started_at'      => $sentAt,
+            'sent_at'         => $sentAt,
+            'stats'           => $status === Campaign::STATUS_SENT ? ($campaign['stats'] ?? ['targeted' => 0, 'batches' => 0]) : null,
+            'meta'            => $this->meta('campaign:' . $ownerKey . ':' . $key),
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Networks
     |--------------------------------------------------------------------------
     */
 
     protected function createNetwork(Company $company, array $definition): Network
     {
-        $network = $this->createRecord(Network::class, [
+        $network = $this->createWithSeededIdentity(Network::class, 'network:' . $definition['key'], [
             'company_uuid'      => $company->uuid,
             'created_by_uuid'   => session('user'),
             'order_config_uuid' => Storefront::getOrderConfig($company)->uuid,
@@ -512,7 +836,7 @@ trait SeedsStorefrontFixtures
             'phone'             => $definition['phone'] ?? null,
             'website'           => $definition['website'] ?? null,
             'tags'              => $definition['tags'] ?? [],
-            'currency'          => $definition['currency'] ?? 'USD',
+            'currency'          => $definition['currency'] ?? $this->seedCurrency(),
             'timezone'          => $definition['timezone'] ?? 'Asia/Singapore',
             'pod_method'        => $definition['pod_method'] ?? 'scan',
             'options'           => array_merge([
@@ -561,14 +885,27 @@ trait SeedsStorefrontFixtures
      */
     protected function seedCustomers(Company $company, array $fixtures): array
     {
-        return array_values(array_map(fn (array $fixture) => $this->createCustomer($company, ...$fixture), $fixtures));
+        return array_values(array_map(fn (array $fixture) => $this->createCustomer($company, ...$this->customerIdentity($fixture)), $fixtures));
+    }
+
+    /**
+     * The [name, email, phone] a seeder gives one of the shared customer fixtures.
+     *
+     * Fleet-Ops allows one customer profile per account (matched by email or phone) in a
+     * company, and both seeders run in the same company, so a seeder sharing the fixtures
+     * must give its customers identities of their own.
+     */
+    protected function customerIdentity(array $fixture): array
+    {
+        return $fixture;
     }
 
     protected function createCustomer(Company $company, string $name, string $email, string $phone): Contact
     {
         $seedId = 'customer:' . Str::slug($name);
 
-        return $this->createRecord(Contact::class, [
+        // Same id (and app account) as last time, so a customer signed in to an app stays signed in.
+        return $this->createWithSeededIdentity(Contact::class, $seedId, [
             '_key'         => $this->fixtureKey($seedId),
             'company_uuid' => $company->uuid,
             'name'         => $name,

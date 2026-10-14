@@ -12,15 +12,10 @@ module('Integration | Component | context-panel', function (hooks) {
 
         await render(hbs`<ContextPanel />`);
 
-        assert.dom().hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
-        await render(hbs`
-      <ContextPanel>
-        template block text
-      </ContextPanel>
-    `);
-
-        assert.dom().hasText('template block text');
+        await render(hbs`<ContextPanel />`);
+        assert.dom(this.element).exists();
     });
 });

@@ -27,6 +27,8 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
             $router->group(['prefix' => 'checkouts'], function () use ($router) {
                 $router->match(['get', 'post'], 'capture-qpay', 'CheckoutController@captureQpayCallback');
             });
+            // storefront/v1/orders/balance-paid: QPay's callback for a balance invoice
+            $router->match(['get', 'post'], 'orders/balance-paid', 'OrderController@balancePaid');
         });
 
         /*
@@ -73,6 +75,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 // storefront/v1/products
                 $router->group(['prefix' => 'products'], function () use ($router) {
                     $router->get('/', 'ProductController@query');
+                    $router->get('{id}/slots', 'ProductController@slots');
                     $router->get('{id}', 'ProductController@find');
                     $router->post('/', 'ProductController@create');
                     $router->put('{id}', 'ProductController@update');
@@ -88,33 +91,29 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                 $router->group(['prefix' => 'reviews'], function () use ($router) {
                     $router->get('/', 'ReviewController@query');
                     $router->get('count', 'ReviewController@count');
+                    $router->get('eligibility', 'ReviewController@eligibility');
                     $router->get('{id}', 'ReviewController@find');
                     $router->post('/', 'ReviewController@create');
-                    $router->delete('{id}', 'ReviewController@find');
+                    $router->delete('{id}', 'ReviewController@delete');
                 });
 
                 // storefront/v1/orders
                 $router->group(['prefix' => 'orders'], function () use ($router) {
                     $router->put('picked-up', 'OrderController@completeOrderPickup');
                     $router->post('receipt', 'OrderController@getReceipt');
+                    $router->get('{id}/activity-flow', 'OrderController@getActivityFlow');
+                    $router->get('{id}/stores', 'OrderController@getStores');
+                    $router->get('{id}/chat', 'OrderChatController@show');
+                    $router->get('{id}/chat/messages', 'OrderChatController@messages');
+                    $router->post('{id}/chat/messages', 'OrderChatController@send');
+                    $router->post('{id}/chat/read', 'OrderChatController@read');
+                    $router->post('{id}/address-change-request', 'OrderChatController@requestAddressChange');
                 });
 
                 // storefront/v1/promotions
                 $router->group(['prefix' => 'promotions'], function () use ($router) {
                     $router->get('/', 'PromotionController@query');
                     $router->get('{id}', 'PromotionController@find');
-                });
-                
-                // storefront/v1/notifications
-                $router->group(['prefix' => 'notifications'], function () use ($router) {
-                    $router->get('/', 'NotificationController@query');
-                    $router->get('unread-count', 'NotificationController@unreadCount');
-                    $router->get('preferences', 'NotificationController@getPreferences');
-                    $router->put('preferences', 'NotificationController@updatePreferences');
-                    $router->put('read-all', 'NotificationController@markAllAsRead');
-                    $router->get('{id}', 'NotificationController@find');
-                    $router->put('{id}/read', 'NotificationController@markAsRead');
-                    $router->delete('{id}', 'NotificationController@delete');
                 });
 
                 // storefront/v1/notifications
@@ -135,22 +134,25 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                     $router->get('/', 'CustomerController@query');
                     $router->post('register-device', 'CustomerController@registerDevice');
                     $router->post('unregister-device', 'CustomerController@unregisterDevice');
+                    $router->post('socket-token', 'CustomerController@socketToken');
                     $router->get('places', 'CustomerController@places');
                     $router->get('orders', 'CustomerController@orders');
                     $router->get('{id}', 'CustomerController@find');
                     $router->post('/', 'CustomerController@create');
-                    $router->post('login-with-sms', 'CustomerController@loginWithPhone');
+                    // Routes that send a text message carry a much smaller per-device
+                    // bucket than the group throttle; see ThrottleSmsRequests.
+                    $router->post('login-with-sms', 'CustomerController@loginWithPhone')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('login-with-apple', 'CustomerController@loginWithApple');
                     $router->post('login-with-facebook', 'CustomerController@loginWithFacebook');
                     $router->post('login-with-google', 'CustomerController@loginWithGoogle');
                     $router->post('verify-code', 'CustomerController@verifyCode');
                     $router->post('login', 'CustomerController@login');
-                    $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode');
+                    $router->post('request-creation-code', 'CustomerController@requestCustomerCreationCode')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('stripe-ephemeral-key', 'CustomerController@getStripeEphemeralKey');
                     $router->post('stripe-setup-intent', 'CustomerController@getStripeSetupIntent');
-                    $router->post('account-closure', 'CustomerController@startAccountClosure');
+                    $router->post('account-closure', 'CustomerController@startAccountClosure')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('confirm-account-closure', 'CustomerController@confirmAccountClosure');
-                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification');
+                    $router->post('request-phone-verification', 'CustomerController@requestPhoneVerification')->middleware(Fleetbase\Storefront\Http\Middleware\ThrottleSmsRequests::class);
                     $router->post('verify-phone-number', 'CustomerController@verifyPhoneNumber');
                 });
 
@@ -201,12 +203,15 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             ['prefix' => 'analytics'],
                             function ($router) {
                                 $router->get('overview', 'AnalyticsController@overview');
+                                $router->get('attention', 'AnalyticsController@attention');
                                 $router->get('revenue-trend', 'AnalyticsController@revenueTrend');
                                 $router->get('orders-by-status', 'AnalyticsController@ordersByStatus');
                                 $router->get('top-products', 'AnalyticsController@topProducts');
                                 $router->get('customer-insights', 'AnalyticsController@customerInsights');
                             }
                         );
+                        $router->post('orders/console/quote', 'ConsoleOrderController@quote');
+                        $router->post('orders/console/place', 'ConsoleOrderController@place');
                         $router->fleetbaseRoutes(
                             'orders',
                             function ($router, $controller) {
@@ -216,21 +221,60 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                                 $router->post('completed', $controller('markOrderAsCompleted'));
                                 $router->patch('cancel', $controller('rejectOrder'));
                                 $router->post('unassign-driver', $controller('unassignDriver'));
+                                // Moves an order on a custom flow (e.g. a booking) to its next activity.
+                                $router->patch('update-activity/{id}', $controller('updateActivity'));
+                                $router->get('label/{id}', $controller('label'));
+                                $router->get('{id}/overview', $controller('overview'));
+                                $router->get('{id}/chat/{kind}', 'OrderChatController@show');
+                                $router->post('{id}/chat/{kind}/messages', 'OrderChatController@send');
+                                $router->post('{id}/chat/{kind}/read', 'OrderChatController@read');
+                                $router->delete('{id}/address-change-request', 'OrderChatController@dismissAddressChange');
+                                $router->get('{id}/flow', $controller('flow'));
+                                $router->get('{id}/activity', $controller('activity'));
+                                $router->patch('{id}/entities/{entityId}', $controller('updateEntity'));
+                                $router->post('{id}/edit/preview', $controller('previewEdit'));
+                                $router->patch('{id}/edit', $controller('edit'));
+                                $router->post('{id}/balance/link', $controller('issueBalanceLink'));
+                                $router->post('{id}/balance/check', $controller('checkBalancePayment'));
                             }
                         );
                         $router->fleetbaseRoutes(
                             'networks',
                             function ($router, $controller) {
+                                $router->post('{id}/rotate-key', $controller('rotateKey'));
                                 $router->delete('{id}/remove-category', $controller('deleteCategory'));
                                 $router->post('{id}/set-store-category', $controller('addStoreToCategory'));
                                 $router->post('{id}/remove-store-category', $controller('removeStoreCategory'));
                                 $router->post('{id}/add-stores', $controller('addStores'));
                                 $router->post('{id}/remove-stores', $controller('removeStores'));
+                                $router->post('{id}/suspend-stores', $controller('suspendStores'));
+                                $router->post('{id}/reinstate-stores', $controller('reinstateStores'));
+                                $router->post('{id}/approve-stores', $controller('approveStores'));
+                                $router->post('{id}/reject-stores', $controller('rejectStores'));
+                                $router->post('{id}/shareable-link', $controller('updateShareableLink'));
                                 $router->post('{id}/invite', $controller('sendInvites'));
+                                $router->get('{id}/invitations', $controller('invitations'));
+                                $router->post('{id}/invitations/{invitationId}/resend', $controller('resendInvitation'));
+                                $router->delete('{id}/invitations/{invitationId}', $controller('revokeInvitation'));
+                                $router->get('{id}/overview', $controller('overview'));
+                                $router->get('invitations/pending', $controller('pendingInvitationsForStore'));
+                                $router->get('join/{uri}', $controller('lookupInvitation'));
+                                $router->post('join/{uri}/accept', $controller('acceptInvitation'));
+                                $router->post('join/{uri}/decline', $controller('declineInvitation'));
                             }
                         );
-                        $router->fleetbaseRoutes('customers');
-                        $router->fleetbaseRoutes('stores');
+                        $router->fleetbaseRoutes(
+                            'customers',
+                            function ($router, $controller) {
+                                $router->get('{id}/insights', $controller('insights'));
+                            }
+                        );
+                        $router->fleetbaseRoutes(
+                            'stores',
+                            function ($router, $controller) {
+                                $router->post('{id}/rotate-key', $controller('rotateKey'));
+                            }
+                        );
                         $router->fleetbaseRoutes('store-hours');
                         $router->fleetbaseRoutes('store-locations');
                         $router->fleetbaseRoutes(
@@ -238,6 +282,10 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('process-imports', $controller('processImports'));
                                 $router->post('create-entities', $controller('createEntities'));
+                                $router->get('summary', $controller('summary'));
+                                $router->get('{id}/inventory', $controller('inventory'));
+                                $router->get('{id}/slots', $controller('slots'));
+                                $router->put('{id}/inventory', $controller('updateInventory'));
                             }
                         );
                         $router->fleetbaseRoutes('product-hours');
@@ -258,9 +306,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                             function ($router, $controller) {
                                 $router->post('{id}/generate-codes', $controller('generateCodes'));
                                 $router->post('{id}/announce', $controller('announce'));
+                                $router->get('hub', $controller('hub'));
                             }
                         );
                         $router->fleetbaseRoutes('promotion-codes');
+                        $router->fleetbaseRoutes('promotion-redemptions');
                         $router->fleetbaseRoutes(
                             'customer-segments',
                             function ($router, $controller) {
@@ -279,7 +329,12 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('reviews');
                         $router->fleetbaseRoutes('votes');
                         $router->fleetbaseRoutes('food-trucks');
-                        $router->fleetbaseRoutes('catalogs');
+                        $router->fleetbaseRoutes(
+                            'catalogs',
+                            function ($router, $controller) {
+                                $router->put('{id}/subjects', $controller('assignSubjects'));
+                            }
+                        );
                         $router->fleetbaseRoutes('catalog-categories');
                         $router->fleetbaseRoutes('catalog-hours');
                         $router->group(

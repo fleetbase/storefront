@@ -31,11 +31,14 @@ class CreateReviewRequest extends FleetbaseRequest
         // — as a 500, before the controller's own "Invalid subject for review" guard
         // could run. That guard was unreachable for the commonest way to get it wrong.
         return [
-            'subject'  => 'required|string',
-            'rating'   => 'required|numeric',
-            'content'  => 'required',
-            'files'    => 'sometimes|array',
-            'rejected' => 'sometimes|boolean',
+            'subject'      => 'required|string',
+            'order'        => 'sometimes|nullable|string',
+            'rating'       => 'required|integer|between:1,5',
+            'content'      => 'required|string|max:2000',
+            'files'        => 'sometimes|array|max:4',
+            'files.*.data' => 'required_with:files|string',
+            'files.*.type' => 'required_with:files|string|starts_with:image/,video/',
+            'rejected'     => 'sometimes|boolean',
         ];
     }
 }

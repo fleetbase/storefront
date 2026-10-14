@@ -23,8 +23,16 @@ test('storefront throttle applies package defaults and forwards successful reque
     );
 
     expect($response->getData(true))->toBe(['status' => 'ok'])
-        ->and($response->headers->get('X-RateLimit-Limit'))->toBe('500')
-        ->and($response->headers->get('X-RateLimit-Remaining'))->toBe('499');
+        ->and($response->headers->get('X-RateLimit-Limit'))->toBe('120')
+        ->and($response->headers->get('X-RateLimit-Remaining'))->toBe('119');
+});
+
+test('the package config and the middleware fallback agree on the default limit', function () {
+    // The config file calls env(), which this test app does not load, so read its default.
+    $config = file_get_contents(__DIR__ . '/../../../../config/storefront.php');
+
+    expect($config)->toContain("env('STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE', " . ThrottleRequests::DEFAULT_MAX_ATTEMPTS . ')')
+        ->and($config)->toContain("env('STOREFRONT_THROTTLE_DECAY_MINUTES', 1)");
 });
 
 test('storefront throttle keeps stores and devices behind the same proxy in separate buckets', function () {

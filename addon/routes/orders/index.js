@@ -1,7 +1,7 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
 
-export default class OrdersIndexRoute extends Route {
+export default class OrdersIndexRoute extends StorefrontListRoute {
     @service storefront;
     @service fetch;
     @service intl;
@@ -22,6 +22,7 @@ export default class OrdersIndexRoute extends Route {
         facilitator: { refreshModel: true },
         driver: { refreshModel: true },
         customer: { refreshModel: true },
+        fulfillment: { refreshModel: true },
         pickup: { refreshModel: true },
         dropoff: { refreshModel: true },
         after: { refreshModel: true },

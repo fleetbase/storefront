@@ -49,7 +49,15 @@ class Cart extends StorefrontModel
      *
      * @var array
      */
-    protected $fillable = ['company_uuid', 'user_uuid', 'checkout_uuid', 'customer_id', 'unique_identifier', 'currency', 'discount_code', 'items', 'events', 'expires_at'];
+    protected $fillable = ['company_uuid', 'user_uuid', 'checkout_uuid', 'status', 'customer_id', 'unique_identifier', 'currency', 'discount_code', 'items', 'events', 'expires_at'];
+
+    /**
+     * Cart statuses. Only an open cart is shopped; a checked out or cleared cart keeps its
+     * items as the record of what it held, and the device continues with a new open cart.
+     */
+    public const STATUS_OPEN        = 'open';
+    public const STATUS_CHECKED_OUT = 'checked_out';
+    public const STATUS_CLEARED     = 'cleared';
 
     /**
      * The attributes that should be cast to native types.
@@ -303,16 +311,16 @@ class Cart extends StorefrontModel
      *
      * @throws \Exception
      */
-    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
+    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null, ?string $catalogId = null)
     {
         if ($product instanceof Product) {
-            return $this->addItem($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt);
+            return $this->addItem($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt, $catalogId);
         }
 
         if (is_string($product)) {
             $product = static::findProduct($product);
 
-            return $this->add($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt);
+            return $this->add($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt, $catalogId);
         }
 
         throw new \Exception('Invalid product provided to cart!');
@@ -326,10 +334,16 @@ class Cart extends StorefrontModel
      * @param array  $addons
      * @param string $createdAt
      */
-    public function addItem(Product $product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
+    public function addItem(Product $product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null, ?string $catalogId = null)
     {
         $id       = Utils::generatePublicId('cart_item');
         $cartItem = new \stdClass();
+
+        // When the item comes from a catalog, that catalog's price and availability apply.
+        $override = static::catalogOverride($product, $catalogId);
+        if ($override && $override['is_available'] === false) {
+            throw new \Exception('This product is not available in the selected catalog.');
+        }
 
         if ($storeLocationId && !Str::startsWith($storeLocationId, 'food_truck_')) {
             $locationBelongsToStore = StoreLocation::where('store_uuid', $product->store_uuid)
@@ -344,10 +358,10 @@ class Cart extends StorefrontModel
         }
 
         // set base price
-        $price = Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
+        $price = $override['price'] ?? Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
 
         // calculate subtotal
-        $subtotal = static::calculateProductSubtotal($product, $quantity, $variants, $addons);
+        $subtotal = static::calculateProductSubtotal($product, $quantity, $variants, $addons, $override['price'] ?? null);
 
         // if no store location id, default to first store location
         if (empty($storeLocationId)) {
@@ -371,6 +385,7 @@ class Cart extends StorefrontModel
             'variants'          => $variants,
             'addons'            => $addons,
             'meta'              => $product->meta ?? [],
+            'catalog_id'        => $catalogId,
         ];
 
         // If item was added from a food truck
@@ -439,11 +454,14 @@ class Cart extends StorefrontModel
         $productId = $cartItem->product_id;
         $product   = static::findProduct($productId);
 
+        // the line keeps the catalog it was added from, so its price stays the catalog price
+        $override = static::catalogOverride($product, $cartItem->catalog_id ?? null);
+
         // set base price
-        $price = Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
+        $price = $override['price'] ?? Utils::numbersOnly($product->is_on_sale ? $product->sale_price : $product->price);
 
         // calculate subtotal
-        $subtotal = static::calculateProductSubtotal($product, $quantity, $variants, $addons);
+        $subtotal = static::calculateProductSubtotal($product, $quantity, $variants, $addons, $override['price'] ?? null);
 
         // get cart items
         $items = $this->getAttribute('items');
@@ -660,9 +678,64 @@ class Cart extends StorefrontModel
             'expires_at'        => Carbon::now()->addDays(7),
             'currency'          => session('storefront_currency'),
             'customer_id'       => session('customer_id'),
+            'status'            => static::STATUS_OPEN,
             'items'             => [],
             'events'            => [],
         ]);
+    }
+
+    /**
+     * Carts still being shopped: not checked out, not cleared.
+     */
+    public function scopeOpen($query)
+    {
+        return $query->whereNull('checkout_uuid')->where(function ($query) {
+            $query->whereNull('status')->orWhere('status', static::STATUS_OPEN);
+        });
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->checkout_uuid === null && in_array($this->status, [null, static::STATUS_OPEN], true);
+    }
+
+    /**
+     * Close this cart as cleared, keeping its items, and return the open cart the device
+     * continues with. An empty open cart is simply kept; a closed cart is left as it is.
+     */
+    public function clear(): Cart
+    {
+        if ($this->isOpen()) {
+            if (count($this->getAttribute('items') ?? []) === 0) {
+                return $this;
+            }
+
+            $this->createEvent('cart.cleared', null, false);
+            $this->status = static::STATUS_CLEARED;
+            $this->save();
+        }
+
+        return static::openCartFor($this->unique_identifier);
+    }
+
+    /**
+     * The open cart of a device (its unique identifier), or a new one for it.
+     */
+    public static function openCartFor(?string $uniqueId): Cart
+    {
+        if ($uniqueId) {
+            $query = static::where('unique_identifier', $uniqueId)->open();
+            if (session('company')) {
+                $query->where('company_uuid', session('company'));
+            }
+
+            $open = $query->latest()->first();
+            if ($open) {
+                return $open;
+            }
+        }
+
+        return static::newCart($uniqueId);
     }
 
     /**
@@ -683,17 +756,24 @@ class Cart extends StorefrontModel
             $query->where('company_uuid', session('company'));
         }
 
-        if ($excludeCheckedout) {
-            $query->whereNull('checkout_uuid');
+        if (!$excludeCheckedout) {
+            return $query->first() ?? static::newCart(!Str::startsWith($id, 'cart_') ? $id : null);
         }
 
-        $cart = $query->first();
-
-        if (!$cart) {
-            return static::newCart(!Str::startsWith($id, 'cart_') ? $id : null);
+        $cart = (clone $query)->open()->first();
+        if ($cart) {
+            return $cart;
         }
 
-        return $cart;
+        // The id may name a cart that has been checked out or cleared (an app can still
+        // hold it): continue with the open cart of the same device rather than starting an
+        // anonymous cart that no device will find again.
+        $closed = (clone $query)->latest()->first();
+        if ($closed && $closed->unique_identifier) {
+            return static::openCartFor($closed->unique_identifier);
+        }
+
+        return static::newCart(!Str::startsWith($id, 'cart_') ? $id : null);
     }
 
     /**
@@ -704,9 +784,9 @@ class Cart extends StorefrontModel
      * @param array                                $variants
      * @param array                                $addons
      */
-    public static function calculateProductSubtotal(Product $product, $quantity = 1, $variants = [], $addons = []): int
+    public static function calculateProductSubtotal(Product $product, $quantity = 1, $variants = [], $addons = [], ?int $basePrice = null): int
     {
-        $subtotal = $product->is_on_sale ? $product->sale_price : $product->price;
+        $subtotal = $basePrice ?? ($product->is_on_sale ? $product->sale_price : $product->price);
 
         foreach ($variants as $variant) {
             $subtotal += Utils::get($variant, 'additional_cost');
@@ -717,6 +797,38 @@ class Cart extends StorefrontModel
         }
 
         return $subtotal * $quantity;
+    }
+
+    /**
+     * The per-catalog price and availability of a product, when it is sold through a catalog.
+     *
+     * @return array{price: int|null, is_available: bool|null}|null null when there is no catalog or the product is not in it
+     */
+    public static function catalogOverride(?Product $product, ?string $catalogId): ?array
+    {
+        if (!$product || !$catalogId) {
+            return null;
+        }
+
+        $catalogUuid = Str::isUuid($catalogId) ? $catalogId : Catalog::where('public_id', $catalogId)->value('uuid');
+        if (!$catalogUuid) {
+            return null;
+        }
+
+        $pivot = CatalogProduct::query()
+            ->where('product_uuid', $product->uuid)
+            ->whereNull('deleted_at')
+            ->whereIn('catalog_category_uuid', CatalogCategory::query()->where('owner_uuid', $catalogUuid)->select('uuid'))
+            ->first();
+
+        if (!$pivot) {
+            return null;
+        }
+
+        return [
+            'price'        => $pivot->price === null ? null : (int) $pivot->price,
+            'is_available' => $pivot->is_available === null ? null : (bool) $pivot->is_available,
+        ];
     }
 
     /**

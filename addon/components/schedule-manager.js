@@ -14,19 +14,38 @@ export default class ScheduleManagerComponent extends Component {
         const { subject } = this.args;
         const { hours } = subject;
 
-        for (let i = 0; i < week.length; i++) {
-            const day = week.objectAt(i);
-
+        for (const day of week) {
             schedule[day] = [];
         }
 
-        for (let i = 0; i < hours.length; i++) {
-            const hour = hours.objectAt(i);
+        const list = hours?.toArray?.() ?? Array.from(hours ?? []);
 
-            schedule[hour.day_of_week].pushObject(hour);
+        // Hour rows arrive capitalised ("Monday") from the console and lowercase ("monday")
+        // from the API and seeds; bucket them by name regardless of case.
+        for (const hour of list) {
+            const day = week.find((name) => name.toLowerCase() === String(hour.day_of_week ?? '').toLowerCase());
+
+            if (day) {
+                schedule[day].push(hour);
+            }
         }
 
         return schedule;
+    }
+
+    /** The week in order, each day with its label in the console's language and its slots. */
+    get days() {
+        const schedule = this.schedule;
+        // 5 Jan 1970 was a Monday; adding the index gives each weekday's name in the current locale.
+        return Object.keys(schedule).map((name, index) => ({
+            name,
+            label: this.intl.formatDate(new Date(Date.UTC(1970, 0, 5 + index, 12)), { weekday: 'long', timeZone: 'UTC' }),
+            hours: schedule[name],
+        }));
+    }
+
+    get hasHours() {
+        return this.days.some((day) => day.hours.length > 0);
     }
 
     @computed('args.hourModelType') get hourModelType() {

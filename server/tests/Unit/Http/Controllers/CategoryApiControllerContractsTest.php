@@ -156,6 +156,7 @@ test('network category query scopes categories to the active network', function 
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -249,6 +250,7 @@ test('network category query resolves a member store and its child categories', 
         $table->increments('id');
         $table->string('network_uuid');
         $table->string('store_uuid');
+        $table->string('status')->default('active');
         $table->string('category_uuid')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });

@@ -10,7 +10,7 @@ class CartControllerOperationStub extends Fleetbase\Storefront\Models\Cart
 {
     public array $calls = [];
 
-    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null)
+    public function add($product, $quantity = 1, $variants = [], $addons = [], $storeLocationId = null, $scheduledAt = null, $createdAt = null, ?string $catalogId = null)
     {
         $this->calls['add'] = func_get_args();
 
@@ -34,6 +34,13 @@ class CartControllerOperationStub extends Fleetbase\Storefront\Models\Cart
     public function empty()
     {
         $this->calls['empty'] = true;
+
+        return $this;
+    }
+
+    public function clear(): Fleetbase\Storefront\Models\Cart
+    {
+        $this->calls['clear'] = true;
 
         return $this;
     }
@@ -70,6 +77,7 @@ function createPublicCartControllerSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('user_uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->string('customer_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->string('currency')->nullable();
@@ -178,6 +186,7 @@ test('cart add accepts member products and rejects products outside the active n
         $table->increments('id');
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('store_locations', function ($table) {
@@ -395,6 +404,8 @@ test('cart controller delegates successful item and lifecycle operations with re
             [['name' => 'Insurance']],
             'store_location_abcdefgh',
             '2026-07-28 09:00:00',
+            null,
+            null,
         ])
         ->and($cart->calls['update'])->toBe([
             'line_item_abcdefgh',
@@ -404,7 +415,9 @@ test('cart controller delegates successful item and lifecycle operations with re
             '2026-07-29 10:00:00',
         ])
         ->and($cart->calls['remove'])->toBe(['line_item_abcdefgh'])
-        ->and($cart->calls['empty'])->toBeTrue()
+        // Emptying closes the cart (keeping its items) rather than wiping it.
+        ->and($cart->calls['clear'])->toBeTrue()
+        ->and($cart->calls)->not->toHaveKey('empty')
         ->and($cart->calls['delete'])->toBeTrue();
 });
 

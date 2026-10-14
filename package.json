@@ -1,6 +1,6 @@
 {
     "name": "@fleetbase/storefront-engine",
-    "version": "0.4.24",
+    "version": "0.4.25",
     "description": "Headless Commerce & Marketplace Extension for Fleetbase",
     "fleetbase": {
         "route": "storefront",
@@ -44,9 +44,9 @@
     },
     "dependencies": {
         "@babel/core": "^7.23.2",
-        "@fleetbase/ember-core": "^0.3.25",
-        "@fleetbase/ember-ui": "^0.4.5",
-        "@fleetbase/fleetops-data": "^0.1.37",
+        "@fleetbase/ember-core": "^0.3.26",
+        "@fleetbase/ember-ui": "^0.4.6",
+        "@fleetbase/fleetops-data": "^0.2.3",
         "@fortawesome/ember-fontawesome": "^2.0.0",
         "@fortawesome/fontawesome-svg-core": "6.4.0",
         "@fortawesome/free-brands-svg-icons": "6.4.0",
@@ -61,6 +61,7 @@
     "devDependencies": {
         "@babel/eslint-parser": "^7.22.15",
         "@babel/plugin-proposal-decorators": "^7.23.2",
+        "@ember/legacy-built-in-components": "^0.4.2",
         "@ember/optional-features": "^2.0.0",
         "@ember/test-helpers": "^3.2.0",
         "@embroider/test-setup": "^3.0.2",
@@ -71,7 +72,6 @@
         "broccoli-funnel": "^3.0.8",
         "broccoli-merge-trees": "^4.2.0",
         "concurrently": "^8.2.2",
-        "ember-classic-decorator": "^3.0.0",
         "ember-cli": "~5.4.1",
         "ember-cli-clean-css": "^3.0.0",
         "ember-cli-dependency-checker": "^3.3.2",

@@ -234,6 +234,8 @@ test('catalog observer removes category product pivots when a catalog is deleted
         $table->string('uuid')->nullable();
         $table->string('catalog_category_uuid');
         $table->string('product_uuid');
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -562,13 +564,20 @@ test('network invite mailable derives sender network recipients and join URL', f
     ]);
     $invite->setRelation('subject', $network);
     $invite->setRelation('createdBy', $sender);
+    $consoleConfig = config('fleetbase.console');
+    config(['fleetbase.console' => ['host' => 'console.fleetbase.test', 'secure' => true]]);
 
-    $mail = (new StorefrontNetworkInvite($invite))->build();
+    try {
+        $mail = (new StorefrontNetworkInvite($invite))->build();
+    } finally {
+        config(['fleetbase.console' => $consoleConfig]);
+    }
 
+    // The link opens the storefront engine's join route (console.storefront.networks.join).
     expect($mail->invite)->toBe($invite)
         ->and($mail->network)->toBe($network)
         ->and($mail->sender)->toBe($sender)
-        ->and($mail->url)->toContain('join/network/invite-code')
+        ->and($mail->url)->toBe('https://console.fleetbase.test/storefront/networks/join/invite-code')
         ->and($mail->subject)->toBe('You have been invited to join Coffee Network!')
         ->and($mail->to[0]['address'])->toBe('merchant@example.test');
 });

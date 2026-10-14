@@ -238,8 +238,8 @@ Important environment variables include:
 | --- | --- |
 | `STOREFRONT_DB_CONNECTION` | Database connection name for Storefront models. |
 | `STOREFRONT_BYPASS_VERIFICATION_CODE` | Development bypass code for Storefront app verification flows. |
-| `STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE` | Public Storefront API request limit. |
-| `STOREFRONT_THROTTLE_DECAY_MINUTES` | Public Storefront API throttle decay window. |
+| `STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE` | Public Storefront API requests allowed per device (store key + client IP) per window. Default `120`. |
+| `STOREFRONT_THROTTLE_DECAY_MINUTES` | Public Storefront API throttle window in minutes. Default `1`. |
 
 For customer app configuration, see the [Storefront App configuration docs](https://www.fleetbase.io/docs/storefront/app/configuration).
 

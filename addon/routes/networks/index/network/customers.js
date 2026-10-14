@@ -1,15 +1,16 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { inject as service } from '@ember/service';
+import queryCustomers from '@fleetbase/storefront-engine/utils/query-customers';
 
-export default class NetworksIndexNetworkCustomersRoute extends Route {
+export default class NetworksIndexNetworkCustomersRoute extends StorefrontListRoute {
     @service store;
-    @service storefront;
+    @service fetch;
 
     queryParams = {
-        page: { refreshModel: true, as: 'n_page' },
-        limit: { refreshModel: true, as: 'n_limit' },
-        sort: { refreshModel: true, as: 'n_sort' },
-        query: { refreshModel: true, as: 'n_query' },
+        page: { refreshModel: true, as: 'c_page' },
+        limit: { refreshModel: true, as: 'c_limit' },
+        sort: { refreshModel: true, as: 'c_sort' },
+        query: { refreshModel: true, as: 'c_query' },
         status: { refreshModel: true, as: 'n_status' },
         phone: { refreshModel: true },
         email: { refreshModel: true },
@@ -21,6 +22,6 @@ export default class NetworksIndexNetworkCustomersRoute extends Route {
     };
 
     model(params) {
-        return this.store.query('customer', { ...params, storefront: this.storefront.getActiveStore('public_id') });
+        return queryCustomers(this, { ...params, network: this.modelFor('networks.index.network').public_id });
     }
 }

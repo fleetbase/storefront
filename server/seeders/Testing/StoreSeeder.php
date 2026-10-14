@@ -12,7 +12,8 @@ use Illuminate\Database\Seeder;
  * Produces a store with an order config, a store location with opening hours,
  * a sandbox Stripe gateway, product categories, products with variants and addons,
  * a published catalog, customers, an open cart, a pending checkout, a month of
- * captured orders (cash and Stripe, delivery and pickup) and reviews.
+ * captured orders (cash and Stripe, delivery and pickup), reviews, and promotions,
+ * customer segments and campaigns in several states.
  *
  * Re-running the seeder purges and recreates its own fixtures only.
  *
@@ -43,16 +44,31 @@ class StoreSeeder extends Seeder
         $this->withoutForeignKeyConstraints(fn () => $this->purgeSeedData());
 
         $bundle    = $this->seedStore($company, $this->storeDefinition());
+        $this->createDeliveryServiceRate($company, 'service-rate:' . static::STORE_KEY, $bundle['store']->currency);
         $customers = $this->seedCustomers($company, $this->customerFixtures());
         $orders    = $this->seedStoreActivity($company, $bundle, $customers, null, 30);
+        $marketing = $this->seedMarketing($company, $bundle['store'], static::STORE_KEY, $this->marketingDefinition(), [static::STORE_KEY => $bundle]);
 
         $this->command?->info(sprintf('Seeded Storefront testing store for company %s with %d products and %d orders.', $company->public_id, count($bundle['products']), count($orders)));
+        $this->command?->info(sprintf('  Marketing: %d promotions, %d segments, %d campaigns.', count($marketing['promotions']), count($marketing['segments']), count($marketing['campaigns'])));
         $this->reportStorefront($bundle['store'], $bundle['gateway'], '  ');
     }
 
     public function purgeSeedData(): void
     {
         $this->purgeStorefrontFixtures();
+    }
+
+    /**
+     * The network seeder uses the same customer fixtures in the same company, so this
+     * store's customers get their own emails (`ava.chen+market@example.test`) and phones
+     * (`+65 9101 …`).
+     */
+    protected function customerIdentity(array $fixture): array
+    {
+        [$name, $email, $phone] = $fixture;
+
+        return [$name, str_replace('@', '+market@', $email), str_replace('+65 9100 ', '+65 9101 ', $phone)];
     }
 
     protected function storeDefinition(): array
@@ -65,7 +81,7 @@ class StoreSeeder extends Seeder
             'phone'       => '+65 6100 0100',
             'website'     => 'https://example.test/fleetbase-market',
             'tags'        => ['groceries', 'local', 'testing'],
-            'currency'    => 'USD',
+            'currency'    => $this->seedCurrency(),
             'timezone'    => 'Asia/Singapore',
             'pod_method'  => 'scan',
             'gateway'     => 'stripe',
@@ -211,6 +227,32 @@ class StoreSeeder extends Seeder
                     'Drinks'      => ['coffee-kit', 'iced-latte'],
                     'Pantry'      => ['rice-pack', 'olive-oil', 'cleaning-bundle'],
                 ],
+            ],
+        ];
+    }
+
+    /**
+     * The store's own promotions, segments and campaigns.
+     */
+    protected function marketingDefinition(): array
+    {
+        $key = static::STORE_KEY;
+
+        return [
+            'promotions' => [
+                'coffee-hour'   => ['name' => 'Coffee hour', 'description' => '20% off beverages, every morning 7 to 10.', 'type' => 'percentage', 'value' => 20, 'applies_to' => ['categories' => [$key . ':beverages']], 'schedule' => [['days' => [1, 2, 3, 4, 5, 6, 7], 'start' => '07:00', 'end' => '10:00']], 'starts_in_days' => -14, 'ends_in_days' => 60],
+                'market-five'   => ['name' => 'S$5 off S$30', 'description' => 'Use MARKET5 on orders of S$30 or more.', 'type' => 'fixed_amount', 'value' => 500, 'min_subtotal' => 3000, 'code' => 'MARKET5', 'usage_limit_per_customer' => 3, 'starts_in_days' => -7, 'ends_in_days' => 30],
+                'free-delivery' => ['name' => 'Free delivery for first orders', 'description' => 'Your first delivery is free.', 'type' => 'free_delivery', 'first_order_only' => true, 'starts_in_days' => -30, 'ends_in_days' => 90],
+                'harvest'       => ['name' => 'Harvest week', 'description' => '15% off fresh produce (coming soon).', 'type' => 'percentage', 'value' => 15, 'applies_to' => ['categories' => [$key . ':produce']], 'starts_in_days' => 5, 'ends_in_days' => 12],
+            ],
+            'segments' => [
+                'regulars' => ['name' => 'Regulars', 'description' => 'Five or more orders.', 'rules' => ['min_orders' => 5]],
+                'lapsed'   => ['name' => 'Lapsed', 'description' => 'No order in the last 21 days.', 'rules' => ['not_ordered_within_days' => 21]],
+            ],
+            'campaigns' => [
+                'coffee-sent'    => ['name' => 'Coffee hour', 'title' => '20% off coffee before 10', 'body' => 'Cold brew and lattes, every morning.', 'status' => 'sent', 'segment' => 'regulars', 'promotion' => 'coffee-hour', 'action' => ['type' => 'promotion'], 'sent_days_ago' => 2, 'stats' => ['targeted' => 6, 'batches' => 1]],
+                'harvest-soon'   => ['name' => 'Harvest week', 'title' => 'Harvest week starts soon', 'body' => '15% off fresh produce all week.', 'status' => 'scheduled', 'promotion' => 'harvest', 'action' => ['type' => 'promotion'], 'send_in_days' => 5],
+                'winback-draft'  => ['name' => 'Win back (draft)', 'title' => 'S$5 off your next order', 'body' => 'Use MARKET5 on orders of S$30 or more.', 'status' => 'draft', 'segment' => 'lapsed', 'promotion' => 'market-five'],
             ],
         ];
     }

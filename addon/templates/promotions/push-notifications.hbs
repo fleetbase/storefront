@@ -1,17 +1,23 @@
-<div class="overflow-y-scroll h-screen">
-    <div class="h-screen">
-        <main class="h-screen max-w-xl mx-auto pt-4">
-            <form class="h-screen" {{on "submit" this.sendPushNotification}}>
-                <div class="space-y-4 h-screen">
-                    <div>
-                        <h1 class="text-lg leading-6 font-bold text-gray-900 dark:text-gray-100">
-                            {{t "storefront.promotions.push-notifications.header"}}
-                        </h1>
-                        <p class="mt-1 text-sm text-gray-500">
-                            {{t "storefront.promotions.push-notifications.description"}}
-                        </p>
-                    </div>
+<Storefront::PageHeader @title={{t "storefront.promotions.hub.title"}} @subtitle={{t "storefront.promotions.hub.subtitle"}} @icon="tags" data-test-promotions-header>
+    <Button
+        @type="primary"
+        @size="sm"
+        @icon={{if this.isLoading "spinner" "paper-plane"}}
+        @iconPrefix={{if this.isLoading "fas fa-spin" "fas"}}
+        @text={{t "storefront.promotions.push-notifications.send-button"}}
+        @isLoading={{this.isLoading}}
+        @disabled={{this.isLoading}}
+        @onClick={{this.sendPushNotification}}
+        @permission="storefront create push-notification"
+    />
+</Storefront::PageHeader>
 
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <Storefront::Promotions::HubTabs />
+    <div class="storefront-page storefront-push-page">
+        <form class="storefront-push-page__form" {{on "submit" this.sendPushNotification}} data-test-push-notification-form>
+            <Storefront::SectionCard @id="push-notification" @title={{t "storefront.promotions.push-notifications.header"}} @subtitle={{t "storefront.promotions.push-notifications.description"}} @pad={{true}}>
+                <div class="space-y-4">
                     <InputGroup
                         @name={{t "storefront.promotions.push-notifications.title-label"}}
                         @value={{this.title}}
@@ -37,6 +43,7 @@
                         <InputGroup @name={{t "storefront.promotions.push-notifications.customers-label"}}>
                             <ModelSelectMultiple
                                 @modelName="contact"
+                                @selectedItemComponent={{component "select-option/contact" compact=true}}
                                 @query={{hash type="customer"}}
                                 @selectedModel={{this.selectedCustomers}}
                                 @placeholder={{t "storefront.promotions.push-notifications.customers-placeholder"}}
@@ -46,40 +53,12 @@
                                 @triggerClass="form-select form-input w-full"
                                 as |model|
                             >
-                                <div class="flex flex-row space-x-2">
-                                    <div class="hide-from-trigger">
-                                        <Image
-                                            src={{model.photo_url}}
-                                            @fallbackSrc={{config "defaultValues.customerImage"}}
-                                            alt={{model.name}}
-                                            height="40"
-                                            width="40"
-                                            class="h-10 w-10 rounded-lg shadow-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <div class="font-semibold normalize-in-trigger">{{model.name}}</div>
-                                        <div class="text-xs hide-from-trigger">{{n-a model.email}}</div>
-                                        <div class="text-xs hide-from-trigger">{{n-a model.phone}}</div>
-                                    </div>
-                                </div>
+                                <SelectOption::Contact @option={{model}} />
                             </ModelSelectMultiple>
                         </InputGroup>
                     {{/unless}}
-
-                    <div class="flex justify-end">
-                        <Button
-                            @type="primary"
-                            @icon={{if this.isLoading "spinner" "paper-plane"}}
-                            @iconPrefix={{if this.isLoading "fas fa-spin" "fas"}}
-                            @text={{t "storefront.promotions.push-notifications.send-button"}}
-                            @isLoading={{this.isLoading}}
-                            @disabled={{this.isLoading}}
-                            @onClick={{this.sendPushNotification}}
-                        />
-                    </div>
                 </div>
-            </form>
-        </main>
+            </Storefront::SectionCard>
+        </form>
     </div>
-</div>
+</Layout::Section::Body>

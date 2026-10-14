@@ -35,6 +35,16 @@ class Catalog extends StorefrontModel
     protected $table = 'catalogs';
 
     /**
+     * Tables the cached catalog lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on). The console list
+     * eager loads `categories.products`, `hours` and `assignments.subject`; the subject
+     * is a morphTo, so its tables are named.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['categories', 'categories.products', 'hours', 'assignments', 'stores', 'food_trucks'];
+
+    /**
      * Searchable columns.
      *
      * @var array
@@ -121,7 +131,7 @@ class Catalog extends StorefrontModel
      */
     public function categories(): HasMany
     {
-        return $this->setConnection(config('fleetbase.connection.db'))->hasMany(CatalogCategory::class, 'owner_uuid', 'uuid');
+        return $this->setConnection(config('fleetbase.connection.db'))->hasMany(CatalogCategory::class, 'owner_uuid', 'uuid')->orderBy('order');
     }
 
     /**
@@ -182,10 +192,12 @@ class Catalog extends StorefrontModel
             });
 
         // 2) Loop through incoming categories array
-        foreach ($categories as $categoryData) {
+        foreach ($categories as $index => $categoryData) {
             $categoryUuid = data_get($categoryData, 'uuid');
             $products     = data_get($categoryData, 'products', []);
+            $overrides    = is_array($categoryData) && array_key_exists('product_overrides', $categoryData) ? (array) ($categoryData['product_overrides'] ?? []) : null;
             $name         = data_get($categoryData, 'name');
+            $order        = (int) data_get($categoryData, 'order', $index);
 
             // Try to find an existing category
             $categoryRecord = null;
@@ -195,11 +207,12 @@ class Catalog extends StorefrontModel
 
             if ($categoryRecord) {
                 // 2a) Update existing category
-                $categoryRecord->update(['name' => $name]);
+                $categoryRecord->update(['name' => $name, 'order' => $order]);
             } else {
                 // 2b) Create a new category
                 $categoryRecord = CatalogCategory::create([
                     'name'         => $name,
+                    'order'        => $order,
                     'company_uuid' => $this->company_uuid,
                     'owner_uuid'   => $this->uuid,
                     'owner_type'   => get_class($this),
@@ -207,7 +220,7 @@ class Catalog extends StorefrontModel
             }
 
             // 3) Update products for this category
-            $categoryRecord->setProducts($products);
+            $categoryRecord->setProducts($products, $overrides);
         }
 
         return $this;

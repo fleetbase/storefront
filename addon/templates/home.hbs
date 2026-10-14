@@ -1,4 +1,5 @@
 <Layout::Section::Body class="overflow-y-scroll h-full">
+    <Storefront::Network::InvitationBanner class="mx-4 mt-4" />
     <Dashboard
         @defaultDashboardId="storefront"
         @defaultDashboardName="Storefront Dashboard"
@@ -9,6 +10,15 @@
         @stickyHeader={{true}}
         class="storefront-dashboard-page"
     >
+        {{#if this.activeStore}}
+            <div class="storefront-dashboard-heading" data-test-dashboard-heading>
+                <h1 class="storefront-dashboard-heading__name">{{this.activeStore.name}}</h1>
+                <span class="storefront-open-state {{if this.openState.isOpen 'is-open' 'is-closed'}} {{unless this.openState.hasHours 'is-unknown'}}" title={{this.activeStore.name}} data-test-open-state data-open={{if this.openState.isOpen "true" "false"}}>
+                    <span class="storefront-open-state__dot"></span>
+                    {{this.openStateLabel}}
+                </span>
+            </div>
+        {{/if}}
         <div class="storefront-dashboard-date-control storefront-datepicker">
             <DatePicker
                 @value={{this.storefrontDashboard.datePickerValue}}
@@ -19,6 +29,7 @@
                 class="form-input form-input-sm"
             />
         </div>
+        <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.newOrder}} @permission="storefront create order" data-test-dashboard-new-order />
     </Dashboard>
     <Spacer @height="300px" />
     {{outlet}}

@@ -1,6 +1,6 @@
 <ContentPanel
-    @title="Activity"
-    @open={{true}}
+    @title={{t "storefront.order.tabs.activity"}}
+    @open={{not @folded}}
     @actionButtons={{this.actionButtons}}
     @isLoading={{or @isLoadingActivity this.loadActivity.isRunning @isLoading}}
     @wrapperClass="bordered-top"

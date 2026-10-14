@@ -6,12 +6,12 @@
                     <div class="flex flex-col space-y-1">
                         <div class="text-xs font-semibold truncate">{{trackingStatus.status}}</div>
                         <div class="text-xs truncate">{{n-a trackingStatus.details}}</div>
-                        <div class="text-xs">{{format-date-fns trackingStatus.created_at "d MMM HH:mm"}}</div>
+                        <div class="text-xs">{{store-time trackingStatus.created_at "d MMM HH:mm" order=(or @order @resource)}}</div>
                     </div>
                     <Attach::Tooltip @class="clean" @animation="scale" @placement="top">
                         <InputInfo>
                             <div class="text-xs">{{or trackingStatus.details trackingStatus.status}}</div>
-                            <div class="text-xs">{{format-date-fns trackingStatus.created_at "d MMM yyyy HH:mm"}}</div>
+                            <div class="text-xs">{{store-time trackingStatus.created_at "d MMM yyyy HH:mm" order=(or @order @resource)}}</div>
                         </InputInfo>
                     </Attach::Tooltip>
                 </div>

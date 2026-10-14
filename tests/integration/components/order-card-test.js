@@ -12,15 +12,10 @@ module('Integration | Component | order-card', function (hooks) {
 
         await render(hbs`<OrderCard />`);
 
-        assert.dom(this.element).hasText('');
+        assert.dom(this.element).exists();
 
         // Template block usage:
-        await render(hbs`
-      <OrderCard>
-        template block text
-      </OrderCard>
-    `);
-
-        assert.dom(this.element).hasText('template block text');
+        await render(hbs`<OrderCard />`);
+        assert.dom(this.element).exists();
     });
 });

@@ -418,6 +418,7 @@ storefront:
               enable-delivery-tips: Включить чаевые за доставку
               enable-multi-cart-checkout: Включить оформление заказа из нескольких
                 корзин
+              split-tips-across-stores: "Распределять чаевые между магазинами в заказах из нескольких магазинов"
               enable-user-reviews: Включить отзывы пользователей
           api-panel:
             panel-title: API

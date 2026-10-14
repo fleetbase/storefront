@@ -31,6 +31,7 @@ class CatalogCategory extends FleetbaseResource
             'tags'                               => data_get($this, 'tags', []),
             'meta'                               => data_get($this, 'meta', Utils::createObject()),
             'products'                           => CatalogProduct::collection($this->products ?? []),
+            'product_overrides'                  => $this->when(Http::isInternalRequest(), fn () => $this->resource->productOverrides()),
             'for'                                => $this->for,
             'order'                              => $this->order,
             'created_at'                         => $this->created_at,

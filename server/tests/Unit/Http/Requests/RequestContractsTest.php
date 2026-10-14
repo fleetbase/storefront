@@ -152,12 +152,17 @@ test('customer review verification and capture request rules preserve API contra
         // `subject` is required: the controller resolves it with Utils::resolveSubject(),
         // whose parameter is a non-nullable string, so omitting it threw a TypeError as a
         // 500 before the controller's own "Invalid subject for review" guard could run.
+        // Ratings are whole stars from 1 to 5, and a review carries at most four photos or
+        // videos. `order` optionally names the completed order being reviewed.
         ->and($reviewRules)->toBe([
-            'subject'  => 'required|string',
-            'rating'   => 'required|numeric',
-            'content'  => 'required',
-            'files'    => 'sometimes|array',
-            'rejected' => 'sometimes|boolean',
+            'subject'      => 'required|string',
+            'order'        => 'sometimes|nullable|string',
+            'rating'       => 'required|integer|between:1,5',
+            'content'      => 'required|string|max:2000',
+            'files'        => 'sometimes|array|max:4',
+            'files.*.data' => 'required_with:files|string',
+            'files.*.type' => 'required_with:files|string|starts_with:image/,video/',
+            'rejected'     => 'sometimes|boolean',
         ])->and($verificationRules)->toBe([
             'mode'     => 'required|in:email,sms',
             'identity' => 'required',

@@ -261,7 +261,9 @@ test('order resources normalize and restrict nested storefront metadata shapes',
             ],
             'storefront_network_id' => 'network_public',
             'currency'              => 'MNT',
-            'checkout_id'           => 'excluded_from_index',
+            // Kept on the index so the console can group a multi-store checkout's orders.
+            'checkout_id'           => 'checkout_public',
+            'secret'                => 'excluded_from_index',
         ]),
     ]);
     $indexResource    = new IndexOrderResource($indexOrder);
@@ -292,6 +294,7 @@ test('order resources normalize and restrict nested storefront metadata shapes',
         ],
         'storefront_network_id' => 'network_public',
         'currency'              => 'MNT',
+        'checkout_id'           => 'checkout_public',
     ])->and($detailNormalized)->toBe(['currency' => 'USD'])
         ->and($indexNormalized)->toBe(['currency' => 'MNT']);
 });
@@ -374,10 +377,27 @@ test('review customer resource reports aggregate review and upload counts', func
 
     expect($data)->toMatchArray([
         'id'            => 'customer_public',
-        'name'          => 'Ada Buyer',
+        'name'          => 'Ada B.',
         'reviews_count' => 4,
         'uploads_count' => 6,
-    ])->and($data)->not->toHaveKeys(['uuid', 'public_id']);
+    ])->and($data)->not->toHaveKeys(['uuid', 'public_id', 'email', 'phone']);
+
+    $internal = (new ReviewCustomerResource($customer))
+        ->resolve(setSimpleStorefrontResourceRoute('int/v1/storefront/review-customers'));
+
+    expect($internal)->toMatchArray([
+        'name'  => 'Ada Buyer',
+        'email' => 'ada@example.test',
+        'phone' => '+15550100',
+    ]);
+});
+
+test('review customers are named by first name and last initial in public', function () {
+    expect(ReviewCustomerResource::publicName('  ada   van buyer '))->toBe('ada B.')
+        ->and(ReviewCustomerResource::publicName('Ada'))->toBe('Ada')
+        ->and(ReviewCustomerResource::publicName('Ölga ölund'))->toBe('Ölga Ö.')
+        ->and(ReviewCustomerResource::publicName('   '))->toBeNull()
+        ->and(ReviewCustomerResource::publicName(null))->toBeNull();
 });
 
 test('store hour and location resources preserve customer-facing scheduling shapes', function () {

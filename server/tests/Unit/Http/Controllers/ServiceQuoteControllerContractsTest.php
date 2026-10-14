@@ -183,6 +183,7 @@ function createServiceQuoteLookupSchema(): void
         $table->string('uuid')->nullable();
         $table->string('network_uuid')->nullable();
         $table->string('store_uuid')->nullable();
+        $table->string('status')->default('active');
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
@@ -211,6 +212,8 @@ function createServiceQuoteLookupSchema(): void
         $table->string('sku')->nullable();
         $table->integer('price')->nullable();
         $table->integer('sale_price')->nullable();
+        $table->boolean('is_available')->default(true);
+        $table->string('status')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
     $schema->create('files', function ($table) {
@@ -227,6 +230,7 @@ function createServiceQuoteLookupSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('user_uuid')->nullable();
         $table->string('checkout_uuid')->nullable();
+        $table->string('status')->nullable();
         $table->string('customer_id')->nullable();
         $table->string('unique_identifier')->nullable();
         $table->string('currency')->nullable();
@@ -279,6 +283,25 @@ function createServiceQuoteLookupSchema(): void
         $table->string('provider')->nullable();
         $table->timestamp('deleted_at')->nullable();
     });
+}
+
+/** A place location as MySQL returns it: SRID then little-endian WKB (x = longitude). */
+function serviceQuotePointWkb(float $latitude, float $longitude): string
+{
+    return pack('L', 0) . pack('CLdd', 1, 1, $longitude, $latitude);
+}
+
+/** A product the cart lines below can order, so the quote's availability check passes. */
+function seedServiceQuoteProduct(): void
+{
+    Model::getConnectionResolver()->connection('mysql')->table('products')->insert([
+        'uuid'         => 'product_uuid',
+        'public_id'    => 'product_public',
+        'company_uuid' => 'company_uuid',
+        'name'         => 'Coffee',
+        'currency'     => 'USD',
+        'price'        => 900,
+    ]);
 }
 
 function seedServiceQuoteMarketplace(string $storeUuid = 'store_uuid', string $storePublicId = 'store_public'): void
@@ -563,11 +586,21 @@ test('network service quote derives origins from explicit and default store loca
         'options'   => '{}',
     ]);
     seedServiceQuoteMarketplace();
+    seedServiceQuoteProduct();
     $connection->table('store_locations')->insert([
-        'uuid'       => 'location_uuid',
-        'public_id'  => 'store_location_public',
-        'store_uuid' => 'store_uuid',
-        'place_uuid' => 'origin_uuid',
+        [
+            'uuid'       => 'location_uuid',
+            'public_id'  => 'store_location_public',
+            'store_uuid' => 'store_uuid',
+            'place_uuid' => 'origin_uuid',
+        ],
+        [
+            // exists, but its store is not in the marketplace
+            'uuid'       => 'outside_location_uuid',
+            'public_id'  => 'store_location_outside',
+            'store_uuid' => 'store_outside_uuid',
+            'place_uuid' => 'origin_uuid',
+        ],
     ]);
     $connection->table('carts')->insert([
         [
@@ -578,6 +611,7 @@ test('network service quote derives origins from explicit and default store loca
             'currency'          => 'USD',
             'items'             => json_encode([
                 [
+                    'product_id'        => 'product_public',
                     'store_id'          => 'store_public',
                     'store_location_id' => 'store_location_public',
                 ],
@@ -595,6 +629,7 @@ test('network service quote derives origins from explicit and default store loca
             'currency'          => 'USD',
             'items'             => json_encode([
                 [
+                    'product_id'        => 'product_public',
                     'store_id'          => 'store_public',
                     'store_location_id' => null,
                 ],
@@ -612,8 +647,29 @@ test('network service quote derives origins from explicit and default store loca
             'currency'          => 'USD',
             'items'             => json_encode([
                 [
+                    'id'                => 'cart_item_missing',
+                    'product_id'        => 'product_public',
+                    'name'              => 'Coffee',
                     'store_id'          => 'store_public',
                     'store_location_id' => 'store_location_missing',
+                ],
+            ]),
+            'events'     => '[]',
+            'expires_at' => now()->addHour(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        [
+            'uuid'              => 'outside_location_cart_uuid',
+            'public_id'         => 'outside_location_cart_public',
+            'company_uuid'      => 'company_uuid',
+            'unique_identifier' => 'outside-location-cart',
+            'currency'          => 'USD',
+            'items'             => json_encode([
+                [
+                    'product_id'        => 'product_public',
+                    'store_id'          => 'store_public',
+                    'store_location_id' => 'store_location_outside',
                 ],
             ]),
             'events'     => '[]',
@@ -629,6 +685,7 @@ test('network service quote derives origins from explicit and default store loca
             'currency'          => 'USD',
             'items'             => json_encode([
                 [
+                    'product_id'        => 'product_public',
                     'store_id'          => 'store_different',
                     'store_location_id' => 'store_location_public',
                 ],
@@ -678,6 +735,10 @@ test('network service quote derives origins from explicit and default store loca
         'destination' => 'place_destination',
         'cart'        => 'missing-location-cart',
     ]));
+    $outsideLocation = $controller->fromCartForNetwork(GetServiceQuoteFromCart::create('/quote', 'POST', [
+        'destination' => 'place_destination',
+        'cart'        => 'outside-location-cart',
+    ]));
     $mismatchedLocation = $controller->fromCartForNetwork(GetServiceQuoteFromCart::create('/quote', 'POST', [
         'destination' => 'place_destination',
         'cart'        => 'mismatched-location-cart',
@@ -685,8 +746,15 @@ test('network service quote derives origins from explicit and default store loca
 
     expect($default->getData(true))->toBe(['error' => 'Integrated vendor not found!'])
         ->and($explicit->getData(true))->toBe(['error' => 'Integrated vendor not found!'])
+        // a store location that no longer exists makes its line unavailable
         ->and($missingLocation->getStatusCode())->toBe(422)
         ->and($missingLocation->getData(true))->toBe([
+            'errors' => ['Some items in your cart are no longer available.'],
+            'code'   => 'cart_items_unavailable',
+            'items'  => [['id' => 'cart_item_missing', 'product_id' => 'product_public', 'name' => 'Coffee']],
+        ])
+        ->and($outsideLocation->getStatusCode())->toBe(422)
+        ->and($outsideLocation->getData(true))->toBe([
             'error' => 'One or more store locations are unavailable for this marketplace.',
         ])
         ->and($mismatchedLocation->getStatusCode())->toBe(422)
@@ -699,6 +767,7 @@ test('network service quote persists integrated facilitator origin metadata and 
     createServiceQuoteLookupSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     seedServiceQuoteMarketplace();
+    seedServiceQuoteProduct();
     $connection->table('places')->insert([
         'uuid'      => 'origin_uuid',
         'public_id' => 'place_origin',
@@ -716,7 +785,7 @@ test('network service quote persists integrated facilitator origin metadata and 
         'unique_identifier' => 'network-cart',
         'currency'          => 'USD',
         'items'             => json_encode([
-            ['store_location_id' => 'store_location_public'],
+            ['product_id' => 'product_public', 'store_location_id' => 'store_location_public'],
         ]),
         'events'     => '[]',
         'expires_at' => now()->addHour(),
@@ -971,8 +1040,9 @@ test('network service quote resolves comma separated fallback origins before rep
     $connection = Model::getConnectionResolver()->connection('mysql');
     seedServiceQuoteMarketplace();
     $connection->table('places')->insert([
-        ['uuid' => 'place_one_uuid', 'public_id' => 'place_one'],
-        ['uuid' => 'place_two_uuid', 'public_id' => 'place_two'],
+        // The route is measured store to store, so the stores' places need coordinates.
+        ['uuid' => 'place_one_uuid', 'public_id' => 'place_one', 'location' => serviceQuotePointWkb(47.92, 106.91)],
+        ['uuid' => 'place_two_uuid', 'public_id' => 'place_two', 'location' => serviceQuotePointWkb(47.93, 106.93)],
     ]);
     $connection->table('store_locations')->insert([
         [

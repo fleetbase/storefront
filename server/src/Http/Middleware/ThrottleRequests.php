@@ -6,9 +6,14 @@ use Illuminate\Routing\Middleware\ThrottleRequests as ThrottleRequestsMiddleware
 
 class ThrottleRequests extends ThrottleRequestsMiddleware
 {
+    /**
+     * The limit when the package config is not loaded; keep in step with config/storefront.php.
+     */
+    public const DEFAULT_MAX_ATTEMPTS = 120;
+
     public function handle($request, \Closure $next, $maxAttempts = null, $decayMinutes = null, $prefix = '')
     {
-        $maxAttempts  = config('storefront.throttle.max_attempts', 500);
+        $maxAttempts  = config('storefront.throttle.max_attempts', static::DEFAULT_MAX_ATTEMPTS);
         $decayMinutes = config('storefront.throttle.decay_minutes', 1);
 
         return parent::handle($request, $next, $maxAttempts, $decayMinutes, $prefix);

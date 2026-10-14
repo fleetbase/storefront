@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Http\Controllers\v1;
 
 use Fleetbase\Auth\AppleVerifier;
 use Fleetbase\Auth\GoogleVerifier;
+use Fleetbase\Exceptions\SmsBlockedException;
 use Fleetbase\FleetOps\Exceptions\UserAlreadyExistsException;
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\FleetOps\Http\Resources\v1\DeletedResource;
@@ -22,7 +23,10 @@ use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Support\StorefrontSocket;
+use Fleetbase\Support\SocketCluster\SocketToken;
 use Fleetbase\Support\Utils;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +35,24 @@ use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
+    /**
+     * Seconds inside which a repeated creation-code request answers "ok" without sending
+     * again: the first code is still valid, and a second message would only cost money.
+     */
+    public const CREATION_CODE_RESEND_SECONDS = 60;
+
+    /**
+     * Wrong codes an identity may try inside the window before it is locked out, so a
+     * six-digit code cannot be guessed from many addresses.
+     */
+    public const CODE_ATTEMPT_LIMIT  = 10;
+    public const CODE_ATTEMPT_WINDOW = 900;
+
+    /**
+     * Wrong guesses a single code tolerates before it locks itself (core's check()).
+     */
+    public const CODE_CHECK_ATTEMPTS = 5;
+
     protected function authenticatedCustomerForRequest(Request $request): ?Contact
     {
         return Storefront::getCustomerFromToken();
@@ -128,6 +150,36 @@ class CustomerController extends Controller
     }
 
     /**
+     * Mints a realtime socket token for the signed-in customer.
+     *
+     * POST storefront/v1/customers/socket-token — authenticated like every other
+     * customer endpoint: the storefront key plus a Customer-Token header. The token
+     * is a `customer` principal scoped to the store or network the key belongs to;
+     * the socket server only lets it subscribe to channels the customer owns.
+     * Returns 404 while socket authentication is not configured on this instance.
+     */
+    public function socketToken(Request $request)
+    {
+        if (!SocketToken::enabled()) {
+            return response()->apiError('Not found.', 404);
+        }
+
+        $customer = Storefront::getCustomerFromToken();
+        if (!$customer) {
+            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+        }
+
+        // A customer's token is only honoured by the storefront whose company the
+        // customer belongs to, so a token minted against another company's key is refused.
+        $storefront = Storefront::about();
+        if (!$storefront || $storefront->company_uuid !== $customer->company_uuid) {
+            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+        }
+
+        return response()->json(SocketToken::issue(StorefrontSocket::customerPrincipal($customer, $storefront)));
+    }
+
+    /**
      * Newer core-api versions add push metadata columns to user_devices.
      *
      * @return string[]
@@ -153,12 +205,10 @@ class CustomerController extends Controller
         $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
             $query->where('customer_uuid', $customer->uuid)->whereNull('deleted_at')->withoutGlobalScopes();
 
-            // dont query any master orders if its a network
+            // A multi-store checkout is one order to the customer: list its master order (which
+            // shows each store's part) and leave out the stores' own orders.
             if (session('storefront_network')) {
-                $query->where(function ($q) {
-                    $q->where('meta->is_master_order', false);
-                    $q->orWhere('meta', 'not like', '%related_orders%');
-                });
+                $query->whereNull('meta->master_order_id');
             }
         }, true);
 
@@ -208,6 +258,23 @@ class CustomerController extends Controller
             $identity = static::phone($identity);
         }
 
+        // An identity that already has an account cannot ask for a creation code. Nothing
+        // is checked or sent; the caller is told to sign in instead.
+        if (static::accountExistsForIdentity($identity, $isEmail)) {
+            return response()->apiError('An account already exists for this ' . ($isEmail ? 'email address' : 'phone number') . '. Sign in instead.', 422);
+        }
+
+        // A number that can never receive a text is refused before anything is written.
+        if ($isPhone && ($rejection = static::phoneRejection($identity))) {
+            return response()->apiError($rejection, 422);
+        }
+
+        // A code sent moments ago is still valid: answer as if it went out again rather
+        // than paying for a second message.
+        if (static::hasRecentCreationCode($identity)) {
+            return response()->json(['status' => 'ok']);
+        }
+
         // set contact attributes
         $attributes[$isEmail ? 'email' : 'phone'] = $identity;
 
@@ -225,6 +292,7 @@ class CustomerController extends Controller
                 ]);
             } else {
                 VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
+                    'hashed'          => true,
                     'messageCallback' => function ($verification) use ($about) {
                         return "Your {$about->name} verification code is {$verification->code}";
                     },
@@ -233,6 +301,8 @@ class CustomerController extends Controller
             }
 
             return response()->json(['status' => 'ok']);
+        } catch (SmsBlockedException $e) {
+            return static::blockedResponse($e);
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->apiError($e->getMessage());
         } catch (\Exception $e) {
@@ -268,11 +338,18 @@ class CustomerController extends Controller
             return response()->apiError('An identity is required to create a customer.');
         }
 
-        // verify code
-        $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_create_customer', 'meta->identity' => $identity])->exists();
-        if (!$verificationCode) {
+        if ($this->codeAttemptsExceeded('create|' . $identity)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
+        // verify code: the newest live code for this identity, checked and used up
+        if (!$this->verifyIdentityCode('storefront_create_customer', $identity, $code)) {
+            $this->recordFailedCodeAttempt('create|' . $identity);
+
             return response()->apiError('Invalid verification code provided!');
         }
+
+        $this->clearCodeAttempts('create|' . $identity);
 
         // check for existing user to attach contact to
         if (Utils::isEmail($identity)) {
@@ -440,24 +517,39 @@ class CustomerController extends Controller
     /**
      * Query for Storefront Customer resources.
      *
+     * The storefront key is public (it ships inside every app build), so it can't be what
+     * authorizes reading customers: this used to list every customer of the company to
+     * anyone holding it. Only the customer signed in with the Customer-Token is returned.
+     *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function query(Request $request)
     {
-        $results = Contact::queryWithRequestCached($request, function (&$query, $request) {
-            $query->where(['type' => 'customer', 'company_uuid' => session('company')]);
+        $customer = $this->authenticatedCustomerForRequest($request);
+        if (!$customer) {
+            return response()->apiError('Not authorized to view customers.', 401);
+        }
+
+        $results = Contact::queryWithRequestCached($request, function (&$query) use ($customer) {
+            $query->where(['type' => 'customer', 'company_uuid' => session('company'), 'uuid' => $customer->uuid]);
         });
 
         return Customer::collection($results);
     }
 
     /**
-     * Finds a single Storefront Product resources.
+     * Finds a single Storefront Customer resource: only the customer signed in with the
+     * Customer-Token. A storefront key alone used to read any customer by id.
      *
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     public function find($id)
     {
+        $customer = $this->authenticatedCustomerForRequest(request());
+        if (!$customer) {
+            return response()->apiError('Not authorized to view customer.', 401);
+        }
+
         if (Str::startsWith($id, 'customer')) {
             $id = Str::replaceFirst('customer', 'contact', $id);
         }
@@ -467,6 +559,10 @@ class CustomerController extends Controller
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return response()->apiError('Customer resource not found.');
+        }
+
+        if ($contact->uuid !== $customer->uuid) {
+            return response()->apiError('Not authorized to view customer.', 403);
         }
 
         // response the customer resource
@@ -592,13 +688,18 @@ class CustomerController extends Controller
             return "Your {$about->name} verification code is {$verification->code}";
         };
 
+        $smsFailure = null;
+
         try {
             VerificationCode::generateSmsVerificationFor($user, 'storefront_login', [
+                'hashed'          => true,
                 'messageCallback' => $messageCallback,
             ]);
 
             return response()->json(['status' => 'OK', 'method' => 'sms']);
         } catch (\Throwable $e) {
+            $smsFailure = $e;
+
             if (app()->bound('sentry')) {
                 app('sentry')->captureException($e);
             }
@@ -618,7 +719,9 @@ class CustomerController extends Controller
             }
         }
 
-        return response()->apiError('Unable to send verification code.');
+        // With no email to fall back to, a refusal by the SMS guard is answered with its
+        // own status so the app can tell "wait a minute" from "something broke".
+        return static::sendFailureResponse($smsFailure, 'Unable to send verification code.');
     }
 
     /**
@@ -881,6 +984,29 @@ class CustomerController extends Controller
      * @return \Fleetbase\Http\Resources\Storefront\Customer
      */
     /**
+     * The create-customer request for a verify-code call made with
+     * `for=storefront_create_customer`. Laravel resolves verifyCode()'s parameter as a plain
+     * Request, and create() requires a CreateCustomerRequest, so passing it on as-is threw a
+     * TypeError (500). This builds the form request from it and authorizes and validates it
+     * the way the router does for `POST customers`: a bad code or duplicate email is a 422.
+     */
+    protected function createCustomerRequestFrom(Request $request): CreateCustomerRequest
+    {
+        if ($request instanceof CreateCustomerRequest) {
+            return $request;
+        }
+
+        $createRequest = CreateCustomerRequest::createFrom($request);
+        $createRequest->setContainer(app());
+        if (app()->bound('redirect')) {
+            $createRequest->setRedirector(app('redirect'));
+        }
+        $createRequest->validateResolved();
+
+        return $createRequest;
+    }
+
+    /**
      * Whether a verification code should be accepted as an app-review bypass.
      *
      * App store reviewers cannot receive our SMS or email, so a fixed code has to keep
@@ -928,7 +1054,7 @@ class CustomerController extends Controller
         $attrs    = $request->input(['name', 'phone', 'email']);
 
         if ($for === 'storefront_create_customer') {
-            return $this->create($request);
+            return $this->create($this->createCustomerRequestFrom($request));
         }
 
         // Without an identity there is nobody to verify. The lookup below would compile to
@@ -938,18 +1064,28 @@ class CustomerController extends Controller
             return response()->apiError('Unable to verify code.');
         }
 
+        if ($this->codeAttemptsExceeded('verify|' . $identity)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // check if user exists
         $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
 
         if (!$user) {
+            $this->recordFailedCodeAttempt('verify|' . $identity);
+
             return response()->apiError('Unable to verify code.');
         }
 
-        // find and verify code
-        $verificationCode = VerificationCode::where(['subject_uuid' => $user->uuid, 'code' => $code, 'for' => $for])->exists();
+        // find and verify code: the newest live code for this user, checked and used up
+        $verificationCode = $this->verifySubjectCode($for, $user->uuid, $code);
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
+            $this->recordFailedCodeAttempt('verify|' . $identity);
+
             return response()->apiError('Invalid verification code!');
         }
+
+        $this->clearCodeAttempts('verify|' . $identity);
 
         // get the storefront or network logging in for
         $about = Storefront::about(['company_uuid']);
@@ -1016,6 +1152,160 @@ class CustomerController extends Controller
         return $phone;
     }
 
+    /**
+     * Whether an account already exists for an identity. Anything that goes wrong looking
+     * counts as "no", so a bare install without the table cannot block signups.
+     */
+    protected static function accountExistsForIdentity(?string $identity, bool $isEmail): bool
+    {
+        if (blank($identity)) {
+            return false;
+        }
+
+        try {
+            return User::where($isEmail ? 'email' : 'phone', $identity)->whereNull('deleted_at')->withoutGlobalScopes()->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether a creation code went to this identity moments ago and is still valid.
+     */
+    protected static function hasRecentCreationCode(?string $identity): bool
+    {
+        $seconds = (int) config('storefront.verification.resend_seconds', static::CREATION_CODE_RESEND_SECONDS);
+        if (blank($identity) || $seconds <= 0) {
+            return false;
+        }
+
+        try {
+            return VerificationCode::where('for', 'storefront_create_customer')
+                ->where('meta->identity', $identity)
+                ->where('created_at', '>', now()->subSeconds($seconds))
+                ->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Why a phone number cannot be texted, or null when it can. Null too when the core in
+     * use has no SMS guard yet, or the guard is switched off: this is the same rule the
+     * guard applies on the send, surfaced before anything is written.
+     */
+    protected static function phoneRejection(?string $phone): ?string
+    {
+        if (blank($phone) || !class_exists(\Fleetbase\Support\Sms\PhoneValidator::class) || !class_exists(\Fleetbase\Support\Sms\SmsPolicy::class)) {
+            return null;
+        }
+
+        $settings = \Fleetbase\Support\Sms\SmsPolicy::settings();
+        if (!$settings['enabled']) {
+            return null;
+        }
+
+        $result = \Fleetbase\Support\Sms\PhoneValidator::validate($phone, $settings['validation']);
+
+        return $result['valid'] ? null : \Fleetbase\Support\Sms\PhoneValidator::messageFor($result['reason']);
+    }
+
+    /**
+     * The response for a send the SMS guard refused: its own status (422 bad number, 429
+     * limited, 423 paused) and Retry-After when there is a time to wait.
+     */
+    protected static function blockedResponse(SmsBlockedException $e)
+    {
+        $response = response()->apiError($e->getMessage(), $e->status());
+        $response->headers->add($e->headers());
+
+        return $response;
+    }
+
+    /**
+     * The response when a code could not be sent: the guard's refusal when that is why,
+     * otherwise the flow's own generic message.
+     */
+    protected static function sendFailureResponse(?\Throwable $failure, string $message)
+    {
+        if ($failure instanceof SmsBlockedException) {
+            return static::blockedResponse($failure);
+        }
+
+        return response()->apiError($message);
+    }
+
+    /**
+     * Check a code filed under an identity and use it up. The newest live code is the one
+     * that counts; a wrong guess counts against it until it locks.
+     */
+    protected function verifyIdentityCode(string $for, string $identity, mixed $code): bool
+    {
+        $verificationCode = VerificationCode::findActiveFor($for, $identity);
+
+        return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code);
+    }
+
+    /**
+     * The live code for a subject once the submitted code matched it (and used it up), else null.
+     */
+    protected function findSubjectCode(string $for, string $subjectUuid, mixed $code): ?VerificationCode
+    {
+        $verificationCode = VerificationCode::findActiveForSubject($for, $subjectUuid);
+
+        return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code) ? $verificationCode : null;
+    }
+
+    protected function verifySubjectCode(string $for, string $subjectUuid, mixed $code): bool
+    {
+        return $this->findSubjectCode($for, $subjectUuid, $code) !== null;
+    }
+
+    protected function checkAndConsume(VerificationCode $verificationCode, mixed $code): bool
+    {
+        if ($verificationCode->check((string) $code, static::CODE_CHECK_ATTEMPTS) !== VerificationCode::CHECK_VALID) {
+            return false;
+        }
+
+        $verificationCode->consume();
+
+        return true;
+    }
+
+    protected function codeAttemptsExceeded(string $key): bool
+    {
+        $limiter = $this->attemptLimiter();
+
+        return $limiter ? $limiter->tooManyAttempts($this->codeAttemptKey($key), static::CODE_ATTEMPT_LIMIT) : false;
+    }
+
+    protected function recordFailedCodeAttempt(string $key): void
+    {
+        $this->attemptLimiter()?->hit($this->codeAttemptKey($key), static::CODE_ATTEMPT_WINDOW);
+    }
+
+    protected function clearCodeAttempts(string $key): void
+    {
+        $this->attemptLimiter()?->clear($this->codeAttemptKey($key));
+    }
+
+    protected function codeAttemptKey(string $key): string
+    {
+        return 'storefront-code-attempts:' . sha1(strtolower($key));
+    }
+
+    /**
+     * The limiter behind the attempt lockout, or null where none is bound (unit tests).
+     */
+    protected function attemptLimiter(): ?RateLimiter
+    {
+        try {
+            return app()->bound(RateLimiter::class) ? app(RateLimiter::class) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function getStripeEphemeralKey(Request $request)
     {
         $customer = Storefront::getCustomerFromToken();
@@ -1030,12 +1320,13 @@ class CustomerController extends Controller
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
-        // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
-        }
-
         try {
+            // Ensure customer has a stripe_id. Inside the try: Stripe refusing the gateway's key
+            // must come back as an error, not an uncaught exception rendered as 401.
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+
             // Create Ephemeral Key
             $ephemeralKey = \Stripe\EphemeralKey::create(
                 ['customer' => $customer->getMeta('stripe_id')],
@@ -1065,12 +1356,13 @@ class CustomerController extends Controller
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
 
-        // Ensure customer has a stripe_id
-        if ($customer->missingMeta('stripe_id')) {
-            Storefront::createStripeCustomerForContact($customer);
-        }
-
         try {
+            // Ensure customer has a stripe_id. Inside the try: Stripe refusing the gateway's key
+            // must come back as an error, not an uncaught exception rendered as 401.
+            if ($customer->missingMeta('stripe_id')) {
+                Storefront::createStripeCustomerForContact($customer);
+            }
+
             // Create SetupIntent
             $setupIntent = \Stripe\SetupIntent::create([
                 'customer' => $customer->getMeta('stripe_id'),
@@ -1124,16 +1416,20 @@ class CustomerController extends Controller
         // `if phone / elseif email` meant a customer WITH a phone never reached the email
         // branch — the request just returned the SDK's own message, "Credentials are
         // required to create a Client", to the client.
-        $sent = false;
+        $sent       = false;
+        $smsFailure = null;
 
         if ($user->phone) {
             try {
                 VerificationCode::generateSmsVerificationFor($user, 'storefront_account_closure', [
+                    'hashed'          => true,
                     'messageCallback' => $messageCallback,
                     'meta'            => ['identity' => $identity],
                 ]);
                 $sent = true;
             } catch (\Throwable $e) {
+                $smsFailure = $e;
+
                 if (app()->bound('sentry')) {
                     app('sentry')->captureException($e);
                 }
@@ -1159,7 +1455,7 @@ class CustomerController extends Controller
             return response()->json(['status' => 'OK']);
         }
 
-        return response()->apiError('Unable to send account closure verification code.');
+        return static::sendFailureResponse($smsFailure, 'Unable to send account closure verification code.');
     }
 
     public function confirmAccountClosure(Request $request)
@@ -1184,11 +1480,19 @@ class CustomerController extends Controller
         // Get verification identity
         $identity = $user->phone ?? $user->email;
 
+        if ($this->codeAttemptsExceeded('closure|' . $customer->uuid)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
         // verify account closure code
-        $verificationCode = VerificationCode::where(['code' => $code, 'for' => 'storefront_account_closure', 'meta->identity' => $identity])->exists();
+        $verificationCode = $this->verifyIdentityCode('storefront_account_closure', $identity, $code);
         if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
+            $this->recordFailedCodeAttempt('closure|' . $customer->uuid);
+
             return response()->apiError('Invalid verification code provided!');
         }
+
+        $this->clearCodeAttempts('closure|' . $customer->uuid);
 
         try {
             // If the user type is `contact` or `customer` delete the user account
@@ -1250,8 +1554,16 @@ class CustomerController extends Controller
             return response()->json(['status' => 'ok', 'method' => 'bypass']);
         }
 
+        // A number that can never receive a text is refused before anything is written.
+        if ($rejection = static::phoneRejection($phone)) {
+            return response()->apiError($rejection, 422);
+        }
+
         try {
+            // Text the number being verified, not the one on file (which may be none).
             VerificationCode::generateSmsVerificationFor($user, 'storefront_verify_phone', [
+                'hashed'          => true,
+                'phone'           => $phone,
                 'messageCallback' => function ($verification) use ($about) {
                     return "Your {$about->name} verification code is {$verification->code}";
                 },
@@ -1259,6 +1571,8 @@ class CustomerController extends Controller
             ]);
 
             return response()->json(['status' => 'ok']);
+        } catch (SmsBlockedException $e) {
+            return static::blockedResponse($e);
         } catch (\Throwable $e) {
             if (app()->bound('sentry')) {
                 app('sentry')->captureException($e);
@@ -1303,12 +1617,12 @@ class CustomerController extends Controller
             return response()->apiError('No user associated with this customer.');
         }
 
-        // Find the verification code
-        $verificationCode = VerificationCode::where([
-            'subject_uuid' => $user->uuid,
-            'code'         => $code,
-            'for'          => 'storefront_verify_phone',
-        ])->first();
+        if ($this->codeAttemptsExceeded('verify-phone|' . $user->uuid)) {
+            return response()->apiError('Too many attempts. Try again later.', 429);
+        }
+
+        // Find the verification code: the newest live one for this user, checked and used up
+        $verificationCode = $this->findSubjectCode('storefront_verify_phone', $user->uuid, $code);
 
         // The bypass leaves no code row to read the phone back from, so it comes from the
         // request — which is what the caller is asking to verify in the first place.
@@ -1322,8 +1636,12 @@ class CustomerController extends Controller
                 return new Customer($customer->fresh());
             }
 
+            $this->recordFailedCodeAttempt('verify-phone|' . $user->uuid);
+
             return response()->apiError('Invalid verification code!');
         }
+
+        $this->clearCodeAttempts('verify-phone|' . $user->uuid);
 
         // Get the phone number from meta. A row written by anything other than
         // requestPhoneVerification may not carry it, and an unguarded subscript turns a
@@ -1337,9 +1655,7 @@ class CustomerController extends Controller
         $user->update(['phone' => $phone, 'phone_verified_at' => now()]);
         $customer->update(['phone' => $phone]);
 
-        // Invalidate the verification code
-        $verificationCode->delete();
-
+        // The code was used up by findSubjectCode(), so it cannot verify twice.
         return new Customer($customer->fresh());
     }
 }

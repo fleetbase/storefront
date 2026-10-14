@@ -5,16 +5,20 @@ export default buildRoutes(function () {
     this.route('products', function () {
         this.route('index', { path: '/' }, function () {
             this.route('index', { path: '/' }, function () {
+                this.route('new');
                 this.route('edit', { path: '/:public_id' });
             });
-            this.route('category', { path: '/:slug' }, function () {
+            // Under its own segment so a product id (`/products/:public_id`) never resolves as a category slug.
+            this.route('category', { path: '/category/:slug' }, function () {
                 this.route('new');
                 this.route('edit', { path: '/:public_id' });
             });
         });
     });
     this.route('catalogs', function () {
-        this.route('index', { path: '/' }, function () {});
+        this.route('index', { path: '/' }, function () {
+            this.route('edit', { path: '/:public_id' });
+        });
     });
     this.route('customers', function () {
         this.route('index', { path: '/' }, function () {
@@ -25,7 +29,7 @@ export default buildRoutes(function () {
     this.route('orders', function () {
         this.route('index', { path: '/' }, function () {
             this.route('new');
-            this.route('edit', { path: '/:public_id' });
+            this.route('edit', { path: '/:public_id/edit' });
             this.route('view', { path: '/:public_id' }, function () {
                 this.route('index', { path: '/' });
                 this.route('virtual', { path: '/:slug' });
@@ -33,11 +37,24 @@ export default buildRoutes(function () {
         });
     });
     this.route('networks', function () {
+        this.route('join', { path: '/join/:uri' });
         this.route('index', { path: '/' }, function () {
             this.route('network', { path: '/:public_id' }, function () {
                 this.route('stores');
+                this.route('store', { path: '/stores/:store_id' });
+                this.route('trucks');
                 this.route('customers');
-                this.route('orders');
+                this.route('orders', function () {
+                    this.route('new');
+                });
+                this.route('categories');
+                this.route('promotions', function () {
+                    this.route('index', { path: '/' });
+                    this.route('campaigns');
+                    this.route('segments');
+                    this.route('redemptions');
+                });
+                this.route('settings');
             });
         });
     });
@@ -49,10 +66,8 @@ export default buildRoutes(function () {
         this.route('campaigns');
         this.route('segments');
         this.route('push-notifications');
+        this.route('redemptions');
     });
-    this.route('coupons');
-    this.route('broadcast');
-    this.route('pages');
     this.route('settings', function () {
         this.route('index', { path: '/' });
         this.route('api');

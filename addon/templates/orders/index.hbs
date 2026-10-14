@@ -1,16 +1,43 @@
-<Layout::Resource::Tabular
-    @registry="storefront:order:table"
-    @title={{t "storefront.common.orders"}}
-    @searchQuery={{this.query}}
-    @onSearch={{perform this.search}}
-    @data={{@model}}
-    @columns={{this.columns}}
-    @page={{this.page}}
-    @onPageChange={{fn (mut this.page)}}
-    @setupTable={{fn (mut this.table)}}
-    @actionButtons={{this.actionButtons}}
-    @bulkActions={{this.bulkActions}}
-    @controller={{this}}
-/>
+<Storefront::PageHeader @title={{t "storefront.common.orders"}} @subtitle={{t "storefront.orders.index.subtitle"}} @searchQuery={{this.query}} @onSearch={{perform this.search}} @searchPlaceholder={{t "storefront.orders.index.search"}} data-test-orders-header>
+    <FiltersPicker @columns={{this.registeredColumns}} @onApply={{fn this.filters.apply this}} @onClear={{fn this.filters.reset this}} @onFilterClear={{this.filters.clear}} @onChange={{this.filters.set}} @size="sm" @renderInPlace={{false}} data-test-orders-filters />
+    <VisibleColumnPicker @columns={{this.columns}} @onChange={{this.setColumns}} @size="sm" @renderInPlace={{false}} data-test-orders-columns />
+    <Button @size="sm" @icon="calendar-plus" @text={{t "storefront.orders.booking.title"}} @onClick={{this.createBooking}} @permission="storefront create order" data-test-new-booking />
+    <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.orders.create.title"}} @onClick={{this.createOrder}} @permission="storefront create order" data-test-new-order />
+    <Layout::Resource::ActionButtons @buttons={{this.registeredActionButtons}} />
+</Storefront::PageHeader>
+
+<Layout::Section::Body class="overflow-y-scroll-i h-full">
+    <div class="storefront-page">
+        <div class="storefront-table-card" data-test-orders-card>
+            {{#if this.hasSelection}}
+                <div class="storefront-table-card__bulk" data-test-orders-bulk-bar>
+                    <span class="storefront-bulk-bar__count">{{t "storefront.networks.invitations.selected-count" count=this.selectedOrders.length}}</span>
+                    {{#each this.registeredBulkActions as |bulkAction|}}
+                        {{#unless bulkAction.separator}}
+                            <Button @size="xs" @icon={{bulkAction.icon}} @text={{or bulkAction.text bulkAction.label}} @type={{if (eq bulkAction.id "bulk-delete") "danger" "default"}} @onClick={{bulkAction.fn}} @permission={{bulkAction.permission}} />
+                        {{/unless}}
+                    {{/each}}
+                    <a href="javascript:;" class="storefront-table-card__bulk-clear" {{on "click" this.clearSelection}}>{{t "storefront.networks.invitations.clear"}}</a>
+                </div>
+            {{/if}}
+            <Table
+                @wrapperClass="storefront-table-card__table storefront-orders-table"
+                @rows={{@model}}
+                @columns={{this.registeredColumns}}
+                @selectable={{true}}
+                @canSelectAll={{true}}
+                @onSetup={{fn (mut this.table)}}
+                @onSort={{this.handleSort}}
+                @tfoot={{false}}
+                @emptyStateTitle={{t "storefront.orders.index.empty-title"}}
+                @emptyStateDescription={{t "storefront.orders.index.empty-help"}}
+            />
+            <div class="storefront-table-card__footer">
+                <span></span>
+                <Pagination @meta={{@model.meta}} @currentPage={{this.page}} @onPageChange={{fn (mut this.page)}} />
+            </div>
+        </div>
+    </div>
+</Layout::Section::Body>
 
 {{outlet}}

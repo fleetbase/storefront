@@ -1,8 +1,6 @@
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { alias } from '@ember/object/computed';
-import { tracked } from '@glimmer/tracking';
 
 export default class ApplicationController extends Controller {
     @service storefront;
@@ -12,42 +10,148 @@ export default class ApplicationController extends Controller {
     @service intl;
     @service abilities;
     @service store;
-    @alias('storefront.activeStore') activeStore;
-    @tracked productCategories = [];
-    categoryLoadStoreUuid;
+    /**
+     * Native getters so the sidebar re-renders when the service's tracked ids change;
+     * a computed alias onto a native getter never invalidates.
+     */
+    get activeStore() {
+        return this.storefront.activeStore;
+    }
 
+    get activeNetwork() {
+        return this.storefront.activeNetwork;
+    }
+
+    get isNetworkContext() {
+        return Boolean(this.activeNetwork?.id);
+    }
+
+    /**
+     * The sidebar is rewritten for the active context: a network gets its own
+     * navigation, everything else is scoped to the active store.
+     */
     get navigationItems() {
+        return this.isNetworkContext ? this.networkNavigationItems : this.storeNavigationItems;
+    }
+
+    get networkNavigationItems() {
+        const publicId = this.activeNetwork.public_id;
+        const networkItem = (key, { alsoActiveOn = [], ...item }) => {
+            const route = `console.storefront.networks.index.network.${key}`;
+
+            return {
+                id: `network:${publicId}:${key}`,
+                ...item,
+                // These routes share one dynamic segment, so route-name matching alone cannot tell networks apart.
+                activeWhen: () => [route, ...alsoActiveOn.map((name) => `console.storefront.networks.index.network.${name}`)].some((name) => this.hostRouter.isActive(name, publicId)),
+                onClick: () => this.hostRouter.transitionTo(route, publicId),
+            };
+        };
+
+        return [
+            networkItem('index', {
+                label: this.intl.t('storefront.networks.index.network.overview'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-overview'),
+                icon: 'gauge-high',
+                permission: 'storefront view network',
+                keywords: ['overview', 'dashboard', 'network'],
+            }),
+            networkItem('stores', {
+                label: this.intl.t('storefront.networks.index.network.stores.store'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-stores'),
+                icon: 'store',
+                badge: this.networkPendingCount || null,
+                permission: 'storefront view network',
+                keywords: ['stores', 'members', 'invite', 'categories'],
+                // A store's details page sits under Stores.
+                alsoActiveOn: ['store'],
+            }),
+            networkItem('trucks', {
+                label: this.intl.t('storefront.common.food-trucks'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-trucks'),
+                icon: 'truck',
+                permission: 'storefront list food-truck',
+                visible: this.can('storefront see food-truck'),
+                keywords: ['vehicles', 'mobile store', 'truck'],
+            }),
+            networkItem('orders', {
+                label: this.intl.t('storefront.networks.index.network.orders'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-orders'),
+                icon: 'file-invoice-dollar',
+                permission: 'storefront list order',
+                visible: this.can('storefront see order'),
+                keywords: ['fulfillment', 'deliveries', 'checkout orders'],
+            }),
+            networkItem('customers', {
+                label: this.intl.t('storefront.networks.index.network.customers'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-customers'),
+                icon: 'users',
+                permission: 'storefront list user',
+                visible: this.can('storefront see user'),
+                keywords: ['contacts', 'buyers', 'users'],
+            }),
+            networkItem('categories', {
+                label: this.intl.t('storefront.networks.categories.title'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-categories'),
+                icon: 'folder-tree',
+                permission: 'storefront view network',
+                keywords: ['categories', 'groups', 'sections'],
+            }),
+            networkItem('promotions', {
+                label: this.intl.t('storefront.sidebar.promotions'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-promotions'),
+                icon: 'bullhorn',
+                permission: 'storefront view promotions',
+                visible: this.can('storefront see promotions'),
+                keywords: ['discounts', 'coupons', 'promo codes', 'campaigns', 'segments', 'redemptions'],
+            }),
+            networkItem('settings', {
+                label: this.intl.t('storefront.networks.index.network.settings'),
+                description: this.intl.t('storefront.sidebar.descriptions.network-settings'),
+                icon: 'cog',
+                permission: 'storefront update network',
+                keywords: ['settings', 'general', 'gateways', 'notifications'],
+            }),
+        ];
+    }
+
+    get storeNavigationItems() {
         const hasActiveStore = Boolean(this.activeStore?.id);
 
         return [
             {
                 label: this.intl.t('storefront.sidebar.dashboard'),
-                description: 'Storefront dashboard and sales overview.',
+                description: this.intl.t('storefront.sidebar.descriptions.dashboard'),
                 icon: 'home',
                 route: 'console.storefront.home',
+                disabled: false,
                 keywords: ['dashboard', 'overview', 'metrics', 'sales'],
             },
             {
+                label: this.intl.t('storefront.sidebar.orders'),
+                description: this.intl.t('storefront.sidebar.descriptions.orders'),
+                icon: 'file-invoice-dollar',
+                route: 'console.storefront.orders',
+                badge: this.ordersToConfirm || null,
+                permission: 'storefront list order',
+                visible: this.can('storefront see order'),
+                disabled: !hasActiveStore,
+                keywords: ['fulfillment', 'deliveries', 'checkout orders'],
+            },
+            {
                 label: this.intl.t('storefront.sidebar.products'),
-                description: 'Manage products, categories, variants, and addons.',
+                description: this.intl.t('storefront.sidebar.descriptions.products'),
                 icon: 'box',
                 permission: 'storefront list product',
                 visible: this.can('storefront see product'),
                 disabled: !hasActiveStore,
-                children: [
-                    {
-                        label: 'All Products',
-                        description: 'Browse and manage product inventory.',
-                        icon: 'box',
-                        route: 'console.storefront.products.index.index',
-                        keywords: ['inventory', 'items', 'sku', 'create product', 'add product'],
-                    },
-                    ...this.productCategoryItems,
-                ],
+                // One entry: the products page carries its own category sidebar.
+                route: 'console.storefront.products',
+                keywords: ['inventory', 'items', 'sku', 'categories', 'create product', 'add product'],
             },
             {
                 label: this.intl.t('storefront.sidebar.catalogs'),
-                description: 'Create and manage storefront catalogs.',
+                description: this.intl.t('storefront.sidebar.descriptions.catalogs'),
                 icon: 'book-open',
                 route: 'console.storefront.catalogs',
                 permission: 'storefront list catalog',
@@ -57,7 +161,7 @@ export default class ApplicationController extends Controller {
             },
             {
                 label: this.intl.t('storefront.sidebar.customers'),
-                description: 'Review storefront customers and order history.',
+                description: this.intl.t('storefront.sidebar.descriptions.customers'),
                 icon: 'users',
                 route: 'console.storefront.customers',
                 permission: 'storefront list user',
@@ -66,28 +170,8 @@ export default class ApplicationController extends Controller {
                 keywords: ['contacts', 'buyers', 'users'],
             },
             {
-                label: this.intl.t('storefront.sidebar.orders'),
-                description: 'Manage incoming storefront orders.',
-                icon: 'file-invoice-dollar',
-                route: 'console.storefront.orders',
-                permission: 'storefront list order',
-                visible: this.can('storefront see order'),
-                disabled: !hasActiveStore,
-                keywords: ['fulfillment', 'deliveries', 'checkout orders'],
-            },
-            {
-                label: this.intl.t('storefront.sidebar.networks'),
-                description: 'Manage marketplace networks and participating stores.',
-                icon: 'network-wired',
-                route: 'console.storefront.networks',
-                permission: 'storefront list network',
-                visible: this.can('storefront see network'),
-                disabled: !hasActiveStore,
-                keywords: ['marketplace', 'network stores', 'partners'],
-            },
-            {
                 label: this.intl.t('storefront.sidebar.food-trucks'),
-                description: 'Manage food truck locations and availability.',
+                description: this.intl.t('storefront.sidebar.descriptions.trucks'),
                 icon: 'truck',
                 route: 'console.storefront.food-trucks',
                 permission: 'storefront list food-truck',
@@ -97,90 +181,27 @@ export default class ApplicationController extends Controller {
             },
             {
                 label: this.intl.t('storefront.sidebar.promotions'),
-                description: 'Discounts, promo codes, customer segments and campaigns.',
+                description: this.intl.t('storefront.sidebar.descriptions.promotions'),
                 icon: 'bullhorn',
+                route: 'console.storefront.promotions',
                 permission: 'storefront view promotions',
                 visible: this.can('storefront see promotions'),
                 disabled: !hasActiveStore,
-                children: [
-                    {
-                        label: this.intl.t('storefront.promotions.list.tab-title'),
-                        description: 'Create discounts and promo codes applied at checkout.',
-                        icon: 'tags',
-                        route: 'console.storefront.promotions.index',
-                        keywords: ['discounts', 'coupons', 'promo codes', 'sales', 'deals'],
-                    },
-                    {
-                        label: this.intl.t('storefront.promotions.campaigns.tab-title'),
-                        description: 'Send scheduled notifications to customer segments.',
-                        icon: 'bullhorn',
-                        route: 'console.storefront.promotions.campaigns',
-                        keywords: ['marketing', 'broadcast', 'notifications'],
-                    },
-                    {
-                        label: this.intl.t('storefront.promotions.segments.tab-title'),
-                        description: 'Group customers by their order history for targeting.',
-                        icon: 'users',
-                        route: 'console.storefront.promotions.segments',
-                        keywords: ['audience', 'customers', 'targeting'],
-                    },
-                    {
-                        label: 'Push Notifications',
-                        description: 'Send push notifications to storefront customers.',
-                        icon: 'bell',
-                        route: 'console.storefront.promotions.push-notifications',
-                        keywords: ['marketing', 'broadcast', 'campaigns'],
-                    },
-                ],
+                keywords: ['discounts', 'coupons', 'promo codes', 'campaigns', 'segments', 'push notifications', 'redemptions'],
             },
             {
                 label: this.intl.t('storefront.sidebar.settings'),
-                description: 'Configure storefront settings, locations, gateways, and notifications.',
+                description: this.intl.t('storefront.sidebar.descriptions.settings'),
                 icon: 'cogs',
+                route: 'console.storefront.settings',
                 permission: 'storefront view settings',
                 visible: this.can('storefront see settings'),
                 disabled: !hasActiveStore,
-                children: [
-                    {
-                        label: this.intl.t('storefront.common.general'),
-                        description: 'General storefront settings.',
-                        icon: 'cog',
-                        route: 'console.storefront.settings.index',
-                        keywords: ['settings', 'general'],
-                    },
-                    {
-                        label: this.intl.t('storefront.common.location'),
-                        description: 'Storefront pickup and service locations.',
-                        icon: 'map-marker-alt',
-                        route: 'console.storefront.settings.locations',
-                        keywords: ['locations', 'places', 'pickup'],
-                    },
-                    {
-                        label: this.intl.t('storefront.common.gateways'),
-                        description: 'Payment gateway settings.',
-                        icon: 'cash-register',
-                        route: 'console.storefront.settings.gateways',
-                        keywords: ['payments', 'stripe', 'qpay', 'checkout'],
-                    },
-                    {
-                        label: this.intl.t('storefront.common.api'),
-                        description: 'Storefront API settings.',
-                        icon: 'code',
-                        route: 'console.storefront.settings.api',
-                        keywords: ['api', 'developer'],
-                    },
-                    {
-                        label: this.intl.t('storefront.common.notification'),
-                        description: 'Notification channel settings.',
-                        icon: 'bell-concierge',
-                        route: 'console.storefront.settings.notifications',
-                        keywords: ['push notifications', 'apn', 'fcm'],
-                    },
-                ],
+                keywords: ['settings', 'general', 'locations', 'gateways', 'payments', 'notifications', 'api', 'hours', 'checkout'],
             },
             {
                 label: this.intl.t('storefront.sidebar.launch-app'),
-                description: 'Open the storefront application repository.',
+                description: this.intl.t('storefront.sidebar.descriptions.launch-app'),
                 icon: 'rocket',
                 url: 'https://github.com/fleetbase/storefront-app',
                 target: '_github',
@@ -189,28 +210,38 @@ export default class ApplicationController extends Controller {
         ];
     }
 
-    get activeStoreUuid() {
-        return this.activeStore?.id;
+    /**
+     * Store context: the networks the active store belongs to, as cross-links.
+     * Clicking one enters that network's context.
+     */
+    get memberOfItems() {
+        if (this.isNetworkContext) {
+            return [];
+        }
+
+        const memberships = this.activeStore?.networks ?? [];
+
+        return memberships.filter((network) => network?.public_id).map((network) => ({ id: network.public_id, name: network.name, icon: 'network-wired', network }));
     }
 
-    get productCategoryItems() {
-        return this.productCategories
-            .filter((category) => category?.slug)
-            .map((category) => {
-                const description = category.description || category.slug;
-                const route = 'console.storefront.products.index.category';
+    @action selectMemberNetwork(item) {
+        return this.switchActiveNetwork(item.network);
+    }
 
-                return {
-                    id: `product-category:${category.id ?? category.slug}`,
-                    label: category.name,
-                    description,
-                    icon: 'folder',
-                    // Route-only matching cannot distinguish categories sharing a dynamic route.
-                    activeWhen: () => this.hostRouter.isActive(route, category.slug),
-                    onClick: () => this.hostRouter.transitionTo(route, category.slug),
-                    keywords: ['category', 'collection', category.slug, category.name, description].filter(Boolean),
-                };
-            });
+    /** Invitations and memberships waiting on the operator, shown on the network's Stores item. */
+    get networkPendingCount() {
+        const invitations = this.activeNetwork?.invitations ?? [];
+
+        return invitations.filter((invitation) => ['pending', 'awaiting_approval'].includes(invitation?.status)).length;
+    }
+
+    /** Orders waiting to be confirmed, shown as the Orders badge. */
+    get ordersToConfirm() {
+        return Number(this.storefront.attention?.orders_to_confirm ?? 0);
+    }
+
+    get activeStoreUuid() {
+        return this.activeStore?.id;
     }
 
     can(permission) {
@@ -221,65 +252,40 @@ export default class ApplicationController extends Controller {
         }
     }
 
-    async loadProductCategories(storeUuid = this.activeStoreUuid) {
-        const ownerUuid = storeUuid;
-        this.categoryLoadStoreUuid = ownerUuid;
-
-        if (!ownerUuid) {
-            this.productCategories = [];
-            return [];
-        }
-
-        try {
-            const categories = await this.store.query('category', {
-                for: 'storefront_product',
-                owner_uuid: ownerUuid,
-                limit: -1,
-            });
-
-            if (this.categoryLoadStoreUuid !== ownerUuid) {
-                return this.productCategories;
-            }
-
-            this.productCategories = categories?.toArray?.() ?? Array.from(categories ?? []);
-            return this.productCategories;
-        } catch (_) {
-            if (this.categoryLoadStoreUuid !== ownerUuid) {
-                return this.productCategories;
-            }
-
-            this.productCategories = [];
-            return [];
-        }
-    }
-
     @action createNewStorefront() {
         return this.storefront.createNewStorefront({
             onSuccess: () => {
                 const loader = this.loader.show({ loadingMessage: 'Switching to newly created store...' });
 
                 this.hostRouter.refresh().then(() => {
-                    this.notifyPropertyChange('activeStore');
-                    this.loadProductCategories(this.activeStoreUuid);
                     this.loader.removeLoader(loader);
                 });
             },
         });
     }
 
+    @action createNewNetwork() {
+        return this.storefront.createNewNetwork({
+            onSuccess: (network) => this.switchActiveNetwork(network),
+        });
+    }
+
     @action switchActiveStore(store) {
         const loader = this.loader.show({ loadingMessage: `Switching Storefront to ${store.name}...` });
+        const leavingNetwork = this.isNetworkContext;
         this.storefront.setActiveStorefront(store);
-        this.productCategories = [];
-        return this.hostRouter
-            .refresh()
-            .then(() => {
-                this.notifyPropertyChange('activeStore');
-                return this.loadProductCategories(store.id);
-            })
-            .finally(() => {
-                this.loader.removeLoader(loader);
-            });
+        // A page inside a network has no meaning for a store, so the switch lands on the store dashboard;
+        // leaving the network route is what clears the network context.
+        const transition = leavingNetwork ? this.hostRouter.transitionTo('console.storefront.home') : this.hostRouter.refresh();
+
+        return Promise.resolve(transition).finally(() => {
+            this.loader.removeLoader(loader);
+        });
+    }
+
+    @action switchActiveNetwork(network) {
+        // Entering the network route is what sets the network context; a switch lands on the overview.
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.index', network.public_id);
     }
 
     @action

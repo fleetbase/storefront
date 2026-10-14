@@ -1,0 +1,68 @@
+{{! Where the order goes: distance and ETA, the route on a map, from and to with their full addresses, the drop-off instructions. }}
+{{#unless this.isPickup}}
+    <div class="sfop-section-pad">
+        <div class="sfop-box" data-test-order-delivery>
+            <div class="sfop-box__head">
+                <span class="sfop-lbl">{{if this.order.meta.is_booking (t "storefront.orders.booking.service-address") (t "storefront.networks.orders.delivery")}}</span>
+                {{#if this.summary}}<span class="sfop-muted sfop-small">{{this.summary}}</span>{{/if}}
+                {{#if @canEdit}}
+                    <span class="sfop-box__head-actions">
+                        <Button @size="xs" @icon="map-marker-alt" @text={{t "storefront.order.panel.edit-address"}} @onClick={{this.editAddress}} @permission="storefront update order" />
+                    </span>
+                {{/if}}
+            </div>
+            <div class="sfop-delivery {{if this.expanded 'is-expanded'}}">
+                <div class="sfop-map-wrap">
+                    <div
+                        class="sfop-map"
+                        role="img"
+                        aria-label={{t "storefront.order.panel.map-label"}}
+                        {{did-insert this.drawMap}}
+                        {{did-update this.drawMap this.dropoff.id this.order.status}}
+                        {{will-destroy this.removeMap}}
+                    ></div>
+                    <div class="sfop-map__controls">
+                        <Button
+                            @size="xs"
+                            @icon="crosshairs"
+                            aria-label={{t "storefront.order.panel.map-focus"}}
+                            title={{t "storefront.order.panel.map-focus"}}
+                            @onClick={{this.focusRoute}}
+                            data-test-order-map-focus
+                        />
+                        <Button
+                            @size="xs"
+                            @icon={{if this.expanded "compress" "expand"}}
+                            aria-label={{if this.expanded (t "storefront.order.panel.map-shrink") (t "storefront.order.panel.map-expand")}}
+                            title={{if this.expanded (t "storefront.order.panel.map-shrink") (t "storefront.order.panel.map-expand")}}
+                            aria-pressed={{if this.expanded "true" "false"}}
+                            @onClick={{this.toggleExpanded}}
+                            data-test-order-map-expand
+                        />
+                    </div>
+                </div>
+                <div class="sfop-delivery__text">
+                    <div class="sfop-delivery__stops">
+                        <div>
+                            <div class="sfop-muted sfop-tiny">{{t "storefront.order.panel.from"}}</div>
+                            <div class="sfop-address"><strong>{{n-a this.pickup.name this.order.meta.storefront}}</strong>{{#each this.pickupLines as |line|}}<span
+                                    >{{line}}</span>{{/each}}</div>
+                        </div>
+                        <div>
+                            <div class="sfop-muted sfop-tiny">{{t "storefront.order.panel.to"}}</div>
+                            <div class="sfop-address">
+                                {{#if this.dropoffLines.length}}
+                                    {{#each this.dropoffLines as |line index|}}{{#if (eq index 0)}}<strong>{{line}}</strong>{{else}}<span>{{line}}</span>{{/if}}{{/each}}
+                                {{else}}
+                                    <strong>{{t "storefront.order.panel.no-address"}}</strong>
+                                {{/if}}
+                            </div>
+                            {{#if this.contactLine}}<div class="sfop-small sfop-muted">{{this.contactLine}}</div>{{/if}}
+                        </div>
+                    </div>
+                    {{#if this.instructions}}<div class="sfop-note">{{this.instructions}}</div>{{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+{{/unless}}

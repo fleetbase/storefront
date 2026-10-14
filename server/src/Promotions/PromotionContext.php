@@ -16,6 +16,12 @@ use Illuminate\Support\Carbon;
 class PromotionContext
 {
     /**
+     * Re-pricing a placed order: its own promotion uses and the order itself are left out of
+     * usage limits and first-order checks, so an edit keeps the promotions it was placed with.
+     */
+    public ?string $excludeOrderUuid = null;
+
+    /**
      * @param PromotionLine[] $lines
      */
     public function __construct(

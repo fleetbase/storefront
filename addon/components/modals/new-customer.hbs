@@ -1,0 +1,19 @@
+<Modal::Default @modalIsOpened={{@modalIsOpened}} @options={{@options}} @confirm={{@onConfirm}} @decline={{@onDecline}}>
+    <div class="storefront-new-customer" data-test-new-customer>
+        <div class="storefront-create-order__field">
+            <label class="storefront-create-order__label" for="new-customer-name">{{t "storefront.common.name"}} <span class="text-red-500">*</span></label>
+            <Input id="new-customer-name" class="form-input w-full" @value={{this.draft.name}} placeholder={{t "storefront.customers.create.name-placeholder"}} data-test-new-customer-name />
+        </div>
+        <div class="storefront-new-customer__row">
+            <div class="storefront-create-order__field">
+                <label class="storefront-create-order__label" for="new-customer-email">{{t "storefront.common.email"}}</label>
+                <Input id="new-customer-email" @type="email" class="form-input w-full" @value={{this.draft.email}} data-test-new-customer-email />
+            </div>
+            <div class="storefront-create-order__field">
+                <span class="storefront-create-order__label">{{t "storefront.common.phone"}}</span>
+                <PhoneInput @value={{this.draft.phone}} @onInput={{this.setPhone}} class="form-input w-full" />
+            </div>
+        </div>
+        <p class="storefront-create-order__help">{{t "storefront.customers.create.help"}}</p>
+    </div>
+</Modal::Default>

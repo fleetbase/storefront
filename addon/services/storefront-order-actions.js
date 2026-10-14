@@ -1,15 +1,102 @@
 import Service, { inject as service } from '@ember/service';
+import { getOwner } from '@ember/application';
+import { tracked } from '@glimmer/tracking';
 import { isArray } from '@ember/array';
+import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
+import { storeOffset, formatInStore } from '../utils/store-time';
+
+class CancelDraft {
+    @tracked reason = '';
+    // refund | store_credit | none
+    @tracked giveBack = 'none';
+    @tracked amount = 0;
+}
+
+class RescheduleDraft {
+    @tracked start = null;
+    @tracked end = null;
+    @tracked notifyCustomer = true;
+    @tracked notifyProvider = true;
+}
+
+/**
+ * State the order panel's header and body share: whether the messages drawer is open, on which
+ * thread, with what draft, and the order's overview (payment, alerts, unread counts).
+ */
+class OrderPanelState {
+    @tracked chatOpen = false;
+    @tracked chatKind = 'customer';
+    @tracked chatDraft = '';
+    @tracked overview = null;
+    @tracked flow = null;
+    @tracked printingLabel = false;
+    @tracked orderId = null;
+    printLabel = null;
+    // The panel's data and the orders list (after an action that changes the order).
+    refresh = null;
+    // The panel's overview only (payment, alerts, chat summary): nothing about the order changed.
+    reloadOverview = null;
+    // The open messages drawer's: a message arrived on the thread it shows.
+    chatArrived = null;
+
+    openChat = (kind = 'customer', draft = '') => {
+        this.chatKind = kind;
+        this.chatDraft = draft ?? '';
+        this.chatOpen = true;
+    };
+
+    closeChat = () => {
+        this.chatOpen = false;
+    };
+
+    setOverview(orderId, overview) {
+        if (this.orderId !== orderId) {
+            this.chatOpen = false;
+            this.chatDraft = '';
+        }
+        this.orderId = orderId;
+        this.overview = overview;
+    }
+
+    get unread() {
+        return this.overview?.chat?.unread ?? {};
+    }
+
+    /** A message arrived on a thread that is not open: count it until the thread is read. */
+    addUnread(kind) {
+        const chat = this.overview?.chat ?? {};
+        const unread = { ...(chat.unread ?? {}), [kind]: (chat.unread?.[kind] ?? 0) + 1 };
+        this.overview = { ...this.overview, chat: { ...chat, unread, unread_total: (chat.unread_total ?? 0) + 1 } };
+    }
+
+    get unreadTotal() {
+        return this.overview?.chat?.unread_total ?? 0;
+    }
+}
 
 export default class StorefrontOrderActionsService extends Service {
+    /** The open order panel's shared state (see OrderPanelState). */
+    panel = new OrderPanelState();
+
     @service intl;
     @service notifications;
     @service fetch;
     @service modalsManager;
+    @service abilities;
     @service storefront;
+    @service store;
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
     @service('universe/menu-service') menuService;
+
+    /**
+     * The router: the engine's host router inside Storefront, the console's own router when the
+     * service is used from the console (the resource context panel), where engines' services are not.
+     */
+    get hostRouter() {
+        const owner = getOwner(this);
+        return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
+    }
 
     async viewOrder(order, options = {}) {
         const hydratedOrder = await this.fetch.get(
@@ -30,9 +117,10 @@ export default class StorefrontOrderActionsService extends Service {
             title: hydratedOrder.public_id,
             header: 'storefront/order/panel-header',
             tabs: this.tabsFor(hydratedOrder),
+            onChange: options.onChange,
             actionButtons: this.actionButtonsFor(hydratedOrder, options.onChange),
             registry: 'storefront:order:details',
-            width: '560px',
+            width: '640px',
             size: 'sm',
             dismissible: false,
             bodyClass: 'scrollable',
@@ -43,34 +131,58 @@ export default class StorefrontOrderActionsService extends Service {
         return hydratedOrder;
     }
 
+    /** The order's own view, then tabs other extensions register on `storefront:component:order:details`. */
     tabsFor() {
-        const registeredTabs = this.menuService.getMenuItems('storefront:component:order:details');
+        const registered = this.menuService.getMenuItems('storefront:component:order:details');
 
         return [
-            {
-                label: 'Overview',
-                key: 'overview',
-                icon: 'folder-open',
-                component: 'storefront/order/details',
-            },
-            ...(isArray(registeredTabs)
-                ? registeredTabs.map((tab) => ({
-                      label: tab.label ?? tab.title,
-                      key: tab.slug,
-                      icon: tab.icon,
-                      component: 'storefront/order/details/registered-tab',
-                      class: tab.slug,
-                  }))
-                : []),
+            { label: this.intl.t('storefront.order.panel.details-tab'), key: 'details', icon: 'receipt', component: 'storefront/order/overview' },
+            ...(isArray(registered) ? registered : []).map((tab) => ({
+                label: tab.label ?? tab.title,
+                key: tab.slug,
+                icon: tab.icon,
+                component: 'storefront/order/details/registered-tab',
+                class: tab.slug,
+            })),
         ];
     }
 
     actionButtonsFor(order, callback) {
-        return [
-            {
-                items: this.actionItemsFor(order, callback),
-            },
-        ];
+        const items = this.actionItemsFor(order, callback);
+        const primary = items.find((item) => item.id === 'perform-workflow-action');
+        const rest = items.filter((item) => item !== primary);
+        const buttons = [];
+
+        if (primary) {
+            buttons.push({ text: primary.text, icon: primary.icon, type: primary.type ?? 'primary', size: 'sm', fn: primary.fn, permission: 'storefront update order' });
+        }
+
+        buttons.push({
+            text: this.intl.t('common.edit'),
+            icon: 'pencil',
+            size: 'sm',
+            permission: 'storefront update order',
+            fn: () => this.editOrder(order),
+        });
+
+        buttons.push({ items: rest });
+
+        return buttons;
+    }
+
+    /**
+     * Opens the order's edit form; `focus` scrolls it to a section (dropoff, items, schedule, contact).
+     */
+    editOrder(order, { focus } = {}) {
+        if (!order?.public_id) {
+            return;
+        }
+
+        try {
+            return this.hostRouter.transitionTo('console.storefront.orders.index.edit', order.public_id, { queryParams: { focus: focus ?? null } });
+        } catch {
+            return null;
+        }
     }
 
     actionItemsFor(order, callback) {
@@ -86,7 +198,9 @@ export default class StorefrontOrderActionsService extends Service {
         return [
             ...workflowItems,
             {
-                text: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'Unassign Driver' : 'Assign Driver',
+                text: this.storefrontOrderWorkflow.hasAssignedDriver(order)
+                    ? this.intl.t('storefront.orders.index.view.unassign-driver')
+                    : this.intl.t('storefront.orders.index.view.assign-driver'),
                 icon: this.storefrontOrderWorkflow.hasAssignedDriver(order) ? 'user-minus' : 'id-card',
                 disabled: isTerminal,
                 fn: () => (this.storefrontOrderWorkflow.hasAssignedDriver(order) ? this.unassignDriver(order, callback) : this.assignDriver(order, callback)),
@@ -96,7 +210,7 @@ export default class StorefrontOrderActionsService extends Service {
             },
             {
                 id: 'cancel-order',
-                text: 'Cancel order',
+                text: this.intl.t('storefront.orders.index.view.cancel-order'),
                 icon: 'ban',
                 class: 'text-danger',
                 disabled: isTerminal,
@@ -243,20 +357,54 @@ export default class StorefrontOrderActionsService extends Service {
         }
     }
 
-    cancelOrder(order, callback) {
-        this.modalsManager.confirm({
-            title: this.intl.t('storefront.component.widget.orders.cancel-order-modal-title'),
-            body: this.intl.t('storefront.component.widget.orders.cancel-order-modal-body'),
-            acceptButtonText: this.intl.t('storefront.component.widget.orders.cancel-order'),
+    /**
+     * Cancel with a reason and give back what was paid: refunded to the gateway (in part where it
+     * can refund part of a payment), given as store credit, or kept. The customer is told why.
+     */
+    async cancelOrder(order, callback) {
+        let overview = null;
+        try {
+            overview = await this.fetch.get(`orders/${order.public_id}/overview`, {}, { namespace: 'storefront/int/v1' });
+        } catch {
+            // The dialog still cancels; it just cannot offer a refund.
+        }
+
+        const plan = overview?.cancel ?? null;
+        const draft = new CancelDraft();
+        if (plan?.refundable > 0) {
+            draft.giveBack = plan.default ?? 'none';
+            draft.amount = plan.refundable;
+        }
+
+        const confirmKey = { refund: 'confirm-refund', store_credit: 'confirm-credit' }[draft.giveBack] ?? 'confirm';
+
+        this.modalsManager.show('modals/cancel-order', {
+            title: this.intl.t('storefront.order.cancel.title'),
+            acceptButtonText: this.intl.t(`storefront.order.cancel.${confirmKey}`, { amount: formatCurrency(draft.amount, plan?.currency) }),
             acceptButtonScheme: 'danger',
+            acceptButtonIcon: 'ban',
+            declineButtonText: this.intl.t('storefront.order.cancel.keep-order'),
             order,
+            payment: overview?.payment ?? null,
+            plan,
+            draft,
             confirm: async (modal) => {
                 modal.startLoading();
 
+                const giveBack = plan?.refundable > 0 && draft.giveBack !== 'none';
                 try {
-                    const response = await this.fetch.patch('orders/cancel', { order: order.id }, { namespace: 'storefront/int/v1' });
+                    const response = await this.fetch.patch(
+                        'orders/cancel',
+                        {
+                            order: order.id,
+                            reason: draft.reason?.trim() || null,
+                            refund: giveBack,
+                            ...(giveBack ? { settlement: draft.giveBack, amount: draft.amount } : {}),
+                        },
+                        { namespace: 'storefront/int/v1' }
+                    );
                     this.setOrderStateFromResponse(order, response, 'canceled', callback);
-                    this.notifications.success(this.intl.t('storefront.component.widget.orders.cancel-order-success', { orderId: order.public_id }));
+                    this.notifications.success(this.intl.t('storefront.order.cancel.success', { orderId: order.public_id }));
                     modal.done();
                 } catch (error) {
                     this.notifications.serverError(error);
@@ -271,6 +419,134 @@ export default class StorefrontOrderActionsService extends Service {
                 modal.done();
             },
         });
+    }
+
+    /**
+     * Show the balance's payment link: copy it, open it, or send it to the customer in the order
+     * chat. The order is marked paid by itself once the customer pays.
+     */
+    showPaymentLink(order, payment = {}) {
+        const link = payment.payment_link;
+        if (!link) {
+            return;
+        }
+
+        const name = String(order?.customer?.name ?? this.intl.t('storefront.common.customer')).split(' ')[0];
+        const amount = payment.balance_due ?? 0;
+
+        this.modalsManager.show('modals/balance-payment-link', {
+            title: this.intl.t('storefront.order.payment-link.title'),
+            acceptButtonText: this.intl.t('storefront.order.payment-link.send', { name }),
+            acceptButtonIcon: 'paper-plane',
+            declineButtonText: this.intl.t('storefront.order.payment-link.close'),
+            link,
+            name,
+            amount,
+            currency: payment.currency,
+            gateway: payment.gateway,
+            confirm: (modal) => {
+                modal.done();
+                this.panel.openChat('customer', this.intl.t('storefront.order.panel.alerts.link-message', { amount: formatCurrency(amount, payment.currency), link }));
+            },
+        });
+    }
+
+    /**
+     * The clock an order's times are read on: its store's (a network order's own store when it is
+     * loaded), else the active store's or network's. Minutes east of UTC.
+     */
+    storeOffsetFor(order) {
+        const storefrontId = order?.meta?.storefront_id;
+        const own = storefrontId
+            ? (this.store.peekAll('store').find((store) => store.public_id === storefrontId) ?? this.store.peekAll('network').find((network) => network.public_id === storefrontId))
+            : null;
+
+        return storeOffset(own ?? this.storefront.activeStore ?? this.storefront.activeNetwork);
+    }
+
+    /** An order's time formatted (date-fns pattern) on its store's clock. */
+    formatForOrder(order, value, pattern) {
+        return formatInStore(value, pattern, this.storeOffsetFor(order));
+    }
+
+    /** A booking can move until its job is under way, by whoever may edit the order. */
+    canReschedule(order, overview) {
+        return (
+            Boolean(order?.meta?.is_booking) &&
+            this.abilities.can('storefront update order') &&
+            overview?.edit?.stage !== 'closed' &&
+            !['in_progress', 'completed', 'canceled', 'order_canceled'].includes(order?.status)
+        );
+    }
+
+    /**
+     * Move a booking to another free time of its service: the week of free times, the customer
+     * and the provider told. The time is changed through the order edit (which checks the time
+     * is still free).
+     */
+    rescheduleBooking(order, callback) {
+        const entities = order?.payload?.entities?.toArray?.() ?? Array.from(order?.payload?.entities ?? []);
+        const line = entities.find((entity) => entity.meta?.scheduled_at) ?? entities.find((entity) => entity.meta?.product_id);
+        const productId = line?.meta?.product_id;
+        if (!productId) {
+            return this.editOrder(order, { focus: 'schedule' });
+        }
+
+        const booking = order.meta?.booking ?? {};
+        const firstName = (name) => String(name ?? '').split(' ')[0];
+        const draft = new RescheduleDraft();
+        const provider = order.driver_assigned;
+
+        this.modalsManager.show('modals/reschedule-booking', {
+            title: this.intl.t('storefront.order.reschedule.title'),
+            acceptButtonText: this.intl.t('storefront.order.reschedule.move'),
+            acceptButtonIcon: 'calendar-check',
+            acceptButtonDisabled: true,
+            declineButtonText: this.intl.t('storefront.order.reschedule.keep'),
+            size: 'lg',
+            order,
+            product: { id: productId, name: line.name },
+            current: booking.start ?? order.meta?.booking_at ?? null,
+            currentEnd: booking.end ?? null,
+            customerName: firstName(order.customer?.name) || this.intl.t('storefront.order.edit.the-customer'),
+            providerName: provider ? firstName(provider.name) || this.intl.t('storefront.order.edit.the-driver') : null,
+            draft,
+            confirm: async (modal) => {
+                if (!draft.start) {
+                    return;
+                }
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch(
+                        `orders/${order.public_id}/edit`,
+                        { scheduled_at: draft.start, notify_customer: draft.notifyCustomer, notify_driver: Boolean(provider) && draft.notifyProvider },
+                        { namespace: 'storefront/int/v1' }
+                    );
+                    await order.reload();
+                    this.notifications.success(this.intl.t('storefront.order.reschedule.moved', { id: order.public_id }));
+                    modal.done();
+                    (this.panel.refresh ?? callback)?.(order);
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
+    /**
+     * Assign a driver to an order without the dialog (a booking's provider is its driver), the
+     * same way the Assign driver dialog does.
+     */
+    async setDriver(order, driver) {
+        this.setOrderProperty(order, 'driver_assigned', driver);
+        this.setOrderProperty(order, 'driver_assigned_uuid', driver?.id ?? driver?.uuid ?? null);
+        this.setOrderProperty(order, 'has_driver_assigned', Boolean(driver));
+        await order.save();
+
+        return order;
     }
 
     async assignDriver(order, callback) {
@@ -360,7 +636,7 @@ export default class StorefrontOrderActionsService extends Service {
             acceptButtonText: this.intl.t('storefront.component.widget.orders.accept-order'),
             acceptButtonScheme: 'success',
             acceptButtonIcon: 'check',
-            modalClass: 'scrollable-height-dialog',
+            modalClass: 'scrollable-height-dialog storefront-incoming-order-modal',
             order,
             store,
             assignDriver: async () => {
@@ -544,13 +820,57 @@ export default class StorefrontOrderActionsService extends Service {
         });
     }
 
+    /**
+     * Move the order to a step of its own flow (`option` from the flow endpoint's `next` or
+     * `completion`). The server takes the step from the order's config; proof the step asks for
+     * cannot be captured from the console, so it is bypassed, and the dialog says so.
+     */
+    moveToActivity(order, option, callback) {
+        if (!option?.code) {
+            return;
+        }
+
+        const t = (key, options) => this.intl.t(`storefront.order.panel.step-dialog.${key}`, options);
+        const isPickup = this.storefrontOrderWorkflow.isPickupOrder(order);
+        const body = [option.complete ? t(isPickup ? 'complete-pickup-body' : 'complete-body') : t('move-body', { step: option.label }), option.require_pod ? t('no-proof') : null]
+            .filter(Boolean)
+            .join(' ');
+
+        this.modalsManager.confirm({
+            title: option.complete ? t(isPickup ? 'complete-pickup-title' : 'complete-title') : t('move-title', { step: option.label }),
+            body,
+            acceptButtonText: option.complete ? t(isPickup ? 'complete-pickup' : 'complete') : t('move', { step: option.label }),
+            acceptButtonIcon: option.complete ? 'check' : 'forward',
+            acceptButtonScheme: option.complete ? 'success' : 'primary',
+            confirm: async (modal) => {
+                modal.startLoading();
+
+                try {
+                    await this.fetch.patch(
+                        `orders/update-activity/${order.public_id ?? order.id}`,
+                        { activity: { code: option.code }, bypass_proof: true },
+                        { namespace: 'storefront/int/v1' }
+                    );
+                    order.set?.('status', option.code);
+                    this.notifications.success(t('moved', { step: option.label }));
+                    modal.done();
+                    callback?.(order);
+                } catch (error) {
+                    this.notifications.serverError(error);
+                } finally {
+                    modal.stopLoading();
+                }
+            },
+        });
+    }
+
     updateActivity(order, activity, callback) {
         if (!activity) {
             return;
         }
 
         this.modalsManager.confirm({
-            title: 'Update Order Activity',
+            title: this.intl.t('storefront.order.update-activity'),
             body: `Update this order to ${activity._resolved_status ?? activity.status ?? activity.code}?`,
             acceptButtonText: 'Update Activity',
             acceptButtonIcon: 'signal',

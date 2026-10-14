@@ -4,6 +4,8 @@ namespace Fleetbase\Storefront\Providers;
 
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
+use Fleetbase\Storefront\Support\StorefrontSocket;
+use Fleetbase\Support\SocketCluster\SocketChannelRegistry;
 
 // These dependency guards are only reachable before Composer can load this provider.
 // The test runtime necessarily has both parent providers loaded, so the throw paths cannot execute.
@@ -33,6 +35,9 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Models\Catalog::class   => \Fleetbase\Storefront\Observers\CatalogObserver::class,
         \Fleetbase\Storefront\Models\FoodTruck::class => \Fleetbase\Storefront\Observers\FoodTruckObserver::class,
         \Fleetbase\Models\Company::class              => \Fleetbase\Storefront\Observers\CompanyObserver::class,
+        \Fleetbase\Models\ChatMessage::class          => \Fleetbase\Storefront\Observers\ChatMessageObserver::class,
+        \Fleetbase\Models\File::class                 => \Fleetbase\Storefront\Observers\FileObserver::class,
+        \Fleetbase\FleetOps\Models\Order::class       => \Fleetbase\Storefront\Observers\OrderActivityObserver::class,
     ];
 
     /**
@@ -64,7 +69,10 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Storefront\Console\Commands\PurgeExpiredCarts::class,
         \Fleetbase\Storefront\Console\Commands\MigrateStripeSandboxCustomers::class,
         \Fleetbase\Storefront\Console\Commands\ReleasePromotionReservations::class,
+        \Fleetbase\Storefront\Console\Commands\ReleaseInventoryReservations::class,
+        \Fleetbase\Storefront\Console\Commands\CheckBalancePayments::class,
         \Fleetbase\Storefront\Console\Commands\DispatchCampaigns::class,
+        \Fleetbase\Storefront\Console\Commands\RotateStorefrontKey::class,
     ];
 
     /**
@@ -97,11 +105,16 @@ class StorefrontServiceProvider extends CoreServiceProvider
     public function boot()
     {
         $this->registerCommands();
+        // A run that outlasts its interval must not start another on top of it (runs pile up and
+        // starve the server). The lock expires after a few minutes so a crashed run cannot block
+        // its command for the default 24 hours.
         $this->scheduleCommands(function ($schedule) {
-            $schedule->command('storefront:notify-order-nearby')->everyMinute()->storeOutputInDb();
-            $schedule->command('storefront:purge-carts')->daily()->storeOutputInDb();
-            $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->storeOutputInDb();
-            $schedule->command('storefront:dispatch-campaigns')->everyMinute()->storeOutputInDb();
+            $schedule->command('storefront:notify-order-nearby')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
+            $schedule->command('storefront:purge-carts')->daily()->withoutOverlapping(60)->storeOutputInDb();
+            $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->withoutOverlapping(15)->storeOutputInDb();
+            $schedule->command('storefront:release-inventory')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
+            $schedule->command('storefront:check-balance-payments')->everyFiveMinutes()->withoutOverlapping(10)->storeOutputInDb();
+            $schedule->command('storefront:dispatch-campaigns')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
         });
         $this->registerObservers();
         $this->registerMiddleware();
@@ -111,5 +124,15 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/database.connections.php', 'database.connections');
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
+        $this->registerStorefrontSocketChannels();
+    }
+
+    /**
+     * Registers the realtime channel prefixes storefront owns (`storefront`, `checkout`)
+     * with core-api's socket channel registry, so the socket server can authorize them.
+     */
+    public function registerStorefrontSocketChannels(): void
+    {
+        StorefrontSocket::registerChannels($this->app->make(SocketChannelRegistry::class));
     }
 }

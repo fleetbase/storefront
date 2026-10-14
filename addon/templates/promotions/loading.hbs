@@ -1,0 +1,11 @@
+{{! A promotions hub page (campaigns, segments, push, redemptions): the hub tabs over a table. }}
+<Skeleton::Page @actions={{1}} @toolbar={{false}} @checkbox={{false}} @columns={{6}} @label={{t "storefront.common.loading"}} class="storefront-loading storefront-loading--hub" data-test-storefront-loading="promotions-hub">
+    <Skeleton::Tabs @count={{4}} @counts={{true}} />
+    <div class="ui-skeleton-table-card">
+        <Skeleton::Table @rows={{8}} @columns={{6}} />
+        <div class="ui-skeleton-table-card-footer">
+            <Skeleton @variant="text" @width="8rem" />
+            <Skeleton @variant="button" @width="9rem" />
+        </div>
+    </div>
+</Skeleton::Page>

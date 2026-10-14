@@ -11,6 +11,7 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\File;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Support\Storefront;
+use Fleetbase\Storefront\Traits\HasStorefrontKey;
 use Fleetbase\Support\Utils as FleetbaseUtils;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
@@ -19,8 +20,8 @@ use Fleetbase\Traits\HasOptionsAttributes;
 use Fleetbase\Traits\HasPublicid;
 use Fleetbase\Traits\HasUuid;
 use Fleetbase\Traits\Searchable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
@@ -33,6 +34,7 @@ class Store extends StorefrontModel
     use HasOptionsAttributes;
     use HasMetaAttributes;
     use HasSlug;
+    use HasStorefrontKey;
     use Searchable;
 
     /**
@@ -43,11 +45,28 @@ class Store extends StorefrontModel
     protected $publicIdType = 'store';
 
     /**
+     * The prefix of the storefront key, which SetStorefrontSession resolves the key by.
+     */
+    public const KEY_PREFIX = 'store_';
+
+    /**
      * The database table used by the model.
      *
      * @var string
      */
     protected $table = 'stores';
+
+    /**
+     * Tables the cached store lists embed, so writes to them invalidate those lists
+     * (read by core's ApiModelCache from fleetbase/core-api#301 on): the rating average
+     * over `reviews`, and `networks` (membership, status and category in `network_stores`),
+     * which the console list loads and filters by. Logo and backdrop are left out: a new
+     * one changes `logo_uuid`/`backdrop_uuid` on the store row itself, and file rows are
+     * not edited, so depending on the busy `files` table would only cost cache hits.
+     *
+     * @var string[]
+     */
+    protected $apiCacheDependencies = ['reviews', 'networks'];
 
     /**
      * These attributes that can be queried.
@@ -107,15 +126,6 @@ class Store extends StorefrontModel
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
-    }
-
-    /** on boot generate key */
-    public static function boot()
-    {
-        parent::boot();
-        static::creating(function ($model) {
-            $model->key = 'store_' . md5(Str::random(14) . time());
-        });
     }
 
     /**
@@ -285,13 +295,45 @@ class Store extends StorefrontModel
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return BelongsToMany
      */
-    public function networks()
+    /**
+     * Catalog assignments pointing at this store.
+     */
+    public function catalogAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(CatalogSubject::class, 'subject', 'subject_type', 'subject_uuid');
+    }
+
+    /**
+     * The catalogs this store serves; a store can be assigned catalogs like a truck.
+     */
+    public function catalogs(): \Illuminate\Database\Eloquent\Relations\MorphToMany
+    {
+        return $this->morphToMany(
+            Catalog::class,
+            'subject',
+            'catalog_subjects',
+            'subject_uuid',
+            'catalog_uuid'
+        );
+    }
+
+    /**
+     * Stores that sell through the network: active members only. Suspended and pending
+     * (not yet approved) members stay in the console but are hidden from every storefront
+     * API, the same way `Network::activeStores()` hides them from the app and carts.
+     */
+    public function scopeActiveInNetwork($query, ?string $networkUuid)
+    {
+        return $query->whereHas('networks', fn ($networkQuery) => $networkQuery->where('network_uuid', $networkUuid)->where('network_stores.status', NetworkStore::STATUS_ACTIVE));
+    }
+
+    public function networks(): BelongsToMany
     {
         return $this->belongsToMany(Network::class, 'network_stores', 'store_uuid', 'network_uuid')
             ->using(NetworkStore::class)
-            ->withPivot(['category_uuid', 'deleted_at'])
+            ->withPivot(['category_uuid', 'status', 'deleted_at'])
             ->wherePivotNull('deleted_at');
     }
 
@@ -340,6 +382,14 @@ class Store extends StorefrontModel
      */
     public function getRatingAttribute()
     {
+        // Use the average preloaded with withAvg('reviews', 'rating') when present, so
+        // listing stores does not run one aggregate query per store.
+        if (array_key_exists('reviews_avg_rating', $this->attributes)) {
+            $average = $this->attributes['reviews_avg_rating'];
+
+            return is_numeric($average) ? $average + 0 : 0;
+        }
+
         return $this->reviews()->avg('rating') ?? 0;
     }
 
@@ -352,17 +402,71 @@ class Store extends StorefrontModel
      */
     public function getNetworkCategoryUsingId(?string $id)
     {
+        $networkUuid = $this->resolveNetworkUuid($id);
+
+        if (!$networkUuid) {
+            return null;
+        }
+
+        return $this->getNetworkCategory((new Network())->forceFill(['uuid' => $networkUuid]));
+    }
+
+    /**
+     * The store's membership status in a network (`active` or `suspended`), or null when it is not a member.
+     */
+    public function getNetworkMembershipStatus(Network $network): ?string
+    {
+        $networkRelation = $this->relationLoaded('networks')
+            ? $this->networks->firstWhere('uuid', $network->uuid)
+            : $this->networks()->where('networks.uuid', $network->uuid)->first();
+
+        if (!$networkRelation) {
+            return null;
+        }
+
+        return $networkRelation->pivot->status ?? NetworkStore::STATUS_ACTIVE;
+    }
+
+    /**
+     * Membership status for a network given by uuid or public id.
+     */
+    public function getNetworkMembershipStatusUsingId(?string $id): ?string
+    {
+        $networkUuid = $this->resolveNetworkUuid($id);
+
+        return $networkUuid ? $this->getNetworkMembershipStatus((new Network())->forceFill(['uuid' => $networkUuid])) : null;
+    }
+
+    /**
+     * A network's uuid from its uuid or public id, resolved once per request.
+     */
+    protected function resolveNetworkUuid(?string $id): ?string
+    {
         if (is_null($id)) {
             return null;
         }
 
-        $network = Network::where('uuid', $id)->orWhere('public_id', $id)->first();
-
-        if (!$network instanceof Network) {
-            return null;
+        // A network's uuid never changes, so resolve each id once instead of once per store.
+        if (!array_key_exists($id, static::$networkUuidsById)) {
+            static::$networkUuidsById[$id] = Network::where('uuid', $id)->orWhere('public_id', $id)->value('uuid');
         }
 
-        return $this->getNetworkCategory($network);
+        return static::$networkUuidsById[$id];
+    }
+
+    /**
+     * Network uuids resolved by uuid or public id.
+     *
+     * @var array<string, string|null>
+     */
+    protected static array $networkUuidsById = [];
+
+    /**
+     * Forget network ids resolved by getNetworkCategoryUsingId().
+     */
+    public static function flushResolvedNetworkIds(): void
+    {
+        static::$networkUuidsById = [];
     }
 
     /**
@@ -374,8 +478,11 @@ class Store extends StorefrontModel
      */
     public function getNetworkCategory(Network $network)
     {
-        // Find the relationship between this store and the given network
-        $networkRelation = $this->networks()->where('networks.uuid', $network->uuid)->first();
+        // Find the relationship between this store and the given network, using the
+        // eager-loaded networks when available.
+        $networkRelation = $this->relationLoaded('networks')
+            ? $this->networks->firstWhere('uuid', $network->uuid)
+            : $this->networks()->where('networks.uuid', $network->uuid)->first();
 
         // Check if the relationship exists
         if ($networkRelation) {

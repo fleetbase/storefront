@@ -404,6 +404,7 @@ storefront:
               enable-tips: تفعيل الإكراميات
               enable-delivery-tips: تفعيل إكراميات التوصيل
               enable-multi-cart-checkout: تفعيل الدفع لعربات متعددة
+              split-tips-across-stores: "تقسيم الإكراميات بين المتاجر في الطلبات متعددة المتاجر"
               enable-user-reviews: تفعيل تقييمات المستخدمين
           api-panel:
             panel-title: واجهة برمجة التطبيقات

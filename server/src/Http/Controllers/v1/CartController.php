@@ -65,10 +65,11 @@ class CartController extends Controller
         $addons          = $request->input('addons', []);
         $scheduledAt     = $request->input('scheduled_at');
         $storeLocationId = $request->input('store_location');
+        $catalogId       = $request->input('catalog');
         $cart            = $this->retrieveCart($cartId);
 
         try {
-            $cart->add($productId, $quantity, $variants, $addons, $storeLocationId, $scheduledAt);
+            $cart->add($productId, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, null, $catalogId);
         } catch (\Exception $e) {
             return response()->error($e->getMessage());
         }
@@ -127,11 +128,12 @@ class CartController extends Controller
      */
     public function empty(string $cartId)
     {
+        // Emptying closes the cart as cleared, keeping its items as a record of what it
+        // held, and continues with the device's open cart. A cart already checked out or
+        // cleared is never touched: retrieveCart() resolves its id to the device's open cart.
         $cart = $this->retrieveCart($cartId);
 
-        $cart->empty();
-
-        return new StorefrontCart($cart);
+        return new StorefrontCart($cart->clear());
     }
 
     /**

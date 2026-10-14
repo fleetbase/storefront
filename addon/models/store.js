@@ -35,11 +35,17 @@ export default class StoreModel extends Model {
     @attr('boolean') online;
     @attr('string') currency;
     @attr('string') timezone;
+    /** The store's clock now, minutes east of UTC (read only, from the API). */
+    @attr('number') utc_offset;
     @attr('string') pod_method;
     @attr('object') options;
     @attr('raw') translations;
     @attr('raw') tags;
     @attr('raw') alertable;
+    /** The networks this store is a member of; present when the query asks `with: ['networks']`. */
+    @attr('raw') networks;
+    /** Membership status (`active` or `suspended`) in the network a list was queried for. */
+    @attr('string') network_status;
     @attr('string') logo_url;
     @attr('string') backdrop_url;
     @attr('string') slug;

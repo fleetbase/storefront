@@ -1,8 +1,40 @@
-<ContentPanel @title="Youtube Videos" @open={{true}} @wrapperClass="bordered-top">
-    <p class="text-sm">Add YouTube video urls to associate with this product or service.</p>
-    <div class="input-group">
-        <ArrayInput @data={{@product.youtube_urls}} @placeholder="Enter youtube video url" @onDataChanged={{fn (mut @product.youtube_urls)}} @disabled={{@disabled}}>
-            <InputLabel @labelText="Youtube Video URLs" @helpText="Input product youtube video urls if applicable." />
-        </ArrayInput>
+{{! YouTube links shown in the product gallery: one row per link, its thumbnail once the link is valid. }}
+<div class="storefront-product-videos" data-test-product-videos>
+    <div class="storefront-product-videos__head">
+        <span class="storefront-create-order__label">{{t "storefront.products.form.fields.video-urls"}}</span>
+        {{#unless @disabled}}
+            <button type="button" class="storefront-create-order__text-action" {{on "click" @onAdd}} data-test-product-video-add>
+                <FaIcon @icon="plus" @size="xs" />
+                {{t "storefront.products.form.videos.add"}}
+            </button>
+        {{/unless}}
     </div>
-</ContentPanel>
+    {{#each @rows as |row|}}
+        <div class="storefront-product-videos__row {{if (and row.url (not row.isValid)) 'is-invalid'}}" data-test-product-video={{row.index}}>
+            <span class="storefront-product-videos__thumb">
+                {{#if row.thumbnail}}
+                    <img src={{row.thumbnail}} alt="" loading="lazy" />
+                {{else}}
+                    <FaIcon @icon="video" />
+                {{/if}}
+            </span>
+            <input
+                type="url"
+                class="form-input w-full"
+                value={{row.url}}
+                placeholder={{t "storefront.products.form.fields.video-placeholder"}}
+                aria-label={{t "storefront.products.form.fields.video-urls"}}
+                disabled={{@disabled}}
+                {{on "change" (fn @onChange row.index)}}
+            />
+            {{#unless @disabled}}
+                <Button @size="xs" @icon="times" @helpText={{t "common.remove"}} aria-label={{t "common.remove"}} @onClick={{fn @onRemove row.index}} />
+            {{/unless}}
+        </div>
+        {{#if (and row.url (not row.isValid))}}
+            <p class="storefront-product-videos__error">{{t "storefront.products.form.videos.invalid"}}</p>
+        {{/if}}
+    {{else}}
+        <p class="storefront-create-order__help mt-0">{{t "storefront.products.form.fields.video-urls-help"}}</p>
+    {{/each}}
+</div>

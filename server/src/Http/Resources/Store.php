@@ -29,6 +29,12 @@ class Store extends FleetbaseResource
             'logo_uuid'           => $this->when(Http::isInternalRequest(), $this->logo_uuid),
             'backdrop_uuid'       => $this->when(Http::isInternalRequest(), $this->backdrop_uuid),
             'order_config_uuid'   => $this->when(Http::isInternalRequest(), $this->order_config_uuid),
+            // The store's timezone (else its company's) and its clock now in minutes east of UTC:
+            // hours, booked times and due times are read on the store's clock, not the device's.
+            'timezone'            => \Fleetbase\Storefront\Support\BookingSlots::timezone($this->resource),
+            'utc_offset'          => \Fleetbase\Storefront\Support\BookingSlots::utcOffset($this->resource),
+            // Settings the console edits: without it a save looks lost on the next load.
+            'pod_method'          => $this->when(Http::isInternalRequest(), $this->pod_method),
             'name'                => $this->name,
             'description'         => $this->description,
             'translations'        => $this->translations ?? [],
@@ -50,10 +56,12 @@ class Store extends FleetbaseResource
             'alertable'           => $this->alertable,
             'is_network'          => false,
             'is_store'            => true,
-            'category'            => $this->when($request->filled('network') && ($request->has('with_category') || $request->inArray('with', 'category')), new Category($this->getNetworkCategoryUsingId($request->input('network')))),
-            'networks'            => $this->when($request->boolean('with_networks') || $request->inArray('with', 'networks'), Network::collection($this->networks)),
-            'locations'           => $this->when($request->boolean('with_locations') || $request->inArray('with', 'locations'), $this->locations->mapInto(StoreLocation::class)),
-            'media'               => $this->when($request->boolean('with_media') || $request->inArray('with', 'media'), Media::collection($this->media)),
+            // Closures, so relations and lookups only run when the field is requested.
+            'category'            => $this->when($request->filled('network') && ($request->has('with_category') || $request->inArray('with', 'category')), fn () => new Category($this->getNetworkCategoryUsingId($request->input('network')))),
+            'network_status'      => $this->when($request->filled('network') && Http::isInternalRequest(), fn () => $this->getNetworkMembershipStatusUsingId($request->input('network'))),
+            'networks'            => $this->when($request->boolean('with_networks') || $request->inArray('with', 'networks'), fn () => Network::collection($this->networks)),
+            'locations'           => $this->when($request->boolean('with_locations') || $request->inArray('with', 'locations'), fn () => $this->locations->mapInto(StoreLocation::class)),
+            'media'               => $this->when($request->boolean('with_media') || $request->inArray('with', 'media'), fn () => Media::collection($this->media)),
             'slug'                => $this->slug,
             'created_at'          => $this->created_at,
             'updated_at'          => $this->updated_at,

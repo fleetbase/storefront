@@ -1,12 +1,11 @@
-import Route from '@ember/routing/route';
+import StorefrontListRoute from '@fleetbase/storefront-engine/utils/list-route';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
-export default class ProductsIndexCategoryRoute extends Route {
+export default class ProductsIndexCategoryRoute extends StorefrontListRoute {
     @service store;
     @service currentUser;
-    @service loader;
     @service intl;
     @service abilities;
     @service hostRouter;
@@ -22,16 +21,18 @@ export default class ProductsIndexCategoryRoute extends Route {
         sku: { refreshModel: true },
         created_at: { refreshModel: true },
         updated_at: { refreshModel: true },
+        status: { refreshModel: true },
+        available: { refreshModel: true },
+        stock: { refreshModel: true },
+        on_sale: { refreshModel: true },
+        recommended: { refreshModel: true },
+        uncategorized: { refreshModel: true },
     };
 
     @action willTransition({ targetName }) {
         if (typeof targetName === 'string' && !targetName.startsWith('console.storefront.products.index.category')) {
             this.controllerFor('products.index').category = null;
         }
-    }
-
-    @action loading(transition) {
-        this.loader.showOnInitialTransition(transition, 'section.next-view-section', { loadingMessage: 'Loading products...' });
     }
 
     beforeModel() {
