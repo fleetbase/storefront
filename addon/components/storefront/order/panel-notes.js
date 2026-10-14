@@ -3,19 +3,23 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
-import { format } from 'date-fns';
-
 /**
  * The 11a notes: the customer's note from checkout and the store's notes on the order. Notes
  * written here are internal: the customer never sees them.
  */
 export default class StorefrontOrderPanelNotesComponent extends Component {
     @service store;
+    @service storefrontOrderActions;
     @service intl;
     @service abilities;
     @service notifications;
     @tracked comments = [];
     @tracked draft = '';
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     constructor() {
         super(...arguments);
@@ -51,7 +55,7 @@ export default class StorefrontOrderPanelNotesComponent extends Component {
                     .slice(0, 2)
                     .map((part) => part[0].toUpperCase())
                     .join(''),
-                time: comment.created_at ? format(comment.created_at, 'd MMM HH:mm') : '',
+                time: comment.created_at ? this.storeTime(comment.created_at, 'd MMM HH:mm') : '',
                 internal: (comment.meta?.visibility ?? 'internal') === 'internal',
             };
         });

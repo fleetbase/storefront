@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action, get } from '@ember/object';
 import storeOpenState from '../utils/store-open-state';
+import { storeOffset } from '../utils/store-time';
 
 export default class HomeController extends Controller {
     @service storefrontDashboard;
@@ -27,7 +28,7 @@ export default class HomeController extends Controller {
     }
 
     get openState() {
-        return storeOpenState(this.hours, { timezone: get(this.activeStore, 'timezone') });
+        return storeOpenState(this.hours, { timezone: get(this.activeStore, 'timezone'), offset: storeOffset(this.activeStore) });
     }
 
     get openStateLabel() {

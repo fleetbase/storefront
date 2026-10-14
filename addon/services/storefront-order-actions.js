@@ -3,6 +3,7 @@ import { getOwner } from '@ember/application';
 import { tracked } from '@glimmer/tracking';
 import { isArray } from '@ember/array';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
+import { storeOffset, formatInStore } from '../utils/store-time';
 
 class CancelDraft {
     @tracked reason = '';
@@ -83,6 +84,7 @@ export default class StorefrontOrderActionsService extends Service {
     @service modalsManager;
     @service abilities;
     @service storefront;
+    @service store;
     @service resourceContextPanel;
     @service storefrontOrderWorkflow;
     @service('universe/menu-service') menuService;
@@ -447,6 +449,24 @@ export default class StorefrontOrderActionsService extends Service {
                 this.panel.openChat('customer', this.intl.t('storefront.order.panel.alerts.link-message', { amount: formatCurrency(amount, payment.currency), link }));
             },
         });
+    }
+
+    /**
+     * The clock an order's times are read on: its store's (a network order's own store when it is
+     * loaded), else the active store's or network's. Minutes east of UTC.
+     */
+    storeOffsetFor(order) {
+        const storefrontId = order?.meta?.storefront_id;
+        const own = storefrontId
+            ? (this.store.peekAll('store').find((store) => store.public_id === storefrontId) ?? this.store.peekAll('network').find((network) => network.public_id === storefrontId))
+            : null;
+
+        return storeOffset(own ?? this.storefront.activeStore ?? this.storefront.activeNetwork);
+    }
+
+    /** An order's time formatted (date-fns pattern) on its store's clock. */
+    formatForOrder(order, value, pattern) {
+        return formatInStore(value, pattern, this.storeOffsetFor(order));
     }
 
     /** A booking can move until its job is under way, by whoever may edit the order. */

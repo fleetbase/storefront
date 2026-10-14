@@ -64,6 +64,9 @@ class Cart extends FleetbaseResource
                         'backdrop_url' => $product->store->backdrop_url,
                         'online'       => $product->store->online,
                         'currency'     => $product->store->currency,
+                        // The store's clock, for a booking's time at checkout.
+                        'timezone'     => \Fleetbase\Storefront\Support\BookingSlots::timezone($product->store),
+                        'utc_offset'   => \Fleetbase\Storefront\Support\BookingSlots::utcOffset($product->store),
                     ]);
                 }
             }

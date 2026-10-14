@@ -52,6 +52,9 @@ class FoodTruck extends FleetbaseResource
                 'logo_url'    => $this->store->logo_url,
                 'currency'    => $this->store->currency,
                 'options'     => $this->store->options,
+                // The clock the truck's hours are read on.
+                'timezone'    => \Fleetbase\Storefront\Support\BookingSlots::timezone($this->store),
+                'utc_offset'  => \Fleetbase\Storefront\Support\BookingSlots::utcOffset($this->store),
             ] : null),
             'created_at'                     => $this->created_at,
             'updated_at'                     => $this->updated_at,

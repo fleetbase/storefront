@@ -11,7 +11,7 @@
                         <div class="storefront-order-item__description">{{n-a entity.description (t "storefront.order.sections.no-description")}}</div>
                         {{#if entity.meta.scheduled_at}}
                             <div class="storefront-order-item__options">
-                                <span>{{t "storefront.order.sections.scheduled-at" date=(format-date-fns entity.meta.scheduled_at "d MMM yyyy HH:mm")}}</span>
+                                <span>{{t "storefront.order.sections.scheduled-at" date=(store-time entity.meta.scheduled_at "d MMM yyyy HH:mm" order=(or @order @resource))}}</span>
                             </div>
                         {{/if}}
                         {{#if entity.meta.variants}}

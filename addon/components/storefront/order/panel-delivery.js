@@ -3,7 +3,7 @@ import { inject as service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { underscore } from '@ember/string';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import getRoutingHost from '@fleetbase/ember-core/utils/get-routing-host';
 
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -37,6 +37,11 @@ export default class StorefrontOrderPanelDeliveryComponent extends Component {
     map = null;
     // What "focus the route" fits the map to: the routed path once known, else the stops.
     routePoints = [];
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     get order() {
         return this.args.order;
@@ -85,7 +90,7 @@ export default class StorefrontOrderPanelDeliveryComponent extends Component {
 
         const due = this.args.overview?.due_at ? parseISO(this.args.overview.due_at) : null;
         if (due && isValid(due) && !this.args.overview?.delivery?.delivered_at) {
-            parts.push(this.intl.t('storefront.order.panel.eta', { time: format(due, 'HH:mm') }));
+            parts.push(this.intl.t('storefront.order.panel.eta', { time: this.storeTime(due, 'HH:mm') }));
         }
 
         return parts.join(' · ');

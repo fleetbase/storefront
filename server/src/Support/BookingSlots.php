@@ -80,13 +80,50 @@ class BookingSlots
     }
 
     /**
-     * The store's time zone, else its company's, else the app's: slots are the store's local times.
+     * The store's timezone, else its company's, else the app's: slots are the store's local times.
+     *
+     * @param Store|Network|object|null $store anything with `timezone` and `company_uuid`
      */
-    public static function timezone(?Store $store): string
+    public static function timezone($store, ?string $companyUuid = null): string
     {
-        $timezone = $store?->timezone ?: ($store ? Company::where('uuid', $store->company_uuid)->value('timezone') : null);
+        $companyUuid = $store?->company_uuid ?? $companyUuid;
+        $timezone    = $store?->timezone ?: static::companyTimezone($companyUuid);
 
         return $timezone ?: config('app.timezone', 'UTC');
+    }
+
+    /**
+     * A company's timezone, looked up once per request (a list of stores shares it). Kept on the
+     * request, not statically: Octane workers outlive requests.
+     */
+    protected static function companyTimezone(?string $companyUuid): ?string
+    {
+        if (!$companyUuid) {
+            return null;
+        }
+
+        $request = request();
+        $known   = (array) $request->attributes->get('storefront.company_timezones', []);
+        if (!array_key_exists($companyUuid, $known)) {
+            $known[$companyUuid] = Company::where('uuid', $companyUuid)->value('timezone');
+            $request->attributes->set('storefront.company_timezones', $known);
+        }
+
+        return $known[$companyUuid];
+    }
+
+    /**
+     * The store's (or network's) clock now, in minutes east of UTC.
+     */
+    public static function utcOffset($storefront): int
+    {
+        $timezone = $storefront?->timezone ?: static::companyTimezone($storefront?->company_uuid);
+
+        try {
+            return Carbon::now($timezone ?: config('app.timezone', 'UTC'))->utcOffset();
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**

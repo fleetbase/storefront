@@ -1,6 +1,7 @@
 import Component from '@glimmer/component';
+import { isSameStoreDay } from '../../../utils/store-time';
 import { inject as service } from '@ember/service';
-import { format, isValid, isToday, parseISO, differenceInMinutes } from 'date-fns';
+import { isValid, parseISO, differenceInMinutes } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 function parse(value) {
@@ -18,6 +19,16 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
     @service abilities;
     @service notifications;
     @service storefrontOrderActions;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
+
+    /** Whether a time falls on today's date on the order's store calendar. */
+    isStoreToday(value) {
+        return isSameStoreDay(value, new Date(), this.storefrontOrderActions.storeOffsetFor(this.args.order ?? this.order));
+    }
 
     get order() {
         return this.args.order;
@@ -52,7 +63,7 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
 
     describe(alert) {
         const at = parse(alert.at);
-        const time = at ? format(at, 'HH:mm') : null;
+        const time = at ? this.storeTime(at, 'HH:mm') : null;
         const edit = (focus, text, primary = true) => (this.canUpdate ? { text, primary, onClick: () => this.storefrontOrderActions.editOrder(this.order, { focus }) } : null);
 
         switch (alert.code) {
@@ -102,7 +113,7 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
                     tone: told ? 'warn' : 'bad',
                     icon: 'clock',
                     title: this.t('late', { late: this.duration(alert.minutes) }),
-                    detail: told ? this.t('late-told', { name: this.firstName, time: format(told, isToday(told) ? 'HH:mm' : 'd MMM HH:mm') }) : this.t('late-detail'),
+                    detail: told ? this.t('late-told', { name: this.firstName, time: this.storeTime(told, this.isStoreToday(told) ? 'HH:mm' : 'd MMM HH:mm') }) : this.t('late-detail'),
                     actions: [
                         told ? null : { text: this.t('tell', { name: this.firstName }), onClick: () => this.storefrontOrderActions.panel.openChat('customer', this.t('late-message')) },
                         primary && this.canUpdate ? { text: primary.text, primary: true, onClick: primary.fn } : null,
@@ -132,7 +143,7 @@ export default class StorefrontOrderPanelAlertsComponent extends Component {
             code: 'delivered',
             tone: 'good',
             icon: 'check',
-            title: `${this.order?.meta?.is_pickup ? this.t('picked-up', { time: format(at, 'HH:mm') }) : this.t('delivered', { time: format(at, 'HH:mm') })}${timing ? `, ${timing}` : ''}.`,
+            title: `${this.order?.meta?.is_pickup ? this.t('picked-up', { time: this.storeTime(at, 'HH:mm') }) : this.t('delivered', { time: this.storeTime(at, 'HH:mm') })}${timing ? `, ${timing}` : ''}.`,
             detail: proofs ? this.t('proof-captured', { count: proofs }) : null,
             actions: proofs ? [{ text: this.t('view-proof'), onClick: () => document.getElementById('sfop-proof')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }] : [],
         };

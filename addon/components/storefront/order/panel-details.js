@@ -1,6 +1,6 @@
 import OrderDetailsDocumentsComponent from './details/documents';
 import { inject as service } from '@ember/service';
-import { format, isValid } from 'date-fns';
+import { isValid } from 'date-fns';
 
 /**
  * The 11a "Details and documents" section, as Details / Metadata / Files tabs: the order's
@@ -9,6 +9,12 @@ import { format, isValid } from 'date-fns';
  */
 export default class StorefrontOrderPanelDetailsComponent extends OrderDetailsDocumentsComponent {
     @service intl;
+    @service storefrontOrderActions;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     get order() {
         return this.args.order;
@@ -29,7 +35,7 @@ export default class StorefrontOrderPanelDetailsComponent extends OrderDetailsDo
         const order = this.order ?? {};
         const when = (value) => {
             const date = value ? new Date(value) : null;
-            return date && isValid(date) ? format(date, 'd MMM yyyy HH:mm') : null;
+            return date && isValid(date) ? this.storeTime(date, 'd MMM yyyy HH:mm') : null;
         };
 
         return [

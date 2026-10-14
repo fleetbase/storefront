@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 function cents(value) {
@@ -24,6 +24,11 @@ function tipAmount(tip, subtotal) {
 export default class StorefrontOrderPanelItemsComponent extends Component {
     @service intl;
     @service storefrontOrderActions;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     get order() {
         return this.args.order;
@@ -117,7 +122,7 @@ export default class StorefrontOrderPanelItemsComponent extends Component {
         const t = (key, options) => this.intl.t(`storefront.order.panel.payment.${key}`, options);
         const money = (amount) => formatCurrency(amount ?? 0, payment.currency ?? this.currency);
         const paidAt = this.args.overview?.payment_reference?.paid_at ? parseISO(this.args.overview.payment_reference.paid_at) : null;
-        const at = paidAt && isValid(paidAt) ? format(paidAt, 'HH:mm') : null;
+        const at = paidAt && isValid(paidAt) ? this.storeTime(paidAt, 'HH:mm') : null;
         const method = payment.method_label;
 
         switch (payment.state) {

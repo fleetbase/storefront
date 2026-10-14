@@ -84,7 +84,7 @@
                             </td>
                             <td><span class="storefront-order-total">{{format-currency row.order.meta.total row.order.meta.currency}}</span></td>
                             <td><Badge @status={{row.order.status}} /></td>
-                            <td><span class="storefront-table-muted">{{format-date-fns row.order.created_at "d MMM, HH:mm"}}</span></td>
+                            <td><span class="storefront-table-muted">{{store-time row.order.created_at "d MMM, HH:mm" order=row.order}}</span></td>
                             <td>
                                 <div class="storefront-table-actions">
                                     {{#if row.next}}

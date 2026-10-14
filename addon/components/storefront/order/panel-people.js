@@ -2,7 +2,7 @@ import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
 import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 const DRIVER_STATUS = {
     dispatched: 'heading-to-store',
@@ -28,6 +28,11 @@ export default class StorefrontOrderPanelPeopleComponent extends Component {
      * The router: the engine's host router inside Storefront, the console's own router when the
      * panel opens from the console (the resource context panel), where engines' services are not.
      */
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
+
     get hostRouter() {
         const owner = getOwner(this);
         return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
@@ -80,7 +85,7 @@ export default class StorefrontOrderPanelPeopleComponent extends Component {
         const since = summary.since ? parseISO(summary.since) : null;
         const orders = this.intl.t('storefront.order.panel.orders-count', { count: summary.orders_count ?? 0 });
 
-        return since && isValid(since) ? `${orders} · ${this.intl.t('storefront.order.panel.since', { date: format(since, 'MMM yyyy') })}` : orders;
+        return since && isValid(since) ? `${orders} · ${this.intl.t('storefront.order.panel.since', { date: this.storeTime(since, 'MMM yyyy') })}` : orders;
     }
 
     get lastMessage() {
@@ -90,7 +95,7 @@ export default class StorefrontOrderPanelPeopleComponent extends Component {
         }
 
         const at = message.at ? parseISO(message.at) : null;
-        return { content: message.content, time: at && isValid(at) ? format(at, 'HH:mm') : '' };
+        return { content: message.content, time: at && isValid(at) ? this.storeTime(at, 'HH:mm') : '' };
     }
 
     get driverStatus() {

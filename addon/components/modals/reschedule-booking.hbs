@@ -15,7 +15,7 @@
                 {{/if}}
             </div>
 
-            <Storefront::Order::BookingSlots @product={{this.options.product}} @value={{or this.draft.start this.options.current}} @current={{this.options.current}} @onSelect={{this.pick}} />
+            <Storefront::Order::BookingSlots @product={{this.options.product}} @value={{or this.draft.start this.options.current}} @current={{this.options.current}} @offset={{this.offset}} @onSelect={{this.pick}} />
 
             <div class="sfrs__tell">
                 <Checkbox @value={{this.draft.notifyCustomer}} @onToggle={{this.toggleCustomer}} data-test-reschedule-notify-customer>

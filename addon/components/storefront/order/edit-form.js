@@ -4,7 +4,7 @@ import { inject as service } from '@ember/service';
 import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 import getRoutingHost from '@fleetbase/ember-core/utils/get-routing-host';
 import findContact from '@fleetbase/storefront-engine/utils/find-contact';
@@ -79,6 +79,11 @@ export default class StorefrontOrderEditFormComponent extends Component {
      * The router: the engine's host router inside Storefront, the console's own router when the
      * panel opens from the console (the resource context panel), where engines' services are not.
      */
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
+
     get hostRouter() {
         const owner = getOwner(this);
         return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
@@ -611,7 +616,7 @@ export default class StorefrontOrderEditFormComponent extends Component {
 
     get dueLabel() {
         const due = this.overview?.due_at ? parseISO(this.overview.due_at) : null;
-        return due && isValid(due) ? this.intl.t('storefront.order.edit.due', { time: format(due, 'HH:mm') }) : this.intl.t('storefront.order.edit.asap-help');
+        return due && isValid(due) ? this.intl.t('storefront.order.edit.due', { time: this.storeTime(due, 'HH:mm') }) : this.intl.t('storefront.order.edit.asap-help');
     }
 
     get hoursLabel() {
@@ -676,8 +681,8 @@ export default class StorefrontOrderEditFormComponent extends Component {
         const end = booking.end ? parseISO(booking.end) : null;
 
         return end && isValid(end)
-            ? this.intl.t('storefront.order.panel.booking-when', { day: format(start, 'EEE d MMM'), start: format(start, 'HH:mm'), end: format(end, 'HH:mm') })
-            : format(start, 'EEE d MMM, HH:mm');
+            ? this.intl.t('storefront.order.panel.booking-when', { day: this.storeTime(start, 'EEE d MMM'), start: this.storeTime(start, 'HH:mm'), end: this.storeTime(end, 'HH:mm') })
+            : this.storeTime(start, 'EEE d MMM, HH:mm');
     }
 
     @action pickSlot(start) {

@@ -202,7 +202,7 @@
         {{else if this.isBooking}}
             {{#if this.bookedLabel}}<div class="sfoe-was">{{t "storefront.order.edit.booked-for"}} {{#if this.scheduleChanged}}<s>{{this.bookedLabel}}</s>{{else}}<strong>{{this.bookedLabel}}</strong>{{/if}}</div>{{/if}}
             {{#if this.bookedService}}
-                <Storefront::Order::BookingSlots @product={{this.bookedService}} @value={{this.scheduledAt}} @current={{this.originalTime}} @onSelect={{this.pickSlot}} />
+                <Storefront::Order::BookingSlots @product={{this.bookedService}} @value={{this.scheduledAt}} @current={{this.originalTime}} @order={{this.order}} @onSelect={{this.pickSlot}} />
             {{else if this.load.isRunning}}
                 <Spinner @size="sm" />
             {{else}}

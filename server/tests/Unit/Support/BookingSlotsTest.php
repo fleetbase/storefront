@@ -119,3 +119,20 @@ test('service settings default to one booking per hour', function () {
     expect(BookingSlots::service(bookableService()))->toMatchArray(['duration_minutes' => 60, 'capacity' => 1])
         ->and(BookingSlots::service(bookableService(['duration_minutes' => 2, 'capacity' => 0])))->toMatchArray(['duration_minutes' => 5, 'capacity' => 1]);
 });
+
+test("a store's clock: its timezone, else its company's, as the offset now", function () {
+    createBookingSchema();
+    bookingDb()->table('companies')->insert(['uuid' => 'company-ub', 'timezone' => 'Asia/Ulaanbaatar']);
+
+    $own      = new Fleetbase\Storefront\Models\Store(['timezone' => 'Asia/Singapore']);
+    $inherits = new Fleetbase\Storefront\Models\Store(['company_uuid' => 'company-ub']);
+    $nothing  = new Fleetbase\Storefront\Models\Store([]);
+
+    expect(BookingSlots::timezone($own))->toBe('Asia/Singapore')
+        ->and(BookingSlots::utcOffset($own))->toBe(480)
+        ->and(BookingSlots::timezone($inherits))->toBe('Asia/Ulaanbaatar')
+        ->and(BookingSlots::utcOffset($inherits))->toBe(480)
+        ->and(BookingSlots::timezone(null, 'company-ub'))->toBe('Asia/Ulaanbaatar')
+        ->and(BookingSlots::timezone($nothing))->toBe(config('app.timezone', 'UTC'))
+        ->and(BookingSlots::utcOffset(new Fleetbase\Storefront\Models\Store(['timezone' => 'Not/AZone'])))->toBe(0);
+});

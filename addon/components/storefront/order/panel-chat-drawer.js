@@ -4,7 +4,7 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { htmlSafe } from '@ember/template';
 import { task, timeout } from 'ember-concurrency';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 const WIDTH = 360;
 
@@ -23,6 +23,11 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
     @tracked rect = null;
     @tracked destination = null;
     observer = null;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     get panel() {
         return this.storefrontOrderActions.panel;
@@ -129,7 +134,7 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
 
     timeOf = (message) => {
         const at = message.created_at ? parseISO(message.created_at) : null;
-        const time = at && isValid(at) ? format(at, 'HH:mm') : '';
+        const time = at && isValid(at) ? this.storeTime(at, 'HH:mm') : '';
         return message.is_mine || message.read ? time : `${time} · ${this.intl.t('storefront.order.panel.unread')}`;
     };
 

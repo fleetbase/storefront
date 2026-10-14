@@ -155,7 +155,7 @@
                             <td><a href="javascript:;" class="storefront-table__link" title={{order.public_id}}>{{or order.tracking order.public_id}}</a></td>
                             <td><Customer::Pill @customer={{hash id=order.customer_id public_id=order.customer_id name=order.customer_name photo_url=order.customer_photo_url}} @title={{order.customer_name}} @subtitle={{null}} @static={{true}} @noTooltip={{true}} /></td>
                             <td><Store::Pill @store={{hash id=order.store_id public_id=order.store_id name=order.store_name logo_url=order.store_logo_url}} @title={{order.store_name}} @subtitle={{null}} @static={{true}} @noTooltip={{true}} /></td>
-                            <td class="storefront-table__muted">{{format-date-fns order.created_at "d MMM, HH:mm"}}</td>
+                            <td class="storefront-table__muted">{{store-time order.created_at "d MMM, HH:mm" order=order}}</td>
                             <td><Badge @status={{order.status}} @size="xs" /></td>
                             <td class="is-right font-semibold">{{format-currency order.total order.currency}}</td>
                         </tr>

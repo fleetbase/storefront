@@ -27,7 +27,8 @@ test('storefront provider registers its required Fleetbase providers', function 
 
 test('storefront provider boot wires commands schedules observers middleware and package files', function () {
     $provider = new class(new Fleetbase\TestSupport\ApplicationContainer()) extends StorefrontServiceProvider {
-        public array $calls = [];
+        public array $calls         = [];
+        public array $overlapGuards = [];
 
         public function registerCommands(): void
         {
@@ -67,13 +68,23 @@ test('storefront provider boot wires commands schedules observers middleware and
                     return $this;
                 }
 
+                public array $guards = [];
+
+                public function withoutOverlapping(int $expiresAt = 1440): self
+                {
+                    $this->guards[end($this->commands)] = $expiresAt;
+
+                    return $this;
+                }
+
                 public function storeOutputInDb(): self
                 {
                     return $this;
                 }
             };
             $callback($schedule);
-            $this->calls = [...$this->calls, ...$schedule->commands];
+            $this->calls         = [...$this->calls, ...$schedule->commands];
+            $this->overlapGuards = $schedule->guards;
         }
 
         public function registerObservers(): void
@@ -132,6 +143,17 @@ test('storefront provider boot wires commands schedules observers middleware and
         'storefront',
         'storefront.api',
         'socket-channels',
+    ]);
+
+    // Every scheduled command skips a run while the last one is still going, with a lock that
+    // expires in minutes, not the default day.
+    expect($provider->overlapGuards)->toBe([
+        'storefront:notify-order-nearby'             => 5,
+        'storefront:purge-carts'                     => 60,
+        'storefront:release-promotion-reservations'  => 15,
+        'storefront:release-inventory'               => 5,
+        'storefront:check-balance-payments'          => 10,
+        'storefront:dispatch-campaigns'              => 5,
     ]);
 });
 

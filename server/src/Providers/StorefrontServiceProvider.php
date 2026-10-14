@@ -105,13 +105,16 @@ class StorefrontServiceProvider extends CoreServiceProvider
     public function boot()
     {
         $this->registerCommands();
+        // A run that outlasts its interval must not start another on top of it (runs pile up and
+        // starve the server). The lock expires after a few minutes so a crashed run cannot block
+        // its command for the default 24 hours.
         $this->scheduleCommands(function ($schedule) {
-            $schedule->command('storefront:notify-order-nearby')->everyMinute()->storeOutputInDb();
-            $schedule->command('storefront:purge-carts')->daily()->storeOutputInDb();
-            $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->storeOutputInDb();
-            $schedule->command('storefront:release-inventory')->everyMinute()->storeOutputInDb();
-            $schedule->command('storefront:check-balance-payments')->everyFiveMinutes()->storeOutputInDb();
-            $schedule->command('storefront:dispatch-campaigns')->everyMinute()->storeOutputInDb();
+            $schedule->command('storefront:notify-order-nearby')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
+            $schedule->command('storefront:purge-carts')->daily()->withoutOverlapping(60)->storeOutputInDb();
+            $schedule->command('storefront:release-promotion-reservations')->everyFifteenMinutes()->withoutOverlapping(15)->storeOutputInDb();
+            $schedule->command('storefront:release-inventory')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
+            $schedule->command('storefront:check-balance-payments')->everyFiveMinutes()->withoutOverlapping(10)->storeOutputInDb();
+            $schedule->command('storefront:dispatch-campaigns')->everyMinute()->withoutOverlapping(5)->storeOutputInDb();
         });
         $this->registerObservers();
         $this->registerMiddleware();

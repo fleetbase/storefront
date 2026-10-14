@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 /**
  * Move a booking: the time it is booked for, the week of its service's free times (its own time
@@ -10,6 +10,16 @@ import { format, isValid, parseISO } from 'date-fns';
 export default class ModalsRescheduleBookingComponent extends Component {
     @service intl;
     @service modalsManager;
+    @service storefrontOrderActions;
+
+    /** The booking's store clock: its times are the store's. */
+    get offset() {
+        return this.storefrontOrderActions.storeOffsetFor(this.options.order);
+    }
+
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.options.order, value, pattern);
+    }
 
     get options() {
         return this.args.options ?? {};
@@ -27,8 +37,8 @@ export default class ModalsRescheduleBookingComponent extends Component {
         const to = end ? parseISO(end) : null;
 
         return to && isValid(to)
-            ? this.intl.t('storefront.order.panel.booking-when', { day: format(from, 'EEE d MMM'), start: format(from, 'HH:mm'), end: format(to, 'HH:mm') })
-            : format(from, 'EEE d MMM, HH:mm');
+            ? this.intl.t('storefront.order.panel.booking-when', { day: this.storeTime(from, 'EEE d MMM'), start: this.storeTime(from, 'HH:mm'), end: this.storeTime(to, 'HH:mm') })
+            : this.storeTime(from, 'EEE d MMM, HH:mm');
     }
 
     get currentLabel() {
@@ -52,7 +62,7 @@ export default class ModalsRescheduleBookingComponent extends Component {
         this.modalsManager.setOption('acceptButtonDisabled', !moved);
         this.modalsManager.setOption(
             'acceptButtonText',
-            moved ? this.intl.t('storefront.order.reschedule.move-to', { time: format(parseISO(start), 'EEE d MMM, HH:mm') }) : this.intl.t('storefront.order.reschedule.move')
+            moved ? this.intl.t('storefront.order.reschedule.move-to', { time: this.storeTime(start, 'EEE d MMM, HH:mm') }) : this.intl.t('storefront.order.reschedule.move')
         );
     }
 

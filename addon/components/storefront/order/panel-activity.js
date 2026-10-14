@@ -3,7 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 /**
@@ -11,8 +11,14 @@ import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
  */
 export default class StorefrontOrderPanelActivityComponent extends Component {
     @service fetch;
+    @service storefrontOrderActions;
     @service intl;
     @tracked entries = null;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     constructor() {
         super(...arguments);
@@ -57,7 +63,7 @@ export default class StorefrontOrderPanelActivityComponent extends Component {
                     text = entry.title ?? entry.body ?? '';
             }
 
-            return { text, time: at && isValid(at) ? format(at, 'd MMM HH:mm') : '' };
+            return { text, time: at && isValid(at) ? this.storeTime(at, 'd MMM HH:mm') : '' };
         });
     }
 

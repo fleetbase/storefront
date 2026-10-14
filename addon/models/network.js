@@ -35,6 +35,8 @@ export default class NetworkModel extends Model {
     @attr('string') key;
     @attr('string') currency;
     @attr('string') timezone;
+    /** The store's clock now, minutes east of UTC (read only, from the API). */
+    @attr('number') utc_offset;
     @attr('string') pod_method;
     @attr('boolean') online;
     @attr('number') stores_count;

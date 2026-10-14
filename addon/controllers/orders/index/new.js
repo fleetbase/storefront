@@ -3,7 +3,8 @@ import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
+import { formatInStore, storeOffset } from '@fleetbase/storefront-engine/utils/store-time';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 import findContact from '@fleetbase/storefront-engine/utils/find-contact';
 
@@ -99,6 +100,11 @@ export default class OrdersIndexNewController extends Controller {
         this.tipCustom = 0;
         this.quote = null;
         this.quoteError = null;
+    }
+
+    /** A time on the store's clock (date-fns pattern): bookings are made in the store's time. */
+    storeTime(value, pattern) {
+        return formatInStore(value, pattern, storeOffset(this.activeStore));
     }
 
     get isNetworkContext() {
@@ -225,7 +231,7 @@ export default class OrdersIndexNewController extends Controller {
         }
 
         const end = this.scheduledEnd ? parseISO(this.scheduledEnd) : null;
-        return `${format(start, 'EEE d MMM')} · ${end && isValid(end) ? this.intl.t('storefront.orders.booking.range', { start: format(start, 'HH:mm'), end: format(end, 'HH:mm') }) : format(start, 'HH:mm')}`;
+        return `${this.storeTime(start, 'EEE d MMM')} · ${end && isValid(end) ? this.intl.t('storefront.orders.booking.range', { start: this.storeTime(start, 'HH:mm'), end: this.storeTime(end, 'HH:mm') }) : this.storeTime(start, 'HH:mm')}`;
     }
 
     get bookingWhere() {
@@ -248,7 +254,7 @@ export default class OrdersIndexNewController extends Controller {
         const total = formatCurrency(this.totals.total ?? 0, this.currency);
 
         return start && isValid(start)
-            ? this.intl.t('storefront.orders.booking.book-at', { when: format(start, 'EEE HH:mm'), total })
+            ? this.intl.t('storefront.orders.booking.book-at', { when: this.storeTime(start, 'EEE HH:mm'), total })
             : this.intl.t('storefront.orders.booking.book', { total });
     }
 

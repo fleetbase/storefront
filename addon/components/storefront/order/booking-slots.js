@@ -4,6 +4,7 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 import { addDays, format, isBefore, parseISO, startOfDay } from 'date-fns';
+import { formatInStore, storeNow, toStoreWall } from '../../../utils/store-time';
 
 const DAYS = 7;
 
@@ -16,23 +17,36 @@ const DAYS = 7;
  * @argument {String} value the chosen slot start (ISO)
  * @argument {String} current the start of the booking being moved (ISO): its own place counts as free
  * @argument {Function} onSelect called with the slot start (ISO) and end
+ * @argument {Number} offset the store's UTC offset in minutes (else the active store's): days and
+ *   times are the store's, whatever the browser's timezone
  */
 export default class StorefrontOrderBookingSlotsComponent extends Component {
     @service fetch;
     @service intl;
     @service notifications;
+    @service storefrontOrderActions;
     @tracked from;
     @tracked date;
     @tracked responses = {};
 
     constructor() {
         super(...arguments);
-        // Open on the chosen day when there is one (and it has not passed), else today.
-        const today = startOfDay(new Date());
-        const chosen = this.args.value ? startOfDay(parseISO(this.args.value)) : null;
+        // Open on the chosen day when there is one (and it has not passed), else today; both on
+        // the store's calendar (the days are wall-clock dates, as the slots endpoint reads them).
+        const today = this.today;
+        const chosen = this.args.value ? startOfDay(toStoreWall(this.args.value, this.offset)) : null;
         this.from = chosen && !isBefore(chosen, today) ? chosen : today;
         this.date = format(chosen ?? today, 'yyyy-MM-dd');
         this.load.perform();
+    }
+
+    get offset() {
+        return this.args.offset ?? this.storefrontOrderActions.storeOffsetFor(this.args.order);
+    }
+
+    /** Today on the store's calendar. */
+    get today() {
+        return startOfDay(storeNow(this.offset));
     }
 
     get service() {
@@ -50,7 +64,7 @@ export default class StorefrontOrderBookingSlotsComponent extends Component {
     }
 
     get canGoBack() {
-        return isBefore(startOfDay(new Date()), this.from);
+        return isBefore(this.today, this.from);
     }
 
     /** A day's slots, with the place of the booking being moved given back. */
@@ -106,7 +120,7 @@ export default class StorefrontOrderBookingSlotsComponent extends Component {
             .filter((slot) => !slot.past)
             .map((slot) => ({
                 ...slot,
-                label: slot.time ?? format(parseISO(slot.start), 'HH:mm'),
+                label: slot.time ?? formatInStore(slot.start, 'HH:mm', this.offset),
                 isSelected: selected === parseISO(slot.start).getTime(),
             }));
     }
@@ -118,7 +132,7 @@ export default class StorefrontOrderBookingSlotsComponent extends Component {
     /** "10:00 to 13:00" for the chosen time. */
     get rangeLabel() {
         const slot = this.selectedSlot;
-        return slot ? this.intl.t('storefront.orders.booking.range', { start: slot.label, end: format(parseISO(slot.end), 'HH:mm') }) : null;
+        return slot ? this.intl.t('storefront.orders.booking.range', { start: slot.label, end: formatInStore(slot.end, 'HH:mm', this.offset) }) : null;
     }
 
     @task({ restartable: true }) *load() {
@@ -156,7 +170,7 @@ export default class StorefrontOrderBookingSlotsComponent extends Component {
 
     @action shiftWeek(direction) {
         const next = addDays(this.from, direction * DAYS);
-        this.from = isBefore(next, startOfDay(new Date())) ? startOfDay(new Date()) : next;
+        this.from = isBefore(next, this.today) ? this.today : next;
         this.load.perform();
     }
 

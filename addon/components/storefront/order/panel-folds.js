@@ -2,7 +2,7 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { task } from 'ember-concurrency';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 import formatCurrency from '@fleetbase/ember-ui/utils/format-currency';
 
 /**
@@ -13,6 +13,11 @@ export default class StorefrontOrderPanelFoldsComponent extends Component {
     @service intl;
     @service storefrontOrderActions;
     @tracked siblings = [];
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     constructor() {
         super(...arguments);
@@ -49,7 +54,7 @@ export default class StorefrontOrderPanelFoldsComponent extends Component {
             { label: t('method'), value: payment.method_label ?? '—' },
             { label: t('payment-state'), value: payment.state ? this.intl.t(`storefront.order.panel.payment-states.${payment.state}`) : '—' },
             { label: t('paid'), value: money(payment.amount_paid) },
-            { label: t('paid-at'), value: paidAt && isValid(paidAt) ? format(paidAt, 'd MMM HH:mm') : '—' },
+            { label: t('paid-at'), value: paidAt && isValid(paidAt) ? this.storeTime(paidAt, 'd MMM HH:mm') : '—' },
             reference.transaction ? { label: t('transaction'), value: reference.transaction, mono: true, copy: true } : null,
             reference.reference ? { label: t('gateway-reference'), value: reference.reference, mono: true, copy: true } : null,
             reference.invoice ? { label: t('invoice'), value: reference.invoice, mono: true, copy: true } : null,
@@ -68,7 +73,7 @@ export default class StorefrontOrderPanelFoldsComponent extends Component {
                 text:
                     this.intl.t(`storefront.order.panel.activity.payment-${adjustment.type}`, { amount: formatCurrency(Math.abs(adjustment.amount ?? 0), this.payment.currency) }) +
                     (adjustment.reference ? ` · ${adjustment.reference}` : ''),
-                time: at && isValid(at) ? format(at, 'd MMM HH:mm') : '',
+                time: at && isValid(at) ? this.storeTime(at, 'd MMM HH:mm') : '',
             };
         });
     }

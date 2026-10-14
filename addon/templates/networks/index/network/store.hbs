@@ -88,7 +88,7 @@
                                 <td><a href="javascript:;" class="storefront-table__link" title={{order.public_id}}>{{or order.tracking order.public_id}}</a></td>
                                 <td><Table::Cell::Identity @row={{order}} @value={{order.customer}} @column={{hash resourceType="customer" resourcePath="customer"}} /></td>
                                 <td><Badge @status={{if order.meta.is_pickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if order.meta.is_pickup (t "storefront.common.pickup") (t "storefront.common.delivery")}} /></td>
-                                <td class="storefront-table__muted">{{format-date-fns order.created_at "d MMM, HH:mm"}}</td>
+                                <td class="storefront-table__muted">{{store-time order.created_at "d MMM, HH:mm" order=order}}</td>
                                 <td><Badge @status={{order.status}} @size="xs" /></td>
                                 <td class="is-right font-semibold">{{format-currency order.meta.total order.meta.currency}}</td>
                             </tr>

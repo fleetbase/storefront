@@ -1,7 +1,8 @@
 import StorefrontOrderFlowStepsComponent from './flow-steps';
+import { isSameStoreDay } from '../../../utils/store-time';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
-import { format, formatDistanceToNowStrict, isPast, isValid, parseISO } from 'date-fns';
+import { formatDistanceToNowStrict, isPast, isValid, parseISO } from 'date-fns';
 
 const FINISHED = ['completed', 'picked_up', 'canceled', 'order_canceled', 'expired', 'failed'];
 // Statuses with their own Storefront action (accepting, and marking ready, which dispatches).
@@ -48,6 +49,16 @@ function parse(value) {
  */
 export default class StorefrontOrderPanelProgressComponent extends StorefrontOrderFlowStepsComponent {
     @service storefrontOrderActions;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
+
+    /** Whether a time falls on today's date on the order's store calendar. */
+    isStoreToday(value) {
+        return isSameStoreDay(value, new Date(), this.storefrontOrderActions.storeOffsetFor(this.args.order ?? this.order));
+    }
 
     get overview() {
         return this.args.overview;
@@ -139,7 +150,7 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
     }
 
     timeLabel(date) {
-        return format(date, new Date().toDateString() === date.toDateString() ? 'HH:mm' : 'd MMM HH:mm');
+        return this.storeTime(date, this.isStoreToday(date) ? 'HH:mm' : 'd MMM HH:mm');
     }
 
     get timedSteps() {
@@ -288,8 +299,8 @@ export default class StorefrontOrderPanelProgressComponent extends StorefrontOrd
 
         const end = parse(booking.end);
         const when = end
-            ? this.intl.t('storefront.order.panel.booking-when', { day: format(start, 'EEE d MMM'), start: format(start, 'HH:mm'), end: format(end, 'HH:mm') })
-            : format(start, 'EEE d MMM, HH:mm');
+            ? this.intl.t('storefront.order.panel.booking-when', { day: this.storeTime(start, 'EEE d MMM'), start: this.storeTime(start, 'HH:mm'), end: this.storeTime(end, 'HH:mm') })
+            : this.storeTime(start, 'EEE d MMM, HH:mm');
         const relative = this.isFinished
             ? null
             : isPast(start)

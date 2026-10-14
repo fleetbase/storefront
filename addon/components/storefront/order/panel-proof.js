@@ -1,6 +1,6 @@
 import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 /**
  * The 11a proof-of-delivery box: what the driver (or the store) captured for the order, from the
@@ -8,6 +8,12 @@ import { format, isValid, parseISO } from 'date-fns';
  */
 export default class StorefrontOrderPanelProofComponent extends Component {
     @service intl;
+    @service storefrontOrderActions;
+
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
 
     get items() {
         return (this.args.overview?.delivery?.proof_items ?? []).map((proof) => {
@@ -18,7 +24,7 @@ export default class StorefrontOrderPanelProofComponent extends Component {
                 ...proof,
                 typeLabel: this.intl.t(`storefront.order.panel.proof-types.${type}`),
                 isImage: Boolean(proof.url) && (String(proof.content_type ?? '').startsWith('image/') || !proof.content_type),
-                time: at && isValid(at) ? format(at, 'd MMM HH:mm') : null,
+                time: at && isValid(at) ? this.storeTime(at, 'd MMM HH:mm') : null,
             };
         });
     }

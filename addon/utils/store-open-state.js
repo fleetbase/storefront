@@ -1,3 +1,5 @@
+import { storeClock } from './store-time';
+
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 /**
@@ -69,19 +71,20 @@ function normalizeHours(hours) {
 
 /**
  * Whether a store is open right now from its hour rows (`day_of_week`, `start`, `end`),
- * evaluated in the store's timezone. Hours from several locations can be passed together:
+ * evaluated on the store's clock: its UTC offset from the API (`offset`, minutes) when known,
+ * else its timezone through the browser. Hours from several locations can be passed together:
  * the store counts as open when any of them is.
  *
  * @returns {{ hasHours: boolean, isOpen: boolean, closesAt: string|null, opensAt: string|null, opensDay: string|null }}
  */
-export default function storeOpenState(hours, { timezone, now = new Date() } = {}) {
+export default function storeOpenState(hours, { timezone, offset, now = new Date() } = {}) {
     const rows = normalizeHours(hours);
 
     if (!rows.length) {
         return { hasHours: false, isOpen: false, closesAt: null, opensAt: null, opensDay: null };
     }
 
-    const { day, minutes } = localClock(now, timezone);
+    const { day, minutes } = Number.isFinite(offset) ? storeClock(offset, now) : localClock(now, timezone);
     const today = rows.filter((row) => row.day === day);
     const current = today.filter((row) => row.start <= minutes && minutes < row.end).sort((a, b) => b.end - a.end)[0];
 

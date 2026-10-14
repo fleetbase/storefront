@@ -15,7 +15,7 @@
                     {{#if this.trackingDurationSeconds}}
                         {{format-duration this.trackingDurationSeconds}}
                     {{else if this.hasCompletionEta}}
-                        {{format-date-fns this.trackerData.eta.completion_at "d MMM HH:mm"}}
+                        {{store-time this.trackerData.eta.completion_at "d MMM HH:mm" order=(or @order @resource)}}
                     {{else}}
                         -
                     {{/if}}

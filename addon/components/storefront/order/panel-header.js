@@ -2,7 +2,7 @@ import Component from '@glimmer/component';
 import { inject as service } from '@ember/service';
 import { getOwner } from '@ember/application';
 import { action } from '@ember/object';
-import { format, formatDistanceToNowStrict, isValid } from 'date-fns';
+import { formatDistanceToNowStrict, isValid } from 'date-fns';
 
 /**
  * The order panel's header, as the 11a design draws it. The primary flow action lives in the
@@ -19,6 +19,11 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
      * The router: the engine's host router inside Storefront, the console's own router when the
      * panel opens from the console (the resource context panel), where engines' services are not.
      */
+    /** A time on the order's store clock (date-fns pattern), not the browser's. */
+    storeTime(value, pattern) {
+        return this.storefrontOrderActions.formatForOrder(this.args.order ?? this.order, value, pattern);
+    }
+
     get hostRouter() {
         const owner = getOwner(this);
         return owner.lookup('service:hostRouter') ?? owner.lookup('service:router');
@@ -60,7 +65,7 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
             return null;
         }
 
-        return this.intl.t('storefront.order.panel.placed', { time: format(created, 'd MMM HH:mm'), ago: formatDistanceToNowStrict(created, { addSuffix: true }) });
+        return this.intl.t('storefront.order.panel.placed', { time: this.storeTime(created, 'd MMM HH:mm'), ago: formatDistanceToNowStrict(created, { addSuffix: true }) });
     }
 
     get canEdit() {
