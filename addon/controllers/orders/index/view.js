@@ -29,8 +29,9 @@ export default class OrdersIndexViewController extends BaseController {
         return this.storefrontOrderActions.actionButtonsFor(this.model, this.refreshOrder);
     }
 
+    /** The order and the list behind it, in place: the panel stays open while they reload. */
     @action refreshOrder() {
-        return this.hostRouter.refresh();
+        return this.hostRouter.refresh('console.storefront.orders.index');
     }
 
     /**

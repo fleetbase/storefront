@@ -18,7 +18,11 @@ import { inject as service } from '@ember/service';
 export function realQueryParamChanges(changed = {}, previous = {}, defaults = {}) {
     const normalize = (value) => (value === undefined || value === null ? '' : String(value));
 
+    // Only the list's own params: a child panel's (`booking`, `for_customer`) is not a list change.
     return Object.keys(changed).filter((key) => {
+        if (!Object.prototype.hasOwnProperty.call(defaults, key)) {
+            return false;
+        }
         const before = Object.prototype.hasOwnProperty.call(previous, key) ? previous[key] : defaults[key];
         return normalize(changed[key]) !== normalize(before);
     });
@@ -40,11 +44,17 @@ export default class StorefrontListRoute extends Route {
         // A child route dropping its own param (a panel's `for_customer`) is not a list change.
         const ownRemovals = Object.keys(removed ?? {}).filter((key) => Object.prototype.hasOwnProperty.call(defaults, key));
 
-        if (ownRemovals.length === 0 && realQueryParamChanges(changed, previous, defaults).length === 0) {
+        const real = realQueryParamChanges(changed, previous, defaults);
+        if (ownRemovals.length === 0 && real.length === 0) {
             // Nothing the list depends on changed; let the event keep bubbling as Ember's would.
             return true;
         }
 
-        return Route.prototype.actions.queryParamsDidChange.call(this, changed, totalPresent, removed);
+        // Ember refreshes for any of the route's params merely present in `changed`, and the router
+        // re-sends them all: hand it only the ones that changed.
+        const onlyReal = Object.fromEntries(real.map((key) => [key, changed[key]]));
+        const onlyOwnRemovals = Object.fromEntries(ownRemovals.map((key) => [key, removed[key]]));
+
+        return Route.prototype.actions.queryParamsDidChange.call(this, onlyReal, totalPresent, onlyOwnRemovals);
     }
 }

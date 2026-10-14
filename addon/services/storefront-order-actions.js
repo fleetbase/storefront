@@ -31,7 +31,10 @@ class OrderPanelState {
     @tracked printingLabel = false;
     @tracked orderId = null;
     printLabel = null;
+    // The panel's data and the orders list (after an action that changes the order).
     refresh = null;
+    // The panel's overview only (payment, alerts, chat summary): nothing about the order changed.
+    reloadOverview = null;
 
     openChat = (kind = 'customer', draft = '') => {
         this.chatKind = kind;

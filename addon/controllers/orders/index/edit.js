@@ -26,7 +26,7 @@ export default class OrdersIndexEditController extends Controller {
     }
 
     @action saved() {
-        this.hostRouter.refresh();
+        this.hostRouter.refresh('console.storefront.orders.index');
         return this.backToOrder();
     }
 }

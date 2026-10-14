@@ -43,6 +43,7 @@ export default class StorefrontOrderOverviewComponent extends Component {
             panel.setOverview(this.order.public_id, overview);
             panel.flow = flow;
             panel.refresh = this.refresh;
+            panel.reloadOverview = this.reload;
             panel.printLabel = () => this.printLabel.perform();
         } catch {
             this.overview = null;

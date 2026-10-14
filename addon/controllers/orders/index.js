@@ -468,7 +468,7 @@ export default class OrdersIndexController extends BaseController {
     }
 
     @action refreshOrders() {
-        return this.hostRouter.refresh();
+        return this.hostRouter.refresh('console.storefront.orders.index');
     }
 
     @action assignDriver(order) {
