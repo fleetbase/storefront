@@ -174,6 +174,51 @@ test('an existing booking config is found, and creating one for a company return
         ->and(OrderConfig::where('company_uuid', $companyUuid)->count())->toBe(1);
 });
 
+/** Forget the booking configs answered from memory, as a new process would. */
+function storefrontCoverageForgetBookingConfigs(): void
+{
+    (new ReflectionClass(Storefront::class))->setStaticPropertyValue('bookingConfigCache', []);
+}
+
+test('a new booking config keeps its key though Fleet-Ops keys new configs by name, and a new process finds it', function () {
+    $companyUuid = 'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd';
+    storefrontCoverageForgetBookingConfigs();
+
+    $created = Storefront::getBookingOrderConfig($companyUuid);
+    storefrontCoverageForgetBookingConfigs();
+    $found = Storefront::getBookingOrderConfig($companyUuid);
+
+    expect($created->key)->toBe(Storefront::BOOKING_CONFIG_KEY)
+        ->and(storefrontCoverageDb()->table('order_configs')->where('company_uuid', $companyUuid)->value('key'))->toBe(Storefront::BOOKING_CONFIG_KEY)
+        // Before, a lookup by key missed the `storefront-booking` row and every process made another.
+        ->and($found->uuid)->toBe($created->uuid)
+        ->and(OrderConfig::where('company_uuid', $companyUuid)->count())->toBe(1);
+});
+
+test('booking configs made under the name key are found and keyed again; of duplicates the oldest is used', function () {
+    $companyUuid = 'abababab-abab-4bab-8bab-abababababab';
+    foreach ([['booking_newer', '2026-10-13 09:00:00'], ['booking_oldest', '2026-10-01 09:00:00']] as [$uuid, $createdAt]) {
+        storefrontCoverageDb()->table('order_configs')->insert([
+            'uuid'         => $uuid,
+            'company_uuid' => $companyUuid,
+            'key'          => 'storefront-booking',
+            'namespace'    => Storefront::BOOKING_CONFIG_NS,
+            'name'         => 'Storefront Booking',
+            'flow'         => json_encode([]),
+            'created_at'   => $createdAt,
+        ]);
+    }
+    storefrontCoverageForgetBookingConfigs();
+
+    $config = Storefront::getBookingOrderConfig($companyUuid);
+
+    expect($config->uuid)->toBe('booking_oldest')
+        ->and(storefrontCoverageDb()->table('order_configs')->where('uuid', 'booking_oldest')->value('key'))->toBe(Storefront::BOOKING_CONFIG_KEY)
+        ->and(storefrontCoverageDb()->table('order_configs')->where('uuid', 'booking_newer')->value('key'))->toBe('storefront-booking')
+        ->and(Storefront::createBookingConfig($companyUuid)->uuid)->toBe('booking_oldest')
+        ->and(OrderConfig::where('company_uuid', $companyUuid)->count())->toBe(2);
+});
+
 test('without a company there is no booking config', function () {
     $previous = session('company');
     session(['company' => null]);

@@ -609,10 +609,32 @@ class Storefront
             return static::$bookingConfigCache[$companyUuid];
         }
 
-        $config = OrderConfig::where(['company_uuid' => $companyUuid, 'key' => self::BOOKING_CONFIG_KEY, 'namespace' => self::BOOKING_CONFIG_NS])->first()
-            ?? DB::transaction(fn () => static::createBookingConfig($companyUuid));
+        $config = static::findBookingConfig($companyUuid) ?? DB::transaction(fn () => static::createBookingConfig($companyUuid));
 
         return static::$bookingConfigCache[$companyUuid] = $config;
+    }
+
+    /**
+     * The company's booking config, by its namespace. Fleet-Ops keys a new config by its name
+     * (`storefront-booking`), so a lookup by key missed every config it had created and each new
+     * process made another; the oldest is the one (earlier orders follow it), and its key is
+     * set back to BOOKING_CONFIG_KEY.
+     */
+    protected static function findBookingConfig(string $companyUuid): ?OrderConfig
+    {
+        $config = OrderConfig::where(['company_uuid' => $companyUuid, 'namespace' => self::BOOKING_CONFIG_NS])->orderBy('created_at')->orderBy('id')->first();
+
+        return $config ? static::keyBookingConfig($config) : null;
+    }
+
+    /** The booking config keyed BOOKING_CONFIG_KEY, whatever Fleet-Ops gave it. */
+    protected static function keyBookingConfig(OrderConfig $config): OrderConfig
+    {
+        if ($config->key !== self::BOOKING_CONFIG_KEY) {
+            $config->forceFill(['key' => self::BOOKING_CONFIG_KEY])->saveQuietly();
+        }
+
+        return $config;
     }
 
     /**
@@ -639,13 +661,15 @@ class Storefront
             'canceled'         => static::bookingActivity('canceled', 'Booking canceled', 'Your booking was canceled.', [], [], ['events' => ['order.canceled']]),
         ];
 
-        return OrderConfig::firstOrCreate(
+        $existing = static::findBookingConfig($companyUuid);
+        if ($existing) {
+            return $existing;
+        }
+
+        // Fleet-Ops keys a new config by its name on creation; the key is set back after.
+        return static::keyBookingConfig(OrderConfig::create(
             [
                 'company_uuid' => $companyUuid,
-                'key'          => self::BOOKING_CONFIG_KEY,
-                'namespace'    => self::BOOKING_CONFIG_NS,
-            ],
-            [
                 'name'         => 'Storefront Booking',
                 'key'          => self::BOOKING_CONFIG_KEY,
                 'namespace'    => self::BOOKING_CONFIG_NS,
@@ -658,7 +682,7 @@ class Storefront
                 'meta'         => [],
                 'flow'         => $flow,
             ]
-        );
+        ));
     }
 
     /**
