@@ -29,6 +29,9 @@ class Store extends FleetbaseResource
             'logo_uuid'           => $this->when(Http::isInternalRequest(), $this->logo_uuid),
             'backdrop_uuid'       => $this->when(Http::isInternalRequest(), $this->backdrop_uuid),
             'order_config_uuid'   => $this->when(Http::isInternalRequest(), $this->order_config_uuid),
+            // Settings the console edits: without them a save looks lost on the next load.
+            'timezone'            => $this->when(Http::isInternalRequest(), $this->timezone),
+            'pod_method'          => $this->when(Http::isInternalRequest(), $this->pod_method),
             'name'                => $this->name,
             'description'         => $this->description,
             'translations'        => $this->translations ?? [],

@@ -1,13 +1,30 @@
-{{! Renders in the settings content area beside the rail; the shell header stays. Two sections of two-column fields. }}
+{{! Payment gateways and notification channels, beside the rail (the shell header stays): the section with its lede and create button, then an item of two-column fields. }}
 <Skeleton::Page @hideHeader={{true}} @label={{t "storefront.common.loading"}} class="storefront-loading storefront-loading--body storefront-loading--settings" data-test-storefront-loading="settings">
-    {{#each (array 6 4) as |fields|}}
-        <div class="ui-skeleton-table-card storefront-skeleton-section">
-            <div class="storefront-skeleton-section__head">
-                <Skeleton @variant="text" @width="6rem" />
+    <div class="storefront-skeleton-settings__sections">
+        <div class="ui-skeleton-table-card storefront-skeleton-cpanel">
+            <div class="storefront-skeleton-cpanel__bar">
+                <Skeleton @variant="text" @width="9rem" />
                 <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
             </div>
-            <Skeleton @variant="text" @width="40%" @height="0.625rem" />
-            <Skeleton::Form @fields={{fields}} @columns={{2}} />
+            <div class="storefront-skeleton-cpanel__body">
+                <div class="storefront-skeleton-cpanel__lede">
+                    <Skeleton @variant="text" @width="40%" @height="0.625rem" />
+                    <Skeleton @variant="button" @width="11rem" />
+                </div>
+                <div class="ui-skeleton-table-card storefront-skeleton-cpanel">
+                    <div class="storefront-skeleton-cpanel__bar">
+                        <Skeleton @variant="text" @width="4rem" />
+                        <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                    </div>
+                    <div class="storefront-skeleton-cpanel__body">
+                        <Skeleton::Form @fields={{6}} @columns={{2}} />
+                        <span class="storefront-skeleton-row">
+                            <Skeleton @variant="button" @width="9rem" />
+                            <Skeleton @variant="button" @width="9rem" />
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
-    {{/each}}
+    </div>
 </Skeleton::Page>

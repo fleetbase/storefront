@@ -35,6 +35,7 @@ export default class NetworkModel extends Model {
     @attr('string') key;
     @attr('string') currency;
     @attr('string') timezone;
+    @attr('string') pod_method;
     @attr('boolean') online;
     @attr('number') stores_count;
     @attr('raw') invitations;

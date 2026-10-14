@@ -23,7 +23,7 @@
                         @searchEnabled={{true}}
                         @searchPlaceholder={{t "storefront.settings.sections.timezone-search"}}
                         @placeholder={{t "storefront.settings.sections.timezone"}}
-                        @onChange={{fn (mut @model.timezone)}}
+                        @onChange={{this.setTimezone}}
                         @triggerClass="form-select form-input w-full"
                         data-test-settings-timezone
                         as |zone|
@@ -300,6 +300,37 @@
                     </ModelSelectMultiple>
                 </InputGroup>
             </div>
+        </ContentPanel>
+    </section>
+
+    <section id="settings-messages" class="storefront-settings-section" data-test-settings-section="messages">
+        <ContentPanel @title={{t "storefront.settings.sections.messages"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            <p class="storefront-settings-section__lede">{{t "storefront.settings.sections.messages-lede"}}</p>
+            <div class="storefront-settings-grid">
+                <InputGroup @name={{t "storefront.settings.messages.quick-replies"}} @helpText={{t "storefront.settings.messages.quick-replies-help"}}>
+                    <textarea
+                        class="form-input w-full storefront-settings-replies"
+                        rows="5"
+                        aria-label={{t "storefront.settings.messages.quick-replies"}}
+                        placeholder={{t "storefront.settings.messages.quick-replies-placeholder"}}
+                        value={{this.quickRepliesText}}
+                        {{on "input" (fn this.setReplies "quick_replies")}}
+                        data-test-settings-quick-replies
+                    ></textarea>
+                </InputGroup>
+                <InputGroup @name={{t "storefront.settings.messages.booking-quick-replies"}} @helpText={{t "storefront.settings.messages.booking-quick-replies-help"}}>
+                    <textarea
+                        class="form-input w-full storefront-settings-replies"
+                        rows="5"
+                        aria-label={{t "storefront.settings.messages.booking-quick-replies"}}
+                        placeholder={{t "storefront.settings.messages.booking-quick-replies-placeholder"}}
+                        value={{this.bookingQuickRepliesText}}
+                        {{on "input" (fn this.setReplies "booking_quick_replies")}}
+                        data-test-settings-booking-quick-replies
+                    ></textarea>
+                </InputGroup>
+            </div>
+            <p class="storefront-settings-section__note">{{t "storefront.settings.messages.note"}}</p>
         </ContentPanel>
     </section>
 

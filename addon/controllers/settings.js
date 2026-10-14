@@ -58,6 +58,7 @@ export default class SettingsController extends Controller {
             routeItem('gateways', this.intl.t('storefront.settings.sections.payment-gateways'), 'cash-register', 'settings.gateways', { badge: gatewaysCount || null }),
             routeItem('notifications', this.intl.t('storefront.settings.sections.notification-channels'), 'bell-concierge', 'settings.notifications'),
             sectionItem('alerts', this.intl.t('storefront.common.alerts'), 'bell'),
+            sectionItem('messages', this.intl.t('storefront.settings.sections.messages'), 'comments'),
             routeItem('api', this.intl.t('storefront.settings.sections.api-keys'), 'code', 'settings.api'),
             sectionItem('danger', this.intl.t('storefront.settings.sections.danger'), 'triangle-exclamation'),
         ];

@@ -1,0 +1,54 @@
+{{! Opening Settings: the header with Copy store key, the section rail, then the General page as it renders (the General and Branding sections, the save bar). }}
+<Skeleton::Page @hideAvatar={{true}} @hideSearch={{true}} @actions={{1}} @bodyClass="storefront-skeleton-settings" @label={{t "storefront.common.loading"}} class="storefront-loading" data-test-storefront-loading="settings-shell">
+    <div class="storefront-skeleton-settings__rail">
+        {{#each (array 0 1 2 3 4 5 6 7 8 9 10)}}
+            <div class="storefront-skeleton-row">
+                <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                <Skeleton @variant="text" @width="60%" />
+            </div>
+        {{/each}}
+    </div>
+    <div class="storefront-skeleton-settings__content storefront-skeleton-settings__content--page">
+        <div class="storefront-skeleton-settings__sections">
+            {{! General: name and store key, currency and timezone, the default order config alone, then description, tags and the folded contact panel. }}
+            <div class="ui-skeleton-table-card storefront-skeleton-cpanel">
+                <div class="storefront-skeleton-cpanel__bar">
+                    <Skeleton @variant="text" @width="4.5rem" />
+                    <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                </div>
+                <div class="storefront-skeleton-cpanel__body">
+                    <Skeleton @variant="text" @width="45%" @height="0.625rem" />
+                    <Skeleton::Form @fields={{5}} @columns={{2}} />
+                    <Skeleton::Form @fields={{2}} @columns={{1}} />
+                    <div class="storefront-skeleton-cpanel__bar storefront-skeleton-cpanel__bar--fold">
+                        <Skeleton @variant="text" @width="8rem" />
+                        <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                    </div>
+                </div>
+            </div>
+            {{! Branding: the logo and the backdrop, each an image beside its upload button. }}
+            <div class="ui-skeleton-table-card storefront-skeleton-cpanel">
+                <div class="storefront-skeleton-cpanel__bar">
+                    <Skeleton @variant="text" @width="8rem" />
+                    <Skeleton @variant="rect" @width="0.875rem" @height="0.875rem" />
+                </div>
+                <div class="storefront-skeleton-cpanel__body">
+                    {{#each (array 0 1)}}
+                        <Skeleton @variant="text" @width="4rem" @height="0.625rem" />
+                        <div class="storefront-skeleton-row">
+                            <Skeleton @variant="rect" @width="8.5rem" @height="4rem" />
+                            <Skeleton @variant="button" @width="7.5rem" />
+                        </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+        <div class="storefront-skeleton-savebar">
+            <Skeleton @variant="text" @width="7rem" />
+            <span class="storefront-skeleton-row">
+                <Skeleton @variant="button" @width="4.5rem" />
+                <Skeleton @variant="button" @width="7.5rem" />
+            </span>
+        </div>
+    </div>
+</Skeleton::Page>

@@ -2031,6 +2031,8 @@ storefront:
       branding: Branding and media
       checkout-rules: Checkout rules
       checkout-rules-lede: What the app allows in the cart and at checkout.
+      messages: Order messages
+      messages-lede: The quick replies offered when the store messages a customer about an order.
       alerts: Alerts
       api-keys: API keys
       store-key: Store key
@@ -2049,6 +2051,22 @@ storefront:
       network-rules-lede: What the app allows across the stores in this network.
       copy-network-key: Copy network key
       network-key-copied: Network key copied.
+    messages:
+      quick-replies: Quick replies for orders
+      quick-replies-help: One reply per line. Leave empty to offer the defaults shown.
+      quick-replies-placeholder: |-
+        Your order is being prepared.
+        Your driver is on the way.
+        We are running about 10 minutes late, sorry.
+        Can you confirm the delivery address?
+      booking-quick-replies: Quick replies for bookings
+      booking-quick-replies-help: One reply per line. Leave empty to offer the booking defaults shown; the order replies are not used for bookings.
+      booking-quick-replies-placeholder: |-
+        Your booking is confirmed.
+        Your provider is on the way.
+        We are running about 10 minutes late, sorry.
+        Can you confirm the address and how to get in?
+      note: Replies to the driver are not set here; the console offers its own.
     rules:
       online: Customers can see and order from this store in the app.
       pickup-label: Pickup orders

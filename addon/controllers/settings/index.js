@@ -6,6 +6,9 @@ import { action } from '@ember/object';
 import { isArray } from '@ember/array';
 import getPodMethods from '@fleetbase/console/utils/get-pod-methods';
 
+// Options that belong to the Order messages section (the rest are checkout rules).
+const MESSAGE_OPTIONS = ['quick_replies', 'booking_quick_replies'];
+
 export default class SettingsIndexController extends Controller {
     @service notifications;
     @service fetch;
@@ -75,6 +78,21 @@ export default class SettingsIndexController extends Controller {
         return JSON.stringify(this.model?.options ?? {}) !== this.optionsSnapshot;
     }
 
+    /** The options that differ from the saved ones. */
+    get changedOptionKeys() {
+        this.optionsRevision;
+
+        let saved = {};
+        try {
+            saved = JSON.parse(this.optionsSnapshot) ?? {};
+        } catch {
+            // snapshots are JSON we wrote ourselves
+        }
+        const current = this.model?.options ?? {};
+
+        return [...new Set([...Object.keys(saved), ...Object.keys(current)])].filter((key) => JSON.stringify(saved[key] ?? null) !== JSON.stringify(current[key] ?? null));
+    }
+
     get alertableChanged() {
         this.optionsRevision;
 
@@ -99,7 +117,7 @@ export default class SettingsIndexController extends Controller {
         const sections = new Set(this.changedAttributeNames.map((key) => this.sectionLabels[key] ?? 'general'));
 
         if (this.optionsChanged) {
-            sections.add('checkout-rules');
+            this.changedOptionKeys.forEach((key) => sections.add(MESSAGE_OPTIONS.includes(key) ? 'messages' : 'checkout-rules'));
         }
 
         if (this.alertableChanged) {
@@ -137,11 +155,51 @@ export default class SettingsIndexController extends Controller {
         this.optionsRevision++;
     }
 
+    /** What is typed in the quick replies boxes, kept as typed until saved or discarded. */
+    @tracked repliesDrafts = {};
+
+    /** A list of quick replies as the text box shows it: one per line. */
+    repliesText(key) {
+        if (key in this.repliesDrafts) {
+            return this.repliesDrafts[key];
+        }
+        const replies = this.model?.options?.[key];
+
+        return isArray(replies) ? replies.join('\n') : '';
+    }
+
+    get quickRepliesText() {
+        return this.repliesText('quick_replies');
+    }
+
+    get bookingQuickRepliesText() {
+        return this.repliesText('booking_quick_replies');
+    }
+
+    /** One reply per line; blank lines dropped, and none at all keeps the defaults. */
+    @action setReplies(key, event) {
+        const text = String(event?.target?.value ?? '');
+        this.repliesDrafts = { ...this.repliesDrafts, [key]: text };
+        const replies = text
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+        this.setOption(key, replies.length ? replies : null);
+    }
+
+    /** The store's timezone; the select does not fire the form's change event, so mark the page changed. */
+    @action setTimezone(zone) {
+        this.model.set('timezone', zone);
+        this.optionsRevision++;
+    }
+
     @action setMapMarker(option) {
         this.setOption('map_marker', (option?.value ?? option) || 'store');
     }
 
     @action discardChanges() {
+        this.repliesDrafts = {};
         this.model.rollbackAttributes();
 
         try {
@@ -217,6 +275,7 @@ export default class SettingsIndexController extends Controller {
         this.model
             .save()
             .then(() => {
+                this.repliesDrafts = {};
                 this.snapshotOptions();
                 this.notifications.success(this.intl.t('storefront.settings.save-bar.saved-toast'));
             })
