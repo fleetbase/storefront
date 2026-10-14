@@ -223,6 +223,8 @@ test('a typed drop-off is saved for the customer, quoted, and closes their addre
 
     $place = Place::where('street1', '22 Harbour Front')->first();
     expect($place)->not->toBeNull()
+        // The order's company's: the quote finds places by company.
+        ->and($place->company_uuid)->toBe('company_uuid')
         ->and($place->owner_uuid)->toBe('contact_uuid')
         ->and($place->owner_type)->toBe(Fleetbase\Support\Utils::getMutationType('fleet-ops:contact'))
         ->and($place->getMeta('instructions'))->toBe('Lobby desk')

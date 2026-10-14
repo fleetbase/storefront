@@ -356,7 +356,7 @@ class OrderEditor
         $subtotal    = $reprice ? array_sum(array_column($lines, 'subtotal')) : $current['subtotal'];
         $deliveryFee = $current['delivery_fee'];
         if ($dropoff && in_array('dropoff', $changes, true)) {
-            [$quoted, $quoteError] = static::quoteDeliveryFee($order, $store, $dropoff, $lines);
+            [$quoted, $quoteError] = $dropoff->exists ? static::quoteDeliveryFee($order, $store, $dropoff, $lines) : static::quoteDraftDeliveryFee($order, $store, $dropoff, $lines);
             if ($quoted !== null) {
                 $deliveryFee = $quoted;
             } else {
@@ -691,11 +691,41 @@ class OrderEditor
         }
 
         $place = Place::createFromMixed($attributes, ['company_uuid' => $order->company_uuid]);
-        if ($place && $saveToCustomer && $order->customer) {
-            $place->forceFill(['owner_uuid' => $order->customer->uuid, 'owner_type' => Utils::getMutationType('fleet-ops:contact')])->save();
+
+        // createFromMixed() does not apply the attributes for an address array: the place is the
+        // order's company's, or the quote (which finds places by company) cannot see it.
+        $place?->forceFill([
+            'company_uuid' => $place->company_uuid ?: $order->company_uuid,
+            ...($saveToCustomer && $order->customer ? ['owner_uuid' => $order->customer->uuid, 'owner_type' => Utils::getMutationType('fleet-ops:contact')] : []),
+        ]);
+        if ($place?->isDirty()) {
+            $place->save();
         }
 
         return $place;
+    }
+
+    /**
+     * A delivery quote to an address a preview has not saved: the quote reads the drop-off by its
+     * id, so the address is saved for the quote and everything is rolled back after, leaving no
+     * place (or quote) behind. The edit itself saves the address and quotes it the same way.
+     *
+     * @return array{0: ?int, 1: ?string}
+     */
+    protected static function quoteDraftDeliveryFee(Order $order, ?Store $store, Place $draft, array $lines): array
+    {
+        $connection = $draft->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $draft->forceFill(['company_uuid' => $order->company_uuid])->save();
+
+            return static::quoteDeliveryFee($order, $store, $draft, $lines);
+        } catch (\Throwable $e) {
+            return [null, $e->getMessage()];
+        } finally {
+            $connection->rollBack();
+        }
     }
 
     /**

@@ -176,6 +176,44 @@ test('a quote that answers with several quotes takes the first', function () {
         ->and($preview['proposed']['total'])->toBe(2180);
 });
 
+test('a typed address is quoted in a preview, and nothing it needed for the quote is kept', function () {
+    $order                                        = orderEditorCoverageOrder();
+    $placesBefore                                 = orderEditorCoverageDb()->table('places')->count();
+    OrderEditorCoverageQuoteController::$response = function ($request) {
+        // The quote reads the drop-off by its id: the address is a place of the order's company
+        // for the length of the quote.
+        $destination = orderEditorCoverageDb()->table('places')->where('public_id', $request->input('destination'))->first();
+        expect($request->input('destination'))->toStartWith('place_')
+            ->and($destination)->not->toBeNull()
+            ->and($destination->company_uuid)->toBe('company_uuid')
+            ->and($destination->street1)->toBe('12 King St');
+
+        return new ServiceQuoteResource(orderEditorPlanQuote(450));
+    };
+
+    $preview = OrderEditor::preview($order, ['dropoff' => ['street1' => '12 King St', 'city' => 'Singapore']]);
+
+    // Before, the address had no id and the quote always failed ("The destination field is
+    // required"), so the preview kept the old fee and saving it was refused for another total.
+    expect($preview['changes'])->toBe(['dropoff', 'total'])
+        ->and($preview['warnings'])->toBe([])
+        ->and($preview['proposed'])->toMatchArray(['delivery_fee' => 450, 'total' => 2250])
+        ->and(OrderEditorCoverageQuoteController::$requests)->toHaveCount(1)
+        ->and(orderEditorCoverageDb()->table('places')->count())->toBe($placesBefore);
+});
+
+test('a typed address that cannot be held for the quote keeps the fee and says why', function () {
+    Fleetbase\FleetOps\Models\Place::creating(function () {
+        throw new RuntimeException('Places are read-only');
+    });
+
+    $preview = OrderEditor::preview(orderEditorCoverageOrder(), ['dropoff' => ['street1' => '12 King St']]);
+
+    expect($preview['warnings'])->toBe(['delivery_fee' => 'Places are read-only The delivery fee is unchanged.'])
+        ->and($preview['proposed']['delivery_fee'])->toBe(200)
+        ->and(OrderEditorCoverageQuoteController::$requests)->toBe([]);
+});
+
 test('when the new drop-off cannot be quoted the delivery fee stays and the store is told why', function ($response, string $warning) {
     OrderEditorCoverageQuoteController::$response = $response();
 
