@@ -53,9 +53,10 @@ class OrderChatController extends Controller
             ]);
         }
 
-        $messages    = $this->messageQuery($channel)->limit(static::PAGE_SIZE)->get()->reverse()->values();
-        $participant = OrderChat::participantFor($channel, session('user'));
-        $unread      = $participant ? $channel->getUnreadMessagesForParticipant($participant)->count() : 0;
+        $messages = $this->messageQuery($channel)->limit(static::PAGE_SIZE)->get()->reverse()->values();
+        // What the store has not read here, as the panel counts it (a staff member who has not
+        // joined the thread still reads it for the store).
+        $unread   = static::unread($order, session('user'))[static::unreadKey($kind)] ?? 0;
         $channel->load(['participants.user']);
 
         return response()->json([
@@ -128,7 +129,9 @@ class OrderChatController extends Controller
             return response()->json(['read' => 0]);
         }
 
-        $participant = OrderChat::participantFor($channel, session('user'));
+        // A staff member reading a thread they have not written in joins it as the store, so the
+        // receipt counts for the store.
+        $participant = OrderChat::participantFor($channel, session('user')) ?? (session('user') ? OrderChat::join($channel, session('user'), OrderChat::ROLE_STORE) : null);
         if (!$participant) {
             return response()->json(['read' => 0]);
         }
@@ -168,13 +171,22 @@ class OrderChatController extends Controller
      *
      * @return array{customer: int, dispatch: int, group: int}
      */
-    public static function unread(Order $order): array
+    public static function unread(Order $order, ?string $viewerUuid = null): array
     {
+        // Whoever is looking has read what they sent: the store owner can be the driver too.
+        $from = fn (array $userUuids) => array_values(array_filter($userUuids, fn ($uuid) => $uuid && $uuid !== $viewerUuid));
+
         return [
-            'customer' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_CUSTOMER), [OrderChat::customerUserUuid($order)]),
-            'dispatch' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_DISPATCH), [OrderChat::driverUserUuid($order)]),
-            'group'    => static::unreadIn(OrderChat::find($order), [OrderChat::customerUserUuid($order), OrderChat::driverUserUuid($order)]),
+            'customer' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_CUSTOMER), $from([OrderChat::customerUserUuid($order)])),
+            'dispatch' => static::unreadIn(OrderChat::find($order, OrderChat::KIND_DISPATCH), $from([OrderChat::driverUserUuid($order)])),
+            'group'    => static::unreadIn(OrderChat::find($order), $from([OrderChat::customerUserUuid($order), OrderChat::driverUserUuid($order)])),
         ];
+    }
+
+    /** The key of a thread kind in unread(): the customer-and-driver thread is `group`. */
+    protected static function unreadKey(string $kind): string
+    {
+        return $kind === OrderChat::KIND_DRIVER ? 'group' : $kind;
     }
 
     /**

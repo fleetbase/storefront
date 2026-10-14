@@ -986,6 +986,7 @@ storefront:
       send: Send
       delivery-help: The customer gets it as a push and in the app's order chat.
       driver-readonly: This is the customer's conversation with the driver; the store can read it.
+      new-message: "New message from {name}"
       roles:
         customer: Customer
         driver: Driver

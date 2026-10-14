@@ -484,16 +484,19 @@ class OrderController extends FleetbaseOrderController
 
     protected static function chatSummary(Order $order): array
     {
-        $unread = OrderChatController::unread($order);
+        $unread  = OrderChatController::unread($order, session('user'));
+        $threads = [
+            'customer' => OrderChat::find($order, OrderChat::KIND_CUSTOMER),
+            'dispatch' => OrderChat::find($order, OrderChat::KIND_DISPATCH),
+            'group'    => OrderChat::find($order),
+        ];
 
         return [
             'unread'       => $unread,
             'unread_total' => array_sum($unread),
-            'threads'      => [
-                'customer' => OrderChat::find($order, OrderChat::KIND_CUSTOMER) !== null,
-                'dispatch' => OrderChat::find($order, OrderChat::KIND_DISPATCH) !== null,
-                'group'    => OrderChat::find($order) !== null,
-            ],
+            'threads'      => array_map(fn ($channel) => $channel !== null, $threads),
+            // The threads' chat channels, which the panel listens on (`chat.{uuid}`) for new messages.
+            'channels'     => array_map(fn ($channel) => $channel ? ['uuid' => $channel->uuid, 'public_id' => $channel->public_id] : null, $threads),
         ];
     }
 

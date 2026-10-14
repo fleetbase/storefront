@@ -35,6 +35,8 @@ class OrderPanelState {
     refresh = null;
     // The panel's overview only (payment, alerts, chat summary): nothing about the order changed.
     reloadOverview = null;
+    // The open messages drawer's: a message arrived on the thread it shows.
+    chatArrived = null;
 
     openChat = (kind = 'customer', draft = '') => {
         this.chatKind = kind;
@@ -57,6 +59,13 @@ class OrderPanelState {
 
     get unread() {
         return this.overview?.chat?.unread ?? {};
+    }
+
+    /** A message arrived on a thread that is not open: count it until the thread is read. */
+    addUnread(kind) {
+        const chat = this.overview?.chat ?? {};
+        const unread = { ...(chat.unread ?? {}), [kind]: (chat.unread?.[kind] ?? 0) + 1 };
+        this.overview = { ...this.overview, chat: { ...chat, unread, unread_total: (chat.unread_total ?? 0) + 1 } };
     }
 
     get unreadTotal() {

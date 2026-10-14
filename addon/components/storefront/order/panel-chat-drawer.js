@@ -7,7 +7,6 @@ import { task, timeout } from 'ember-concurrency';
 import { format, isValid, parseISO } from 'date-fns';
 
 const WIDTH = 360;
-const POLL_MS = 15000;
 
 /**
  * The 11a messages drawer: a 360px sheet beside the order panel with the order's three threads
@@ -47,12 +46,15 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
             this.observer.observe(this.panelElement);
         }
         window.addEventListener('resize', measure);
-        this.poll.perform();
+        // New messages come over the socket (the panel's overview listens): reload the thread shown.
+        this.panel.chatArrived = (kind) => kind === this.panel.chatKind && this.load.perform();
+        this.watch.perform();
     }
 
     @action teardownAnchor() {
         this.observer?.disconnect();
         window.removeEventListener('resize', this.measure);
+        this.panel.chatArrived = null;
         this.panel.closeChat();
     }
 
@@ -141,6 +143,9 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
             this.response = response;
             if (response?.chat?.unread_count) {
                 yield this.fetch.post(`orders/${this.order.public_id}/chat/${kind}/read`, {}, { namespace: 'storefront/int/v1' });
+                // Read now: what is on screen says so too.
+                const messages = (response.chat.messages ?? []).map((message) => (message.is_mine ? message : { ...message, read: true }));
+                this.response = { ...response, chat: { ...response.chat, messages, unread_count: 0 } };
                 this.args.onRead?.();
             }
         } catch (error) {
@@ -149,20 +154,18 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
         }
     }
 
-    /** While the drawer is open, the thread is reloaded every few seconds. */
-    @task *poll() {
+    /** Loads a thread when the drawer opens on it or switches to it; new messages arrive over the socket. */
+    @task *watch() {
         let loadedKind = null;
         while (true) {
             if (this.panel.chatOpen && this.panel.chatKind !== loadedKind) {
                 loadedKind = this.panel.chatKind;
                 this.measure?.();
                 yield this.load.perform();
-            } else if (this.panel.chatOpen) {
-                yield this.load.perform();
-            } else {
+            } else if (!this.panel.chatOpen) {
                 loadedKind = null;
             }
-            yield timeout(this.panel.chatOpen ? POLL_MS : 500);
+            yield timeout(300);
         }
     }
 
@@ -174,10 +177,14 @@ export default class StorefrontOrderPanelChatDrawerComponent extends Component {
         const kind = this.panel.chatKind;
         try {
             const { message } = yield this.fetch.post(`orders/${this.order.public_id}/chat/${kind}/messages`, { content }, { namespace: 'storefront/int/v1' });
-            this.response = { ...(this.response ?? {}), chat: { ...(this.response?.chat ?? {}), messages: [...this.messages, message] } };
+            // Unless the socket's reload already brought it.
+            const messages = this.messages.some((existing) => existing.id && existing.id === message?.id) ? this.messages : [...this.messages, message];
+            this.response = { ...(this.response ?? {}), chat: { ...(this.response?.chat ?? {}), messages } };
             this.panel.chatDraft = '';
             if (!this.response.chat.id) {
-                yield this.load.perform();
+                // The first message started the thread: load it (not waited on, a message arriving
+                // over the socket reloads it too).
+                this.load.perform();
             }
             // What the store says can settle a banner ("the customer has not been told"); the order
             // itself did not change, so the list stays as it is.
