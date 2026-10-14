@@ -29,7 +29,7 @@ function catalogCoverageRequest(array $input = [], string $method = 'GET'): Cata
     return CatalogCoverageValidatingRequest::create('/products', $method, $input);
 }
 
-function catalogCoverageSchema(): void
+function productStockCoverageSchema(): void
 {
     $schema = catalogCoverageDb()->getSchemaBuilder();
     foreach (['inventory_reservations', 'inventory_movements', 'product_inventories', 'products', 'product_hours', 'store_locations', 'store_hours', 'food_trucks', 'places', 'stores', 'companies', 'networks', 'network_stores', 'entities', 'orders'] as $table) {
@@ -212,7 +212,7 @@ function catalogCoverageStore(): void
 }
 
 beforeEach(function () {
-    catalogCoverageSchema();
+    productStockCoverageSchema();
     Inventory::flushEnabled();
     session(['company' => 'company_uuid', 'user' => null, 'storefront_store' => null, 'storefront_network' => null]);
     app()->instance('responsecache', new class {
