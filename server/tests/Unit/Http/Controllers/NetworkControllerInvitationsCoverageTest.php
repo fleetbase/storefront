@@ -679,3 +679,43 @@ test('rejecting stores removes only pending memberships and closes their invitat
         ->and($connection->table('network_stores')->where('store_uuid', 'third_store_uuid')->value('deleted_at'))->toBeNull()
         ->and(networkCoverageInviteMeta('awaiting_uuid'))->toBe(['status' => 'rejected', 'accepted_store' => 'store_uuid', 'rejected_at' => Carbon::now()->toIso8601String()]);
 });
+
+test('an expired invitation is still listed, counted, looked up, resent and revoked', function () {
+    $mail = networkCoverageMail();
+    networkCoverageInvite(['uuid' => 'expired_uuid', 'public_id' => 'invite_expired', 'uri' => 'expired-code', 'recipients' => json_encode(['store@example.test']), 'expires_at' => '2026-10-13 12:00:00']);
+    networkCoverageInvite(['uuid' => 'revoked_uuid', 'public_id' => 'invite_revoked', 'recipients' => json_encode(['gone@example.test']), 'expires_at' => '2026-10-13 12:00:00']);
+    $controller = new NetworkController();
+
+    // Core hides expired invitations from every query; the network does not.
+    $listed   = collect($controller->invitations('network_uuid')->getData(true))->keyBy('uuid');
+    $overview = $controller->overview('network_public')->getData(true);
+    $lookup   = $controller->lookupInvitation('expired-code');
+    $revoked  = $controller->revokeInvitation('network_uuid', 'invite_revoked');
+    $resent   = $controller->resendInvitation('network_uuid', 'invite_expired', networkCoverageRequest());
+
+    expect($listed->keys()->sort()->values()->all())->toBe(['expired_uuid', 'revoked_uuid'])
+        ->and($listed['expired_uuid']['status'])->toBe('expired')
+        ->and($overview['invitations'])->toBe(['pending' => 0, 'declined' => 0, 'expired' => 2])
+        ->and($lookup->getStatusCode())->toBe(200)
+        ->and($lookup->getData(true)['invitation']['status'])->toBe('expired')
+        ->and($revoked->getData(true))->toBe(['status' => 'ok'])
+        ->and(Capsule::connection('mysql')->table('invites')->where('uuid', 'revoked_uuid')->value('deleted_at'))->not->toBeNull()
+        // Resending reopens it for another fourteen days.
+        ->and($resent->getStatusCode())->toBe(200)
+        ->and($resent->getData(true)['invitation']['status'])->toBe('pending')
+        ->and(Capsule::connection('mysql')->table('invites')->where('uuid', 'expired_uuid')->value('expires_at'))->toBe('2026-10-28 12:00:00')
+        ->and($mail->sent)->toHaveCount(1);
+});
+
+test('an expired invitation cannot be accepted or declined', function () {
+    networkCoverageInvite(['uuid' => 'expired_uuid', 'uri' => 'expired-code', 'expires_at' => '2026-10-13 12:00:00']);
+    $controller = new NetworkController();
+
+    $accept  = $controller->acceptInvitation('expired-code', Request::create('/', 'POST', ['store' => 'store_uuid']));
+    $decline = $controller->declineInvitation('expired-code');
+
+    expect($accept->getStatusCode())->toBe(404)
+        ->and($decline->getStatusCode())->toBe(404)
+        ->and(networkCoverageInviteMeta('expired_uuid'))->toBe(['status' => 'pending'])
+        ->and(Capsule::connection('mysql')->table('network_stores')->count())->toBe(0);
+});

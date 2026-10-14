@@ -140,7 +140,9 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $invitations = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])
+        // Core hides expired invitations from every query; the network still lists, counts,
+        // resends and revokes them (only accepting and declining refuse an expired one).
+        $invitations = Invite::withHasExpiry()->where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (Invite $invitation) => static::serializeInvitation($invitation))
@@ -162,7 +164,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $invitation = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
+        $invitation = Invite::withHasExpiry()->where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
 
         if (!$invitation) {
             return response()->error('Invitation not found.', 404);
@@ -202,7 +204,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $invitation = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
+        $invitation = Invite::withHasExpiry()->where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->where(fn ($query) => $query->where('uuid', $invitationId)->orWhere('public_id', $invitationId))->first();
 
         if (!$invitation) {
             return response()->error('Invitation not found.', 404);
@@ -221,7 +223,7 @@ class NetworkController extends StorefrontController
      */
     public function lookupInvitation(string $uri)
     {
-        $invitation = Invite::where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject', 'createdBy'])->first();
+        $invitation = Invite::withHasExpiry()->where(['uri' => $uri, 'reason' => 'join_storefront_network'])->with(['subject', 'createdBy'])->first();
 
         // Not an emailed invitation: maybe the network's shareable join link.
         if (!$invitation) {
@@ -456,7 +458,7 @@ class NetworkController extends StorefrontController
         $customers    = (clone $allCustomers)->distinct()->count('customer_uuid');
         $newCustomers = (clone $allCustomers)->where('created_at', '>=', $monthStart)->distinct()->count('customer_uuid');
 
-        $invitations = Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->orderBy('created_at', 'desc')->get()->map(fn (Invite $invitation) => static::serializeInvitation($invitation));
+        $invitations = Invite::withHasExpiry()->where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network'])->orderBy('created_at', 'desc')->get()->map(fn (Invite $invitation) => static::serializeInvitation($invitation));
         $byStore     = $liveOrders->groupBy(fn ($order) => data_get($order, 'meta.storefront_id'));
         $categories  = Category::where('owner_uuid', $network->uuid)->whereIn('uuid', $network->stores->map(fn (Store $store) => $store->pivot->category_uuid ?? null)->filter()->unique()->values())->get()->keyBy('uuid');
         $stores      = $network->stores->map(function (Store $store) use ($byStore, $liveOrders, $revenue, $categories) {
@@ -687,7 +689,7 @@ class NetworkController extends StorefrontController
             'expires_at'        => $options['shareable_link_expires_at'] ?? null,
             'category_uuid'     => $options['shareable_link_category_uuid'] ?? null,
             'requires_approval' => (bool) ($options['shareable_link_requires_approval'] ?? true),
-            'joins'             => Invite::where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network', 'protocol' => 'link'])->count(),
+            'joins'             => Invite::withHasExpiry()->where(['subject_uuid' => $network->uuid, 'reason' => 'join_storefront_network', 'protocol' => 'link'])->count(),
         ];
     }
 
@@ -811,7 +813,7 @@ class NetworkController extends StorefrontController
      */
     protected function closeAwaitingInvitations(string $networkId, array $stores, string $status, string $timestampKey): void
     {
-        $invitations = Invite::where(['subject_uuid' => $networkId, 'reason' => 'join_storefront_network'])
+        $invitations = Invite::withHasExpiry()->where(['subject_uuid' => $networkId, 'reason' => 'join_storefront_network'])
             ->whereIn('meta->accepted_store', $stores)
             ->where('meta->status', 'awaiting_approval')
             ->get();
