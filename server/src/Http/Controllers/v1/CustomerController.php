@@ -1237,15 +1237,10 @@ class CustomerController extends Controller
 
     /**
      * Check a code filed under an identity and use it up. The newest live code is the one
-     * that counts; a wrong guess counts against it until it locks. A core without
-     * findActiveFor() (before 1.6.70) falls back to the plain lookup it always had.
+     * that counts; a wrong guess counts against it until it locks.
      */
     protected function verifyIdentityCode(string $for, string $identity, mixed $code): bool
     {
-        if (!method_exists(VerificationCode::class, 'findActiveFor')) {
-            return VerificationCode::where(['code' => $code, 'for' => $for, 'meta->identity' => $identity])->exists();
-        }
-
         $verificationCode = VerificationCode::findActiveFor($for, $identity);
 
         return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code);
@@ -1256,10 +1251,6 @@ class CustomerController extends Controller
      */
     protected function findSubjectCode(string $for, string $subjectUuid, mixed $code): ?VerificationCode
     {
-        if (!method_exists(VerificationCode::class, 'findActiveForSubject')) {
-            return VerificationCode::where(['subject_uuid' => $subjectUuid, 'code' => $code, 'for' => $for])->first();
-        }
-
         $verificationCode = VerificationCode::findActiveForSubject($for, $subjectUuid);
 
         return $verificationCode !== null && $this->checkAndConsume($verificationCode, $code) ? $verificationCode : null;
@@ -1662,12 +1653,7 @@ class CustomerController extends Controller
         $user->update(['phone' => $phone, 'phone_verified_at' => now()]);
         $customer->update(['phone' => $phone]);
 
-        // The code was used up by findSubjectCode(); older cores without consume() still
-        // need the row removed so it cannot verify twice.
-        if (!method_exists($verificationCode, 'consume')) {
-            $verificationCode->delete();
-        }
-
+        // The code was used up by findSubjectCode(), so it cannot verify twice.
         return new Customer($customer->fresh());
     }
 }
