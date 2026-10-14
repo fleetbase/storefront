@@ -483,6 +483,25 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ],
     ]);
     bindCustomerNotificationDispatcher();
+    // Codes sent by SMS are stored hashed (core-api 1.6.69), so the plain code is only in
+    // the text itself: record what the provider was given and read the code back from it.
+    $twilio = new class {
+        public array $messages = [];
+
+        public function message(string $to, string $message, array $media = [], array $params = []): object
+        {
+            $this->messages[] = $message;
+
+            return (object) ['sid' => 'sms_test'];
+        }
+    };
+    app()->instance('twilio', $twilio);
+    Illuminate\Support\Facades\Facade::clearResolvedInstance('twilio');
+    $lastSmsCode = function () use ($twilio): ?string {
+        $message = $twilio->messages ? $twilio->messages[array_key_last($twilio->messages)] : '';
+
+        return preg_match('/(\d{6})$/', trim($message), $match) ? $match[1] : null;
+    };
     $sentry = new class {
         public array $exceptions = [];
 
@@ -506,19 +525,21 @@ test('authenticated customer endpoints register devices and scope orders and pla
     );
     $closureDeliveryFailure = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
     $connection->statement('DROP TRIGGER fail_closure_verification_insert');
+    // Core texts the code to the phone on file, so the customer needs one for the text
+    // (and its plain code) to exist at all.
+    $connection->table('users')->where('uuid', 'user_uuid')->update(['phone' => '+97699112200']);
     $phoneConflict       = $controller->requestPhoneVerification(Request::create('/customer/phone', 'POST', [
         'phone' => '97699112233',
     ]));
     $invalidPhoneCode = $controller->verifyPhoneNumber(Request::create('/customer/phone/verify', 'POST', [
         'code' => 'invalid-code',
     ]));
-    $generatedCode = $connection->table('verification_codes')
-        ->where('for', 'storefront_verify_phone')
-        ->value('code');
+    $generatedCode = $lastSmsCode();
     $verifiedPhone = $controller->verifyPhoneNumber(Request::create('/customer/phone/verify', 'POST', [
         'code' => $generatedCode,
     ]));
     $closureStarted = $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
+    $closureCode    = $lastSmsCode();
     $connection->statement(
         "CREATE TRIGGER fail_phone_verification_insert BEFORE INSERT ON verification_codes BEGIN SELECT RAISE(ABORT, 'verification insert failed'); END"
     );
@@ -527,10 +548,6 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'phone' => '+97699112234',
     ]));
     $connection->statement('DROP TRIGGER fail_phone_verification_insert');
-    $closureCode    = $connection->table('verification_codes')
-        ->where('for', 'storefront_account_closure')
-        ->where('meta', 'like', '%+97699112233%')
-        ->value('code');
     $invalidClosure = $controller->confirmAccountClosure(Request::create('/customer/closure/confirm', 'POST', [
         'code' => 'invalid-code',
     ]));
@@ -541,8 +558,11 @@ test('authenticated customer endpoints register devices and scope orders and pla
         'code' => $closureCode,
     ]));
     $connection->statement('DROP TRIGGER fail_customer_user_delete');
+    // A code is used up by the check that accepted it, so the failed deletion burned this
+    // one and the customer asks for a new code to try again.
+    $controller->startAccountClosure(Request::create('/customer/closure', 'POST'));
     $closed = $controller->confirmAccountClosure(Request::create('/customer/closure/confirm', 'POST', [
-        'code' => $closureCode,
+        'code' => $lastSmsCode(),
     ]));
     app()->offsetUnset(Illuminate\Contracts\Notifications\Dispatcher::class);
     app()->forgetInstance('sentry');
@@ -590,7 +610,7 @@ test('authenticated customer endpoints register devices and scope orders and pla
         ->and($verifiedPhone)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
         ->and($connection->table('users')->where('uuid', 'user_uuid')->value('phone'))->toBe('+97699112233')
         ->and($connection->table('contacts')->where('uuid', $customerUuid)->value('phone'))->toBe('+97699112233')
-        ->and($connection->table('verification_codes')->where('code', $generatedCode)->value('deleted_at'))->not->toBeNull()
+        ->and($connection->table('verification_codes')->where('for', 'storefront_verify_phone')->value('status'))->toBe('used')
         ->and(json_encode($closureStarted->getData(true)))->toBe('{"status":"OK"}')
         ->and($phoneDeliveryFailure->getData(true))->toHaveKey('error')
         ->and($invalidClosure->getData(true))->toBe(['error' => 'Invalid verification code provided!'])
@@ -904,8 +924,10 @@ test('customer creation rejects unverified identities before creating users or c
     $schema->dropIfExists('verification_codes');
     $schema->create('verification_codes', function ($table) {
         $table->increments('id');
+        $table->string('uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
@@ -936,8 +958,10 @@ test('customer creation falls back to the payload email when no identity is sent
     $schema->dropIfExists('verification_codes');
     $schema->create('verification_codes', function ($table) {
         $table->increments('id');
+        $table->string('uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
@@ -1741,6 +1765,7 @@ test('customer password login reuses the storefront contact and issues an access
         $table->string('subject_uuid')->nullable();
         $table->string('code')->nullable();
         $table->string('for')->nullable();
+        $table->string('status')->nullable();
         $table->text('meta')->nullable();
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
