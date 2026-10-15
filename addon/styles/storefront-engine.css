@@ -6086,6 +6086,21 @@ body[data-theme='dark'] .storefront-invitation-banner__meta {
     min-height: 0;
 }
 
+/* The order panel opened in place (resource context panel): ember-ui's tab wrapper is a flex
+   item, but the body's inner wrapper around it is not a flex column, so the tab content never
+   got a height to scroll within. */
+.storefront-order-context-body,
+.storefront-order-context-body > .next-content-overlay-panel-body-inner-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.storefront-order-context-body > .next-content-overlay-panel-body-inner-wrapper {
+    flex: 1 1 auto;
+    height: auto;
+}
+
 .storefront-create-order {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 23rem;

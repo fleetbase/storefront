@@ -302,8 +302,9 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
         return this.transitionToRoute('customers.index.view', customer.public_id);
     }
 
+    /** Opens the order's panel at its own URL over the list, so it can be reloaded and shared. */
     @action viewOrder(order) {
-        return this.storefrontOrderActions.viewOrder(order, { onChange: this.refresh });
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders.view', this.network.public_id, order.public_id);
     }
 
     @action assignDriver(order) {

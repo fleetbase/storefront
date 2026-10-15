@@ -6,7 +6,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
     setupTest(hooks);
 
     test('it opens order details through the resource context panel', async function (assert) {
-        assert.expect(8);
+        assert.expect(10);
 
         class FetchStub extends Service {
             get(path, params, options) {
@@ -43,6 +43,7 @@ module('Unit | Service | storefront-order-actions', function (hooks) {
                 assert.notOk(definition.content);
                 assert.strictEqual(definition.tabs[0].component, 'storefront/order/overview');
                 assert.strictEqual(definition.width, '640px');
+                assert.true(definition.bodyClass.split(' ').includes('storefront-order-context-body'), 'the body lays out so the tab content scrolls');
             }
         }
 

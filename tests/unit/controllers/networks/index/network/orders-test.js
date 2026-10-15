@@ -29,4 +29,23 @@ module('Unit | Controller | networks/index/network/orders', function (hooks) {
             assert.strictEqual(typeof byId[id].resourcePath, 'function', `${id} resolves its resource`);
         }
     });
+
+    test("an order opens at its own URL over the network's orders", function (assert) {
+        const transitions = [];
+        this.owner.unregister('service:hostRouter');
+        this.owner.register(
+            'service:hostRouter',
+            class extends Service {
+                transitionTo(...args) {
+                    transitions.push(args);
+                }
+            }
+        );
+        const controller = this.owner.lookup('controller:networks/index/network/orders');
+        controller.network = { id: 'network_uuid', public_id: 'network_123' };
+
+        controller.viewOrder({ id: 'order_uuid', public_id: 'order_456' });
+
+        assert.deepEqual(transitions, [['console.storefront.networks.index.network.orders.view', 'network_123', 'order_456']]);
+    });
 });
