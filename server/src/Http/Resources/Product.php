@@ -32,7 +32,8 @@ class Product extends FleetbaseResource
             'primary_image_uuid' => $this->when(Http::isInternalRequest(), $this->primary_image_uuid),
             'name'               => $this->name,
             'description'        => $this->description,
-            'category'           => $this->when(Http::isInternalRequest(), $this->category),
+            // Publicly the category's public id, so an app can group a parent's products by subcategory.
+            'category'           => Http::isInternalRequest() ? $this->category : $this->whenLoaded('category', fn ($category) => $category?->public_id),
             'store'              => $this->when($request->boolean('with_store') || $request->inArray('with', 'store'), new Store($this->store)),
             'sku'                => $this->sku,
             'primary_image_url'  => $this->primary_image_url,

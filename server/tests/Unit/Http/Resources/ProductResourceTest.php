@@ -151,6 +151,8 @@ test('public product resource exposes purchasable shape and filters media types'
         'is_on_sale'        => true,
         'is_available'      => true,
         'youtube_urls'      => ['https://youtube.test/demo'],
+        // The category's public id, which an app groups a parent category's products by.
+        'category'          => 'category_123',
     ])->and($data['images']->all())->toBe(['https://cdn.test/product.png'])
         ->and($data['videos']->all())->toBe(['https://cdn.test/product.mp4'])
         ->and($data)->not->toHaveKeys([

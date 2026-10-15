@@ -133,7 +133,8 @@ test('the product category filter applies to console requests and is left to the
     $internal = (new ProductFilter(filterCoverageRequest('int/v1/storefront/products', ['category' => 'category_food'])))->apply((new Product())->newQuery());
     $public   = (new ProductFilter(filterCoverageRequest('v1/storefront/products', ['category' => 'category_public_id'])))->apply((new Product())->newQuery());
 
-    expect($internal->toSql())->toContain('"category_uuid" = ?')
+    // A category takes in its subcategories' products too.
+    expect($internal->toSql())->toContain('"category_uuid" in (?)')
         ->and($internal->getBindings())->toContain('category_food')
         ->and($public->toSql())->not->toContain('category_uuid')
         ->and($public->getBindings())->not->toContain('category_public_id');
