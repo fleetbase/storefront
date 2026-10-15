@@ -59,6 +59,17 @@
         <Badge @status="violet" @text={{this.fulfillmentLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
         <Badge @status="gray" @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
         {{#if this.storeName}}<Badge @status="blue" @text={{this.storeName}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />{{/if}}
+        {{#if this.order.meta.food_truck_id}}
+            <Badge
+                @status="default"
+                @icon="truck"
+                @size="xs"
+                @disableHumanize={{true}}
+                @text={{or this.order.meta.food_truck.name (t "storefront.networks.orders.truck")}}
+                @helpText={{if this.order.meta.food_truck.name (t "storefront.networks.orders.from-truck" name=this.order.meta.food_truck.name) (t "storefront.networks.orders.from-a-truck")}}
+                data-test-order-panel-truck
+            />
+        {{/if}}
     </div>
     <div class="sfop-head__meta" data-test-order-panel-meta>
         {{this.order.public_id}}{{#if this.placedLine}} · {{this.placedLine}}{{/if}}{{#if this.order.meta.checkout_id}} · {{t "storefront.order.panel.part-of-checkout" checkout=this.order.meta.checkout_id}}{{/if}}
