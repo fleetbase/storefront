@@ -170,6 +170,24 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
         this.optionsRevision++;
     }
 
+    /**
+     * Toggles, selects and pickers fire no input or change event for the form to hear, so they set
+     * the value here, where the save bar learns of it.
+     */
+    @action setAttribute(key, value) {
+        this.model.set(key, value);
+        this.optionsRevision++;
+    }
+
+    @action setOption(key, value) {
+        if (!this.model.options || typeof this.model.options !== 'object') {
+            this.model.set('options', {});
+        }
+
+        this.model.set(`options.${key}`, value);
+        this.optionsRevision++;
+    }
+
     @action setMapMarker(option) {
         if (!this.model.options || typeof this.model.options !== 'object') {
             this.model.set('options', {});
