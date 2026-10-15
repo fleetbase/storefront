@@ -29,22 +29,19 @@
                         <div class="storefront-catalog-categories__title">{{t "storefront.catalogs.editor.sections.categories"}}</div>
                         {{#each this.categoryRows as |row|}}
                             <div class="storefront-catalog-category {{if row.isSelected 'is-selected'}}" data-test-catalog-category={{row.category.id}}>
-                                {{#if (eq this.renamingCategory row.category)}}
-                                    <form class="storefront-catalog-category__rename" aria-label={{t "storefront.catalogs.editor.rename-category"}} {{on "submit" this.commitRename}}>
-                                        <Input class="form-input form-input-xs w-full" @value={{this.renameValue}} {{on "input" this.setRenameValue}} {{on "blur" this.commitRename}} />
-                                    </form>
-                                {{else}}
-                                    <button type="button" class="storefront-catalog-category__select" {{on "click" (fn this.selectCategory row.category)}}>
-                                        <span class="storefront-catalog-category__name">{{row.category.name}}</span>
-                                        <span class="storefront-status-tab__count">{{row.count}}</span>
-                                    </button>
-                                    <div class="storefront-catalog-category__actions">
-                                        <Button @icon="arrow-up" @size="xs" @disabled={{row.isFirst}} @helpText={{t "storefront.catalogs.editor.move-up"}} @onClick={{fn this.moveCategory row.category -1}} />
-                                        <Button @icon="arrow-down" @size="xs" @disabled={{row.isLast}} @helpText={{t "storefront.catalogs.editor.move-down"}} @onClick={{fn this.moveCategory row.category 1}} />
-                                        <Button @icon="pencil" @size="xs" @helpText={{t "storefront.catalogs.editor.rename"}} @onClick={{fn this.startRename row.category}} />
-                                        <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "common.delete"}} @onClick={{fn this.removeCategory row.category}} />
-                                    </div>
-                                {{/if}}
+                                <button type="button" class="storefront-catalog-category__select" {{on "click" (fn this.selectCategory row.category)}}>
+                                    {{#if row.category.icon_file_uuid}}
+                                        <Image src={{row.category.icon_url}} @fallbackSrc={{config "defaultValues.categoryImage"}} alt="" class="storefront-catalog-category__icon" data-test-catalog-category-icon />
+                                    {{/if}}
+                                    <span class="storefront-catalog-category__name">{{row.category.name}}</span>
+                                    <span class="storefront-status-tab__count">{{row.count}}</span>
+                                </button>
+                                <div class="storefront-catalog-category__actions">
+                                    <Button @icon="arrow-up" @size="xs" @disabled={{row.isFirst}} @helpText={{t "storefront.catalogs.editor.move-up"}} @onClick={{fn this.moveCategory row.category -1}} />
+                                    <Button @icon="arrow-down" @size="xs" @disabled={{row.isLast}} @helpText={{t "storefront.catalogs.editor.move-down"}} @onClick={{fn this.moveCategory row.category 1}} />
+                                    <Button @icon="pencil" @size="xs" @helpText={{t "storefront.catalogs.editor.edit-category"}} @onClick={{fn this.editCategory row.category}} @permission="storefront update catalog" data-test-edit-category={{row.category.id}} />
+                                    <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "common.delete"}} @onClick={{fn this.removeCategory row.category}} />
+                                </div>
                             </div>
                         {{else}}
                             <div class="storefront-empty-row"><span>{{t "storefront.catalogs.card.no-categories"}}</span></div>

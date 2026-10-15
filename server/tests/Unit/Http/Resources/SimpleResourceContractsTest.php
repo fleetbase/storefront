@@ -163,11 +163,11 @@ test('media and review resources map customer-facing file shapes', function () {
         'public_id'     => 'review_123',
         'customer_uuid' => 'customer_uuid',
         'order_uuid'    => 'order_uuid',
-        'rating'     => 5,
-        'content'    => 'Excellent service',
-        'slug'       => 'excellent-service',
-        'created_at' => '2026-01-01',
-        'updated_at' => '2026-01-02',
+        'rating'        => 5,
+        'content'       => 'Excellent service',
+        'slug'          => 'excellent-service',
+        'created_at'    => '2026-01-01',
+        'updated_at'    => '2026-01-02',
     ], [
         'subject'  => storefrontResourceModel(['id' => 99, 'public_id' => 'store_123']),
         'customer' => $customer,
@@ -197,22 +197,25 @@ test('media and review resources map customer-facing file shapes', function () {
 test('catalog and category resources expose nested commerce navigation', function () {
     $product         = storefrontResourceModel(['public_id' => 'product_123']);
     $catalogCategory = storefrontResourceModel([
-        'id'           => 5,
-        'uuid'         => 'catalog_category_uuid',
-        'public_id'    => 'catalog_category_123',
-        'company_uuid' => 'company_uuid',
-        'parent_uuid'  => null,
-        'store_uuid'   => 'store_uuid',
-        'owner_uuid'   => 'catalog_uuid',
-        'name'         => 'Coffee',
-        'description'  => 'Coffee products',
-        'icon_url'     => 'https://cdn.test/coffee.png',
-        'tags'         => ['drinks'],
-        'meta'         => ['featured' => true],
-        'for'          => 'catalog',
-        'order'        => 1,
-        'created_at'   => '2026-01-01',
-        'updated_at'   => '2026-01-02',
+        'id'             => 5,
+        'uuid'           => 'catalog_category_uuid',
+        'public_id'      => 'catalog_category_123',
+        'company_uuid'   => 'company_uuid',
+        'parent_uuid'    => null,
+        'store_uuid'     => 'store_uuid',
+        'owner_uuid'     => 'catalog_uuid',
+        'name'           => 'Coffee',
+        'description'    => 'Coffee products',
+        'icon'           => 'mug-hot',
+        'icon_color'     => '#7c3aed',
+        'icon_file_uuid' => 'icon_file_uuid',
+        'icon_url'       => 'https://cdn.test/coffee.png',
+        'tags'           => ['drinks'],
+        'meta'           => ['featured' => true],
+        'for'            => 'catalog',
+        'order'          => 1,
+        'created_at'     => '2026-01-01',
+        'updated_at'     => '2026-01-02',
     ], [
         'products' => collect([$product]),
     ]);
@@ -249,10 +252,14 @@ test('catalog and category resources expose nested commerce navigation', functio
         'id'          => 'catalog_category_123',
         'name'        => 'Coffee',
         'description' => 'Coffee products',
+        'icon'        => 'mug-hot',
+        'icon_color'  => '#7c3aed',
+        'icon_url'    => 'https://cdn.test/coffee.png',
         'tags'        => ['drinks'],
         'meta'        => ['featured' => true],
         'order'       => 1,
-    ])->and($categoryData['products'])->toHaveCount(1);
+    ])->and($categoryData)->not->toHaveKey('icon_file_uuid')
+        ->and($categoryData['products'])->toHaveCount(1);
 });
 
 test('category resource controls optional products and nested categories', function () {
