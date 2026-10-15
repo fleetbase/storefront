@@ -79,4 +79,20 @@ module('Integration | Component | storefront/network/orders cells', function (ho
         assert.dom('[data-test-order-driver]').doesNotIncludeText('+6590000000', 'no phone under the name');
         assert.dom('[data-test-resource-pill-subtitle]').doesNotExist();
     });
+
+    test('an order placed at a food truck says which truck next to how it is fulfilled', async function (assert) {
+        this.set('row', { meta: { is_pickup: true, food_truck_id: 'food_truck_one', food_truck: { id: 'food_truck_one', name: 'Taco Truck' } } });
+        await render(hbs`<Storefront::Network::Orders::Cell::Fulfillment @row={{this.row}} />`);
+
+        assert.dom('[data-test-order-fulfillment]').hasText('Pickup');
+        assert.dom('[data-test-order-food-truck]').hasText('Taco Truck');
+
+        // A truck that is gone still marks the order as a truck order.
+        this.set('row', { meta: { is_pickup: false, food_truck_id: 'food_truck_gone', food_truck: { id: 'food_truck_gone', name: null } } });
+        assert.dom('[data-test-order-food-truck]').hasText('Truck');
+
+        this.set('row', { meta: { is_pickup: false } });
+        assert.dom('[data-test-order-fulfillment]').hasText('Delivery');
+        assert.dom('[data-test-order-food-truck]').doesNotExist('a store order has no truck badge');
+    });
 });

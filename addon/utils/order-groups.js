@@ -113,6 +113,7 @@ export function summarizeGroup(group) {
     const drivers = orders.map((order) => order.driver_assigned ?? null).filter(Boolean);
     const driverIds = new Set(orders.map((order) => order.driver_assigned_uuid ?? order.driver_assigned?.id).filter(Boolean));
     const currency = get(first, 'meta.currency') ?? first.currency;
+    const truckIds = new Set(orders.map((order) => get(order, 'meta.food_truck_id') ?? null));
 
     return Object.assign(group, {
         public_id: group.id,
@@ -124,6 +125,8 @@ export function summarizeGroup(group) {
         storeIds: [...new Set(orders.map(orderStoreId).filter(Boolean))],
         storeNames: [...new Set(orders.map(orderStoreName).filter(Boolean))],
         is_pickup: orders.every((order) => get(order, 'meta.is_pickup')),
+        // The truck a checkout was ordered from, when every order in it came from the same one.
+        food_truck: truckIds.size === 1 && get(first, 'meta.food_truck_id') ? (get(first, 'meta.food_truck') ?? { id: get(first, 'meta.food_truck_id'), name: null }) : null,
         total: orders.reduce((sum, order) => sum + number(get(order, 'meta.total') ?? order.transaction_amount), 0),
         tip: orders.reduce((sum, order) => sum + number(get(order, 'meta.tip')) + number(get(order, 'meta.delivery_tip')), 0),
         currency,

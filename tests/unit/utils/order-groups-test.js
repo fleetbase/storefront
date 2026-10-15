@@ -44,4 +44,13 @@ module('Unit | Utility | order-groups', function () {
         assert.deepEqual(group.statusSummary, { count: 2, total: 3, status: 'preparing' });
         assert.false(group.allTerminal);
     });
+
+    test('a checkout from one food truck carries the truck, a mixed one does not', function (assert) {
+        const truck = { id: 'food_truck_one', name: 'Taco Truck' };
+        const fromTruck = (overrides = {}) => order({ meta: { checkout_id: 'chkt_1', food_truck_id: 'food_truck_one', food_truck: truck }, ...overrides });
+
+        assert.deepEqual(summarizeGroup({ id: 'chkt_1', isGroup: true, orders: [fromTruck(), fromTruck()] }).food_truck, truck);
+        assert.strictEqual(summarizeGroup({ id: 'chkt_1', isGroup: true, orders: [fromTruck(), order()] }).food_truck, null, 'a truck order with a store order');
+        assert.strictEqual(summarizeGroup({ id: 'chkt_1', isGroup: true, orders: [order(), order()] }).food_truck, null, 'store orders only');
+    });
 });

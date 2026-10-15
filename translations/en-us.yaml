@@ -1221,6 +1221,9 @@ storefront:
       no-customer: No customer
       no-store: No store
       delivery: Delivery
+      truck: Truck
+      from-truck: "Ordered from the truck {name}"
+      from-a-truck: Ordered from a food truck
       tip-split: "tip {tip} split {count} ways"
       tip-shared: "+ tip {tip} shared"
       tip-to-store: "tip {tip} to store"

@@ -280,4 +280,29 @@ class FoodTruck extends StorefrontModel
 
         return $this->vehicle?->driver;
     }
+
+    /**
+     * What an order list or panel shows of the truck an order was placed at: its public id and the
+     * name the console gives it (its vehicle's). A company's trucks are looked up once per request,
+     * so a page of orders costs one query.
+     *
+     * @return array{id: string, name: ?string}
+     */
+    public static function summaryFor(string $publicId, ?string $companyUuid): array
+    {
+        $request = request();
+        $names   = $request->attributes->get('storefront.food_truck_names', []);
+        $key     = (string) $companyUuid;
+
+        if (!array_key_exists($key, $names)) {
+            $names[$key] = static::where('company_uuid', $companyUuid)
+                ->with('vehicle')
+                ->get()
+                ->mapWithKeys(fn (FoodTruck $truck) => [$truck->public_id => data_get($truck, 'vehicle.display_name')])
+                ->all();
+            $request->attributes->set('storefront.food_truck_names', $names);
+        }
+
+        return ['id' => $publicId, 'name' => $names[$key][$publicId] ?? null];
+    }
 }

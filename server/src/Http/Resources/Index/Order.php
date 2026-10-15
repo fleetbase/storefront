@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources\Index;
 
 use Fleetbase\FleetOps\Http\Resources\v1\Index\Order as FleetOpsOrderIndexResource;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Illuminate\Contracts\Support\Arrayable;
 
 class Order extends FleetOpsOrderIndexResource
@@ -56,6 +57,8 @@ class Order extends FleetOpsOrderIndexResource
             'is_master_order',
             'related_orders',
             'master_order_id',
+            // An order placed at a food truck: checkout stamps the truck's public id.
+            'food_truck_id',
         ];
 
         $meta = array_intersect_key($this->normalizeMeta($this->resource->meta ?? []), array_flip($keys));
@@ -63,6 +66,10 @@ class Order extends FleetOpsOrderIndexResource
         if (isset($meta['storefront']) && (is_array($meta['storefront']) || is_object($meta['storefront']))) {
             $storefrontKeys     = ['id', 'public_id', 'name', 'logo_url', 'is_store', 'is_network'];
             $meta['storefront'] = array_intersect_key($this->normalizeMeta($meta['storefront']), array_flip($storefrontKeys));
+        }
+
+        if (!empty($meta['food_truck_id'])) {
+            $meta['food_truck'] = FoodTruck::summaryFor($meta['food_truck_id'], $this->resource->company_uuid);
         }
 
         return $meta;
