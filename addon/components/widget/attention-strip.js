@@ -76,8 +76,8 @@ export default class WidgetAttentionStripComponent extends Component {
             },
             {
                 id: 'trucks',
-                count: data.trucks_offline ?? 0,
-                label: this.intl.t('storefront.dashboard.attention.trucks-offline', { count: data.trucks_offline ?? 0 }),
+                count: data.trucks_inactive ?? 0,
+                label: this.intl.t('storefront.dashboard.attention.trucks-inactive', { count: data.trucks_inactive ?? 0 }),
                 hint: null,
                 icon: 'truck',
                 tone: 'muted',

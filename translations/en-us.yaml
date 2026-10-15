@@ -608,6 +608,7 @@ storefront:
       map: Map
       search: Search trucks
       map-note: '{count} of {total} trucks have a reported position.'
+      active: Active
       inactive: Inactive
       empty-state: Add a truck to sell from a vehicle inside a service area.
       create-truck: Add truck
@@ -618,12 +619,9 @@ storefront:
       orders-today: '{count, plural, =0 {no orders today} one {# order today} other {# orders today}}'
       no-service-area: No service area
       inactive: Inactive
-      offline: Offline
-      no-catalog: Online, no catalog
-      no-catalog-in-hours: Online · no catalog in hours
+      no-catalog: Active, no catalog
+      no-catalog-in-hours: Active · no catalog in hours
       serving: "Serving · {catalog}"
-      last-online: "last online {ago} ago"
-      online: Online
       assign-catalogs: Assign catalogs
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
@@ -677,7 +675,7 @@ storefront:
       awaiting-driver: "{count, plural, one {delivery without a driver} other {deliveries without a driver}}"
       out-of-stock: "{count, plural, one {product marked unavailable} other {products marked unavailable}}"
       still-published: still published
-      trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
+      trucks-inactive: "{count, plural, one {truck inactive} other {trucks inactive}}"
       network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
   order:
     booking-steps:

@@ -43,18 +43,20 @@ module('Integration | Component | storefront/truck/card', function (hooks) {
         assert.dom('[data-test-truck-menu]').exists();
     });
 
-    test('presence reads inactive, offline, or online with nothing to sell', async function (assert) {
-        this.set('truck', { status: 'inactive', online: true, catalogs: [{}] });
+    test('presence follows the truck status alone: inactive, or active with nothing to sell', async function (assert) {
+        this.set('truck', { status: 'inactive', online: true, vehicle: { id: 'v1', online: true }, catalogs: [{}] });
         await render(hbs`<Storefront::Truck::Card @truck={{this.truck}} />`);
-        assert.dom('[data-test-truck-presence]').includesText('Inactive');
+        assert.dom('[data-test-truck-presence]').includesText('Inactive', 'an inactive truck is inactive though its vehicle is online');
 
-        this.set('truck', { status: 'active', online: false, catalogs: [{}] });
+        // Its vehicle reporting offline does not take an active truck off sale.
+        this.set('truck', { status: 'active', online: false, vehicle: { id: 'v1', online: false }, catalogs: [] });
         await render(hbs`<Storefront::Truck::Card @truck={{this.truck}} />`);
-        assert.dom('[data-test-truck-presence]').includesText('Offline');
+        assert.dom('[data-test-truck-presence]').includesText('Active, no catalog');
+        assert.dom('[data-test-truck-presence]').doesNotIncludeText('Offline');
 
         this.set('truck', { status: 'active', online: true, catalogs: [] });
         await render(hbs`<Storefront::Truck::Card @truck={{this.truck}} />`);
-        assert.dom('[data-test-truck-presence]').includesText('Online, no catalog');
+        assert.dom('[data-test-truck-presence]').includesText('Active, no catalog');
         assert.dom('[data-test-truck-catalogs-count]').hasText('No catalogs · no orders today');
         assert.dom('[data-test-truck-area]').hasText('No service area');
         assert.dom('[data-test-truck-vehicle] [data-test-resource-pill-title]').hasText('No vehicle assigned');

@@ -333,6 +333,12 @@ test('food truck resource returns safe empty logistics relations and offline sta
         'status'       => 'inactive',
     ])->and($data['catalogs'])->toBeEmpty()
         ->and($data)->not->toHaveKeys(['uuid', 'company_uuid', 'vehicle_uuid']);
+
+    // An active truck takes orders with no vehicle, or a vehicle reporting offline.
+    $truck->forceFill(['status' => 'active']);
+    $active = (new FoodTruckResource($truck))->resolve(setSimpleStorefrontResourceRoute('v1/storefront/food-trucks'));
+
+    expect($active['online'])->toBeTrue();
 });
 
 test('review customer resource reports aggregate review and upload counts', function () {
