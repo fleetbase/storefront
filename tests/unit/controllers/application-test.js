@@ -1,5 +1,6 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
+import { withCreatedRecords } from '@fleetbase/storefront-engine/controllers/application';
 
 class FetchStub {
     static create(props = {}) {
@@ -332,5 +333,54 @@ module('Unit | Controller | application', function (hooks) {
 
         storefront.createNetworkCalls[0].onSuccess({ id: 'network_uuid', public_id: 'network_123' });
         assert.deepEqual(hostRouter.transitions, [['console.storefront.networks.index.network.index', 'network_123']]);
+    });
+
+    test('the switcher lists records created since the engine loaded, and leaves deleted ones out', function (assert) {
+        const controller = this.owner.lookup('controller:application');
+        const storefront = this.owner.lookup('service:storefront');
+        const loadedStore = { id: 'store_uuid', name: 'Corner Store' };
+        const deletedStore = { id: 'deleted_store_uuid', name: 'Gone', isDeleted: true };
+        const loadedNetwork = { id: 'network_uuid', name: 'Night Market' };
+
+        controller.model = { stores: [loadedStore, deletedStore], networks: [loadedNetwork] };
+        assert.deepEqual(
+            controller.switcherStores.map((store) => store.id),
+            ['store_uuid'],
+            'without anything created the loaded list shows, deleted records left out'
+        );
+
+        const newNetwork = { id: 'new_network_uuid', name: 'Harbour Market' };
+        const newStore = { id: 'new_store_uuid', name: 'Second Store' };
+        storefront.createdNetworks = [newNetwork];
+        storefront.createdStores = [newStore];
+
+        assert.deepEqual(
+            controller.switcherNetworks.map((network) => network.id),
+            ['new_network_uuid', 'network_uuid'],
+            'a network created after the list loaded shows first'
+        );
+        assert.deepEqual(
+            controller.switcherStores.map((store) => store.id),
+            ['new_store_uuid', 'store_uuid']
+        );
+
+        // Once a reload includes the new network it is listed once, where the reload put it.
+        controller.model = { stores: [loadedStore], networks: [loadedNetwork, newNetwork] };
+        assert.deepEqual(
+            controller.switcherNetworks.map((network) => network.id),
+            ['network_uuid', 'new_network_uuid']
+        );
+    });
+
+    test('created records are listed newest first, and records not yet saved are skipped', function (assert) {
+        const first = { id: 'first_uuid' };
+        const second = { id: 'second_uuid' };
+        const unsaved = { id: null };
+
+        assert.deepEqual(
+            withCreatedRecords([{ id: 'loaded_uuid' }], [first, second, unsaved]).map((record) => record.id),
+            ['second_uuid', 'first_uuid', 'loaded_uuid']
+        );
+        assert.deepEqual(withCreatedRecords(undefined, undefined), [], 'nothing loaded and nothing created is an empty list');
     });
 });
