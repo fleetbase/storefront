@@ -8,6 +8,19 @@
     @value={{@category.description}}
     @helpText={{t "storefront.component.modals.create-product-category.description-text"}}
 />
+{{#if this.hasParentPicker}}
+    <InputGroup @name={{t "storefront.component.modals.create-product-category.parent"}} @helpText={{t "storefront.component.modals.create-product-category.parent-text"}}>
+        <Select
+            @options={{this.parentOptions}}
+            @optionValue="value"
+            @optionLabel="label"
+            @value={{or @category.parent_uuid ""}}
+            @onSelect={{this.selectParent}}
+            class="w-full"
+            data-test-category-parent
+        />
+    </InputGroup>
+{{/if}}
 <InputGroup @name={{t "storefront.component.modals.create-product-category.icon"}}>
     <div class="storefront-product-category-form__media">
         <Image

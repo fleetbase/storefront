@@ -1,0 +1,11 @@
+<Select
+    @options={{this.options}}
+    @optionValue="value"
+    @optionLabel="label"
+    @value={{@selected.id}}
+    @placeholder={{@placeholder}}
+    @onSelect={{this.select}}
+    class="w-full"
+    data-test-category-tree-select
+    ...attributes
+/>

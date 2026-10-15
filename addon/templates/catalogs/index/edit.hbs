@@ -28,7 +28,12 @@
                     <aside class="storefront-catalog-categories" aria-label={{t "storefront.catalogs.editor.sections.categories"}} data-test-catalog-categories>
                         <div class="storefront-catalog-categories__title">{{t "storefront.catalogs.editor.sections.categories"}}</div>
                         {{#each this.categoryRows as |row|}}
-                            <div class="storefront-catalog-category {{if row.isSelected 'is-selected'}}" data-test-catalog-category={{row.category.id}}>
+                            <div
+                                class="storefront-catalog-category storefront-catalog-category--depth-{{row.depth}} {{if row.isSelected 'is-selected'}}"
+                                title={{row.path}}
+                                data-test-catalog-category={{row.category.id}}
+                                data-test-catalog-category-depth={{row.depth}}
+                            >
                                 {{#if (eq this.renamingCategory row.category)}}
                                     <form class="storefront-catalog-category__rename" aria-label={{t "storefront.catalogs.editor.rename-category"}} {{on "submit" this.commitRename}}>
                                         <Input class="form-input form-input-xs w-full" @value={{this.renameValue}} {{on "input" this.setRenameValue}} {{on "blur" this.commitRename}} />
@@ -41,6 +46,11 @@
                                     <div class="storefront-catalog-category__actions">
                                         <Button @icon="arrow-up" @size="xs" @disabled={{row.isFirst}} @helpText={{t "storefront.catalogs.editor.move-up"}} @onClick={{fn this.moveCategory row.category -1}} />
                                         <Button @icon="arrow-down" @size="xs" @disabled={{row.isLast}} @helpText={{t "storefront.catalogs.editor.move-down"}} @onClick={{fn this.moveCategory row.category 1}} />
+                                        <Button @icon="indent" @size="xs" @disabled={{not row.canIndent}} @helpText={{t "storefront.catalogs.editor.indent"}} @onClick={{fn this.indentCategory row.category}} data-test-catalog-category-indent />
+                                        <Button @icon="outdent" @size="xs" @disabled={{not row.canOutdent}} @helpText={{t "storefront.catalogs.editor.outdent"}} @onClick={{fn this.outdentCategory row.category}} data-test-catalog-category-outdent />
+                                        {{#if row.canAddSubcategory}}
+                                            <Button @icon="plus" @size="xs" @helpText={{t "storefront.catalogs.editor.add-subcategory"}} @onClick={{fn this.addSubcategory row.category}} data-test-catalog-category-add-sub />
+                                        {{/if}}
                                         <Button @icon="pencil" @size="xs" @helpText={{t "storefront.catalogs.editor.rename"}} @onClick={{fn this.startRename row.category}} />
                                         <Button @icon="trash" @size="xs" @type="danger" @helpText={{t "common.delete"}} @onClick={{fn this.removeCategory row.category}} />
                                     </div>

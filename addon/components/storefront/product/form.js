@@ -2,6 +2,7 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action, get } from '@ember/object';
 import { inject as service } from '@ember/service';
+import { categoryPath } from '../../../utils/category-tree';
 
 /** Which section of the page holds each field an issue can point at. */
 const SECTION_FOR_FIELD = { name: 'product', price: 'pricing', sale_price: 'pricing', category: 'organization', media: 'media' };
@@ -33,6 +34,15 @@ function number(value) {
  */
 export default class StorefrontProductFormComponent extends Component {
     @service intl;
+    @service store;
+
+    /** A category option's place in the store's tree: "Drinks › Coffee › Cold brew". */
+    categoryLabel = (category) => {
+        const ownerId = get(category, 'owner_uuid');
+        const categories = this.store.peekAll('category').filter((record) => get(record, 'for') === 'storefront_product' && get(record, 'owner_uuid') === ownerId);
+
+        return categoryPath(categories, category);
+    };
     @tracked moreOpen = false;
     /** The language whose fields are on screen in the translations section. */
     @tracked translationLanguage = null;

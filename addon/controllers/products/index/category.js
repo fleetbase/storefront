@@ -10,6 +10,7 @@ import { timeout, task } from 'ember-concurrency';
 export default class ProductsIndexCategoryController extends BaseController {
     @controller('products.index') productsIndexController;
     @service intl;
+    @service store;
     @service modalsManager;
     @service fetch;
     @service hostRouter;
@@ -130,6 +131,10 @@ export default class ProductsIndexCategoryController extends BaseController {
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
             category,
+            // The store's other categories, for the parent picker.
+            categories: this.store
+                .peekAll('category')
+                .filter((record) => record.for === 'storefront_product' && record.owner_uuid === category.owner_uuid && !record.isNew && !record.isDeleted),
             uploadNewPhoto: (file) => {
                 this.fetch.uploadFile.perform(
                     file,
@@ -151,9 +156,15 @@ export default class ProductsIndexCategoryController extends BaseController {
             confirm: (modal) => {
                 modal.startLoading();
 
-                return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.products.index.category.category-changes-saved-success'));
-                });
+                return category
+                    .save()
+                    .then(() => {
+                        this.notifications.success(this.intl.t('storefront.products.index.category.category-changes-saved-success'));
+                    })
+                    .catch((error) => {
+                        modal.stopLoading();
+                        this.notifications.serverError(error);
+                    });
             },
         });
     }

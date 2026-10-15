@@ -34,6 +34,15 @@
                     <strong>{{row.category.name}}</strong>
                     {{#if (eq row.depth 0)}}<small>{{n-a row.category.description ""}}</small>{{/if}}
                 </span>
+                {{#if (and row.canHaveChildren (can "storefront create product-category"))}}
+                    <span
+                        class="storefront-product-category__add"
+                        title={{t "storefront.products.sidebar.new-subcategory"}}
+                        aria-hidden="true"
+                        data-test-storefront-product-subcategory={{row.category.id}}
+                        {{on "click" (fn this.createSubcategory row.category)}}
+                    ><FaIcon @icon="plus" @size="xs" /></span>
+                {{/if}}
                 <span class="storefront-product-category__count">{{row.count}}</span>
             </button>
         {{else}}
