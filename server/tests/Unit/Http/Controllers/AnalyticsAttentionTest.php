@@ -171,12 +171,14 @@ function analyticsAttentionSeed(): void
         ['uuid' => 'vehicle_offline', 'online' => false],
     ]);
     $db->table('food_trucks')->insert([
+        // An active truck takes orders whatever its vehicle reports: online, offline or no vehicle at all.
         ['uuid' => 'truck_online', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => 'vehicle_online', 'status' => 'active'],
         ['uuid' => 'truck_offline', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => 'vehicle_offline', 'status' => 'active'],
-        // A truck without a vehicle cannot be online.
         ['uuid' => 'truck_no_vehicle', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => null, 'status' => 'active'],
-        ['uuid' => 'truck_inactive', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => 'vehicle_offline', 'status' => 'inactive'],
-        ['uuid' => 'truck_store_b', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_b_uuid', 'vehicle_uuid' => 'vehicle_offline', 'status' => 'active'],
+        // Inactive, even with its vehicle online; and a truck never given a status.
+        ['uuid' => 'truck_inactive', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => 'vehicle_online', 'status' => 'inactive'],
+        ['uuid' => 'truck_unset', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_a_uuid', 'vehicle_uuid' => null, 'status' => null],
+        ['uuid' => 'truck_store_b', 'company_uuid' => 'company_uuid', 'store_uuid' => 'store_b_uuid', 'vehicle_uuid' => 'vehicle_offline', 'status' => 'inactive'],
     ]);
     $db->table('invites')->insert([
         analyticsAttentionInvite('invite_market', ['bloom@example.test']),
@@ -220,7 +222,7 @@ test('attention for a store lists what its operator has to act on today', functi
         // Confirmed delivery orders without a driver: ready for delivery and preparing.
         ->and($data['awaiting_driver'])->toBe(2)
         ->and($data['out_of_stock'])->toBe(1)
-        ->and($data['trucks_offline'])->toBe(2)
+        ->and($data['trucks_inactive'])->toBe(2)
         ->and($data['network_invitations'])->toBe(3)
         ->and($data['invitation_networks'])->toBe(['Market', 'Mall']);
 });
@@ -238,7 +240,7 @@ test('attention for a store without an email has no network invitations', functi
         'ready_for_pickup'    => 0,
         'awaiting_driver'     => 0,
         'out_of_stock'        => 1,
-        'trucks_offline'      => 1,
+        'trucks_inactive'     => 1,
         'network_invitations' => 0,
         'invitation_networks' => [],
     ]);
@@ -253,7 +255,7 @@ test('attention across the company counts every store and leaves invitations out
         ->and($data['ready_for_pickup'])->toBe(2)
         ->and($data['awaiting_driver'])->toBe(2)
         ->and($data['out_of_stock'])->toBe(2)
-        ->and($data['trucks_offline'])->toBe(3)
+        ->and($data['trucks_inactive'])->toBe(3)
         ->and($data['network_invitations'])->toBe(0)
         ->and($data['invitation_networks'])->toBe([]);
 });
@@ -270,7 +272,7 @@ test('attention with nothing waiting is all zeros', function () {
         'ready_for_pickup'    => 0,
         'awaiting_driver'     => 0,
         'out_of_stock'        => 0,
-        'trucks_offline'      => 0,
+        'trucks_inactive'     => 0,
         'network_invitations' => 0,
         'invitation_networks' => [],
     ]);

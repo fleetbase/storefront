@@ -116,7 +116,12 @@ export default class StorefrontTruckPanelComponent extends Component {
         return getPlaceholderImage('vehicle');
     }
 
-    /** The header's second line: id, owner, and whether the vehicle is online. */
+    /** Whether the truck takes orders: its status alone, whatever its vehicle reports. */
+    get isActive() {
+        return get(this.truck, 'status') === 'active';
+    }
+
+    /** The header's second line: id, owner, and whether the truck is active. */
     get subtitle() {
         const parts = [];
 
@@ -130,15 +135,7 @@ export default class StorefrontTruckPanelComponent extends Component {
             parts.push(this.intl.t('storefront.trucks.card.owned-by', { name: this.truck.ownerName }));
         }
 
-        if (this.position.hasVehicle) {
-            parts.push(
-                this.position.online
-                    ? this.intl.t('storefront.common.online')
-                    : this.position.updatedAgo
-                      ? this.intl.t('storefront.trucks.card.last-online', { ago: this.position.updatedAgo })
-                      : this.intl.t('storefront.common.offline')
-            );
-        }
+        parts.push(this.isActive ? this.intl.t('storefront.trucks.index.active') : this.intl.t('storefront.trucks.index.inactive'));
 
         return parts.filter(Boolean).join(' · ');
     }
@@ -219,7 +216,6 @@ export default class StorefrontTruckPanelComponent extends Component {
             hasPosition,
             latitude,
             longitude,
-            online: Boolean(get(vehicle, 'online')),
             updatedAgo: get(vehicle, 'updatedAgo'),
             serviceArea: get(this.truck, 'service_area.name'),
             zone: get(this.truck, 'zone.name'),

@@ -5,7 +5,7 @@
                 <div class="storefront-truck-panel__avatar-wrap">
                     {{#if this.truck.vehicle.id}}
                         <Image src={{this.photoUrl}} @fallbackSrc={{this.placeholder}} alt={{this.title}} class="storefront-truck-panel__avatar" />
-                        <span class="storefront-truck-panel__dot {{if this.position.online 'is-online'}}"></span>
+                        <span class="storefront-truck-panel__dot {{if this.isActive 'is-online'}}"></span>
                     {{else}}
                         <span class="storefront-truck-panel__avatar storefront-truck-panel__avatar--icon"><FaIcon @icon="truck" /></span>
                     {{/if}}
@@ -236,14 +236,6 @@
                             <Storefront::Truck::Map @trucks={{array this.truck}} @height="280px" class="mb-3" />
                         {{/if}}
                         <div class="storefront-kv">
-                            <div class="storefront-kv__row">
-                                <span class="storefront-kv__key">{{t "storefront.common.status"}}</span>
-                                <span class="storefront-kv__value"><Badge
-                                        @status={{if this.position.online "online" "offline"}}
-                                        @size="xs"
-                                        @text={{if this.position.online (t "storefront.common.online") (t "storefront.common.offline")}}
-                                    /></span>
-                            </div>
                             <div class="storefront-kv__row">
                                 <span class="storefront-kv__key">{{t "storefront.trucks.panel.last-position"}}</span>
                                 <span class="storefront-kv__value">{{#if this.position.hasPosition}}{{this.position.latitude}}, {{this.position.longitude}}{{else}}{{t

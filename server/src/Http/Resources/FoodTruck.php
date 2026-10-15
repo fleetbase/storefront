@@ -41,7 +41,9 @@ class FoodTruck extends FleetbaseResource
             'zone'                           => $this->zone ? new ZoneResource($this->zone) : null,
             'catalogs'                       => Catalog::collection($this->catalogs ?? []),
             'location'                       => $this->vehicle ? $this->vehicle->location : null,
-            'online'                         => $this->vehicle ? $this->vehicle->online : false,
+            // Whether the truck takes orders: its Storefront status alone. The vehicle's connectivity
+            // (Navigator, telematics) has no say in it.
+            'online'                         => $this->status === 'active',
             'status'                         => $this->status,
             // Today's orders, revenue and prep time for the console's truck card and panel.
             'today'                          => $this->when(Http::isInternalRequest(), fn () => $this->todayStats()),

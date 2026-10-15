@@ -197,7 +197,8 @@ test('assigning no subjects clears the catalog', function () {
 test('the catalog resource lists its stores and trucks for the console, naming a truck by its vehicle', function () {
     $store = (new Store())->forceFill(['uuid' => 'store_uuid', 'public_id' => 'store_public', 'name' => 'Corner Store', 'online' => true, 'status' => 'active']);
 
-    $namedVehicle = (new Vehicle())->forceFill(['name' => 'Taco Truck', 'plate_number' => 'UB-1234', 'online' => true]);
+    // An active truck serves though its vehicle reports offline: the truck's status alone decides.
+    $namedVehicle = (new Vehicle())->forceFill(['name' => 'Taco Truck', 'plate_number' => 'UB-1234', 'online' => false]);
     $namedTruck   = (new FoodTruck())->forceFill(['uuid' => 'truck_named', 'public_id' => 'food_truck_named', 'status' => 'active'])->setRelation('vehicle', $namedVehicle);
 
     $parkedTruck = (new FoodTruck())->forceFill(['uuid' => 'truck_parked', 'public_id' => 'food_truck_parked'])->setRelation('vehicle', null);

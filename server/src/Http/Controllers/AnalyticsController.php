@@ -81,7 +81,7 @@ class AnalyticsController extends Controller
         $unassigned  = (clone $orders)->whereNotIn('status', ['created', 'pending'])->whereNull('driver_assigned_uuid')->where(fn ($query) => $query->whereNull('meta->is_pickup')->orWhere('meta->is_pickup', false))->count();
 
         $products = Product::where('company_uuid', $companyUuid)->where('status', 'published')->where('is_available', false);
-        $trucks   = \Fleetbase\Storefront\Models\FoodTruck::where('company_uuid', $companyUuid)->where('status', 'active');
+        $trucks   = \Fleetbase\Storefront\Models\FoodTruck::where('company_uuid', $companyUuid);
         $invites  = collect();
 
         if ($store) {
@@ -97,8 +97,9 @@ class AnalyticsController extends Controller
             }
         }
 
-        $offlineTrucks = $trucks->with('vehicle')->get()->filter(fn ($truck) => !$truck->vehicle || !$truck->vehicle->online);
-        $oldest        = $toConfirm->first();
+        // A truck takes orders while its status is active; an inactive one is set aside until switched on.
+        $inactiveTrucks = $trucks->where(fn ($query) => $query->whereNull('status')->orWhere('status', '!=', 'active'))->count();
+        $oldest         = $toConfirm->first();
 
         return response()->json([
             'orders_to_confirm'   => $toConfirm->count(),
@@ -107,7 +108,7 @@ class AnalyticsController extends Controller
             'ready_for_pickup'    => $readyPickup,
             'awaiting_driver'     => $unassigned,
             'out_of_stock'        => $products->count(),
-            'trucks_offline'      => $offlineTrucks->count(),
+            'trucks_inactive'     => $inactiveTrucks,
             'network_invitations' => $invites->count(),
             'invitation_networks' => $invites->map(fn ($invite) => data_get($invite->subject, 'name'))->filter()->values(),
         ]);

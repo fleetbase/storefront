@@ -62,7 +62,8 @@ class Catalog extends FleetbaseResource
                     'name'       => $isTruck ? ($vehicle?->display_name ?? $vehicle?->plate_number ?? $subject->public_id ?? 'Truck') : $subject->name,
                     'plate'      => $isTruck ? $vehicle?->plate_number : null,
                     'logo_url'   => $isTruck ? ($vehicle?->photo_url ?? null) : ($subject->logo_url ?? null),
-                    'online'     => (bool) ($isTruck ? ($subject->online ?? $vehicle?->online) : $subject->online),
+                    // A truck serves while its Storefront status is active, whatever its vehicle reports.
+                    'online'     => (bool) ($isTruck ? $subject->status === 'active' : $subject->online),
                     'status'     => $subject->status ?? null,
                 ];
             })

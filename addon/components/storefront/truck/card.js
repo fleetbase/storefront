@@ -6,8 +6,8 @@ import { catalogServingNow } from './panel';
 /**
  * A truck (the `food-truck` resource) on the shared card anatomy: the vehicle
  * pill as its identity, the vehicle photo as media, and what matters to a
- * store in the footer: whether it is online, where it serves, and which
- * catalogs it carries.
+ * store in the footer: whether it is active (taking orders), where it serves,
+ * and which catalogs it carries. Whether its vehicle reports online has no say.
  */
 export default class StorefrontTruckCardComponent extends Component {
     /** Opens the truck from its title, when the page gives a way to. */
@@ -21,16 +21,6 @@ export default class StorefrontTruckCardComponent extends Component {
 
     get vehicle() {
         return get(this.truck, 'vehicle');
-    }
-
-    get isOnline() {
-        const online = get(this.truck, 'online');
-
-        if (typeof online === 'boolean') {
-            return online;
-        }
-
-        return Boolean(this.vehicle && get(this.vehicle, 'online'));
     }
 
     get status() {
@@ -88,14 +78,10 @@ export default class StorefrontTruckCardComponent extends Component {
         return this.catalogs.filter((catalog) => get(catalog, 'status') !== 'draft' && catalogServingNow(catalog));
     }
 
-    /** What the store needs to know at a glance: serving which catalog, online with nothing to sell, or offline. */
+    /** What the store needs to know at a glance: serving which catalog, active with nothing to sell, or inactive. */
     get presence() {
         if (!this.isActive) {
             return { status: 'inactive', labelKey: 'storefront.trucks.card.inactive' };
-        }
-
-        if (!this.isOnline) {
-            return { status: 'offline', labelKey: 'storefront.trucks.card.offline' };
         }
 
         if (this.catalogs.length === 0) {
@@ -109,14 +95,5 @@ export default class StorefrontTruckCardComponent extends Component {
         }
 
         return { status: 'online', labelKey: 'storefront.trucks.card.serving', catalog: get(serving[0], 'name') };
-    }
-
-    /** For an offline truck: when its vehicle last reported, as Fleet-Ops tracks it. */
-    get lastOnline() {
-        if (this.isOnline || !this.vehicle) {
-            return null;
-        }
-
-        return get(this.vehicle, 'updatedAgo') ?? null;
     }
 }
