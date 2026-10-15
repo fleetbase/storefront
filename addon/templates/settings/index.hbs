@@ -14,7 +14,7 @@
                     <ClickToCopy @value={{@model.key}} class="form-input w-full truncate storefront-settings-readonly">{{n-a @model.key}}</ClickToCopy>
                 </InputGroup>
                 <InputGroup @name={{t "storefront.common.currency"}}>
-                    <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn (mut @model.currency)}} @triggerClass="w-full form-select" />
+                    <CurrencySelect @currency={{@model.currency}} @onCurrencyChange={{fn this.setAttribute "currency"}} @triggerClass="w-full form-select" />
                 </InputGroup>
                 <InputGroup @name={{t "storefront.settings.sections.timezone"}} @helpText={{t "storefront.settings.sections.timezone-help"}}>
                     <PowerSelect
@@ -37,7 +37,7 @@
                         @options={{this.orderConfigs}}
                         @optionValue="id"
                         @optionLabel="name"
-                        @onSelect={{fn (mut @model.order_config_uuid)}}
+                        @onSelect={{fn this.setAttribute "order_config_uuid"}}
                         @placeholder={{t "storefront.settings.sections.default-order-config-placeholder"}}
                         class="w-full"
                     />
@@ -64,7 +64,7 @@
             </InputGroup>
             <ContentPanel @title={{t "storefront.settings.index.contact-social"}} @open={{false}} @pad={{false}} @wrapperClass="bordered-top">
             <InputGroup @name={{t "storefront.common.phone"}}>
-                <PhoneInput @value={{@model.phone}} @onInput={{fn (mut @model.phone)}} class="form-input w-full" />
+                <PhoneInput @value={{@model.phone}} @onInput={{fn this.setAttribute "phone"}} class="form-input w-full" />
             </InputGroup>
             <InputGroup
                 @name={{t "storefront.common.website"}}
@@ -255,7 +255,7 @@
         <ContentPanel @title={{t "storefront.settings.sections.checkout-rules"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
             <p class="storefront-settings-section__lede">{{t "storefront.settings.sections.checkout-rules-lede"}}</p>
             <div class="storefront-rules">
-                <Storefront::SettingRule @icon="plug" @label={{t "storefront.common.online"}} @description={{t "storefront.settings.rules.online"}} @value={{@model.online}} @onToggle={{fn (mut @model.online)}} data-test-rule="online" />
+                <Storefront::SettingRule @icon="plug" @label={{t "storefront.common.online"}} @description={{t "storefront.settings.rules.online"}} @value={{@model.online}} @onToggle={{fn this.setAttribute "online"}} data-test-rule="online" />
                 <Storefront::SettingRule @icon="person-booth" @label={{t "storefront.settings.rules.pickup-label"}} @description={{t "storefront.settings.rules.pickup"}} @value={{@model.options.pickup_enabled}} @onToggle={{fn this.setOption "pickup_enabled"}} data-test-rule="pickup" />
                 <Storefront::SettingRule @icon="cash-register" @label={{t "storefront.settings.rules.tips-label"}} @description={{t "storefront.settings.rules.tips"}} @value={{@model.options.tips_enabled}} @onToggle={{fn this.setOption "tips_enabled"}} data-test-rule="tips" />
                 <Storefront::SettingRule @icon="face-smile" @label={{t "storefront.settings.rules.delivery-tips-label"}} @description={{t "storefront.settings.rules.delivery-tips"}} @value={{@model.options.delivery_tips_enabled}} @onToggle={{fn this.setOption "delivery_tips_enabled"}} data-test-rule="delivery-tips" />
@@ -270,7 +270,7 @@
                 <Storefront::SettingRule @icon="paper-plane" @label={{t "storefront.settings.rules.auto-dispatch-label"}} @description={{t "storefront.settings.rules.auto-dispatch"}} @value={{@model.options.auto_dispatch}} @onToggle={{fn this.setOption "auto_dispatch"}} data-test-rule="auto-dispatch" />
                 <Storefront::SettingRule @icon="signature" @label={{t "storefront.settings.rules.pod-label"}} @description={{t "storefront.settings.rules.pod"}} @value={{@model.options.require_pod}} @onToggle={{fn this.setOption "require_pod"}} data-test-rule="pod">
                     <InputGroup @wrapperClass="mb-0" @name={{t "storefront.settings.index.proof-of-delivery-method"}}>
-                        <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn (mut @model.pod_method)}} class="w-full" />
+                        <Select @options={{this.podMethods}} @optionValue="value" @optionLabel="name" @value={{@model.pod_method}} @onSelect={{fn this.setAttribute "pod_method"}} class="w-full" />
                     </InputGroup>
                 </Storefront::SettingRule>
             </div>
