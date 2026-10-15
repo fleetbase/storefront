@@ -1,7 +1,7 @@
 <EmberWormhole @to="sidebar-menu-items">
     <StoreSelector
-        @stores={{@model.stores}}
-        @networks={{@model.networks}}
+        @stores={{this.switcherStores}}
+        @networks={{this.switcherNetworks}}
         @activeStore={{this.activeStore}}
         @activeNetwork={{this.activeNetwork}}
         @buttonClass="mb-2"
