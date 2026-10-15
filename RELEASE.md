@@ -1,19 +1,17 @@
-> v0.4.25 ~ "Verified reviews, order chat with the driver, richer public promotions and faster store listings"
+> v0.4.26 ~ "New stores and networks show straight away, network orders open at their own URL, and truck orders are marked"
 
 ---
 ## Highlights
 
-- **Verified-purchase reviews.** Reviews can be tied to a delivered order and are marked verified. A new eligibility endpoint tells the app whether a customer can review a store, and customers can delete their own reviews. Reviewer email and phone are no longer exposed publicly; public reviews show a short name such as "Ada B.".
-- **Chat with the driver.** Customers can chat with the driver delivering their order: get the chat, page through messages, send text and photos, and mark messages read. New messages are broadcast on the chat's `chat.{id}` channel.
-- **Public promotions.** Public promotion payloads now include the owning store, the shareable code, availability and the next start time.
-- **Product options.** Public product payloads now include each add-on category's `is_required` and `max_selectable`.
-- **Faster store listings.** Network and Console store listings are quicker.
-- **Private review photos.** Review photos upload without a public ACL, so private buckets work.
+- **New stores and networks show straight away.** A network created from the context switcher, or a company's first store, appears in the switcher without a page reload. Saving the first store also loads the dashboard, order alerts and counts for it. (#148)
+- **Network orders open at their own URL.** An order opened from a network's Orders page has its own URL (`/storefront/networks/<network>/orders/<order>`), so it can be reloaded and shared. (#149)
+- **The order panel scrolls.** The order panel opened in place (dashboard, customer panel, network overview, checkout siblings, redemptions) now scrolls. (#149)
+- **Truck orders are marked.** Order lists and the order panel show the food truck an order was placed at. The order API adds `meta.food_truck_id` and `meta.food_truck` (`{ id, name }`). (#150)
 
 ---
 ## Upgrading
-- Run migrations. This release adds an index on `reviews.subject_uuid` and an `order_uuid` column on `reviews`.
-- Order chat needs storefront socket authentication and fleetbase/core-api v1.6.69 or later.
+- No migrations.
+- A network's Orders page listing every order in the company was caused by fleetbase/core-api caching one filter per model under Octane. Deploy fleetbase/core-api v1.6.71 or later (fleetbase/core-api#315) with this release.
 
 ---
 ## Need help?
