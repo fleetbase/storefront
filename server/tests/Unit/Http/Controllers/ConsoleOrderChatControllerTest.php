@@ -70,7 +70,8 @@ test('the store writes to the customer, who is notified, and sees the thread wit
     $sent    = $this->controller->send(orderOpsCoverageRequest(['content' => "  Your order is being prepared.  \n"]), 'order_active', 'customer')->getData(true)['message'];
     $order   = consoleOrderChatOrder('order_active');
     $channel = OrderChat::find($order, OrderChat::KIND_CUSTOMER);
-    orderOpsCoverageSay($channel, 'customer_user_uuid', 'Thanks! Can you add napkins?', '2026-10-14 11:00:00');
+    // The store's message is stamped with the real clock, so the reply is dated after it, not on a fixed day.
+    orderOpsCoverageSay($channel, 'customer_user_uuid', 'Thanks! Can you add napkins?', now()->addMinute()->toDateTimeString());
 
     $shown = $this->controller->show('order_active', 'customer')->getData(true);
 
