@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'dummy/tests/helpers';
-import { render, select } from '@ember/test-helpers';
+import { fillIn, render, select, settled } from '@ember/test-helpers';
+import { run } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { setupIntl } from 'ember-intl/test-support';
 import { hbs } from 'ember-cli-htmlbars';
@@ -46,5 +47,25 @@ module('Integration | Component | modals/create-product-category', function (hoo
 
         await select('[data-test-category-parent]', '');
         assert.strictEqual(coffee.parent_uuid, null, 'back to the top level');
+    });
+
+    test('it edits a catalog category name, description and icon', async function (assert) {
+        const store = this.owner.lookup('service:store');
+        const category = run(() => store.createRecord('catalog-category', { name: 'Burgers', description: 'Old', icon_url: 'https://cdn.test/burgers.png' }));
+        this.set('options', { category, uploadNewPhoto() {} });
+
+        await render(hbs`<Modals::CreateProductCategory @modalIsOpened={{true}} @options={{this.options}} />`);
+
+        const [name, description] = this.element.querySelectorAll('input[type="text"]');
+        assert.dom(name).hasValue('Burgers');
+        assert.dom(description).hasValue('Old');
+        assert.dom('.storefront-product-category-form__image').hasAttribute('src', 'https://cdn.test/burgers.png');
+
+        await fillIn(description, 'Smash burgers');
+        assert.strictEqual(category.description, 'Smash burgers', 'the form writes to the catalog category');
+
+        run(() => category.set('icon_url', 'https://cdn.test/new.png'));
+        await settled();
+        assert.dom('.storefront-product-category-form__image').hasAttribute('src', 'https://cdn.test/new.png', 'an uploaded icon shows at once');
     });
 });

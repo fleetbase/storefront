@@ -103,6 +103,114 @@ test('catalog synchronizes category updates removals and additions', function ()
         ->and($connection->table('categories')->where('name', 'New category')->exists())->toBeTrue();
 });
 
+test('catalog categories keep the description and icon sent with the catalog', function () {
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $schema     = $connection->getSchemaBuilder();
+    $schema->dropIfExists('categories');
+    $schema->dropIfExists('catalog_category_products');
+    $schema->create('categories', function ($table) {
+        $table->increments('id');
+        $table->string('uuid')->nullable();
+        $table->string('company_uuid')->nullable();
+        $table->string('owner_uuid')->nullable();
+        $table->string('owner_type')->nullable();
+        $table->string('icon_file_uuid')->nullable();
+        $table->string('name');
+        $table->text('description')->nullable();
+        $table->string('icon')->nullable();
+        $table->string('icon_color')->nullable();
+        $table->string('for')->nullable();
+        $table->integer('order')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->create('catalog_category_products', function ($table) {
+        $table->string('uuid')->nullable();
+        $table->string('catalog_category_uuid')->nullable();
+        $table->string('product_uuid')->nullable();
+        $table->integer('price')->nullable();
+        $table->boolean('is_available')->nullable();
+        $table->timestamps();
+        $table->timestamp('deleted_at')->nullable();
+    });
+    $schema->dropIfExists('products');
+    $schema->create('products', function ($table) {
+        $table->string('uuid')->primary();
+        $table->timestamp('deleted_at')->nullable();
+    });
+
+    $editedUuid    = '71000000-0000-4000-8000-000000000001';
+    $untouchedUuid = '71000000-0000-4000-8000-000000000002';
+    $clearedUuid   = '71000000-0000-4000-8000-000000000003';
+    $row           = fn (string $uuid, string $name) => [
+        'uuid'           => $uuid,
+        'company_uuid'   => 'company_uuid',
+        'owner_uuid'     => 'catalog_icon_uuid',
+        'owner_type'     => Catalog::class,
+        'name'           => $name,
+        'description'    => 'Old description',
+        'icon'           => 'utensils',
+        'icon_color'     => '#000000',
+        'icon_file_uuid' => '72000000-0000-4000-8000-000000000001',
+        'created_at'     => now(),
+        'updated_at'     => now(),
+    ];
+    $connection->table('categories')->insert([$row($editedUuid, 'Burgers'), $row($untouchedUuid, 'Sides'), $row($clearedUuid, 'Drinks')]);
+
+    $existing = CatalogCategory::whereIn('uuid', [$editedUuid, $untouchedUuid, $clearedUuid])->orderBy('id')->get();
+    $existing->each(fn (CatalogCategory $category) => $category->setRelation('products', collect()));
+    $catalog = new Catalog(['uuid' => 'catalog_icon_uuid', 'company_uuid' => 'company_uuid']);
+    $catalog->setRelation('categories', $existing);
+
+    $catalog->setCategories([
+        [
+            'uuid'           => $editedUuid,
+            'name'           => 'Burgers',
+            'description'    => 'Smash burgers',
+            'icon'           => 'burger',
+            'icon_color'     => '#f97316',
+            'icon_file_uuid' => '72000000-0000-4000-8000-000000000002',
+            'icon_url'       => 'https://cdn.test/ignored.png',
+            'products'       => [],
+        ],
+        ['uuid' => $untouchedUuid, 'name' => 'Sides', 'products' => []],
+        ['uuid' => $clearedUuid, 'name' => 'Drinks', 'description' => null, 'icon' => null, 'icon_color' => null, 'icon_file_uuid' => null, 'products' => []],
+        ['name' => 'Desserts', 'description' => 'Sweet things', 'icon' => 'ice-cream', 'icon_color' => '#ec4899', 'icon_file_uuid' => '72000000-0000-4000-8000-000000000003', 'products' => []],
+    ]);
+
+    $fields = fn (string $column, string $value) => (array) $connection->table('categories')->where($column, $value)->first(['name', 'description', 'icon', 'icon_color', 'icon_file_uuid', 'order']);
+
+    expect($fields('uuid', $editedUuid))->toBe([
+        'name'           => 'Burgers',
+        'description'    => 'Smash burgers',
+        'icon'           => 'burger',
+        'icon_color'     => '#f97316',
+        'icon_file_uuid' => '72000000-0000-4000-8000-000000000002',
+        'order'          => 0,
+    ])->and($fields('uuid', $untouchedUuid))->toBe([
+        'name'           => 'Sides',
+        'description'    => 'Old description',
+        'icon'           => 'utensils',
+        'icon_color'     => '#000000',
+        'icon_file_uuid' => '72000000-0000-4000-8000-000000000001',
+        'order'          => 1,
+    ])->and($fields('uuid', $clearedUuid))->toBe([
+        'name'           => 'Drinks',
+        'description'    => null,
+        'icon'           => null,
+        'icon_color'     => null,
+        'icon_file_uuid' => null,
+        'order'          => 2,
+    ])->and($fields('name', 'Desserts'))->toBe([
+        'name'           => 'Desserts',
+        'description'    => 'Sweet things',
+        'icon'           => 'ice-cream',
+        'icon_color'     => '#ec4899',
+        'icon_file_uuid' => '72000000-0000-4000-8000-000000000003',
+        'order'          => 3,
+    ]);
+});
+
 test('catalog category exposes catalog product and polymorphic ownership relationships', function () {
     expect((new CatalogCategory())->owner())->toBeInstanceOf(MorphTo::class)
         ->and((new CatalogCategory())->catalog())->toBeInstanceOf(BelongsTo::class)

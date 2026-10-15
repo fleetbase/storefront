@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { dasherize } from '@ember/string';
 import { task } from 'ember-concurrency';
 import { flattenCategoryTree, MAX_CATEGORY_DEPTH } from '../../../utils/category-tree';
 
@@ -12,6 +13,8 @@ const parentKeyOf = (category) => category.parent_uuid ?? category.parent_key ??
 const newKey = () => `new-${Math.random().toString(36).slice(2, 10)}`;
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+/** What the category modal edits; a clone or cancel carries or restores exactly these. */
+const CATEGORY_DETAILS = ['description', 'icon', 'icon_color', 'icon_file_uuid', 'icon_url'];
 
 export default class CatalogsIndexEditController extends Controller {
     @service store;
@@ -20,6 +23,8 @@ export default class CatalogsIndexEditController extends Controller {
     @service modalsManager;
     @service hostRouter;
     @service crud;
+    @service fetch;
+    @service currentUser;
     @tracked catalog;
     @tracked products = [];
     @tracked stores = [];
@@ -29,8 +34,6 @@ export default class CatalogsIndexEditController extends Controller {
     @tracked pickerQuery = '';
     @tracked pickerSelection = [];
     @tracked newCategoryName = '';
-    @tracked renamingCategory = null;
-    @tracked renameValue = '';
     @tracked revision = 0;
     /** The open editor section, kept in the URL so links can land on Served by or Hours. */
     queryParams = [{ activeSection: 'section' }];
@@ -284,6 +287,10 @@ export default class CatalogsIndexEditController extends Controller {
                 name: category.name,
                 parent: parentKeyOf(category),
                 order: Number(category.order ?? 0),
+                description: category.description,
+                icon: category.icon,
+                icon_color: category.icon_color,
+                icon_file_uuid: category.icon_file_uuid,
                 products: (category.products?.toArray?.() ?? Array.from(category.products ?? [])).map((product) => product.id),
                 overrides: this.overridesFor(category),
             })),
@@ -360,28 +367,55 @@ export default class CatalogsIndexEditController extends Controller {
         this.touch();
     }
 
-    @action startRename(category) {
-        this.renamingCategory = category;
-        this.renameValue = category.name ?? '';
+    /**
+     * Edit a category's name, description and icon in the category modal. Like every other
+     * edit here the changes stay on the page until the catalog is saved; cancel puts them back.
+     */
+    @action editCategory(category) {
+        const before = category.getProperties('name', ...CATEGORY_DETAILS);
+
+        return this.modalsManager.show('modals/create-product-category', {
+            title: this.intl.t('storefront.catalogs.editor.edit-category-title', { name: category.name }),
+            acceptButtonText: this.intl.t('storefront.catalogs.editor.apply-category'),
+            acceptButtonIcon: 'check',
+            declineButtonIcon: 'times',
+            declineButtonIconPrefix: 'fas',
+            category,
+            uploadNewPhoto: (file) => this.uploadCategoryIcon(category, file),
+            confirm: (modal) => {
+                const name = String(category.name ?? '').trim();
+
+                if (!name) {
+                    return this.notifications.warning(this.intl.t('storefront.catalogs.editor.category-name-required'));
+                }
+
+                category.set('name', name);
+                this.touch();
+                modal.done();
+            },
+            decline: (modal) => {
+                category.setProperties(before);
+                modal.done();
+            },
+        });
     }
 
-    @action setRenameValue(event) {
-        this.renameValue = event.target.value;
-    }
+    uploadCategoryIcon(category, file) {
+        const companyId = category.company_uuid ?? this.currentUser.companyId;
+        const params = {
+            path: `uploads/${companyId}/catalog-category-icon/${dasherize(category.name || 'category')}`,
+            subject_type: 'category',
+            type: 'category_icon',
+        };
 
-    @action commitRename(event) {
-        event?.preventDefault?.();
-
-        if (this.renamingCategory && this.renameValue.trim()) {
-            this.renamingCategory.set('name', this.renameValue.trim());
-            this.touch();
+        // A category added on this page has no uuid until the catalog is saved.
+        if (!category.isNew && category.id) {
+            params.subject_uuid = category.id;
         }
 
-        this.renamingCategory = null;
-    }
-
-    @action cancelRename() {
-        this.renamingCategory = null;
+        return this.fetch.uploadFile.perform(file, params, (uploadedFile) => {
+            category.setProperties({ icon_file_uuid: uploadedFile.id, icon_url: uploadedFile.url });
+        });
     }
 
     /** Up or down among the categories it shares a parent with. */
@@ -445,7 +479,8 @@ export default class CatalogsIndexEditController extends Controller {
         this.catalog.categories.pushObject(category);
         this.renumber();
         this.selectedCategory = category;
-        this.startRename(category);
+        // Named, described and given an icon in the category modal, like any category.
+        this.editCategory(category);
     }
 
     @action removeCategory(category) {
@@ -617,12 +652,18 @@ export default class CatalogsIndexEditController extends Controller {
         const clones = new Map(
             this.categories.map((category) => [
                 keyOf(category),
-                this.store.createRecord('catalog-category', { name: category.name, for: 'storefront_catalog', order: category.order, key: newKey() }),
+                this.store.createRecord('catalog-category', {
+                    ...category.getProperties(CATEGORY_DETAILS),
+                    name: category.name,
+                    for: 'storefront_catalog',
+                    order: category.order,
+                    key: newKey(),
+                }),
             ])
         );
         this.categories.forEach((category) => {
             const clone = clones.get(keyOf(category));
-            clone.set('parent_key', clones.get(parentKeyOf(category))?.key ?? null);
+            clone.parent_key = clones.get(parentKeyOf(category))?.key ?? null;
             (category.products?.toArray?.() ?? []).forEach((product) => clone.products.pushObject(product));
             copy.categories.pushObject(clone);
         });

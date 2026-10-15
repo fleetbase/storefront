@@ -16,10 +16,11 @@ if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetb
     });
 }
 
-// The addon-category model extends the console's category model; the dummy app has no console.
+// The addon-category and catalog-category models extend the console's category model; the dummy
+// app has no console, so they extend its stand-in, which carries the category attributes.
 if (typeof window.define === 'function' && !window.requirejs?.entries?.['@fleetbase/console/models/category']) {
-    window.define('@fleetbase/console/models/category', ['exports', '@ember-data/model'], function (exports, model) {
-        exports.default = class CategoryModel extends model.default {};
+    window.define('@fleetbase/console/models/category', ['exports', 'dummy/models/category'], function (exports, category) {
+        exports.default = category.default;
     });
 }
 

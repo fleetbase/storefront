@@ -211,7 +211,7 @@ storefront:
         name: Category name
         name-text: Enter a name for category
         description: Category description
-        description-text: Give your product category a brief description
+        description-text: Give your category a brief description
         icon: Category icon
         uploading-new: Upload new category icon
         parent: Parent category
@@ -456,7 +456,10 @@ storefront:
       cancel-new-button: Cancel new customer
   catalogs:
     editor:
-      rename-category: Rename category
+      edit-category: Edit category
+      edit-category-title: "Edit {name}"
+      apply-category: Apply
+      category-name-required: Give the category a name.
       back: All catalogs
       delete-catalog: Delete catalog
       sold-here: Sold here
@@ -477,7 +480,6 @@ storefront:
         served-by: Served by
         details: Details
       new-category: New category
-      rename: Rename
       move-up: Move up
       move-down: Move down
       indent: Move under the category above

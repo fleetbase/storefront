@@ -211,6 +211,8 @@ class Catalog extends StorefrontModel
             $overrides    = is_array($categoryData) && array_key_exists('product_overrides', $categoryData) ? (array) ($categoryData['product_overrides'] ?? []) : null;
             $name         = data_get($categoryData, 'name');
             $order        = (int) data_get($categoryData, 'order', $index);
+            // Description and icon are written only when sent, so a payload without them keeps them.
+            $details      = array_intersect_key((array) $categoryData, array_flip(['description', 'icon', 'icon_color', 'icon_file_uuid']));
 
             // Try to find an existing category
             $categoryRecord = null;
@@ -220,16 +222,16 @@ class Catalog extends StorefrontModel
 
             if ($categoryRecord) {
                 // 2a) Update existing category
-                $categoryRecord->update(['name' => $name, 'order' => $order]);
+                $categoryRecord->update(array_merge(['name' => $name, 'order' => $order], $details));
             } else {
                 // 2b) Create a new category
-                $categoryRecord = CatalogCategory::create([
+                $categoryRecord = CatalogCategory::create(array_merge([
                     'name'         => $name,
                     'order'        => $order,
                     'company_uuid' => $this->company_uuid,
                     'owner_uuid'   => $this->uuid,
                     'owner_type'   => get_class($this),
-                ]);
+                ], $details));
             }
 
             // 3) Update products for this category

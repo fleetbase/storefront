@@ -56,7 +56,13 @@ module('Unit | Controller | catalogs/index/edit', function (hooks) {
         controller.catalog = { categories: A([lunch, tacos, veggie, drinks]) };
         controller.intl = { t: (key) => key };
         controller.store = { createRecord: (type, attributes) => category({ id: null, ...attributes }) };
-        controller.modalsManager = { confirm: ({ confirm }) => confirm({ done() {} }) };
+        controller.modalsManager = {
+            shown: [],
+            confirm: ({ confirm }) => confirm({ done() {} }),
+            show(name, options) {
+                this.shown.push({ name, category: options.category });
+            },
+        };
 
         return { lunch, tacos, veggie, drinks };
     }
@@ -98,7 +104,7 @@ module('Unit | Controller | catalogs/index/edit', function (hooks) {
         assert.deepEqual(shape(controller), ['Lunch', '-Tacos', '-Drinks', '--storefront.catalogs.editor.new-subcategory-name', '-Vegetarian']);
         assert.strictEqual(added.parent_uuid, 'drinks', 'a saved parent is found by its id');
         assert.ok(added.key, 'a new category has a key until it is saved');
-        assert.strictEqual(controller.renamingCategory, added, 'the new subcategory is ready to be named');
+        assert.deepEqual(controller.modalsManager.shown.at(-1), { name: 'modals/create-product-category', category: added }, 'the new subcategory opens in the category modal to be named');
 
         // Already three levels deep: no subcategory.
         const count = controller.categories.length;
