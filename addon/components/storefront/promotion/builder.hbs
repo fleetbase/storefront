@@ -6,7 +6,7 @@
     </Overlay::Header>
     <Overlay::Body class="p-0i storefront-overlay-body" @wrapperClass="storefront-builder" data-test-promotion-builder>
         <ol class="storefront-builder__steps">
-            {{#each this.steps as |step|}}
+            {{#each this.steps key="id" as |step|}}
                 <li class="storefront-builder__step {{if step.isActive 'is-active'}} {{if step.isDone 'is-done'}}" data-test-builder-step={{step.id}}>
                     <button type="button" class="storefront-builder__step-header" {{on "click" (fn this.goTo step)}}>
                         <span class="storefront-flow-step__marker">{{#if step.isDone}}<FaIcon @icon="check" @size="xs" />{{else}}{{step.number}}{{/if}}</span>
@@ -142,7 +142,7 @@
                                 </div>
                             {{else}}
                                 <dl class="storefront-builder__review" data-test-builder-review>
-                                    {{#each this.steps as |done|}}
+                                    {{#each this.steps key="id" as |done|}}
                                         {{#unless (eq done.id "review")}}
                                             <div class="storefront-builder__review-row">
                                                 <dt>{{done.label}}</dt>
