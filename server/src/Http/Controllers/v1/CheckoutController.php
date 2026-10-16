@@ -2255,13 +2255,21 @@ class CheckoutController extends Controller
             // below) confirms it. QPay itself is asked only when the app says the customer
             // is back from paying (verify=1), at most once every few seconds per checkout:
             // QPay asks merchants to rely on the callback, not repeated payment checks.
+            //
+            // Apps released before this behaviour (Storefront app 1.2.x and earlier) send no
+            // `verify` at all: they ask once when the customer is back from paying and finish
+            // only when the answer carries an order, never asking again. For them a status
+            // request verifies with QPay and creates the order straight away, as it did before.
+            $legacyClient = !$request->has('verify');
+            $verify       = $legacyClient || $request->boolean('verify');
+
             if ($checkout->gateway_uuid && !$response['order']) {
                 $gateway = Gateway::where('uuid', $checkout->gateway_uuid)->first();
 
                 if ($gateway && $gateway->code === 'qpay') {
                     $recorded = $checkout->getOption('qpay_payment');
 
-                    if (!$recorded && $request->boolean('verify') && $checkout->getOption('qpay_invoice_id') && Cache::add('storefront:qpay-verify:' . $checkout->uuid, 1, 5)) {
+                    if (!$recorded && $verify && $checkout->getOption('qpay_invoice_id') && Cache::add('storefront:qpay-verify:' . $checkout->uuid, 1, 5)) {
                         $qpay = static::qpayForGateway($gateway);
                         if ($gateway->sandbox) {
                             $qpay->useSandbox();
@@ -2281,9 +2289,10 @@ class CheckoutController extends Controller
 
                         // Safety net: the callback creates the order right after recording the
                         // payment. If it still hasn't appeared a while later (e.g. the callback
-                        // failed), create it here; createOrderFromCheckout is idempotent.
+                        // failed), create it here; createOrderFromCheckout is idempotent. An
+                        // older app won't ask again, so it gets its order now.
                         $recordedAt = data_get($recorded, 'recorded_at');
-                        if ($recordedAt && Carbon::parse($recordedAt)->lt(now()->subSeconds(15))) {
+                        if ($legacyClient || ($recordedAt && Carbon::parse($recordedAt)->lt(now()->subSeconds(15)))) {
                             Log::info('[CHECKOUT STATUS FALLBACK]: Payment confirmed but no order exists, attempting to create', [
                                 'checkout_id' => $checkout->public_id,
                                 'payment_id'  => data_get($recorded, 'payment_id'),
