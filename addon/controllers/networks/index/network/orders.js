@@ -302,9 +302,15 @@ export default class NetworksIndexNetworkOrdersController extends BaseController
         return this.transitionToRoute('customers.index.view', customer.public_id);
     }
 
-    /** Opens the order's panel at its own URL over the list, so it can be reloaded and shared. */
+    /**
+     * Opens the order's panel at its own URL over the list, so it can be reloaded and shared.
+     * The list's record goes along, as the store's Orders list does: the panel route then skips
+     * loading and fills in the details in place. An id alone would load the order first, behind
+     * the list's loading skeleton.
+     */
     @action viewOrder(order) {
-        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders.view', this.network.public_id, order.public_id);
+        const model = order?.constructor?.modelName ? order : order?.public_id;
+        return this.hostRouter.transitionTo('console.storefront.networks.index.network.orders.view', this.network.public_id, model);
     }
 
     @action assignDriver(order) {

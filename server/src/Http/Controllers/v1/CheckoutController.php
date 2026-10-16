@@ -302,6 +302,7 @@ class CheckoutController extends Controller
             'is_cod'       => $isCashOnDelivery,
             'tip'          => $tip,
             'delivery_tip' => $deliveryTip,
+            'notes'        => static::cleanCustomerNotes($request->input('notes')),
         ]);
 
         // find and validate cart session
@@ -1391,6 +1392,10 @@ class CheckoutController extends Controller
             return response()->apiError('Checkout session not found.');
         }
 
+        // The customer's note: sent with the capture, or saved on the checkout before paying
+        // (PUT checkouts/notes). QPay orders are created by QPay's callback, which carries none.
+        $notes = static::cleanCustomerNotes($notes) ?? static::cleanCustomerNotes($checkout->getOption('notes'));
+
         $about        = Storefront::about();
         if (!$about) {
             return response()->apiError('No storefront in request to capture order!');
@@ -1815,6 +1820,10 @@ class CheckoutController extends Controller
             return response()->apiError('Checkout session not found.');
         }
 
+        // The customer's note: sent with the capture, or saved on the checkout before paying
+        // (PUT checkouts/notes). QPay orders are created by QPay's callback, which carries none.
+        $notes = static::cleanCustomerNotes($notes) ?? static::cleanCustomerNotes($checkout->getOption('notes'));
+
         $about        = Storefront::about();
         $customer     = $checkout->owner;
         $serviceQuote = $checkout->serviceQuote;
@@ -2206,6 +2215,59 @@ class CheckoutController extends Controller
 
     public function afterCheckout(Request $request)
     {
+    }
+
+    /** The longest customer note kept on a checkout or order. */
+    public const CUSTOMER_NOTES_MAX = 2000;
+
+    /**
+     * A customer's note as it is kept: trimmed, at most CUSTOMER_NOTES_MAX characters, null when
+     * empty or not text.
+     */
+    public static function cleanCustomerNotes($notes): ?string
+    {
+        if (!is_string($notes)) {
+            return null;
+        }
+        $notes = trim(str_replace("\0", '', $notes));
+
+        return $notes === '' ? null : mb_substr($notes, 0, static::CUSTOMER_NOTES_MAX);
+    }
+
+    /**
+     * PUT storefront/v1/checkouts/notes: save the customer's note on a checkout before paying.
+     *
+     * Gateways whose order is created by the server rather than by the app's capture (QPay's
+     * callback) take the note from here. Only the storefront the checkout was made in can set
+     * it, by the checkout's token. If the order already exists without a note, it gets this one.
+     */
+    public function updateCheckoutNotes(Request $request)
+    {
+        $token = $request->input('token');
+        if (!is_string($token) || $token === '') {
+            return response()->apiError('Missing checkout token.', 400);
+        }
+
+        $notes = $request->input('notes');
+        if ($notes !== null && !is_string($notes)) {
+            return response()->apiError('Notes must be text.', 422);
+        }
+
+        $checkout = Checkout::where('token', $token)->first();
+        $owner    = session('storefront_network') ?? session('storefront_store');
+        if (!$checkout || !$owner || ($checkout->network_uuid ?? $checkout->store_uuid) !== $owner) {
+            return response()->apiError('Checkout session not found.', 404);
+        }
+
+        $notes = static::cleanCustomerNotes($notes);
+        $checkout->updateOption('notes', $notes);
+
+        // Paid and placed already (e.g. QPay's callback was quicker): the order takes the note.
+        if ($notes && $checkout->order_uuid) {
+            Order::where('uuid', $checkout->order_uuid)->where(fn ($query) => $query->whereNull('notes')->orWhere('notes', ''))->update(['notes' => $notes]);
+        }
+
+        return response()->json(['checkout' => $checkout->public_id, 'notes' => $notes]);
     }
 
     /**

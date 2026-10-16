@@ -748,6 +748,7 @@ storefront:
       completed: Completed
       canceled: Canceled
     panel:
+      customer-note: Note from {name}
       copy-tracking: Copy tracking number
       copied: "Copied {value}"
       booking: Booking

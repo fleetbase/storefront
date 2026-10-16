@@ -12593,6 +12593,43 @@ body[data-theme='dark'] .sfop-note {
     color: #fde68a;
 }
 
+/* The customer's note from checkout, first in the order panel: the panel's warning alert, padded like its sections. */
+.sfop-customer-note {
+    padding: 10px 12px 0;
+}
+
+.sfop-customer-note .sfop-alert {
+    flex-wrap: nowrap;
+}
+
+.sfop-customer-note__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.sfop-customer-note__lbl,
+body[data-theme='dark'] .sfop-customer-note__lbl {
+    color: inherit;
+    opacity: 0.8;
+}
+
+.sfop-customer-note__body {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.sfop-customer-note__phone {
+    font-weight: 600;
+    text-decoration: underline;
+    color: inherit;
+}
+
 /* Items */
 .sfop-section {
     display: flex;
