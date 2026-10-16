@@ -3,6 +3,7 @@
 ---
 ## Highlights
 
+- **QPay orders complete in the published app again.** Storefront app 1.2.x asks for the checkout's status once when the customer returns from their bank app, and finishes only when the answer has the order. Since v0.4.25 that answer could come back without one, leaving the customer waiting. A status request without `verify` now checks with QPay and creates the order straight away. Apps that send `verify` are unchanged.
 - **New stores and networks show straight away.** A network created from the context switcher, or a company's first store, appears in the switcher without a page reload. Saving the first store also loads the dashboard, order alerts and counts for it. (#148)
 - **Network orders open at their own URL.** An order opened from a network's Orders page has its own URL (`/storefront/networks/<network>/orders/<order>`), so it can be reloaded and shared. (#149)
 - **The order panel scrolls.** The order panel opened in place (dashboard, customer panel, network overview, checkout siblings, redemptions) now scrolls. (#149)

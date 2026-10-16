@@ -1468,6 +1468,93 @@ test('checkout status answers qpay from the checkout and asks qpay only to verif
         ->and(CheckoutQPayStub::$checks)->toBe($checksUnpaid);
 });
 
+test('checkout status gives apps that send no verify the order as soon as qpay confirms the payment', function () {
+    createCheckoutCaptureExecutionSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('gateways')->insert([
+        'uuid'         => 'qpay_gateway_uuid',
+        'code'         => 'qpay',
+        'owner_uuid'   => 'store_uuid',
+        'type'         => 'qpay',
+        'sandbox'      => true,
+        'callback_url' => 'https://storefront.test/qpay',
+        'config'       => json_encode([
+            'username' => 'merchant',
+            'password' => 'secret',
+        ]),
+    ]);
+    foreach (['checkout_legacy' => 'checkout_legacy_uuid', 'checkout_legacy_unpaid' => 'checkout_legacy_unpaid_uuid', 'checkout_legacy_recorded' => 'checkout_legacy_recorded_uuid'] as $publicId => $uuid) {
+        $connection->table('checkouts')->insert([
+            'uuid'         => $uuid,
+            'public_id'    => $publicId,
+            'gateway_uuid' => 'qpay_gateway_uuid',
+            'options'      => json_encode(['qpay_invoice_id' => 'invoice_' . $publicId]),
+            'token'        => 'checkout-token',
+            'captured'     => false,
+        ]);
+    }
+    $connection->table('orders')->insert([
+        'uuid'      => 'legacy_order_uuid',
+        'public_id' => 'order_legacy',
+    ]);
+    $paidCheck = (object) [
+        'count'       => 1,
+        'paid_amount' => 2500,
+        'rows'        => [
+            (object) [
+                'payment_id'       => 'payment_legacy',
+                'payment_status'   => 'PAID',
+                'payment_amount'   => 2500,
+                'payment_currency' => 'MNT',
+                'payment_date'     => '2026-10-16 10:00:00',
+                'payment_wallet'   => 'Khan bank',
+            ],
+        ],
+    ];
+    CheckoutQPayStub::$failure                         = null;
+    CheckoutQPayStub::$checks                          = 0;
+    CheckoutQPayStub::$paymentCheckResult              = $paidCheck;
+    TestableCheckoutController::$statusFallbackOrder   = Fleetbase\FleetOps\Models\Order::where('uuid', 'legacy_order_uuid')->firstOrFail();
+    TestableCheckoutController::$statusFallbackFailure = null;
+    session(['storefront_key' => null]);
+    $controller = new TestableCheckoutController();
+    // What the published app sends: the checkout and its token, no verify.
+    $request = fn (string $checkout) => Request::create('/checkouts/status', 'GET', [
+        'checkout' => $checkout,
+        'token'    => 'checkout-token',
+    ]);
+
+    // Back from paying, QPay reports it paid: one check, and the order comes back at once.
+    $completed      = $controller->getCheckoutStatus($request('checkout_legacy'))->getData(true);
+    $checksAfter    = CheckoutQPayStub::$checks;
+    $recordedLegacy = Fleetbase\Storefront\Models\Checkout::where('uuid', 'checkout_legacy_uuid')->first()->getOption('qpay_payment');
+
+    // A payment the callback recorded moments ago, but no order yet: no QPay call, order now.
+    $checkout = Fleetbase\Storefront\Models\Checkout::where('uuid', 'checkout_legacy_recorded_uuid')->first();
+    $checkout->updateOption('qpay_payment', ['payment_id' => 'payment_callback', 'payment_status' => 'PAID', 'recorded_at' => now()->toIso8601String()]);
+    $fromCallback        = $controller->getCheckoutStatus($request('checkout_legacy_recorded'))->getData(true);
+    $checksAfterCallback = CheckoutQPayStub::$checks;
+
+    // Not paid yet: still pending, no order, and the QPay check stays throttled.
+    CheckoutQPayStub::$paymentCheckResult = (object) ['count' => 0, 'rows' => []];
+    $unpaidFirst  = $controller->getCheckoutStatus($request('checkout_legacy_unpaid'))->getData(true);
+    $checksUnpaid = CheckoutQPayStub::$checks;
+    $unpaidSecond = $controller->getCheckoutStatus($request('checkout_legacy_unpaid'))->getData(true);
+
+    expect($completed['status'])->toBe('completed')
+        ->and($completed['order']['id'])->toBe('order_legacy')
+        ->and($checksAfter)->toBe(1)
+        ->and(data_get($recordedLegacy, 'payment_id'))->toBe('payment_legacy')
+        ->and($fromCallback['status'])->toBe('completed')
+        ->and($fromCallback['order']['id'])->toBe('order_legacy')
+        ->and($checksAfterCallback)->toBe(1)
+        ->and($unpaidFirst['status'])->toBe('pending')
+        ->and($unpaidFirst['order'])->toBeNull()
+        ->and($checksUnpaid)->toBe(2)
+        ->and($unpaidSecond['status'])->toBe('pending')
+        ->and(CheckoutQPayStub::$checks)->toBe(2);
+});
+
 test('customer lookup safely returns null for unknown customer aliases', function () {
     createCheckoutBoundarySchema();
 
