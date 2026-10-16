@@ -1,9 +1,6 @@
-{{! The customer's note, then the store's own notes (the customer never sees them), and a box to add one. }}
+{{! The store's own notes (the customer never sees them) and a box to add one. The customer's note leads the panel (PanelCustomerNote). }}
 <div class="sfop-section" data-test-order-notes>
     <h3 class="sfop-h3">{{t "storefront.order.edit.notes"}}</h3>
-    {{#if this.order.notes}}
-        <div class="sfop-note sfop-note--lg"><strong>{{t "storefront.order.panel.from" name=this.customerFirstName}}</strong> {{this.order.notes}}</div>
-    {{/if}}
     {{#each this.notes as |note|}}
         <div class="sfop-staff-note" data-test-order-note={{note.id}}>
             <span class="sfop-av sfop-av--sm" aria-hidden="true">{{note.initials}}</span>

@@ -1,0 +1,10 @@
+{{! The customer's note from checkout, first in the panel so it is read before the order is handled. }}
+{{#if this.note}}
+    <div class="sfop-customer-note" role="note" data-test-order-customer-note>
+        <div class="sfop-customer-note__head">
+            <FaIcon @icon="comment-dots" @size="sm" />
+            <span>{{t "storefront.order.panel.customer-note" name=this.customerFirstName}}</span>
+        </div>
+        <p class="sfop-customer-note__body">{{#each this.parts as |part|}}{{#if part.tel}}<a href={{part.tel}} class="sfop-customer-note__phone">{{part.text}}</a>{{else}}{{part.text}}{{/if}}{{/each}}</p>
+    </div>
+{{/if}}

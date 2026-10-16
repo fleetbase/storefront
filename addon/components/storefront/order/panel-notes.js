@@ -4,8 +4,8 @@ import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 import { task } from 'ember-concurrency';
 /**
- * The 11a notes: the customer's note from checkout and the store's notes on the order. Notes
- * written here are internal: the customer never sees them.
+ * The 11a notes: the store's notes on the order (the customer's note from checkout leads the
+ * panel, in PanelCustomerNote). Notes written here are internal: the customer never sees them.
  */
 export default class StorefrontOrderPanelNotesComponent extends Component {
     @service store;
@@ -32,10 +32,6 @@ export default class StorefrontOrderPanelNotesComponent extends Component {
 
     get subjectUuid() {
         return this.order?.uuid ?? this.order?.id;
-    }
-
-    get customerFirstName() {
-        return String(this.order?.customer?.name ?? this.intl.t('storefront.common.customer')).split(' ')[0];
     }
 
     get canAdd() {

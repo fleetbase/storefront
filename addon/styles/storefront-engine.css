@@ -12593,6 +12593,48 @@ body[data-theme='dark'] .sfop-note {
     color: #fde68a;
 }
 
+/* The customer's note from checkout, first in the order panel. */
+.sfop-customer-note {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px solid #fcd34d;
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: #fffbeb;
+    color: #78350f;
+}
+
+.sfop-customer-note__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.sfop-customer-note__body {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.sfop-customer-note__phone {
+    font-weight: 600;
+    text-decoration: underline;
+    color: inherit;
+}
+
+body[data-theme='dark'] .sfop-customer-note {
+    border-color: #b45309;
+    background: #451a03;
+    color: #fde68a;
+}
+
 /* Items */
 .sfop-section {
     display: flex;

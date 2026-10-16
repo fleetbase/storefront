@@ -1555,6 +1555,46 @@ test('checkout status gives apps that send no verify the order as soon as qpay c
         ->and(CheckoutQPayStub::$checks)->toBe(2);
 });
 
+test('a customer note is kept clean: trimmed, capped and null when empty', function () {
+    expect(CheckoutController::cleanCustomerNotes("  Call 9911 2233 at the gate.  "))->toBe('Call 9911 2233 at the gate.')
+        ->and(CheckoutController::cleanCustomerNotes('   '))->toBeNull()
+        ->and(CheckoutController::cleanCustomerNotes(null))->toBeNull()
+        ->and(CheckoutController::cleanCustomerNotes(['not', 'text']))->toBeNull()
+        ->and(mb_strlen(CheckoutController::cleanCustomerNotes(str_repeat('я', CheckoutController::CUSTOMER_NOTES_MAX + 50))))->toBe(CheckoutController::CUSTOMER_NOTES_MAX);
+});
+
+test('the customer note is saved on the checkout by its token, only for its own storefront, and reaches an order already placed', function () {
+    createCheckoutCaptureExecutionSchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('checkouts')->insert([
+        ['uuid' => 'notes_checkout_uuid', 'public_id' => 'checkout_notes', 'network_uuid' => 'network_uuid', 'store_uuid' => 'store_uuid', 'options' => json_encode(['is_pickup' => false]), 'token' => 'notes-token', 'captured' => false],
+        ['uuid' => 'placed_checkout_uuid', 'public_id' => 'checkout_placed', 'network_uuid' => 'network_uuid', 'store_uuid' => 'store_uuid', 'options' => json_encode([]), 'token' => 'placed-token', 'captured' => true],
+    ]);
+    $connection->table('checkouts')->where('uuid', 'placed_checkout_uuid')->update(['order_uuid' => 'placed_order_uuid']);
+    $connection->table('orders')->insert(['uuid' => 'placed_order_uuid', 'public_id' => 'order_placed', 'notes' => null]);
+    $controller = new CheckoutController();
+    $request    = fn (array $input) => Request::create('/checkouts/notes', 'PUT', $input);
+
+    session(['storefront_network' => 'network_uuid', 'storefront_store' => null]);
+    $saved   = $controller->updateCheckoutNotes($request(['token' => 'notes-token', 'notes' => "  Gate code 4411.\nCall 9911 2233.  "]));
+    $placed  = $controller->updateCheckoutNotes($request(['token' => 'placed-token', 'notes' => 'Leave it with the guard.']));
+    $missing = $controller->updateCheckoutNotes($request(['notes' => 'No token']));
+    $notText = $controller->updateCheckoutNotes($request(['token' => 'notes-token', 'notes' => ['x']]));
+
+    session(['storefront_network' => 'other_network_uuid']);
+    $foreign = $controller->updateCheckoutNotes($request(['token' => 'notes-token', 'notes' => 'Not yours']));
+
+    expect($saved->getStatusCode())->toBe(200)
+        ->and($saved->getData(true))->toBe(['checkout' => 'checkout_notes', 'notes' => "Gate code 4411.\nCall 9911 2233."])
+        ->and(Checkout::where('uuid', 'notes_checkout_uuid')->first()->getOption('notes'))->toBe("Gate code 4411.\nCall 9911 2233.")
+        ->and($placed->getStatusCode())->toBe(200)
+        ->and($connection->table('orders')->where('uuid', 'placed_order_uuid')->value('notes'))->toBe('Leave it with the guard.')
+        ->and($missing->getStatusCode())->toBe(400)
+        ->and($notText->getStatusCode())->toBe(422)
+        ->and($foreign->getStatusCode())->toBe(404)
+        ->and(Checkout::where('uuid', 'notes_checkout_uuid')->first()->getOption('notes'))->toBe("Gate code 4411.\nCall 9911 2233.");
+});
+
 test('customer lookup safely returns null for unknown customer aliases', function () {
     createCheckoutBoundarySchema();
 
