@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Models;
 use Fleetbase\Casts\Json;
 use Fleetbase\Models\Company;
 use Fleetbase\Models\User;
+use Fleetbase\Storefront\Support\CategoryTree;
 use Fleetbase\Traits\HasApiModelBehavior;
 use Fleetbase\Traits\HasApiModelCache;
 use Fleetbase\Traits\HasPublicid;
@@ -191,6 +192,18 @@ class Catalog extends StorefrontModel
                 $cat->delete(); // or $cat->forceDelete() if you don't want soft deletes
             });
 
+        // Each category's parent: an existing one by `parent_uuid`, or one created in this same save
+        // by its `parent_key` (the client's `key` for a category that has no uuid yet).
+        $keys    = [];
+        $parents = [];
+        foreach ($categories as $index => $categoryData) {
+            $key           = (string) (data_get($categoryData, 'uuid') ?: data_get($categoryData, 'key') ?: 'index:' . $index);
+            $keys[$index]  = $key;
+            $parents[$key] = data_get($categoryData, 'parent_uuid') ?: data_get($categoryData, 'parent_key') ?: null;
+        }
+        CategoryTree::assertValidTree($parents);
+        $records = [];
+
         // 2) Loop through incoming categories array
         foreach ($categories as $index => $categoryData) {
             $categoryUuid = data_get($categoryData, 'uuid');
@@ -223,6 +236,21 @@ class Catalog extends StorefrontModel
 
             // 3) Update products for this category
             $categoryRecord->setProducts($products, $overrides);
+            $records[$keys[$index]] = $categoryRecord;
+        }
+
+        // 4) Place the categories: detach the moved ones, then attach parents before their children,
+        //    so no save along the way runs past three levels or loops.
+        $parentUuids = array_map(fn ($parentKey) => $parentKey === null ? null : data_get($records, $parentKey . '.uuid'), $parents);
+        foreach ($records as $key => $record) {
+            if ($record->parent_uuid !== null && $record->parent_uuid !== $parentUuids[$key]) {
+                $record->update(['parent_uuid' => null]);
+            }
+        }
+        foreach (CategoryTree::topDown($parents) as $key) {
+            if ($records[$key]->parent_uuid !== $parentUuids[$key]) {
+                $records[$key]->update(['parent_uuid' => $parentUuids[$key]]);
+            }
         }
 
         return $this;

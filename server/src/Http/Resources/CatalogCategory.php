@@ -23,6 +23,8 @@ class CatalogCategory extends FleetbaseResource
             'public_id'                          => $this->when(Http::isInternalRequest(), $this->public_id),
             'company_uuid'                       => $this->when(Http::isInternalRequest(), $this->company_uuid),
             'parent_uuid'                        => $this->when(Http::isInternalRequest(), $this->parent_uuid),
+            // Publicly the parent's public id, set by the catalog: an app builds the menu's tree from it.
+            'parent'                             => $this->when(!Http::isInternalRequest() && array_key_exists('parent_public_id', $this->resource->getAttributes()), fn () => $this->resource->getAttributes()['parent_public_id']),
             'store_uuid'                         => $this->when(Http::isInternalRequest(), $this->store_uuid),
             'owner_uuid'                         => $this->when(Http::isInternalRequest(), $this->owner_uuid),
             'name'                               => $this->name,

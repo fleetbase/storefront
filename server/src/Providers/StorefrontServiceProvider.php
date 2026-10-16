@@ -38,6 +38,9 @@ class StorefrontServiceProvider extends CoreServiceProvider
         \Fleetbase\Models\ChatMessage::class          => \Fleetbase\Storefront\Observers\ChatMessageObserver::class,
         \Fleetbase\Models\File::class                 => \Fleetbase\Storefront\Observers\FileObserver::class,
         \Fleetbase\FleetOps\Models\Order::class       => \Fleetbase\Storefront\Observers\OrderActivityObserver::class,
+        // Product categories are core categories; catalog categories fire their own model events.
+        \Fleetbase\Models\Category::class                   => \Fleetbase\Storefront\Observers\CategoryTreeObserver::class,
+        \Fleetbase\Storefront\Models\CatalogCategory::class => \Fleetbase\Storefront\Observers\CategoryTreeObserver::class,
     ];
 
     /**

@@ -147,6 +147,7 @@ function createProductApiControllerSchema(): void
         $table->string('company_uuid')->nullable();
         $table->string('owner_uuid')->nullable();
         $table->string('owner_type')->nullable();
+        $table->string('parent_uuid')->nullable();
         $table->string('name')->nullable();
         $table->string('slug')->nullable();
         $table->text('description')->nullable();
@@ -557,15 +558,14 @@ test('public product query and lookup stay inside the active network membership'
         ->and($draft->getStatusCode())->toBe(404);
 });
 
-test('product query applies a known storefront category filter', function () {
+test('product query applies a known storefront category filter, with its subcategories unless asked for its own', function () {
     createProductApiControllerSchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $connection->table('categories')->insert([
-        'uuid'         => 'category_uuid',
-        'public_id'    => 'category_drinks',
-        'company_uuid' => 'company_uuid',
-        'owner_uuid'   => 'store_uuid',
-        'for'          => 'storefront_product',
+        ['uuid' => 'category_uuid', 'public_id' => 'category_drinks', 'company_uuid' => 'company_uuid', 'owner_uuid' => 'store_uuid', 'parent_uuid' => null, 'for' => 'storefront_product'],
+        // Drinks › Coffee › Cold brew
+        ['uuid' => 'coffee_uuid', 'public_id' => 'category_coffee', 'company_uuid' => 'company_uuid', 'owner_uuid' => 'store_uuid', 'parent_uuid' => 'category_uuid', 'for' => 'storefront_product'],
+        ['uuid' => 'cold_brew_uuid', 'public_id' => 'category_cold_brew', 'company_uuid' => 'company_uuid', 'owner_uuid' => 'store_uuid', 'parent_uuid' => 'coffee_uuid', 'for' => 'storefront_product'],
     ]);
     $connection->table('products')->insert([
         [
@@ -575,6 +575,16 @@ test('product query applies a known storefront category filter', function () {
             'store_uuid'    => 'store_uuid',
             'category_uuid' => 'category_uuid',
             'name'          => 'Drink',
+            'is_available'  => true,
+            'status'        => 'published',
+        ],
+        [
+            'uuid'          => 'cold_brew_product_uuid',
+            'public_id'     => 'product_cold_brew',
+            'company_uuid'  => 'company_uuid',
+            'store_uuid'    => 'store_uuid',
+            'category_uuid' => 'cold_brew_uuid',
+            'name'          => 'Cold brew',
             'is_available'  => true,
             'status'        => 'published',
         ],
@@ -600,9 +610,17 @@ test('product query applies a known storefront category filter', function () {
         'GET',
         ['category' => 'category_drinks']
     ));
+    $direct = (new ProductController())->query(productApiRequest(
+        '/products',
+        'GET',
+        ['category' => 'category_drinks', 'category_direct' => 1]
+    ));
+    $coldBrew = $resource->resource->firstWhere('uuid', 'cold_brew_product_uuid');
 
-    expect($resource->resource)->toHaveCount(1)
-        ->and($resource->resource->first()->uuid)->toBe('drink_uuid');
+    expect($resource->resource->pluck('uuid')->sort()->values()->all())->toBe(['cold_brew_product_uuid', 'drink_uuid'])
+        // An app groups a parent's products by subcategory from each product's category.
+        ->and($coldBrew->resource->category->public_id)->toBe('category_cold_brew')
+        ->and($direct->resource->pluck('uuid')->all())->toBe(['drink_uuid']);
 });
 
 test('product category filter takes a uuid on the console and leaves the public id to the public API', function () {
@@ -627,9 +645,9 @@ test('product category filter takes a uuid on the console and leaves the public 
     $internal = $filtered('int/v1/storefront/products');
     $public   = $filtered('v1/storefront/products');
 
-    expect($internal->toSql())->toContain('"category_uuid" = ?')
+    expect($internal->toSql())->toContain('"category_uuid" in (?)')
         ->and($internal->getBindings())->toContain('category_drinks')
-        ->and($public->toSql())->not->toContain('"category_uuid" = ?')
+        ->and($public->toSql())->not->toContain('"category_uuid" in')
         ->and($public->getBindings())->not->toContain('category_drinks');
 });
 

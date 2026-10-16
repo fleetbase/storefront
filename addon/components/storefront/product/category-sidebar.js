@@ -2,6 +2,7 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action, get } from '@ember/object';
 import { inject as service } from '@ember/service';
+import { MAX_CATEGORY_DEPTH } from '../../../utils/category-tree';
 
 /**
  * The category sidebar: nested categories with product counts, plus the smart groups a
@@ -48,6 +49,8 @@ export default class StorefrontProductCategorySidebarComponent extends Component
                 depth,
                 count: this.countFor(category),
                 hasChildren: children.length > 0,
+                // A third-level category takes no subcategories.
+                canHaveChildren: depth < MAX_CATEGORY_DEPTH - 1 && typeof this.args.onCreateSubcategory === 'function',
                 isCollapsed: this.collapsed.has(category.id),
                 isActive: this.args.activeCategory?.id === category.id,
             });
@@ -77,6 +80,11 @@ export default class StorefrontProductCategorySidebarComponent extends Component
 
     @action selectGroup(group) {
         return this.args.onSelectGroup?.(group);
+    }
+
+    @action createSubcategory(category, event) {
+        event?.stopPropagation?.();
+        return this.args.onCreateSubcategory?.(category);
     }
 
     @action toggleCollapse(category, event) {
