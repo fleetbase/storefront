@@ -39,6 +39,12 @@ export default class StorefrontService extends Service.extend(Evented) {
     @tracked pendingInvitations = [];
     /** The store's "needs attention" counts (orders to confirm, pickups ready, ...), shared by the dashboard strip and the sidebar badge. */
     @tracked attention = null;
+    /**
+     * Stores and networks created since the engine loaded its lists: the context switcher's
+     * lists are loaded once, so it shows these until the next reload includes them.
+     */
+    @tracked createdStores = [];
+    @tracked createdNetworks = [];
 
     get hostRouter() {
         const owner = getOwner(this);
@@ -339,8 +345,11 @@ export default class StorefrontService extends Service.extend(Evented) {
                 try {
                     await store.save();
                     this.notifications.success(this.intl.t('storefront.service.storefront.storefront-has-been-create-success'));
+                    this.createdStores = [...this.createdStores, store];
                     this.setActiveStorefront(store);
                     modal.done();
+                    // The engine loaded with no store: reload it so the page, the order alerts and the counts are the new store's.
+                    this.hostRouter?.refresh();
                 } catch (error) {
                     modal.stopLoading();
                     this.notifications.serverError(error);
@@ -378,7 +387,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 try {
                     await store.save();
                     this.notifications.success(this.intl.t('storefront.service.storefront.storefront-create-success'));
-                    // this.currentUser.setOption('activeStorefront', store.id);
+                    this.createdStores = [...this.createdStores, store];
                     this.setActiveStorefront(store);
                     if (typeof options?.onSuccess === 'function') {
                         options.onSuccess(store);
@@ -439,6 +448,7 @@ export default class StorefrontService extends Service.extend(Evented) {
                 try {
                     await network.save();
                     this.notifications.success(this.intl.t('storefront.networks.index.success-message'));
+                    this.createdNetworks = [...this.createdNetworks, network];
                     if (typeof options?.onSuccess === 'function') {
                         options.onSuccess(network);
                     }

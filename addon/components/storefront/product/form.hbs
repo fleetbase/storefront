@@ -172,7 +172,7 @@
                         @onChangeId={{fn (mut @product.category_uuid)}}
                         as |model|
                     >
-                        {{model.name}}
+                        {{this.categoryLabel model}}
                     </ModelSelect>
                 </div>
                 <div class="storefront-create-order__field">

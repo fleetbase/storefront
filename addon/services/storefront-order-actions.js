@@ -123,7 +123,7 @@ export default class StorefrontOrderActionsService extends Service {
             width: '640px',
             size: 'sm',
             dismissible: false,
-            bodyClass: 'scrollable',
+            bodyClass: 'storefront-overlay-body storefront-order-context-body',
             headerClass: 'storefront-order-panel-header no-bottom-border',
             panelContentClass: 'storefront-order-panel-content',
         });

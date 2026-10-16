@@ -46,6 +46,7 @@ export default buildRoutes(function () {
                 this.route('customers');
                 this.route('orders', function () {
                     this.route('new');
+                    this.route('view', { path: '/:public_id' });
                 });
                 this.route('categories');
                 this.route('promotions', function () {

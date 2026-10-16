@@ -15,6 +15,69 @@ class CurrentUserStub {
     setOption(key, value) {
         this.options[key] = value;
     }
+
+    getWhoisProperty() {
+        return undefined;
+    }
+}
+
+/** Records the modals shown, so a test can confirm one. */
+class ModalsManagerStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
+    shown = [];
+
+    show(name, options) {
+        this.shown.push({ name, options });
+    }
+
+    async confirm(index = 0) {
+        await this.shown[index].options.confirm({ startLoading() {}, stopLoading() {}, done() {} });
+    }
+}
+
+class NotificationsStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
+    success() {}
+    serverError() {}
+}
+
+class IntlStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
+    t(key) {
+        return key;
+    }
+}
+
+class AbilitiesStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
+    cannot() {
+        return false;
+    }
+}
+
+class HostRouterStub {
+    static create(props = {}) {
+        return Object.assign(new this(), props);
+    }
+
+    refreshCount = 0;
+
+    refresh() {
+        this.refreshCount++;
+        return Promise.resolve();
+    }
 }
 
 class StoreStub {
@@ -40,6 +103,20 @@ class StoreStub {
     }
 
     networks = [{ id: 'network_uuid', name: 'Downtown Market', public_id: 'network_123' }];
+
+    /** A new record that gets its id when saved. */
+    createRecord(modelName) {
+        return {
+            modelName,
+            id: null,
+            setProperties(properties) {
+                Object.assign(this, properties);
+            },
+            async save() {
+                this.id = `new_${modelName}_uuid`;
+            },
+        };
+    }
 
     peekRecord(modelName, id) {
         if (modelName === 'store') {
@@ -156,5 +233,58 @@ module('Unit | Service | storefront', function (hooks) {
 
         assert.strictEqual(service.activeNetwork, null, 'an unknown network does not resolve');
         assert.false(service.isNetworkContext, 'the store context stays in charge');
+    });
+
+    test('a store or network created from its modal is remembered for the lists loaded before it', async function (assert) {
+        this.owner.register('service:modals-manager', ModalsManagerStub);
+        this.owner.register('service:notifications', NotificationsStub);
+        this.owner.register('service:intl', IntlStub);
+        this.owner.register('service:abilities', AbilitiesStub);
+        const service = this.owner.lookup('service:storefront');
+        const modalsManager = this.owner.lookup('service:modals-manager');
+        const created = [];
+
+        service.createNewStorefront({ onSuccess: (store) => created.push(store) });
+        await modalsManager.confirm(0);
+        service.createNewNetwork({ onSuccess: (network) => created.push(network) });
+        await modalsManager.confirm(1);
+
+        assert.deepEqual(
+            service.createdStores.map((store) => store.id),
+            ['new_store_uuid'],
+            'the saved store is remembered'
+        );
+        assert.deepEqual(
+            service.createdNetworks.map((network) => network.id),
+            ['new_network_uuid'],
+            'the saved network is remembered'
+        );
+        assert.strictEqual(service.activeStoreId, 'new_store_uuid', 'the new store becomes active');
+        assert.deepEqual(
+            created.map((record) => record.id),
+            ['new_store_uuid', 'new_network_uuid'],
+            'callers still hear about each record'
+        );
+    });
+
+    test('the first store is remembered and the engine reloads for it', async function (assert) {
+        this.owner.register('service:modals-manager', ModalsManagerStub);
+        this.owner.register('service:notifications', NotificationsStub);
+        this.owner.register('service:intl', IntlStub);
+        this.owner.register('service:abilities', AbilitiesStub);
+        this.owner.register('service:hostRouter', HostRouterStub);
+        const service = this.owner.lookup('service:storefront');
+        const modalsManager = this.owner.lookup('service:modals-manager');
+        const hostRouter = this.owner.lookup('service:hostRouter');
+
+        service.createFirstStore();
+        await modalsManager.confirm(0);
+
+        assert.deepEqual(
+            service.createdStores.map((store) => store.id),
+            ['new_store_uuid']
+        );
+        assert.strictEqual(service.activeStoreId, 'new_store_uuid');
+        assert.strictEqual(hostRouter.refreshCount, 1, 'the engine loaded with no store reloads for the new one');
     });
 });

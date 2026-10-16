@@ -4800,6 +4800,14 @@ body[data-theme='dark'] .storefront-catalog-category {
     border-color: #374151;
 }
 
+.storefront-catalog-category--depth-1 {
+    padding-left: 1.5rem;
+}
+
+.storefront-catalog-category--depth-2 {
+    padding-left: 2.5rem;
+}
+
 .storefront-catalog-category.is-selected {
     background-color: #dbeafe;
 }
@@ -4842,7 +4850,15 @@ body[data-theme='dark'] .storefront-catalog-category__select {
     display: flex;
 }
 
-.storefront-catalog-category__rename {
+.storefront-catalog-category__icon {
+    flex: 0 0 auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    object-fit: cover;
+}
+
+.storefront-catalog-category__icon + .storefront-catalog-category__name {
     flex: 1 1 auto;
 }
 
@@ -5614,6 +5630,38 @@ body[data-theme='dark'] .storefront-product-category__caret:hover {
     color: #e5e7eb;
 }
 
+.storefront-product-category__add {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: auto;
+    border-radius: 0.25rem;
+    color: #6b7280;
+    visibility: hidden;
+}
+
+.storefront-product-category:hover .storefront-product-category__add,
+.storefront-product-category:focus-within .storefront-product-category__add {
+    visibility: visible;
+}
+
+.storefront-product-category__add:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+body[data-theme='dark'] .storefront-product-category__add:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+.storefront-product-category__add + .storefront-product-category__count {
+    margin-left: 0.25rem;
+}
+
 .storefront-product-category__count {
     flex: 0 0 auto;
     margin-left: auto;
@@ -6084,6 +6132,21 @@ body[data-theme='dark'] .storefront-invitation-banner__meta {
     flex: 1 1 auto;
     height: auto;
     min-height: 0;
+}
+
+/* The order panel opened in place (resource context panel): ember-ui's tab wrapper is a flex
+   item, but the body's inner wrapper around it is not a flex column, so the tab content never
+   got a height to scroll within. */
+.storefront-order-context-body,
+.storefront-order-context-body > .next-content-overlay-panel-body-inner-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.storefront-order-context-body > .next-content-overlay-panel-body-inner-wrapper {
+    flex: 1 1 auto;
+    height: auto;
 }
 
 .storefront-create-order {

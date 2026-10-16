@@ -2,9 +2,19 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import { dasherize } from '@ember/string';
 import { task } from 'ember-concurrency';
+import { flattenCategoryTree, MAX_CATEGORY_DEPTH } from '../../../utils/category-tree';
+
+/** A catalog category's key: its id once saved, a client key until then. */
+const keyOf = (category) => category.id ?? category.key ?? null;
+/** The key of the category it sits under: a saved parent's id, or a new parent's key. */
+const parentKeyOf = (category) => category.parent_uuid ?? category.parent_key ?? null;
+const newKey = () => `new-${Math.random().toString(36).slice(2, 10)}`;
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+/** What the category modal edits; a clone or cancel carries or restores exactly these. */
+const CATEGORY_DETAILS = ['description', 'icon', 'icon_color', 'icon_file_uuid', 'icon_url'];
 
 export default class CatalogsIndexEditController extends Controller {
     @service store;
@@ -13,6 +23,8 @@ export default class CatalogsIndexEditController extends Controller {
     @service modalsManager;
     @service hostRouter;
     @service crud;
+    @service fetch;
+    @service currentUser;
     @tracked catalog;
     @tracked products = [];
     @tracked stores = [];
@@ -22,8 +34,6 @@ export default class CatalogsIndexEditController extends Controller {
     @tracked pickerQuery = '';
     @tracked pickerSelection = [];
     @tracked newCategoryName = '';
-    @tracked renamingCategory = null;
-    @tracked renameValue = '';
     @tracked revision = 0;
     /** The open editor section, kept in the URL so links can land on Served by or Hours. */
     queryParams = [{ activeSection: 'section' }];
@@ -36,17 +46,69 @@ export default class CatalogsIndexEditController extends Controller {
         return this.catalog?.categories?.toArray?.() ?? Array.from(this.catalog?.categories ?? []);
     }
 
-    get categoryRows() {
+    /** The menu in tree order: Lunch, Lunch › Tacos, Lunch › Tacos › Vegetarian, Drinks. */
+    get categoryTree() {
         this.revision;
 
-        return this.categories.map((category, index) => ({
-            category,
-            index,
-            count: category.products?.length ?? 0,
-            isSelected: category === this.selectedCategory,
-            isFirst: index === 0,
-            isLast: index === this.categories.length - 1,
-        }));
+        return flattenCategoryTree(this.categories, { idOf: keyOf, parentOf: parentKeyOf });
+    }
+
+    get categoryRows() {
+        const rows = this.categoryTree;
+
+        return rows.map((row, index) => {
+            const siblings = rows.filter((candidate) => candidate.parentId === row.parentId);
+            const position = siblings.indexOf(row);
+            const previous = siblings[position - 1];
+            const height = this.levelsUnder(rows, index);
+
+            return {
+                category: row.category,
+                index,
+                depth: row.depth,
+                path: row.path,
+                count: row.category.products?.length ?? 0,
+                isSelected: row.category === this.selectedCategory,
+                isFirst: position === 0,
+                isLast: position === siblings.length - 1,
+                // Under the category above it, if that keeps the branch within three levels.
+                canIndent: Boolean(previous) && previous.depth + 1 + height < MAX_CATEGORY_DEPTH,
+                canOutdent: row.depth > 0,
+                canAddSubcategory: row.depth < MAX_CATEGORY_DEPTH - 1,
+            };
+        });
+    }
+
+    /** How many levels sit under the row at `index` in tree order. */
+    levelsUnder(rows, index) {
+        let deepest = rows[index].depth;
+        for (let next = index + 1; next < rows.length && rows[next].depth > rows[index].depth; next++) {
+            deepest = Math.max(deepest, rows[next].depth);
+        }
+
+        return deepest - rows[index].depth;
+    }
+
+    categoryByKey(key) {
+        return key ? (this.categories.find((category) => keyOf(category) === key) ?? null) : null;
+    }
+
+    /** Place a category under another (or at the top): a saved parent by id, a new one by its key. */
+    setParent(category, parent) {
+        if (parent && !keyOf(parent)) {
+            parent.set('key', newKey());
+        }
+
+        category.setProperties({
+            parent_uuid: parent?.id ?? null,
+            parent_key: parent && !parent.id ? parent.key : null,
+        });
+    }
+
+    /** Number the categories in tree order, which keeps each one's place among its siblings. */
+    renumber() {
+        flattenCategoryTree(this.categories, { idOf: keyOf, parentOf: parentKeyOf }).forEach((row, position) => row.category.set('order', position));
+        this.touch();
     }
 
     get selectedProducts() {
@@ -223,6 +285,12 @@ export default class CatalogsIndexEditController extends Controller {
             categories: this.categories.map((category) => ({
                 id: category.id,
                 name: category.name,
+                parent: parentKeyOf(category),
+                order: Number(category.order ?? 0),
+                description: category.description,
+                icon: category.icon,
+                icon_color: category.icon_color,
+                icon_file_uuid: category.icon_file_uuid,
                 products: (category.products?.toArray?.() ?? Array.from(category.products ?? [])).map((product) => product.id),
                 overrides: this.overridesFor(category),
             })),
@@ -292,50 +360,127 @@ export default class CatalogsIndexEditController extends Controller {
             return;
         }
 
-        const category = this.store.createRecord('catalog-category', { name, for: 'storefront_catalog', order: this.categories.length });
+        const category = this.store.createRecord('catalog-category', { name, for: 'storefront_catalog', order: this.categories.length, key: newKey() });
         this.catalog.categories.pushObject(category);
         this.newCategoryName = '';
         this.selectedCategory = category;
         this.touch();
     }
 
-    @action startRename(category) {
-        this.renamingCategory = category;
-        this.renameValue = category.name ?? '';
+    /**
+     * Edit a category's name, description and icon in the category modal. Like every other
+     * edit here the changes stay on the page until the catalog is saved; cancel puts them back.
+     */
+    @action editCategory(category) {
+        const before = category.getProperties('name', ...CATEGORY_DETAILS);
+
+        return this.modalsManager.show('modals/create-product-category', {
+            title: this.intl.t('storefront.catalogs.editor.edit-category-title', { name: category.name }),
+            acceptButtonText: this.intl.t('storefront.catalogs.editor.apply-category'),
+            acceptButtonIcon: 'check',
+            declineButtonIcon: 'times',
+            declineButtonIconPrefix: 'fas',
+            category,
+            uploadNewPhoto: (file) => this.uploadCategoryIcon(category, file),
+            confirm: (modal) => {
+                const name = String(category.name ?? '').trim();
+
+                if (!name) {
+                    return this.notifications.warning(this.intl.t('storefront.catalogs.editor.category-name-required'));
+                }
+
+                category.set('name', name);
+                this.touch();
+                modal.done();
+            },
+            decline: (modal) => {
+                category.setProperties(before);
+                modal.done();
+            },
+        });
     }
 
-    @action setRenameValue(event) {
-        this.renameValue = event.target.value;
-    }
+    uploadCategoryIcon(category, file) {
+        const companyId = category.company_uuid ?? this.currentUser.companyId;
+        const params = {
+            path: `uploads/${companyId}/catalog-category-icon/${dasherize(category.name || 'category')}`,
+            subject_type: 'category',
+            type: 'category_icon',
+        };
 
-    @action commitRename(event) {
-        event?.preventDefault?.();
-
-        if (this.renamingCategory && this.renameValue.trim()) {
-            this.renamingCategory.set('name', this.renameValue.trim());
-            this.touch();
+        // A category added on this page has no uuid until the catalog is saved.
+        if (!category.isNew && category.id) {
+            params.subject_uuid = category.id;
         }
 
-        this.renamingCategory = null;
+        return this.fetch.uploadFile.perform(file, params, (uploadedFile) => {
+            category.setProperties({ icon_file_uuid: uploadedFile.id, icon_url: uploadedFile.url });
+        });
     }
 
-    @action cancelRename() {
-        this.renamingCategory = null;
-    }
-
+    /** Up or down among the categories it shares a parent with. */
     @action moveCategory(category, direction) {
-        const list = this.catalog.categories;
-        const index = list.indexOf(category);
+        const tree = this.categoryTree;
+        const parentId = tree.find((row) => row.category === category)?.parentId ?? null;
+        const siblings = tree.filter((row) => row.parentId === parentId).map((row) => row.category);
+        const index = siblings.indexOf(category);
         const target = index + direction;
 
-        if (index < 0 || target < 0 || target >= list.length) {
+        if (index < 0 || target < 0 || target >= siblings.length) {
             return;
         }
 
-        list.removeObject(category);
-        list.insertAt(target, category);
-        list.forEach((item, position) => item.set('order', position));
-        this.touch();
+        const orders = siblings.map((sibling) => Number(sibling.order ?? 0));
+        siblings.splice(index, 1);
+        siblings.splice(target, 0, category);
+        siblings.forEach((sibling, position) => sibling.set('order', orders[position]));
+        this.renumber();
+    }
+
+    /** Under the category above it, as its last subcategory. */
+    @action indentCategory(category) {
+        const row = this.categoryRows.find((candidate) => candidate.category === category);
+        if (!row?.canIndent) {
+            return;
+        }
+
+        const tree = this.categoryTree;
+        const siblings = tree.filter((candidate) => candidate.parentId === tree[row.index].parentId);
+        const previous = siblings[siblings.findIndex((candidate) => candidate.category === category) - 1].category;
+        this.setParent(category, previous);
+        category.set('order', Number.MAX_SAFE_INTEGER);
+        this.renumber();
+    }
+
+    /** Up a level, right after the category it was under. */
+    @action outdentCategory(category) {
+        const parent = this.categoryByKey(parentKeyOf(category));
+        if (!parent) {
+            return;
+        }
+
+        this.setParent(category, this.categoryByKey(parentKeyOf(parent)));
+        category.set('order', Number(parent.order ?? 0) + 0.5);
+        this.renumber();
+    }
+
+    @action addSubcategory(parent) {
+        if (!this.categoryRows.find((row) => row.category === parent)?.canAddSubcategory) {
+            return;
+        }
+
+        const category = this.store.createRecord('catalog-category', {
+            name: this.intl.t('storefront.catalogs.editor.new-subcategory-name'),
+            for: 'storefront_catalog',
+            key: newKey(),
+            order: Number.MAX_SAFE_INTEGER,
+        });
+        this.setParent(category, parent);
+        this.catalog.categories.pushObject(category);
+        this.renumber();
+        this.selectedCategory = category;
+        // Named, described and given an icon in the category modal, like any category.
+        this.editCategory(category);
     }
 
     @action removeCategory(category) {
@@ -345,7 +490,16 @@ export default class CatalogsIndexEditController extends Controller {
             acceptButtonText: this.intl.t('common.delete'),
             acceptButtonScheme: 'danger',
             confirm: (modal) => {
+                // Its subcategories move up to where it was.
+                const parent = this.categoryByKey(parentKeyOf(category));
+                this.categories
+                    .filter((child) => parentKeyOf(child) === keyOf(category))
+                    .forEach((child) => {
+                        this.setParent(child, parent);
+                        child.set('order', Number(category.order ?? 0) + Number(child.order ?? 0) / 1000);
+                    });
                 this.catalog.categories.removeObject(category);
+                this.renumber();
 
                 if (this.selectedCategory === category) {
                     this.selectedCategory = this.categories[0] ?? null;
@@ -494,8 +648,22 @@ export default class CatalogsIndexEditController extends Controller {
             status: 'draft',
         });
 
+        // Clones keep the tree: each finds its parent's clone by key.
+        const clones = new Map(
+            this.categories.map((category) => [
+                keyOf(category),
+                this.store.createRecord('catalog-category', {
+                    ...category.getProperties(CATEGORY_DETAILS),
+                    name: category.name,
+                    for: 'storefront_catalog',
+                    order: category.order,
+                    key: newKey(),
+                }),
+            ])
+        );
         this.categories.forEach((category) => {
-            const clone = this.store.createRecord('catalog-category', { name: category.name, for: 'storefront_catalog', order: category.order });
+            const clone = clones.get(keyOf(category));
+            clone.parent_key = clones.get(parentKeyOf(category))?.key ?? null;
             (category.products?.toArray?.() ?? []).forEach((product) => clone.products.pushObject(product));
             copy.categories.pushObject(clone);
         });

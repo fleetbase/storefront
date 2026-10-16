@@ -3,6 +3,7 @@
 namespace Fleetbase\Storefront\Http\Resources;
 
 use Fleetbase\FleetOps\Http\Resources\v1\Order as FleetOpsOrderResource;
+use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Support\OrderInsights;
 use Fleetbase\Storefront\Support\OrderPayments;
 use Fleetbase\Support\Http;
@@ -81,6 +82,8 @@ class Order extends FleetOpsOrderResource
             'master_order_id',
             'checkout_id',
             'cart_id',
+            // An order placed at a food truck: checkout stamps the truck's public id.
+            'food_truck_id',
         ];
 
         $meta = array_intersect_key($this->normalizeMeta($this->resource->meta ?? []), array_flip($keys));
@@ -88,6 +91,10 @@ class Order extends FleetOpsOrderResource
         if (isset($meta['storefront']) && (is_array($meta['storefront']) || is_object($meta['storefront']))) {
             $storefrontKeys     = ['id', 'public_id', 'name', 'logo_url', 'is_store', 'is_network'];
             $meta['storefront'] = array_intersect_key($this->normalizeMeta($meta['storefront']), array_flip($storefrontKeys));
+        }
+
+        if (!empty($meta['food_truck_id'])) {
+            $meta['food_truck'] = FoodTruck::summaryFor($meta['food_truck_id'], $this->resource->company_uuid);
         }
 
         return $meta;

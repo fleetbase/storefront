@@ -110,14 +110,15 @@ test('product category slug filter resolves known categories and ignores unknown
     $schema->create('categories', function ($table) {
         $table->increments('id');
         $table->string('uuid');
+        $table->string('parent_uuid')->nullable();
         $table->string('slug');
         $table->string('for');
         $table->timestamp('deleted_at')->nullable();
     });
     $connection->table('categories')->insert([
-        'uuid' => 'category_uuid',
-        'slug' => 'coffee',
-        'for'  => 'storefront_product',
+        ['uuid' => 'category_uuid', 'parent_uuid' => null, 'slug' => 'coffee', 'for' => 'storefront_product'],
+        // A subcategory's products are listed under its parent.
+        ['uuid' => 'cold_brew_uuid', 'parent_uuid' => 'category_uuid', 'slug' => 'cold-brew', 'for' => 'storefront_product'],
     ]);
 
     $known = applyStorefrontFilter(
@@ -133,9 +134,9 @@ test('product category slug filter resolves known categories and ignores unknown
         ['category_slug' => 'unknown']
     );
 
-    expect($known->toSql())->toContain('"category_uuid" = ?')
-        ->and($known->getBindings())->toContain('category_uuid')
-        ->and($unknown->toSql())->not->toContain('"category_uuid" = ?');
+    expect($known->toSql())->toContain('"category_uuid" in (?, ?)')
+        ->and($known->getBindings())->toBe(['category_uuid', 'cold_brew_uuid'])
+        ->and($unknown->toSql())->not->toContain('"category_uuid" in');
 });
 
 test('customer filter constrains customers through storefront order metadata', function () {
@@ -278,12 +279,12 @@ test('storefront order filter applies storefront metadata tracking and payload r
 });
 
 test('the order fulfillment filter narrows to pickup or delivery orders and ignores anything else', function () {
-    $pickup = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'pickup']);
+    $pickup    = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'pickup']);
     $pickupSql = $pickup->toSql();
     expect($pickupSql)->toContain('is_pickup')
         ->and(str_contains($pickupSql, 'true') || in_array(true, $pickup->getBindings(), true))->toBeTrue();
 
-    $delivery = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'Delivery']);
+    $delivery    = applyStorefrontFilter(OrderFilter::class, (new Order())->newQuery(), 'int/v1/storefront/orders', ['fulfillment' => 'Delivery']);
     $deliverySql = $delivery->toSql();
     expect($deliverySql)->toContain('is_pickup')
         ->and($deliverySql)->toContain('is null')

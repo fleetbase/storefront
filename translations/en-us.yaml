@@ -211,9 +211,12 @@ storefront:
         name: Category name
         name-text: Enter a name for category
         description: Category description
-        description-text: Give your product category a brief description
+        description-text: Give your category a brief description
         icon: Category icon
         uploading-new: Upload new category icon
+        parent: Parent category
+        parent-text: Categories nest up to three levels, like Drinks › Coffee › Cold brew.
+        top-level: None (top level)
       create-store:
         name: Storefront name
         name-text: Enter the name of your store
@@ -453,7 +456,10 @@ storefront:
       cancel-new-button: Cancel new customer
   catalogs:
     editor:
-      rename-category: Rename category
+      edit-category: Edit category
+      edit-category-title: "Edit {name}"
+      apply-category: Apply
+      category-name-required: Give the category a name.
       back: All catalogs
       delete-catalog: Delete catalog
       sold-here: Sold here
@@ -474,12 +480,15 @@ storefront:
         served-by: Served by
         details: Details
       new-category: New category
-      rename: Rename
       move-up: Move up
       move-down: Move down
+      indent: Move under the category above
+      outdent: Move up a level
+      add-subcategory: Add subcategory
+      new-subcategory-name: New subcategory
       categories-note: The order here is the order the app shows. A category with no products is hidden in the app.
       remove-category-title: "Remove the category {name}?"
-      remove-category-body: Its products stay in the store; they just leave this catalog.
+      remove-category-body: Its products stay in the store; they just leave this catalog. Its subcategories move up a level.
       add-products: Add products
       search-products: Search the store's products
       picker-hint: "{count, plural, =0 {Products already in this catalog are hidden.} one {# selected} other {# selected}}"
@@ -608,6 +617,7 @@ storefront:
       map: Map
       search: Search trucks
       map-note: '{count} of {total} trucks have a reported position.'
+      active: Active
       inactive: Inactive
       empty-state: Add a truck to sell from a vehicle inside a service area.
       create-truck: Add truck
@@ -618,12 +628,9 @@ storefront:
       orders-today: '{count, plural, =0 {no orders today} one {# order today} other {# orders today}}'
       no-service-area: No service area
       inactive: Inactive
-      offline: Offline
-      no-catalog: Online, no catalog
-      no-catalog-in-hours: Online · no catalog in hours
+      no-catalog: Active, no catalog
+      no-catalog-in-hours: Active · no catalog in hours
       serving: "Serving · {catalog}"
-      last-online: "last online {ago} ago"
-      online: Online
       assign-catalogs: Assign catalogs
       catalogs-count: "{count, plural, =0 {No catalogs} one {# catalog} other {# catalogs}}"
       owned-by: "Owned by {name}"
@@ -677,7 +684,7 @@ storefront:
       awaiting-driver: "{count, plural, one {delivery without a driver} other {deliveries without a driver}}"
       out-of-stock: "{count, plural, one {product marked unavailable} other {products marked unavailable}}"
       still-published: still published
-      trucks-offline: "{count, plural, one {truck offline} other {trucks offline}}"
+      trucks-inactive: "{count, plural, one {truck inactive} other {trucks inactive}}"
       network-invitations: "{count, plural, one {network invitation} other {network invitations}}"
   order:
     booking-steps:
@@ -1221,6 +1228,9 @@ storefront:
       no-customer: No customer
       no-store: No store
       delivery: Delivery
+      truck: Truck
+      from-truck: "Ordered from the truck {name}"
+      from-a-truck: Ordered from a food truck
       tip-split: "tip {tip} split {count} ways"
       tip-shared: "+ tip {tip} shared"
       tip-to-store: "tip {tip} to store"
@@ -1737,6 +1747,7 @@ storefront:
       categories: Categories
       categories-help: Organise products for browsing. Click a caret to fold a category.
       new-category: New category
+      new-subcategory: New subcategory
       all-products: All products
       no-categories: No categories yet
       smart-groups: Smart groups
@@ -1968,6 +1979,8 @@ storefront:
         manage-addons-accept-button: Save Changes
       done: Done
       create-new-product-category: Create a new product category
+      create-new-product-subcategory: "New category under {parent}"
+      category-meta: "{path} · {products, plural, =0 {no products} one {# product} other {# products}}"
       product-category-created-success: New product category created.
       import-products-via-spreadsheets: Import products via spreadsheets
       start-upload: Start Upload

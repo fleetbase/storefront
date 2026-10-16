@@ -17,6 +17,7 @@ use Fleetbase\Storefront\Models\ProductVariant;
 use Fleetbase\Storefront\Models\ProductVariantOption;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\BookingSlots;
+use Fleetbase\Storefront\Support\CategoryTree;
 use Fleetbase\Support\Utils;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -361,7 +362,7 @@ class ProductController extends Controller
 
             $query->where('is_available', 1);
             $query->where('status', 'published');
-            $relations = ['addonCategories.category', 'variants.options', 'files'];
+            $relations = ['addonCategories.category', 'variants.options', 'files', 'category:uuid,public_id'];
             if ($request->boolean('with_store') || $request->inArray('with', 'store')) {
                 $relations[] = 'store.logo';
                 $relations[] = 'store.backdrop';
@@ -371,8 +372,9 @@ class ProductController extends Controller
             if ($request->filled('category')) {
                 $category = Category::where(['public_id' => $request->input('category'), 'for' => 'storefront_product'])->first();
 
+                // A category's products and those of every category under it, unless asked for its own only.
                 if ($category) {
-                    $query->where('category_uuid', $category->uuid);
+                    $query->whereIn('category_uuid', $request->boolean('category_direct') ? [$category->uuid] : CategoryTree::withDescendants($category));
                 }
             }
         });
@@ -396,7 +398,7 @@ class ProductController extends Controller
                 $query->where('is_available', 1);
                 $query->where('status', 'published');
             })
-            ->with(['addonCategories.category', 'variants.options', 'files'])
+            ->with(['addonCategories.category', 'variants.options', 'files', 'category:uuid,public_id'])
             ->first();
 
         if (!$product) {

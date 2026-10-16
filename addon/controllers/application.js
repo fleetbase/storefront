@@ -2,6 +2,18 @@ import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
 
+/**
+ * A list the engine loaded, with the records created since added in front (newest first, as
+ * the list is sorted) and deleted ones left out.
+ */
+export function withCreatedRecords(loaded, created = []) {
+    const records = Array.from(loaded ?? []);
+    const loadedIds = new Set(records.map((record) => record?.id));
+    const added = created.filter((record) => record?.id && !loadedIds.has(record.id)).reverse();
+
+    return [...added, ...records].filter((record) => record && !record.isDeleted);
+}
+
 export default class ApplicationController extends Controller {
     @service storefront;
     @service hostRouter;
@@ -24,6 +36,15 @@ export default class ApplicationController extends Controller {
 
     get isNetworkContext() {
         return Boolean(this.activeNetwork?.id);
+    }
+
+    /** The switcher's stores and networks, including any created since the engine loaded them. */
+    get switcherStores() {
+        return withCreatedRecords(this.model?.stores, this.storefront.createdStores);
+    }
+
+    get switcherNetworks() {
+        return withCreatedRecords(this.model?.networks, this.storefront.createdNetworks);
     }
 
     /**

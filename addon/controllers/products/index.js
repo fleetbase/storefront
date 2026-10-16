@@ -7,6 +7,7 @@ import { alias } from '@ember/object/computed';
 import { dasherize } from '@ember/string';
 import { isBlank } from '@ember/utils';
 import { timeout, task } from 'ember-concurrency';
+import { categoryAndDescendantIds, categoryPath } from '../../utils/category-tree';
 
 export default class ProductsIndexController extends BaseController {
     @controller('products.index.index') productsIndexIndexController;
@@ -55,8 +56,15 @@ export default class ProductsIndexController extends BaseController {
         return this.summary?.by_category ?? {};
     }
 
-    /** The header's meta line: products and categories in this store. */
+    /** The header's meta line: products and categories in this store, or the open category's place and products. */
     get headerMeta() {
+        if (this.category) {
+            const ids = categoryAndDescendantIds(this.productCategories, this.category);
+            const products = [...ids].reduce((sum, id) => sum + Number(this.categoryCounts[id] ?? 0), 0);
+
+            return this.intl.t('storefront.products.index.category-meta', { path: categoryPath(this.productCategories, this.category), products });
+        }
+
         const categories = this.model?.length ?? Object.keys(this.categoryCounts).length;
 
         // Before the first list response there is no product count to claim, only the categories.
@@ -396,21 +404,33 @@ export default class ProductsIndexController extends BaseController {
         this.transitionToRoute('products.index.category', category.slug);
     }
 
-    @action createNewProductCategory() {
+    /** A subcategory: the new category starts under the given one. */
+    @action createProductSubcategory(parent) {
+        return this.createNewProductCategory(parent);
+    }
+
+    @action createNewProductCategory(parent = null) {
+        const parentCategory = parent && typeof parent === 'object' && parent.id && !parent.target ? parent : null;
         const category = this.store.createRecord('category', {
             company_uuid: this.currentUser.companyId,
             owner_uuid: this.currentUser.getOption('activeStorefront'),
             owner_type: 'storefront:store',
             for: 'storefront_product',
+            parent_uuid: parentCategory?.id ?? null,
+            parent: parentCategory,
         });
 
         this.modalsManager.show('modals/create-product-category', {
-            title: this.intl.t('storefront.products.index.create-new-product-category'),
+            title: parentCategory
+                ? this.intl.t('storefront.products.index.create-new-product-subcategory', { parent: parentCategory.name })
+                : this.intl.t('storefront.products.index.create-new-product-category'),
             acceptButtonIcon: 'check',
             acceptButtonIconPrefix: 'fas',
             declineButtonIcon: 'times',
             declineButtonIconPrefix: 'fas',
             category,
+            // The store's categories, for the parent picker.
+            categories: this.productCategories,
             uploadNewPhoto: (file) => {
                 this.fetch.uploadFile.perform(
                     file,
@@ -421,23 +441,31 @@ export default class ProductsIndexController extends BaseController {
                         type: `category_icon`,
                     },
                     (uploadedFile) => {
-                        category.setProperties({
-                            icon_file_uuid: uploadedFile.id,
-                            icon_url: uploadedFile.url,
-                            icon: uploadedFile,
-                        });
+                        category.setProperties({ icon_file_uuid: uploadedFile.id, icon_url: uploadedFile.url });
                     }
                 );
             },
             confirm: (modal) => {
                 modal.startLoading();
 
-                return category.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.products.index.product-category-created-success'));
-                    return this.hostRouter.refresh();
-                });
+                return category
+                    .save()
+                    .then(() => {
+                        this.notifications.success(this.intl.t('storefront.products.index.product-category-created-success'));
+                        return this.hostRouter.refresh();
+                    })
+                    .catch((error) => {
+                        // A parent the server refuses (too deep, another store's) is said, and the form stays open.
+                        modal.stopLoading();
+                        this.notifications.serverError(error);
+                    });
             },
         });
+    }
+
+    /** The store's product categories, saved ones only. */
+    get productCategories() {
+        return (this.model?.toArray?.() ?? Array.from(this.model ?? [])).filter((category) => category && !category.isNew && !category.isDeleted);
     }
 
     @action importProducts() {

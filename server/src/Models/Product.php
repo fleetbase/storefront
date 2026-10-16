@@ -66,7 +66,8 @@ class Product extends StorefrontModel
      *
      * @var string[]
      */
-    protected $apiCacheDependencies = ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'store', 'store.networks', 'catalogCategories'];
+    // `category`: moving a category under another changes which products a parent rolls up.
+    protected $apiCacheDependencies = ['addonCategories', 'addonCategories.category', 'addonCategories.category.addons', 'variants', 'variants.options', 'store', 'store.networks', 'catalogCategories', 'category'];
 
     /**
      * The default database connection to use.

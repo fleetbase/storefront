@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Http\Filter;
 use Fleetbase\Http\Filter\Filter;
 use Fleetbase\Models\Category;
 use Fleetbase\Storefront\Models\Product;
+use Fleetbase\Storefront\Support\CategoryTree;
 use Fleetbase\Support\Http;
 
 class ProductFilter extends Filter
@@ -24,8 +25,9 @@ class ProductFilter extends Filter
     {
         $category = Category::where(['slug' => $categorySlug, 'for' => 'storefront_product'])->first();
 
+        // A category lists its own products and those of every category under it.
         if ($category) {
-            $this->builder->where('category_uuid', $category->uuid);
+            $this->builder->whereIn('category_uuid', CategoryTree::withDescendants($category));
         }
     }
 
@@ -46,7 +48,7 @@ class ProductFilter extends Filter
             return;
         }
 
-        $this->builder->where('category_uuid', $category);
+        $this->builder->whereIn('category_uuid', CategoryTree::withDescendants($category));
     }
 
     /**

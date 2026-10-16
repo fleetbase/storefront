@@ -238,8 +238,12 @@ export default class StorefrontPromotionBuilderComponent extends Component {
         this.announce = enabled;
     }
 
+    /**
+     * Saves the promotion, as `status` when given one ("draft"). The plain Save button calls this
+     * with its click event, which must not become the status.
+     */
     @task *save(status = null) {
-        if (status) {
+        if (typeof status === 'string' && status) {
             this.promotion.status = status;
         }
 

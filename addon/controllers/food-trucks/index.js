@@ -40,22 +40,19 @@ export default class FoodTrucksIndexController extends Controller {
         return this.model?.toArray?.() ?? Array.from(this.model ?? []);
     }
 
-    /** Online by the truck's own flag, else by its vehicle (a belongsTo proxy until it resolves). */
-    isOnline(truck) {
-        return Boolean(get(truck, 'online') || get(truck, 'vehicle.online'));
+    /** A truck takes orders while its status is active; whether its vehicle reports online has no say. */
+    isActive(truck) {
+        return get(truck, 'status') === 'active';
     }
 
     get statusTabs() {
         const trucks = this.trucks;
-        const online = trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
-        const inactive = trucks.filter((truck) => truck.status === 'inactive');
-        const offline = trucks.filter((truck) => !online.includes(truck) && !inactive.includes(truck));
+        const active = trucks.filter((truck) => this.isActive(truck));
 
         return [
             { id: 'all', label: this.intl.t('storefront.common.all'), count: trucks.length },
-            { id: 'online', label: this.intl.t('storefront.common.online'), count: online.length },
-            { id: 'offline', label: this.intl.t('storefront.common.offline'), count: offline.length },
-            { id: 'inactive', label: this.intl.t('storefront.trucks.index.inactive'), count: inactive.length },
+            { id: 'active', label: this.intl.t('storefront.trucks.index.active'), count: active.length },
+            { id: 'inactive', label: this.intl.t('storefront.trucks.index.inactive'), count: trucks.length - active.length },
         ].map((tab) => ({ ...tab, isActive: tab.id === this.statusTab }));
     }
 
@@ -63,12 +60,10 @@ export default class FoodTrucksIndexController extends Controller {
         const trucks = this.trucks;
 
         switch (this.statusTab) {
-            case 'online':
-                return trucks.filter((truck) => truck.status !== 'inactive' && this.isOnline(truck));
-            case 'offline':
-                return trucks.filter((truck) => truck.status !== 'inactive' && !this.isOnline(truck));
+            case 'active':
+                return trucks.filter((truck) => this.isActive(truck));
             case 'inactive':
-                return trucks.filter((truck) => truck.status === 'inactive');
+                return trucks.filter((truck) => !this.isActive(truck));
             default:
                 return trucks;
         }

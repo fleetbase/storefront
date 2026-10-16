@@ -1,3 +1,18 @@
-{{#let (if @row.isGroup @row.is_pickup @row.meta.is_pickup) as |isPickup|}}
-    <Badge @status={{if isPickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if isPickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} data-test-order-fulfillment />
-{{/let}}
+<div class="flex flex-wrap items-center gap-1">
+    {{#let (if @row.isGroup @row.is_pickup @row.meta.is_pickup) as |isPickup|}}
+        <Badge @status={{if isPickup "info" "delivery"}} @hideStatusDot={{true}} @size="xs" @text={{if isPickup (t "storefront.common.pickup") (t "storefront.networks.orders.delivery")}} data-test-order-fulfillment />
+    {{/let}}
+    {{#let (if @row.isGroup @row.food_truck @row.meta.food_truck) as |truck|}}
+        {{#if truck}}
+            <Badge
+                @status="default"
+                @icon="truck"
+                @size="xs"
+                @disableHumanize={{true}}
+                @text={{or truck.name (t "storefront.networks.orders.truck")}}
+                @helpText={{if truck.name (t "storefront.networks.orders.from-truck" name=truck.name) (t "storefront.networks.orders.from-a-truck")}}
+                data-test-order-food-truck
+            />
+        {{/if}}
+    {{/let}}
+</div>
