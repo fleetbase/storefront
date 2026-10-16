@@ -1,10 +1,12 @@
-{{! The customer's note from checkout, first in the panel so it is read before the order is handled. }}
+{{! The customer's note from checkout, first in the panel so it is read before the order is handled. Built from the panel's own alert, padded like its sections. }}
 {{#if this.note}}
-    <div class="sfop-customer-note" role="note" data-test-order-customer-note>
-        <div class="sfop-customer-note__head">
-            <FaIcon @icon="comment-dots" @size="sm" />
-            <span>{{t "storefront.order.panel.customer-note" name=this.customerFirstName}}</span>
+    <div class="sfop-customer-note" data-test-order-customer-note>
+        <div class="sfop-alert sfop-alert--warn" role="note">
+            <FaIcon @icon="comment-dots" class="sfop-alert__icon" />
+            <div class="sfop-customer-note__text">
+                <div class="sfop-lbl sfop-customer-note__lbl">{{t "storefront.order.panel.customer-note" name=this.customerFirstName}}</div>
+                <p class="sfop-customer-note__body">{{#each this.parts as |part|}}{{#if part.tel}}<a href={{part.tel}} class="sfop-customer-note__phone">{{part.text}}</a>{{else}}{{part.text}}{{/if}}{{/each}}</p>
+            </div>
         </div>
-        <p class="sfop-customer-note__body">{{#each this.parts as |part|}}{{#if part.tel}}<a href={{part.tel}} class="sfop-customer-note__phone">{{part.text}}</a>{{else}}{{part.text}}{{/if}}{{/each}}</p>
     </div>
 {{/if}}
