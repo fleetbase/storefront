@@ -1,4 +1,4 @@
-> v0.4.26 ~ "New stores and networks show straight away, network orders open at their own URL, and truck orders are marked"
+> v0.4.26 ~ "Nested categories, QPay orders complete again, new stores and networks show straight away, and truck orders are marked"
 
 ---
 ## Highlights
@@ -9,10 +9,15 @@
 - **The order panel scrolls.** The order panel opened in place (dashboard, customer panel, network overview, checkout siblings, redemptions) now scrolls. (#149)
 - **Settings save after a toggle.** Switching a network or store online, toggling a rule, or changing the currency, default order config, phone or proof-of-delivery method enables **Save changes**. (#152)
 - **A truck's status decides whether it takes orders.** A truck is available while its Storefront status is active, whatever its vehicle, its driver's Navigator app or a telematics device reports. The API's truck `online` now means `status === 'active'`, and the dashboard counts inactive trucks. New trucks start inactive: set **Status → Active** to put one on sale. (#153)
+- **Nested categories.** Product categories and catalog (menu) categories nest up to three levels, for example Drinks › Coffee › Cold brew. The category form has a parent picker, the sidebar offers "New subcategory", the catalog editor shows a tree with indent, outdent and move, and opening a parent shows its own products plus those of every category under it. Public API: categories carry `parent` and `depth`, `with_subcategories` lists the categories under each one, `products?category=` includes subcategories' products (`category_direct=1` keeps an exact match), and public products carry `category`. A parent in another store or catalog, a loop, or a fourth level is refused with `422`; removing a category moves its subcategories up a level. The customer app change is fleetbase/storefront-app#82. (#156)
+- **Catalog categories have icons.** The catalog editor's pencil opens the same modal product categories use, with name, description and icon; the catalog save stores them and the `CatalogCategory` resource returns `icon` and `icon_color`. (#155)
+- **Fix: a category icon upload no longer writes the file record into `icon`.** The upload callbacks set only `icon_file_uuid` and `icon_url`. (#157)
+- **Fix: a network's saved gateways and notification channels show after a refresh.** The settings page now loads them itself instead of relying on the networks list. (#154)
 - **Truck orders are marked.** Order lists and the order panel show the food truck an order was placed at. The order API adds `meta.food_truck_id` and `meta.food_truck` (`{ id, name }`). (#150)
 
 ---
 ## Upgrading
+- **Requires fleetbase/core-api v1.6.71** (`composer.json` now requires `^1.6.71`): nested categories read `parent_uuid` from core's internal Category resource (fleetbase/core-api#316).
 - No migrations.
 - A network's Orders page listing every order in the company was caused by fleetbase/core-api caching one filter per model under Octane. Deploy fleetbase/core-api v1.6.71 or later (fleetbase/core-api#315) with this release.
 
