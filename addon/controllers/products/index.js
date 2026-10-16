@@ -441,11 +441,7 @@ export default class ProductsIndexController extends BaseController {
                         type: `category_icon`,
                     },
                     (uploadedFile) => {
-                        category.setProperties({
-                            icon_file_uuid: uploadedFile.id,
-                            icon_url: uploadedFile.url,
-                            icon: uploadedFile,
-                        });
+                        category.setProperties({ icon_file_uuid: uploadedFile.id, icon_url: uploadedFile.url });
                     }
                 );
             },
