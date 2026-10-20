@@ -25,7 +25,10 @@ class CreateCustomerRequest extends FleetbaseRequest
     public function rules()
     {
         return [
-            'code'  => 'required|exists:verification_codes,code',
+            // The code is checked in CustomerController::create() against the newest live code
+            // for the identity, with attempt counting. Phone codes are stored hashed, so the
+            // plain code can't be looked up in verification_codes here.
+            'code'  => 'required|string|max:32',
             'name'  => 'required',
             'email' => [
                 'email', 'nullable', Rule::unique('contacts')->where(function ($query) {
