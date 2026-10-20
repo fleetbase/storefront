@@ -148,7 +148,9 @@ test('customer review verification and capture request rules preserve API contra
     $storefrontRules   = (new StorefrontCustomerRequest())->rules();
 
     expect($customerRules)->toHaveKeys(['code', 'name', 'email', 'phone'])
-        ->and($customerRules['code'])->toBe('required|exists:verification_codes,code')
+        // The code is checked by CustomerController::create() (hashed phone codes can't be
+        // looked up as plain text), so the request only requires one.
+        ->and($customerRules['code'])->toBe('required|string|max:32')
         // `subject` is required: the controller resolves it with Utils::resolveSubject(),
         // whose parameter is a non-nullable string, so omitting it threw a TypeError as a
         // 500 before the controller's own "Invalid subject for review" guard could run.

@@ -1005,7 +1005,7 @@ test('customer creation falls back to the payload email when no identity is sent
         ->and($missing->getData(true))->toBe(['error' => 'An identity is required to create a customer.']);
 });
 
-test('verify code for customer creation validates a plain http request instead of throwing a type error', function () {
+test('verify code for customer creation validates a plain http request and refuses a wrong code', function () {
     createCustomerVerificationDeliverySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
@@ -1035,11 +1035,20 @@ test('verify code for customer creation validates a plain http request instead o
     app()->instance(Illuminate\Contracts\Validation\Factory::class, $validator);
     app()->instance('validator', $validator);
 
+    // A wrong code passes validation and is refused by the code check itself.
+    $wrong = (new CustomerController())->verifyCode(Request::create('/customer/verify-code', 'POST', [
+        'identity' => 'buyer@example.test',
+        'code'     => '999999',
+        'for'      => 'storefront_create_customer',
+        'name'     => 'Verified Buyer',
+        'email'    => 'buyer@example.test',
+    ]));
+
+    // A missing code is still a validation error.
     $refusal = null;
     try {
         (new CustomerController())->verifyCode(Request::create('/customer/verify-code', 'POST', [
             'identity' => 'buyer@example.test',
-            'code'     => '999999',
             'for'      => 'storefront_create_customer',
             'name'     => 'Verified Buyer',
             'email'    => 'buyer@example.test',
@@ -1048,9 +1057,33 @@ test('verify code for customer creation validates a plain http request instead o
         $refusal = $exception;
     }
 
-    expect($refusal)->not->toBeNull()
+    expect($wrong->getStatusCode())->toBe(400)
+        ->and($wrong->getData(true))->toBe(['error' => 'Invalid verification code provided!'])
+        ->and($refusal)->not->toBeNull()
         ->and($refusal->errors())->toHaveKey('code')
         ->and($refusal->getResponse()?->getStatusCode())->toBe(422);
+});
+
+test('the customer creation request accepts a phone code that is stored only hashed', function () {
+    createCustomerVerificationDeliverySchema();
+    $connection = Model::getConnectionResolver()->connection('mysql');
+    $connection->table('verification_codes')->insert([
+        'uuid'       => 'hashed_verification_uuid',
+        'code'       => hash_hmac('sha256', '482913', (string) config('app.key', '')),
+        'for'        => 'storefront_create_customer',
+        'status'     => 'active',
+        'meta'       => json_encode(['identity' => '+97699112233', 'hashed' => true, 'attempts' => 0]),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $validator = new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(), 'en'), app());
+    $validator->setPresenceVerifier(new Illuminate\Validation\DatabasePresenceVerifier(Model::getConnectionResolver()));
+    $rule = (new CreateCustomerRequest())->rules()['code'];
+
+    // What the customer types is the plain code from the text, never the stored HMAC.
+    expect($validator->make(['code' => '482913'], ['code' => $rule])->passes())->toBeTrue()
+        ->and($validator->make([], ['code' => $rule])->passes())->toBeFalse()
+        ->and($validator->make(['code' => str_repeat('9', 40)], ['code' => $rule])->passes())->toBeFalse();
 });
 
 test('customer creation persists a verified storefront identity and issues an access token', function () {
