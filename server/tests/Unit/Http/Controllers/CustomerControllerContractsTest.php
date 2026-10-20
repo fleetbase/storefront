@@ -1090,6 +1090,11 @@ test('customer creation persists a verified storefront identity and issues an ac
     createCustomerVerificationDeliverySchema();
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
+    if (!$schema->hasColumn('users', 'phone_verified_at')) {
+        $schema->table('users', function ($table) {
+            $table->timestamp('phone_verified_at')->nullable();
+        });
+    }
     foreach (['personal_access_tokens', 'contacts', 'files'] as $table) {
         $schema->dropIfExists($table);
     }
@@ -1301,6 +1306,23 @@ test('customer creation persists a verified storefront identity and issues an ac
             'name'     => 'Existing Phone Buyer',
         ])
     );
+    // The app's sign-up posts the texted number only as the identity.
+    $connection->table('verification_codes')->insert([
+        'uuid'       => 'identity_phone_verification_uuid',
+        'code'       => '777777',
+        'for'        => 'storefront_create_customer',
+        'status'     => 'pending',
+        'meta'       => json_encode(['identity' => '+97688776655']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $identityPhoneResource = (new CustomerController())->create(
+        CreateCustomerRequest::create('/customer', 'POST', [
+            'identity' => '+97688776655',
+            'code'     => '777777',
+            'name'     => 'Phone Sign-up Buyer',
+        ])
+    );
     $connection->table('verification_codes')->insert([
         'uuid'       => 'token_failure_verification_uuid',
         'code'       => '111111',
@@ -1363,6 +1385,12 @@ test('customer creation persists a verified storefront identity and issues an ac
         ->and($contactFailure->getData(true))->toHaveKey('error')
         ->and($connection->table('users')->where('email', 'buyer@example.test')->value('type'))->toBe('customer')
         ->and($connection->table('users')->where('uuid', 'existing_phone_user_uuid')->value('type'))->toBe('customer')
+        ->and($connection->table('users')->where('uuid', 'existing_phone_user_uuid')->value('phone_verified_at'))->not->toBeNull()
+        ->and($identityPhoneResource)->toBeInstanceOf(Fleetbase\Storefront\Http\Resources\Customer::class)
+        ->and($identityPhoneResource->resource->phone)->toBe('+97688776655')
+        ->and($connection->table('users')->where('phone', '+97688776655')->value('phone_verified_at'))->not->toBeNull()
+        ->and($connection->table('users')->where('email', 'buyer@example.test')->value('phone'))->toBe('+97699112233')
+        ->and($connection->table('users')->where('email', 'buyer@example.test')->value('phone_verified_at'))->toBeNull()
     ;
 });
 

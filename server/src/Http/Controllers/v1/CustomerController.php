@@ -351,6 +351,11 @@ class CustomerController extends Controller
 
         $this->clearCodeAttempts('create|' . $identity);
 
+        // A phone sign-up's texted code has just proved the number, so it is the account's
+        // phone; without this the number only lived in the code and the app asked for it again.
+        $verifiedPhone = Str::startsWith($identity, '+') ? $identity : null;
+        $phone         = $request->filled('phone') ? static::phone($request->input('phone')) : $verifiedPhone;
+
         // check for existing user to attach contact to
         if (Utils::isEmail($identity)) {
             $user = User::where('email', $identity)->whereNull('deleted_at')->withoutGlobalScopes()->first();
@@ -363,19 +368,23 @@ class CustomerController extends Controller
             $user = User::create(array_merge(
                 [
                     'company_uuid' => session('company'),
-                    'phone'        => static::phone($request->input('phone')),
+                    'phone'        => $phone,
                 ],
-                $request->only(['name', 'email', 'phone', 'meta'])
+                $request->only(['name', 'email', 'meta'])
             ));
             $user->setUserType('customer');
         } elseif (!$user->type) {
             $user->setUserType('customer');
         }
 
+        if ($verifiedPhone && $user->phone === $verifiedPhone && !$user->phone_verified_at) {
+            $user->update(['phone_verified_at' => now()]);
+        }
+
         // always customer type
         $input['type']         = 'customer';
         $input['company_uuid'] = session('company');
-        $input['phone']        = static::phone($request->input('phone'));
+        $input['phone']        = $phone;
         $input['user_uuid']    = $user->uuid;
         $input['meta']         = [
             'storefront_id' => $about->public_id,
