@@ -1,14 +1,14 @@
-> v0.4.28 ~ "Customers can sign up with their phone number again"
+> v0.4.29 ~ "A phone sign-up keeps its number"
 
 ---
 ## Highlights
 
-- **Phone sign-up works again.** Since v0.4.25, signing up with a phone number failed for everyone with "That code didn't match": the code arrived, but the request was refused before it was checked. Phone codes are stored hashed (an HMAC, never the code itself), and the sign-up request still validated the code by looking up the plain code in `verification_codes`, which can never match a hash. The request now only requires a code; the check itself, against the newest live code for that number with attempt counting and lockout, is unchanged. Email sign-up and sign-in were not affected.
+- **Phone sign-up saves the number.** Signing up with a phone number and texted code created the account without that number: the app sends it as the `identity` the code was filed under, and account creation only read a separate `phone` field. Customers were then asked to verify the same number again, couldn't sign back in by phone, and the same number could sign up a second time. The verified identity is now the account's phone, on the user and the customer contact, and is marked verified (`phone_verified_at`), as is an existing user's matching number. A `phone` sent alongside still takes precedence. Email sign-up is unchanged.
 
 ---
 ## Upgrading
 - No migrations.
-- Customers who tried to sign up while this was broken only need to request a new code.
+- Accounts created by phone before this release have no phone saved. They are asked to add it once in the app (Storefront App v0.1.1 also asks at checkout).
 
 ---
 ## Need help?
