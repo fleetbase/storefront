@@ -12,7 +12,6 @@ use Fleetbase\Storefront\Mail\StorefrontNetworkInvite;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\NetworkStore;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Storefront\Traits\ManagesAppReviewAccess;
 use Fleetbase\Support\ApiModelCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -21,8 +20,6 @@ use Illuminate\Support\Str;
 
 class NetworkController extends StorefrontController
 {
-    use ManagesAppReviewAccess;
-
     /**
      * The resource to query.
      *
@@ -70,13 +67,6 @@ class NetworkController extends StorefrontController
         }
 
         return response()->json(['status' => 'ok', 'key' => $network->rotateKey()]);
-    }
-
-    protected function appReviewOwner(string $id, Request $request): Store|Network|null
-    {
-        return Network::where('company_uuid', $request->session()->get('company'))
-            ->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))
-            ->first();
     }
 
     /**

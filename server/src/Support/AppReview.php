@@ -5,18 +5,18 @@ namespace Fleetbase\Storefront\Support;
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\User;
-use Fleetbase\Storefront\Models\AppReviewAccess;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
-use Illuminate\Support\Facades\Log;
+use Fleetbase\Support\AppReview as CoreAppReview;
 
 /**
- * App Review access: how Apple and Google reviewers sign in to a store's app.
+ * App Review access in Storefront: how Apple and Google reviewers sign in to a store's app.
  *
- * Storefront signs customers in with a texted code, which a reviewer cannot receive. A store
- * (or network) that turns App Review access on lets the fixed review number below sign in
- * with a code its owner generated in the Console and gave to the app store. Nothing is ever
- * sent to that number, and the code works only in the storefront that issued it.
+ * The mechanism is core's (Fleetbase\Support\AppReview): Storefront registers stores and
+ * networks as review subjects with its review number, the owner turns access on in the
+ * Console, and a store's code signs the number in to that store only. Core never texts the
+ * number. This class adds what is Storefront's own: the shared review customer, marking
+ * reviewers' orders, and the self-hosted env fallback keys.
  *
  * Self-hosted installs can still configure review accounts instance-wide with
  * STOREFRONT_BYPASS_VERIFICATION_CODE and STOREFRONT_REVIEW_ACCOUNTS (config
@@ -25,19 +25,16 @@ use Illuminate\Support\Facades\Log;
 class AppReview
 {
     /**
-     * The review identity: a number from the North American 555-0100 to 555-0199 range that
-     * is reserved for fiction, so it can never reach a real person. One number serves every
-     * store because customers belong to a store: each store's code signs it in to that store
-     * only. libphonenumber accepts it (US, fixed line or mobile), as does the app's own check.
+     * Storefront's review number: from the North American 555-0100 to 555-0199 range that is
+     * reserved for fiction, so it can never reach a real person. One number serves every store
+     * because customers belong to a store: each store's code signs it in to that store only.
+     * Navigator registers a number of its own, since drivers and customers are different users.
+     * libphonenumber accepts it (US, fixed line or mobile), as does the app's own check.
      */
     public const PHONE = '+12025550143';
 
-    public const PHONE_DISPLAY = '+1 202 555 0143';
-
-    /**
-     * Digits in a generated code; the app's code screen takes six.
-     */
-    public const CODE_LENGTH = 6;
+    public const STORE_TYPE   = 'storefront-store';
+    public const NETWORK_TYPE = 'storefront-network';
 
     /**
      * Name given to the review account when its first sign-in creates it.
@@ -51,8 +48,32 @@ class AppReview
 
     public const OFF_MESSAGE = 'This number is reserved for app store review sign-in, which is turned off for this store.';
 
+    protected const CODE_KEY     = 'storefront.storefront_app.bypass_verification_code';
+    protected const ACCOUNTS_KEY = 'storefront.storefront_app.review_accounts';
+
     /**
-     * Whether an identity is the fixed review number, however it is formatted.
+     * Register stores and networks with core as App Review subjects.
+     */
+    public static function register(): void
+    {
+        CoreAppReview::register(static::STORE_TYPE, [
+            'model'           => Store::class,
+            'phone'           => static::PHONE,
+            'name'            => 'Storefront',
+            'permission'      => 'storefront manage-app-review store',
+            'view_permission' => 'storefront view store',
+        ]);
+        CoreAppReview::register(static::NETWORK_TYPE, [
+            'model'           => Network::class,
+            'phone'           => static::PHONE,
+            'name'            => 'Storefront',
+            'permission'      => 'storefront manage-app-review network',
+            'view_permission' => 'storefront view network',
+        ]);
+    }
+
+    /**
+     * Whether an identity is Storefront's review number, however it is formatted.
      */
     public static function isReviewPhone(?string $identity): bool
     {
@@ -63,26 +84,9 @@ class AppReview
         return preg_replace('/\D+/', '', $identity) === preg_replace('/\D+/', '', static::PHONE);
     }
 
-    /**
-     * The App Review access record of a store or network, if it has one.
-     */
-    public static function accessFor(Store|Network|null $owner): ?AppReviewAccess
-    {
-        if (!$owner || blank($owner->uuid)) {
-            return null;
-        }
-
-        try {
-            return AppReviewAccess::where('owner_uuid', $owner->uuid)->first();
-        } catch (\Throwable $e) {
-            // Before the migration has run there is no access, not an error.
-            return null;
-        }
-    }
-
     public static function isEnabledFor(Store|Network|null $owner): bool
     {
-        return (bool) static::accessFor($owner)?->isUsable();
+        return CoreAppReview::isEnabledFor($owner);
     }
 
     /**
@@ -91,20 +95,7 @@ class AppReview
      */
     public static function acceptsCode(Store|Network|null $owner, ?string $identity, mixed $code): bool
     {
-        if (!static::isReviewPhone($identity) || blank($code) || !is_scalar($code)) {
-            return false;
-        }
-
-        $access = static::accessFor($owner);
-        if (!$access || !$access->isUsable() || !$access->checkCode((string) $code)) {
-            return false;
-        }
-
-        Log::info('[Storefront] App Review sign-in accepted.', [
-            'storefront' => $owner->public_id ?? $owner->uuid,
-        ]);
-
-        return true;
+        return static::isReviewPhone($identity) && CoreAppReview::acceptsCode($owner, static::PHONE, $code);
     }
 
     /**
@@ -113,16 +104,15 @@ class AppReview
      */
     public static function isConfiguredReviewAccount(?string $identity): bool
     {
-        if (blank($identity) || blank(config('storefront.storefront_app.bypass_verification_code'))) {
-            return false;
-        }
+        return CoreAppReview::isConfiguredAccount(static::CODE_KEY, static::ACCOUNTS_KEY, $identity);
+    }
 
-        $reviewAccounts = array_map(
-            static fn ($account) => strtolower(trim((string) $account)),
-            (array) config('storefront.storefront_app.review_accounts', [])
-        );
-
-        return in_array(strtolower(trim($identity)), $reviewAccounts, true);
+    /**
+     * Whether a code is the instance-wide bypass code for a listed review account.
+     */
+    public static function configuredAccountMatches(?string $identity, mixed $code): bool
+    {
+        return CoreAppReview::configuredAccountMatches(static::CODE_KEY, static::ACCOUNTS_KEY, $identity, $code, 'storefront');
     }
 
     /**
@@ -195,64 +185,5 @@ class AppReview
         $user->setUserType('customer');
 
         return $user;
-    }
-
-    /**
-     * A new random code.
-     */
-    public static function generateCode(): string
-    {
-        return str_pad((string) random_int(0, (10 ** static::CODE_LENGTH) - 1), static::CODE_LENGTH, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Change a storefront's access. Turning it on without a code generates one, so it is
-     * never on with nothing to sign in with; `regenerate` replaces the code. Turning it off
-     * keeps the code, so turning it back on restores the same one.
-     *
-     * @return array{0: AppReviewAccess, 1: ?string} the access and the new plain code, if one was generated
-     */
-    public static function update(Store|Network $owner, ?bool $enabled, bool $regenerate = false, ?string $updatedByUuid = null): array
-    {
-        $access = static::accessFor($owner) ?? new AppReviewAccess([
-            'company_uuid' => $owner->company_uuid,
-            'owner_uuid'   => $owner->uuid,
-            'owner_type'   => get_class($owner),
-            'enabled'      => false,
-        ]);
-
-        if ($enabled !== null) {
-            if ($enabled && !$access->enabled) {
-                $access->enabled_at = now();
-            }
-            $access->enabled = $enabled;
-        }
-
-        $code = null;
-        if ($regenerate || ($access->enabled && !$access->hasCode())) {
-            $code = static::generateCode();
-            $access->setPlainCode($code);
-        }
-
-        $access->updated_by_uuid = $updatedByUuid;
-        $access->save();
-
-        return [$access, $code];
-    }
-
-    /**
-     * What the Console and the internal API show about a storefront's access. Never the code
-     * or its hash; `code` is added by the caller only in the response that generated it.
-     */
-    public static function status(?AppReviewAccess $access): array
-    {
-        return [
-            'enabled'           => (bool) $access?->enabled,
-            'phone'             => static::PHONE,
-            'phone_display'     => static::PHONE_DISPLAY,
-            'has_code'          => (bool) $access?->hasCode(),
-            'code_generated_at' => $access?->code_generated_at?->toIso8601String(),
-            'enabled_at'        => $access?->enabled_at?->toIso8601String(),
-        ];
     }
 }

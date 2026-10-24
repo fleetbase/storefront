@@ -4,6 +4,7 @@ namespace Fleetbase\Storefront\Providers;
 
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
+use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Support\SocketCluster\SocketChannelRegistry;
 
@@ -128,6 +129,18 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
         $this->registerStorefrontSocketChannels();
+        $this->registerAppReviewTypes();
+    }
+
+    /**
+     * Registers stores and networks with core-api's App Review access, so their owners can let
+     * app store reviewers sign in to the store's app without a texted code.
+     */
+    public function registerAppReviewTypes(): void
+    {
+        if (class_exists(\Fleetbase\Support\AppReview::class)) {
+            AppReview::register();
+        }
     }
 
     /**

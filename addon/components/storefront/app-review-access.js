@@ -6,8 +6,9 @@ import { task } from 'ember-concurrency';
 
 /**
  * App Review access for a store or network: lets Apple and Google reviewers sign in to its app
- * with a fixed test number (never texted) and a code the owner gives the app store. The code
- * is stored hashed on the server, so it is shown only in the response that created it.
+ * with a fixed test number (never texted) and a code the owner gives the app store. Core
+ * (`int/v1/review-access`) keeps the code hashed, so it is shown only in the response that
+ * created it.
  *
  * Args: @owner (a store or network record).
  */
@@ -30,7 +31,7 @@ export default class StorefrontAppReviewAccessComponent extends Component {
     }
 
     get endpoint() {
-        return `${this.type}s/${this.args.owner?.id}/app-review`;
+        return `review-access/storefront-${this.type}/${this.args.owner?.id}`;
     }
 
     get permission() {
@@ -57,8 +58,8 @@ export default class StorefrontAppReviewAccessComponent extends Component {
         if (!this.args.owner?.id) return;
 
         try {
-            const { app_review } = yield this.fetch.get(this.endpoint, {}, { namespace: 'storefront/int/v1' });
-            this.status = app_review;
+            const { review_access } = yield this.fetch.get(this.endpoint, {}, { namespace: 'int/v1' });
+            this.status = review_access;
         } catch (error) {
             this.notifications.serverError(error);
         }
@@ -66,8 +67,8 @@ export default class StorefrontAppReviewAccessComponent extends Component {
 
     @task *save(payload, message) {
         try {
-            const { app_review } = yield this.fetch.put(this.endpoint, payload, { namespace: 'storefront/int/v1' });
-            const { code, ...status } = app_review;
+            const { review_access } = yield this.fetch.put(this.endpoint, payload, { namespace: 'int/v1' });
+            const { code, ...status } = review_access;
             this.status = status;
             if (code) this.code = code;
             if (!status.enabled) this.code = null;

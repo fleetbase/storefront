@@ -1050,20 +1050,7 @@ class CustomerController extends Controller
      */
     protected static function isReviewAccountBypass(?string $identity, $code): bool
     {
-        if (blank($code) || !AppReview::isConfiguredReviewAccount($identity)) {
-            return false;
-        }
-
-        // hash_equals so a wrong code cannot be recovered by timing the response.
-        if (!hash_equals((string) config('storefront.storefront_app.bypass_verification_code'), (string) $code)) {
-            return false;
-        }
-
-        Log::warning('[Storefront] Verification bypass accepted for a review account.', [
-            'identity' => $identity,
-        ]);
-
-        return true;
+        return AppReview::configuredAccountMatches($identity, $code);
     }
 
     /**

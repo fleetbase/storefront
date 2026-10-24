@@ -69,23 +69,21 @@ addresses, in every store on the instance, and they are never sent a code either
 
 ## For developers
 
-The Console uses two internal endpoints, on stores and networks alike. Both take the
-store's or network's id or public id, and are scoped to the signed-in company.
+App Review access is core-api's (`Fleetbase\Support\AppReview`, table `review_accesses`, core-api 1.6.74 or later). Storefront registers stores as `storefront-store` and networks as `storefront-network`, with the review number above, and the Console uses core's endpoints. They take the store's or network's id or public id, and are scoped to the signed-in company:
 
 ```
-GET  /storefront/int/v1/stores/{id}/app-review
-PUT  /storefront/int/v1/stores/{id}/app-review
-GET  /storefront/int/v1/networks/{id}/app-review
-PUT  /storefront/int/v1/networks/{id}/app-review
+GET  /int/v1/review-access/storefront-store/{id}
+PUT  /int/v1/review-access/storefront-store/{id}
+GET  /int/v1/review-access/storefront-network/{id}
+PUT  /int/v1/review-access/storefront-network/{id}
 ```
 
-`PUT` takes `enabled` (true or false) and `regenerate_code` (true to replace the
-code), both optional. Turning access on when there is no code creates one. Both
-return:
+`PUT` takes `enabled` (true or false) and `regenerate_code` (true to replace the code), both optional. Turning access on when there is no code creates one. Both return:
 
 ```json
 {
-    "app_review": {
+    "review_access": {
+        "type": "storefront-store",
         "enabled": true,
         "phone": "+12025550143",
         "phone_display": "+1 202 555 0143",
@@ -97,6 +95,4 @@ return:
 }
 ```
 
-`code` is present only in the response that created it. The server stores only a
-hash of it, so it can't be read back later; create a new one instead. `GET` needs
-the `view` permission on the store or network, `PUT` needs `manage-app-review`.
+`code` is present only in the response that created it. The server stores only a hash of it, so it can't be read back later; create a new one instead. `GET` needs `storefront view store` (or `network`), `PUT` needs `storefront manage-app-review store` (or `network`). From PHP, call `Fleetbase\Support\AppReview::update($store, true)` and `AppReview::status($store)`.

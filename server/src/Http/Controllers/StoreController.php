@@ -2,16 +2,12 @@
 
 namespace Fleetbase\Storefront\Http\Controllers;
 
-use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Storefront\Traits\ManagesAppReviewAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class StoreController extends StorefrontController
 {
-    use ManagesAppReviewAccess;
-
     /**
      * The resource to query.
      *
@@ -57,12 +53,5 @@ class StoreController extends StorefrontController
         }
 
         return response()->json(['status' => 'ok', 'key' => $store->rotateKey()]);
-    }
-
-    protected function appReviewOwner(string $id, Request $request): Store|Network|null
-    {
-        return Store::where('company_uuid', $request->session()->get('company'))
-            ->where(fn ($query) => $query->where('uuid', $id)->orWhere('public_id', $id))
-            ->first();
     }
 }

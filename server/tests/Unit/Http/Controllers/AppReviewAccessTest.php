@@ -2,18 +2,17 @@
 
 use Fleetbase\FleetOps\Models\Contact;
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Models\ReviewAccess;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Auth\Schemas\Storefront as StorefrontSchema;
-use Fleetbase\Storefront\Http\Controllers\NetworkController;
-use Fleetbase\Storefront\Http\Controllers\StoreController;
 use Fleetbase\Storefront\Http\Controllers\v1\CustomerController;
 use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
 use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
-use Fleetbase\Storefront\Models\AppReviewAccess;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\AppReview;
+use Fleetbase\Support\AppReview as CoreAppReview;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
@@ -29,7 +28,7 @@ function createAppReviewSchema(): object
 {
     $connection = Model::getConnectionResolver()->connection('mysql');
     $schema     = $connection->getSchemaBuilder();
-    foreach (['app_review_accesses', 'personal_access_tokens', 'verification_codes', 'contacts', 'users', 'stores', 'networks', 'companies'] as $table) {
+    foreach (['review_accesses', 'personal_access_tokens', 'verification_codes', 'contacts', 'users', 'stores', 'networks', 'companies'] as $table) {
         $schema->dropIfExists($table);
     }
     foreach (['stores', 'networks'] as $table) {
@@ -105,12 +104,14 @@ function createAppReviewSchema(): object
         $table->timestamp('expires_at')->nullable();
         $table->timestamps();
     });
-    $schema->create('app_review_accesses', function ($table) {
+    // core-api's review_accesses table.
+    $schema->create('review_accesses', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();
         $table->string('company_uuid')->nullable();
-        $table->string('owner_uuid')->unique();
-        $table->string('owner_type')->nullable();
+        $table->string('subject_type');
+        $table->string('subject_uuid');
+        $table->unique(['subject_type', 'subject_uuid']);
         $table->boolean('enabled')->default(false);
         $table->string('code')->nullable();
         $table->timestamp('code_generated_at')->nullable();
@@ -136,13 +137,17 @@ function createAppReviewSchema(): object
     // nothing, then listen only for what the tests need.
     Model::unsetEventDispatcher();
     Model::clearBootedModels();
-    foreach ([User::class, Contact::class, AppReviewAccess::class, Store::class, Network::class] as $class) {
+    foreach ([User::class, Contact::class, ReviewAccess::class, Store::class, Network::class] as $class) {
         new $class();
     }
     Model::setEventDispatcher(new Illuminate\Events\Dispatcher(app()));
     User::creating(fn ($user) => $user->uuid ??= (string) Str::uuid());
     Contact::creating(fn ($contact) => $contact->uuid ??= (string) Str::uuid());
-    AppReviewAccess::creating(fn ($access) => $access->uuid ??= (string) Str::uuid());
+    ReviewAccess::creating(fn ($access) => $access->uuid ??= (string) Str::uuid());
+    app()->instance('cache', new Illuminate\Cache\Repository(new Illuminate\Cache\ArrayStore()));
+
+    // What StorefrontServiceProvider does on boot.
+    AppReview::register();
 
     // Anything that would deliver a code is recorded, so a test can prove nothing went out.
     $sms = new class {
@@ -191,7 +196,7 @@ function appReviewRequest(string $storefrontKey, array $input = [], string $clas
 
 function turnOnAppReview(string $storeUuid): string
 {
-    [, $code] = AppReview::update(Store::where('uuid', $storeUuid)->first(), true);
+    [, $code] = CoreAppReview::update(Store::where('uuid', $storeUuid)->first(), true);
 
     return $code;
 }
@@ -259,7 +264,7 @@ test('with App Review access off, the review number is refused and not texted', 
 
     // A store that turned it on and then off: its code stops working.
     $code = turnOnAppReview('store_a_uuid');
-    AppReview::update(Store::where('uuid', 'store_a_uuid')->first(), false);
+    CoreAppReview::update(Store::where('uuid', 'store_a_uuid')->first(), false);
 
     $refused = (new CustomerController())->verifyCode(appReviewRequest('store_a_key', ['identity' => AppReview::PHONE, 'code' => $code]));
 
@@ -309,7 +314,7 @@ test('one store code does not sign the review number in to another store', funct
 
 test('a network has its own App Review access', function () {
     createAppReviewSchema();
-    [, $code] = AppReview::update(Network::where('uuid', 'network_uuid')->first(), true);
+    [, $code] = CoreAppReview::update(Network::where('uuid', 'network_uuid')->first(), true);
 
     $customer = (new CustomerController())->verifyCode(appReviewRequest('network_key', ['identity' => AppReview::PHONE, 'code' => $code]));
     $atStore  = (new CustomerController())->verifyCode(appReviewRequest('store_a_key', ['identity' => AppReview::PHONE, 'code' => $code]));
@@ -449,64 +454,19 @@ test('orders placed by the review account are marked and never auto-dispatched',
         ->and($reviewOrder->isDirty())->toBeFalse();
 });
 
-test('the Console turns access on with a code shown once, regenerates it and turns it off', function () {
+test('stores and networks are registered with core, with the Storefront number and permissions', function () {
     createAppReviewSchema();
-    $request = function (string $company, array $input = [], string $method = 'PUT') {
-        $request = Request::create('/', $method, $input);
-        $request->setLaravelSession(new SessionStore('app-review-console', new ArraySessionHandler(120)));
-        $request->session()->put('company', $company);
 
-        return $request;
-    };
-    app()->instance('validator', new Illuminate\Validation\Factory(new Illuminate\Translation\Translator(new Illuminate\Translation\ArrayLoader(), 'en'), app()));
-    Request::macro('validate', function (array $rules) {
-        return app('validator')->make($this->all(), $rules)->validate();
-    });
+    $store   = CoreAppReview::definition(AppReview::STORE_TYPE);
+    $network = CoreAppReview::definition(AppReview::NETWORK_TYPE);
 
-    $initial = (new StoreController())->appReview('store_a', $request('company_a', [], 'GET'))->getData(true)['app_review'];
-    expect($initial)->toBe([
-        'enabled'           => false,
-        'phone'             => AppReview::PHONE,
-        'phone_display'     => AppReview::PHONE_DISPLAY,
-        'has_code'          => false,
-        'code_generated_at' => null,
-        'enabled_at'        => null,
-    ]);
-
-    $on = (new StoreController())->manageAppReview('store_a_uuid', $request('company_a', ['enabled' => true]))->getData(true)['app_review'];
-    expect($on['enabled'])->toBeTrue()
-        ->and($on['has_code'])->toBeTrue()
-        ->and($on['code'])->toMatch('/^\d{6}$/');
-
-    // Only the hash is stored, and reading the status never returns the code again.
-    $stored = AppReviewAccess::where('owner_uuid', 'store_a_uuid')->first();
-    $status = (new StoreController())->appReview('store_a', $request('company_a', [], 'GET'))->getData(true)['app_review'];
-    expect($stored->getRawOriginal('code'))->not->toBe($on['code'])
-        ->and(password_verify($on['code'], $stored->getRawOriginal('code')))->toBeTrue()
-        ->and($stored->toArray())->not->toHaveKey('code')
-        ->and($status)->not->toHaveKey('code')
-        ->and($status['enabled'])->toBeTrue();
-
-    // Saving again without regenerating keeps the code.
-    $again = (new StoreController())->manageAppReview('store_a_uuid', $request('company_a', ['enabled' => true]))->getData(true)['app_review'];
-    expect($again)->not->toHaveKey('code')
-        ->and(AppReview::acceptsCode(Store::where('uuid', 'store_a_uuid')->first(), AppReview::PHONE, $on['code']))->toBeTrue();
-
-    $regenerated = (new StoreController())->manageAppReview('store_a_uuid', $request('company_a', ['regenerate_code' => true]))->getData(true)['app_review'];
-    $store       = Store::where('uuid', 'store_a_uuid')->first();
-    expect($regenerated['code'])->toMatch('/^\d{6}$/')
-        ->and(AppReview::acceptsCode($store, AppReview::PHONE, $regenerated['code']))->toBeTrue()
-        ->and($regenerated['code'] === $on['code'] || !AppReview::acceptsCode($store, AppReview::PHONE, $on['code']))->toBeTrue();
-
-    $off = (new StoreController())->manageAppReview('store_a_uuid', $request('company_a', ['enabled' => false]))->getData(true)['app_review'];
-    expect($off['enabled'])->toBeFalse()
-        ->and($off['has_code'])->toBeTrue()
-        ->and(AppReview::acceptsCode($store, AppReview::PHONE, $regenerated['code']))->toBeFalse();
-
-    // Another company's store and network are not found.
-    expect((new StoreController())->manageAppReview('store_b_uuid', $request('company_a', ['enabled' => true]))->getStatusCode())->toBe(404)
-        ->and((new NetworkController())->appReview('network_public', $request('company_b', [], 'GET'))->getStatusCode())->toBe(404)
-        ->and((new NetworkController())->manageAppReview('network_public', $request('company_a', ['enabled' => true]))->getData(true)['app_review']['enabled'])->toBeTrue();
+    expect($store)->toMatchArray(['model' => Store::class, 'phone' => AppReview::PHONE, 'permission' => 'storefront manage-app-review store', 'view_permission' => 'storefront view store'])
+        ->and($network)->toMatchArray(['model' => Network::class, 'phone' => AppReview::PHONE, 'permission' => 'storefront manage-app-review network', 'view_permission' => 'storefront view network'])
+        ->and(CoreAppReview::typeOf(Store::where('uuid', 'store_a_uuid')->first()))->toBe(AppReview::STORE_TYPE)
+        // The Console finds a store by public id in its own company only.
+        ->and(CoreAppReview::resolveSubject(AppReview::STORE_TYPE, 'store_a', 'company_a')?->uuid)->toBe('store_a_uuid')
+        ->and(CoreAppReview::resolveSubject(AppReview::STORE_TYPE, 'store_b', 'company_a'))->toBeNull()
+        ->and(CoreAppReview::status(Store::where('uuid', 'store_a_uuid')->first()))->toMatchArray(['type' => AppReview::STORE_TYPE, 'phone_display' => '+1 202 555 0143', 'enabled' => false]);
 });
 
 test('managing App Review access is its own permission on stores and networks', function () {

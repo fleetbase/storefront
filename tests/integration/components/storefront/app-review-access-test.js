@@ -31,19 +31,19 @@ class FetchStubService extends Service {
     current = status();
     get(url) {
         this.requests.push(['GET', url]);
-        return Promise.resolve({ app_review: this.current });
+        return Promise.resolve({ review_access: this.current });
     }
     put(url, body) {
         this.requests.push(['PUT', url, body]);
         if (body.enabled === true) {
             this.current = status({ enabled: true, has_code: true, code_generated_at: '2026-10-24T09:00:00+00:00' });
-            return Promise.resolve({ app_review: { ...this.current, code: '482913' } });
+            return Promise.resolve({ review_access: { ...this.current, code: '482913' } });
         }
         if (body.regenerate_code) {
-            return Promise.resolve({ app_review: { ...this.current, code: '135790' } });
+            return Promise.resolve({ review_access: { ...this.current, code: '135790' } });
         }
         this.current = { ...this.current, enabled: false };
-        return Promise.resolve({ app_review: this.current });
+        return Promise.resolve({ review_access: this.current });
     }
 }
 
@@ -90,7 +90,7 @@ module('Integration | Component | storefront/app-review-access', function (hooks
 
         await render(hbs`<Storefront::AppReviewAccess @owner={{this.store}} />`);
 
-        assert.deepEqual(fetch.requests[0], ['GET', 'stores/store_1/app-review']);
+        assert.deepEqual(fetch.requests[0], ['GET', 'review-access/storefront-store/store_1']);
         assert.dom('[data-test-app-review-status]').hasText('Off');
         assert.dom('[data-test-app-review-phone]').includesText('+1 202 555 0143');
         assert.dom('[data-test-app-review-code]').doesNotExist();
@@ -98,17 +98,17 @@ module('Integration | Component | storefront/app-review-access', function (hooks
 
         await click('[data-test-app-review-turn-on]');
 
-        assert.deepEqual(fetch.requests[1], ['PUT', 'stores/store_1/app-review', { enabled: true }]);
+        assert.deepEqual(fetch.requests[1], ['PUT', 'review-access/storefront-store/store_1', { enabled: true }]);
         assert.dom('[data-test-app-review-status]').hasText('On');
         assert.dom('[data-test-app-review-code]').includesText('482913');
         assert.dom('[data-test-app-review-access]').includesText('only shown once');
 
         await click('[data-test-app-review-regenerate]');
-        assert.deepEqual(fetch.requests[2], ['PUT', 'stores/store_1/app-review', { regenerate_code: true }]);
+        assert.deepEqual(fetch.requests[2], ['PUT', 'review-access/storefront-store/store_1', { regenerate_code: true }]);
         assert.dom('[data-test-app-review-code]').includesText('135790');
 
         await click('[data-test-app-review-turn-off]');
-        assert.deepEqual(fetch.requests[3], ['PUT', 'stores/store_1/app-review', { enabled: false }]);
+        assert.deepEqual(fetch.requests[3], ['PUT', 'review-access/storefront-store/store_1', { enabled: false }]);
         assert.dom('[data-test-app-review-status]').hasText('Off');
         assert.dom('[data-test-app-review-code]').doesNotExist('the code is forgotten once access is off');
         assert.dom('[data-test-app-review-turn-on]').exists();
@@ -122,7 +122,7 @@ module('Integration | Component | storefront/app-review-access', function (hooks
 
         await render(hbs`<Storefront::AppReviewAccess @owner={{this.network}} />`);
 
-        assert.deepEqual(fetch.requests[0], ['GET', 'networks/network_1/app-review']);
+        assert.deepEqual(fetch.requests[0], ['GET', 'review-access/storefront-network/network_1']);
         assert.dom('[data-test-app-review-status]').hasText('On');
         assert.dom('[data-test-app-review-code]').doesNotExist();
         assert.dom('[data-test-app-review-access]').includesText('Code created');
