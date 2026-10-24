@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Providers;
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\Storefront\Support\AppReview;
+use Fleetbase\Storefront\Support\OAuthScopes;
 use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Support\SocketCluster\SocketChannelRegistry;
 
@@ -130,6 +131,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
         $this->registerStorefrontSocketChannels();
         $this->registerAppReviewTypes();
+        OAuthScopes::register();
     }
 
     /**
