@@ -245,6 +245,12 @@
                     </ContentPanel>
                 </section>
 
+                <section id="network-settings-app-review" class="storefront-settings-section" data-test-settings-section="app-review">
+                    <ContentPanel @title={{t "storefront.settings.sections.app-review"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+                        <Storefront::AppReviewAccess @owner={{@model}} />
+                    </ContentPanel>
+                </section>
+
                             <div class="storefront-save-bar {{if this.isDirty 'is-dirty'}}" data-test-save-bar>
                     <div class="storefront-save-bar__status">
                         {{#if this.isDirty}}

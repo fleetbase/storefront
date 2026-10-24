@@ -237,7 +237,8 @@ Important environment variables include:
 | Variable | Purpose |
 | --- | --- |
 | `STOREFRONT_DB_CONNECTION` | Database connection name for Storefront models. |
-| `STOREFRONT_BYPASS_VERIFICATION_CODE` | Development bypass code for Storefront app verification flows. |
+| `STOREFRONT_BYPASS_VERIFICATION_CODE` | Instance-wide sign-in code for the review accounts in `STOREFRONT_REVIEW_ACCOUNTS` (self-hosted). Stores can instead turn on [App Review access](docs/app-review.md) in their settings. |
+| `STOREFRONT_REVIEW_ACCOUNTS` | Comma-separated phone numbers and emails that sign in with `STOREFRONT_BYPASS_VERIFICATION_CODE` and are never sent a code. |
 | `STOREFRONT_THROTTLE_REQUESTS_PER_MINUTE` | Public Storefront API requests allowed per device (store key + client IP) per window. Default `120`. |
 | `STOREFRONT_THROTTLE_DECAY_MINUTES` | Public Storefront API throttle window in minutes. Default `1`. |
 
@@ -248,6 +249,7 @@ For customer app configuration, see the [Storefront App configuration docs](http
 - [Storefront documentation](https://www.fleetbase.io/docs/storefront)
 - [Products and catalog](https://docs.fleetbase.io/guides/storefront/products/)
 - [Orders and checkout](https://www.fleetbase.io/docs/storefront/orders/overview)
+- [App Review access](docs/app-review.md): letting Apple and Google reviewers sign in to a store's app
 - [Checkout flow](https://www.fleetbase.io/docs/storefront/orders/checkout)
 - [Store locations](https://www.fleetbase.io/docs/storefront/stores/store-locations)
 - [Storefront App configuration](https://www.fleetbase.io/docs/storefront/app/configuration)

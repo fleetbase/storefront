@@ -1,0 +1,12 @@
+{{! An app store reviewer placed this order to test the app. Shown first so the store does not fulfil it. }}
+{{#if this.isAppReview}}
+    <div class="sfop-app-review" data-test-order-app-review>
+        <div class="sfop-alert sfop-alert--bad" role="note">
+            <FaIcon @icon="user-check" class="sfop-alert__icon" />
+            <div>
+                <div class="sfop-lbl">{{t "storefront.order.panel.app-review"}}</div>
+                <p class="sfop-app-review__body">{{t "storefront.order.panel.app-review-body"}}</p>
+            </div>
+        </div>
+    </div>
+{{/if}}

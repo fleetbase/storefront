@@ -4489,6 +4489,81 @@ body[data-theme='dark'] .storefront-settings-key-rotation {
     color: #9ca3af;
 }
 
+/* App Review access: the reviewer's test number and code, and the on/off actions. */
+.storefront-app-review__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.storefront-app-review__loading {
+    padding: 1rem 0;
+}
+
+.storefront-app-review__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.storefront-app-review__value {
+    display: flex;
+    align-items: center;
+    min-height: 2.25rem;
+    cursor: pointer;
+}
+
+.storefront-app-review__code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+}
+
+.storefront-app-review__hint {
+    margin: 0.375rem 0 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.storefront-app-review__hint--warn {
+    font-weight: 600;
+    color: #b45309;
+}
+
+.storefront-app-review__notes {
+    margin: 1rem 0 0;
+    padding-left: 1.1rem;
+    list-style: disc;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+.storefront-app-review__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+body[data-theme='dark'] .storefront-app-review__hint,
+body[data-theme='dark'] .storefront-app-review__notes {
+    color: #9ca3af;
+}
+
+body[data-theme='dark'] .storefront-app-review__hint--warn {
+    color: #fbbf24;
+}
+
+@media (width <= 640px) {
+    .storefront-app-review__fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .storefront-settings-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -12628,6 +12703,21 @@ body[data-theme='dark'] .sfop-customer-note__lbl {
     font-weight: 600;
     text-decoration: underline;
     color: inherit;
+}
+
+/* An app store reviewer's test order: above everything, so nobody fulfils it. */
+.sfop-app-review {
+    padding: 10px 12px 0;
+}
+
+.sfop-app-review .sfop-alert {
+    flex-wrap: nowrap;
+}
+
+.sfop-app-review__body {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 /* Items */

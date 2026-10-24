@@ -21,7 +21,10 @@ use Fleetbase\Models\VerificationCode;
 use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
 use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
+use Fleetbase\Storefront\Models\Network;
+use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StorefrontSocket;
 use Fleetbase\Support\SocketCluster\SocketToken;
@@ -258,6 +261,13 @@ class CustomerController extends Controller
             $identity = static::phone($identity);
         }
 
+        // An app reviewer is sent nothing: they sign up with the store's App Review code. The
+        // review account is shared by every store, so it may already exist; create() then
+        // gives it a customer in this store.
+        if ($reviewerResponse = static::reviewerSendResponse($identity, $about, ['status' => 'ok'])) {
+            return $reviewerResponse;
+        }
+
         // An identity that already has an account cannot ask for a creation code. Nothing
         // is checked or sent; the caller is told to sign in instead.
         if (static::accountExistsForIdentity($identity, $isEmail)) {
@@ -338,18 +348,20 @@ class CustomerController extends Controller
             return response()->apiError('An identity is required to create a customer.');
         }
 
-        if ($this->codeAttemptsExceeded('create|' . $identity)) {
+        $attemptKey = 'create|' . static::attemptIdentity($identity, $about);
+        if ($this->codeAttemptsExceeded($attemptKey)) {
             return response()->apiError('Too many attempts. Try again later.', 429);
         }
 
-        // verify code: the newest live code for this identity, checked and used up
-        if (!$this->verifyIdentityCode('storefront_create_customer', $identity, $code)) {
-            $this->recordFailedCodeAttempt('create|' . $identity);
+        // verify code: an app reviewer's App Review code, else the newest live code for this
+        // identity, checked and used up
+        if (!static::acceptsReviewerCode($identity, $code, $about) && !$this->verifyIdentityCode('storefront_create_customer', $identity, $code)) {
+            $this->recordFailedCodeAttempt($attemptKey);
 
             return response()->apiError('Invalid verification code provided!');
         }
 
-        $this->clearCodeAttempts('create|' . $identity);
+        $this->clearCodeAttempts($attemptKey);
 
         // A phone sign-up's texted code has just proved the number, so it is the account's
         // phone; without this the number only lived in the code and the app asked for it again.
@@ -673,15 +685,21 @@ class CustomerController extends Controller
             return response()->apiError('No customer with this phone # found.');
         }
 
+        // get the storefront or network logging in for
+        $about = Storefront::about();
+
+        // An app reviewer is sent nothing: they sign in with the store's App Review code, and
+        // verifyCode() creates the review account on its first sign-in.
+        if ($reviewerResponse = static::reviewerSendResponse($phone, $about, ['status' => 'OK', 'method' => 'sms'])) {
+            return $reviewerResponse;
+        }
+
         // check if user exists
         $user = User::where('phone', $phone)->whereNull('deleted_at')->withoutGlobalScopes()->first();
 
         if (!$user) {
             return response()->apiError('No customer with this phone # found.');
         }
-
-        // get the storefront or network logging in for
-        $about = Storefront::about();
 
         // Generate the verification token.
         //
@@ -1024,27 +1042,20 @@ class CustomerController extends Controller
      * only honoured for an identity explicitly listed in storefront.review_accounts,
      * and both the code and the list must be configured.
      *
+     * This is the instance-wide (env) fallback for self-hosted installs; a store's own
+     * App Review access is checked by AppReview::acceptsCode().
+     *
      * @param string|null $identity email or phone the caller is authenticating as
      * @param mixed       $code     the submitted verification code
      */
     protected static function isReviewAccountBypass(?string $identity, $code): bool
     {
-        $bypassCode = config('storefront.storefront_app.bypass_verification_code');
-        if (blank($bypassCode) || blank($code) || blank($identity)) {
-            return false;
-        }
-
-        $reviewAccounts = array_map(
-            static fn ($account) => strtolower(trim((string) $account)),
-            (array) config('storefront.storefront_app.review_accounts', [])
-        );
-
-        if (!in_array(strtolower(trim($identity)), $reviewAccounts, true)) {
+        if (blank($code) || !AppReview::isConfiguredReviewAccount($identity)) {
             return false;
         }
 
         // hash_equals so a wrong code cannot be recovered by timing the response.
-        if (!hash_equals((string) $bypassCode, (string) $code)) {
+        if (!hash_equals((string) config('storefront.storefront_app.bypass_verification_code'), (string) $code)) {
             return false;
         }
 
@@ -1053,6 +1064,44 @@ class CustomerController extends Controller
         ]);
 
         return true;
+    }
+
+    /**
+     * Whether a code signs an app reviewer in: this storefront's App Review code for the
+     * review number, or the instance-wide bypass for a configured review account.
+     */
+    protected static function acceptsReviewerCode(?string $identity, mixed $code, Store|Network|null $about): bool
+    {
+        return AppReview::acceptsCode($about, $identity, $code) || static::isReviewAccountBypass($identity, $code);
+    }
+
+    /**
+     * The answer to a request to send a code to an app reviewer, or null for anyone else.
+     * Nothing is ever sent to a reviewer: they sign in with the code the store gave the app
+     * store. The review number is refused outright where its access is off, so it is never
+     * texted either.
+     */
+    protected static function reviewerSendResponse(?string $identity, Store|Network|null $about, array $ok)
+    {
+        if (AppReview::isConfiguredReviewAccount($identity)) {
+            return response()->json($ok);
+        }
+
+        if (AppReview::isReviewPhone($identity)) {
+            return AppReview::isEnabledFor($about) ? response()->json($ok) : response()->apiError(AppReview::OFF_MESSAGE, 422);
+        }
+
+        return null;
+    }
+
+    /**
+     * The key wrong codes are counted under. The review number is shared by every store, so
+     * its count is kept per storefront: guessing at one store cannot lock reviewers out of
+     * another.
+     */
+    protected static function attemptIdentity(string $identity, Store|Network|null $about): string
+    {
+        return AppReview::isReviewPhone($identity) && $about ? $identity . '|' . $about->uuid : $identity;
     }
 
     public function verifyCode(Request $request)
@@ -1073,31 +1122,35 @@ class CustomerController extends Controller
             return response()->apiError('Unable to verify code.');
         }
 
-        if ($this->codeAttemptsExceeded('verify|' . $identity)) {
+        // get the storefront or network logging in for
+        $about = Storefront::about(['company_uuid']);
+
+        $attemptKey = 'verify|' . static::attemptIdentity($identity, $about);
+        if ($this->codeAttemptsExceeded($attemptKey)) {
             return response()->apiError('Too many attempts. Try again later.', 429);
         }
 
+        // This storefront's App Review code signs the review number in, creating the shared
+        // review account the first time.
+        $isAppReviewer = AppReview::acceptsCode($about, $identity, $code);
+
         // check if user exists
-        $user = User::where('phone', $identity)->orWhere('email', $identity)->first();
+        $user = $isAppReviewer ? AppReview::user($about) : User::where('phone', $identity)->orWhere('email', $identity)->first();
 
         if (!$user) {
-            $this->recordFailedCodeAttempt('verify|' . $identity);
+            $this->recordFailedCodeAttempt($attemptKey);
 
             return response()->apiError('Unable to verify code.');
         }
 
         // find and verify code: the newest live code for this user, checked and used up
-        $verificationCode = $this->verifySubjectCode($for, $user->uuid, $code);
-        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
-            $this->recordFailedCodeAttempt('verify|' . $identity);
+        if (!$isAppReviewer && !$this->verifySubjectCode($for, $user->uuid, $code) && !static::isReviewAccountBypass($identity, $code)) {
+            $this->recordFailedCodeAttempt($attemptKey);
 
             return response()->apiError('Invalid verification code!');
         }
 
-        $this->clearCodeAttempts('verify|' . $identity);
-
-        // get the storefront or network logging in for
-        $about = Storefront::about(['company_uuid']);
+        $this->clearCodeAttempts($attemptKey);
 
         // get contact record
         $contact = Contact::firstOrCreate(
@@ -1420,6 +1473,11 @@ class CustomerController extends Controller
             return "Your {$about->name} account closure verification code is {$verification->code}";
         };
 
+        // An app reviewer confirms with the store's App Review code; nothing is sent.
+        if ($reviewerResponse = static::reviewerSendResponse($identity, $about, ['status' => 'OK'])) {
+            return $reviewerResponse;
+        }
+
         // The SMS attempt is guarded rather than sharing one try with the email branch.
         // The Twilio SDK throws when the store has no credentials configured, and the old
         // `if phone / elseif email` meant a customer WITH a phone never reached the email
@@ -1494,8 +1552,8 @@ class CustomerController extends Controller
         }
 
         // verify account closure code
-        $verificationCode = $this->verifyIdentityCode('storefront_account_closure', $identity, $code);
-        if (!$verificationCode && !static::isReviewAccountBypass($identity, $code)) {
+        $isAppReviewer = AppReview::acceptsCode($about, $identity, $code);
+        if (!$isAppReviewer && !$this->verifyIdentityCode('storefront_account_closure', $identity, $code) && !static::isReviewAccountBypass($identity, $code)) {
             $this->recordFailedCodeAttempt('closure|' . $customer->uuid);
 
             return response()->apiError('Invalid verification code provided!');
@@ -1504,8 +1562,10 @@ class CustomerController extends Controller
         $this->clearCodeAttempts('closure|' . $customer->uuid);
 
         try {
-            // If the user type is `contact` or `customer` delete the user account
-            if ($user->isType(['contact', 'customer'])) {
+            // If the user type is `contact` or `customer` delete the user account. The review
+            // account is shared by every store, so closing it only removes this store's
+            // customer; it signs in afresh next time.
+            if ($user->isType(['contact', 'customer']) && !AppReview::isReviewPhone($user->phone)) {
                 $user->delete();
             }
 
@@ -1546,21 +1606,23 @@ class CustomerController extends Controller
             return response()->apiError('A phone number is required to request verification.');
         }
 
-        // Check if phone number is already used by another user
-        $existingUser = $this->findExistingUserByPhone($phone, $user->uuid);
+        $about = Storefront::about();
+
+        // Check if phone number is already used by another user. The review number is the
+        // exception: it belongs to the shared review account, and a reviewer signed in another
+        // way (Apple, Google) may still be asked for it at checkout.
+        $existingUser = AppReview::isReviewPhone($phone) ? null : $this->findExistingUserByPhone($phone, $user->uuid);
 
         if ($existingUser) {
             return response()->apiError('This phone number is already associated with another account.');
         }
 
-        $about = Storefront::about();
-
-        // A review account verifies with the configured bypass code, so no message needs
-        // to be delivered — and requiring one would make the flow untestable wherever SMS
-        // is not configured, which is the situation this bypass exists for. Same
-        // allowlist + constant-time code check as every other bypass call site.
-        if (static::isReviewAccountBypass($phone, config('storefront.storefront_app.bypass_verification_code'))) {
-            return response()->json(['status' => 'ok', 'method' => 'bypass']);
+        // An app reviewer verifies with the store's App Review code (or a self-hosted review
+        // account with the configured bypass code), so no message needs to be delivered —
+        // and requiring one would make the flow untestable wherever SMS is not configured,
+        // which is the situation review access exists for.
+        if ($reviewerResponse = static::reviewerSendResponse($phone, $about, ['status' => 'ok', 'method' => 'bypass'])) {
+            return $reviewerResponse;
         }
 
         // A number that can never receive a text is refused before anything is written.
@@ -1638,7 +1700,7 @@ class CustomerController extends Controller
         $requestedPhone = $request->input('phone') ? static::phone($request->input('phone')) : null;
 
         if (!$verificationCode) {
-            if ($requestedPhone && static::isReviewAccountBypass($requestedPhone, $code)) {
+            if ($requestedPhone && static::acceptsReviewerCode($requestedPhone, $code, Storefront::about())) {
                 $user->update(['phone' => $requestedPhone, 'phone_verified_at' => now()]);
                 $customer->update(['phone' => $requestedPhone]);
 

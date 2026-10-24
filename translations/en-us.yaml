@@ -748,6 +748,9 @@ storefront:
       completed: Completed
       canceled: Canceled
     panel:
+      app-review: App Review test order
+      app-review-body: An app store reviewer placed this order while testing your app. Don't prepare or deliver it; cancel it when you're ready.
+      app-review-order: App Review order
       customer-note: Note from {name}
       copy-tracking: Copy tracking number
       copied: "Copied {value}"
@@ -2035,6 +2038,7 @@ storefront:
       copy-store-key: Copy store key
       store-key-copied: Store key copied.
     sections:
+      app-review: App Review
       select-gateway-type: Select gateway type
       hours: Hours
       locations: Locations
@@ -2109,6 +2113,28 @@ storefront:
       split-tips: A multi-store order's store tip is divided by each store's share; off, the network keeps it.
       reviews-label: Customer reviews
       reviews: Customers can review products and stores after a completed order.
+    app-review:
+      lede: Apple and Google test your app before it goes live, and their reviewers can't receive a text message. Turn this on to let them sign in with a test phone number and a code you give the app store.
+      'on': 'On'
+      'off': 'Off'
+      phone-label: Reviewer phone number
+      phone-help: A test number that is never texted. It is the same for every store; the code decides which store it signs in to.
+      code-label: Sign-in code
+      code-new: Copy this code now. It is only shown once.
+      code-hidden: Code created {date}. It is only shown once, so create a new one if you've lost it.
+      code-none: No code yet. Turning this on creates one.
+      where: In App Store Connect, enter both under App Review Information, Sign-in required. In Google Play Console, enter them under App content, App access.
+      orders: Orders the reviewer places are marked App Review test order and are never sent to a driver. Don't fulfil them.
+      turn-on: Turn on
+      turn-off: Turn off
+      turn-off-title: Turn off App Review access?
+      turn-off-body: Reviewers can no longer sign in to {name}. Turn it off once your app is approved, and turn it back on before you submit an update.
+      regenerate: Create new code
+      regenerate-title: Create a new code?
+      regenerate-body: The current code stops working at once. Enter the new one in App Store Connect and Google Play Console.
+      turned-on: App Review access is on.
+      turned-off: App Review access is off.
+      regenerated: New code created.
     rotate-key:
       button: Rotate key
       help: Rotating issues a new key. Apps and integrations using the current key are rejected immediately until they are updated with the new one.

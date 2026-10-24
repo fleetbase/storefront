@@ -107,5 +107,9 @@ test('storefront route file registers public consumable and internal API contrac
         ['FLEETBASE', 'stores', null],
         ['POST', '{id}/rotate-key', 'stores:rotateKey'],
         ['POST', '{id}/rotate-key', 'networks:rotateKey'],
+        ['GET', '{id}/app-review', 'stores:appReview'],
+        ['PUT', '{id}/app-review', 'stores:manageAppReview'],
+        ['GET', '{id}/app-review', 'networks:appReview'],
+        ['PUT', '{id}/app-review', 'networks:manageAppReview'],
     )->and($router->routes)->not->toContain(['DELETE', '{id}', 'ReviewController@find'])->and(count($router->routes))->toBeGreaterThan(50);
 });

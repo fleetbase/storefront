@@ -1,5 +1,6 @@
-{{! The 11a order panel body (the first tab): the customer's note, people, delivery, proof of delivery when there is any, items, staff notes, then the folded paperwork; messages open in a drawer beside the panel. The next step, steps and notices are in the header. }}
+{{! The 11a order panel body (the first tab): the App Review mark on a reviewer's test order, the customer's note, people, delivery, proof of delivery when there is any, items, staff notes, then the folded paperwork; messages open in a drawer beside the panel. The next step, steps and notices are in the header. }}
 <div class="sfop" data-test-order-overview {{did-update this.reload this.order.status this.order.updated_at}}>
+    <Storefront::Order::PanelAppReview @order={{this.order}} />
     <Storefront::Order::PanelCustomerNote @order={{this.order}} />
     <Storefront::Order::PanelPeople @order={{this.order}} @overview={{this.overview}} @refresh={{this.refresh}} />
     <Storefront::Order::PanelDelivery @order={{this.order}} @overview={{this.overview}} @canEdit={{this.canEdit}} />

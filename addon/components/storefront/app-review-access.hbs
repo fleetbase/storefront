@@ -1,0 +1,79 @@
+{{! App Review access: the test number and code Apple and Google reviewers sign in with. Buttons only, no inputs, so it can sit inside a settings form without marking it dirty. }}
+<div class="storefront-app-review" data-test-app-review-access {{did-update this.reload @owner.id}}>
+    <div class="storefront-app-review__head">
+        <p class="storefront-settings-section__lede mb-0">{{t "storefront.settings.app-review.lede"}}</p>
+        {{#if this.status}}
+            <Badge
+                @status={{if this.enabled "success" "default"}}
+                @text={{if this.enabled (t "storefront.settings.app-review.on") (t "storefront.settings.app-review.off")}}
+                @disableHumanize={{true}}
+                data-test-app-review-status
+            />
+        {{/if}}
+    </div>
+
+    {{#if this.load.isRunning}}
+        <div class="storefront-app-review__loading"><Spinner /></div>
+    {{else if this.status}}
+        <div class="storefront-app-review__fields">
+            <InputGroup @name={{t "storefront.settings.app-review.phone-label"}} @helpText={{t "storefront.settings.app-review.phone-help"}} @wrapperClass="mb-0">
+                <ClickToCopy @value={{this.status.phone}} class="form-input disabled storefront-app-review__value" data-test-app-review-phone>{{this.status.phone_display}}</ClickToCopy>
+            </InputGroup>
+            <InputGroup @name={{t "storefront.settings.app-review.code-label"}} @wrapperClass="mb-0">
+                {{#if this.code}}
+                    <ClickToCopy
+                        @value={{this.code}}
+                        class="form-input disabled storefront-app-review__value storefront-app-review__code"
+                        data-test-app-review-code
+                    >{{this.code}}</ClickToCopy>
+                    <p class="storefront-app-review__hint storefront-app-review__hint--warn">{{t "storefront.settings.app-review.code-new"}}</p>
+                {{else if this.status.has_code}}
+                    <div class="form-input disabled storefront-app-review__value storefront-app-review__code">••••••</div>
+                    <p class="storefront-app-review__hint">{{t "storefront.settings.app-review.code-hidden" date=this.codeCreatedAt}}</p>
+                {{else}}
+                    <p class="storefront-app-review__hint">{{t "storefront.settings.app-review.code-none"}}</p>
+                {{/if}}
+            </InputGroup>
+        </div>
+
+        <ul class="storefront-app-review__notes">
+            <li>{{t "storefront.settings.app-review.where"}}</li>
+            <li>{{t "storefront.settings.app-review.orders"}}</li>
+        </ul>
+
+        <div class="storefront-app-review__actions">
+            {{#if this.enabled}}
+                <Button
+                    @size="sm"
+                    @icon="rotate"
+                    @text={{t "storefront.settings.app-review.regenerate"}}
+                    @onClick={{this.regenerate}}
+                    @isLoading={{this.save.isRunning}}
+                    @permission={{this.permission}}
+                    data-test-app-review-regenerate
+                />
+                <Button
+                    @type="danger"
+                    @size="sm"
+                    @icon="power-off"
+                    @text={{t "storefront.settings.app-review.turn-off"}}
+                    @onClick={{this.turnOff}}
+                    @isLoading={{this.save.isRunning}}
+                    @permission={{this.permission}}
+                    data-test-app-review-turn-off
+                />
+            {{else}}
+                <Button
+                    @type="primary"
+                    @size="sm"
+                    @icon="user-check"
+                    @text={{t "storefront.settings.app-review.turn-on"}}
+                    @onClick={{this.turnOn}}
+                    @isLoading={{this.save.isRunning}}
+                    @permission={{this.permission}}
+                    data-test-app-review-turn-on
+                />
+            {{/if}}
+        </div>
+    {{/if}}
+</div>

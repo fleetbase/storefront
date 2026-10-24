@@ -60,6 +60,7 @@ export default class SettingsController extends Controller {
             sectionItem('alerts', this.intl.t('storefront.common.alerts'), 'bell'),
             sectionItem('messages', this.intl.t('storefront.settings.sections.messages'), 'comments'),
             routeItem('api', this.intl.t('storefront.settings.sections.api-keys'), 'code', 'settings.api'),
+            routeItem('app-review', this.intl.t('storefront.settings.sections.app-review'), 'user-check', 'settings.app-review'),
             sectionItem('danger', this.intl.t('storefront.settings.sections.danger'), 'triangle-exclamation'),
         ];
     }
