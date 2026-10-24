@@ -50,7 +50,15 @@ export default class StorefrontOrderPanelHeaderComponent extends Component {
         return meta.is_pickup ? this.intl.t('storefront.common.pickup') : this.intl.t('storefront.networks.orders.delivery');
     }
 
+    get isAppReview() {
+        return this.order?.meta?.app_review === true;
+    }
+
     get sourceLabel() {
+        if (this.isAppReview) {
+            return this.intl.t('storefront.order.panel.app-review-order');
+        }
+
         return this.panel.overview?.source === 'console' ? this.intl.t('storefront.order.panel.console-order') : this.intl.t('storefront.order.panel.app-order');
     }
 

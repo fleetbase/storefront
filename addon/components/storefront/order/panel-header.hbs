@@ -57,7 +57,7 @@
     <div class="sfop-head__badges" data-test-order-panel-badges>
         <Badge @status={{this.order.status}} @size="xs" />
         <Badge @status="violet" @text={{this.fulfillmentLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
-        <Badge @status="gray" @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
+        <Badge @status={{if this.isAppReview "warning" "gray"}} @text={{this.sourceLabel}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />
         {{#if this.storeName}}<Badge @status="blue" @text={{this.storeName}} @hideStatusDot={{true}} @disableHumanize={{true}} @size="xs" />{{/if}}
         {{#if this.order.meta.food_truck_id}}
             <Badge

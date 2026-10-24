@@ -1,14 +1,17 @@
-> v0.4.29 ~ "A phone sign-up keeps its number"
+> v0.4.30 ~ "App store reviewers can sign in"
 
 ---
 ## Highlights
 
-- **Phone sign-up saves the number.** Signing up with a phone number and texted code created the account without that number: the app sends it as the `identity` the code was filed under, and account creation only read a separate `phone` field. Customers were then asked to verify the same number again, couldn't sign back in by phone, and the same number could sign up a second time. The verified identity is now the account's phone, on the user and the customer contact, and is marked verified (`phone_verified_at`), as is an existing user's matching number. A `phone` sent alongside still takes precedence. Email sign-up is unchanged.
+- **App Review access.** Apple and Google reviewers can't receive the texted sign-in code, and Apple rejects apps its reviewers can't sign in to. A store or network can now turn on **Settings → App Review**: reviewers sign in with the test number +1 202 555 0143 (a range kept for fiction, never texted) and a six-digit code the owner creates in the Console and enters in App Store Connect and Google Play Console. The code is stored hashed and shown once; it works only in the store that created it. The mechanism is core-api's App Review access (core-api 1.6.74), which Navigator and future apps share. Reviewers can sign up, sign in, add the number at checkout and delete their account without a text message, on Fleetbase Cloud as well as self-hosted. See [docs/app-review.md](docs/app-review.md).
+- **Reviewers' orders are marked.** Orders placed by the review account carry `meta.app_review = true`, are labelled **App Review order** in the order panel and staff alerts, and are never auto-dispatched to a driver.
+- **Self-hosted review accounts keep working** (`STOREFRONT_BYPASS_VERIFICATION_CODE` with `STOREFRONT_REVIEW_ACCOUNTS`), now for sign-up as well, and the accounts they list are never sent a code.
+- **Endpoints and permission.** The Console uses core's `GET|PUT /int/v1/review-access/storefront-store/{id}` (and `storefront-network`). A new permission, `storefront manage-app-review store` / `network`, is needed to change it.
 
 ---
 ## Upgrading
-- No migrations.
-- Accounts created by phone before this release have no phone saved. They are asked to add it once in the app (Storefront App v0.1.1 also asks at checkout).
+- **Requires fleetbase/core-api v1.6.74** (`composer.json` now requires `^1.6.74`), which adds App Review access and the `review_accesses` table. Run migrations.
+- Grant `manage-app-review` on stores or networks to staff who aren't administrators and should manage App Review access (the Storefront Administrator role's full-access policy already covers it).
 
 ---
 ## Need help?

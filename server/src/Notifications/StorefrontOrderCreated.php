@@ -5,6 +5,7 @@ namespace Fleetbase\Storefront\Notifications;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Support\Utils;
 use Illuminate\Bus\Queueable;
@@ -107,6 +108,10 @@ class StorefrontOrderCreated extends Notification implements ShouldQueue
             'Customer: ' . $customerName . ' (' . $customerPhone . ')' . "\n" .
             'Items: ' . $items . "\n";
 
+        if (AppReview::isReviewOrder($this->order)) {
+            $content .= AppReview::ORDER_NOTICE . "\n";
+        }
+
         if ($isDelivery) {
             $content .= 'Address: ' . $deliveryAddress . "\n";
             $content .= 'Delivery Fee: ' . Utils::moneyFormat($deliveryFee, $currency) . "\n";
@@ -156,6 +161,10 @@ class StorefrontOrderCreated extends Notification implements ShouldQueue
             ->line('A new ' . $method . ' order was just created!')
             ->line('Customer: ' . $customerName . ' (' . $customerPhone . ')')
             ->line('Items: ' . $items);
+
+        if (AppReview::isReviewOrder($this->order)) {
+            $message->line(AppReview::ORDER_NOTICE);
+        }
 
         if ($isDelivery) {
             $message->line('Address: ' . $deliveryAddress);

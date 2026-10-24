@@ -101,6 +101,7 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
             item('gateways', this.intl.t('storefront.settings.sections.gateways'), 'cash-register', this.gateways?.length || null),
             item('notifications', this.intl.t('storefront.settings.sections.notifications'), 'bell-concierge', this.channels?.length || null),
             item('api', this.intl.t('storefront.settings.sections.api-keys'), 'code'),
+            item('app-review', this.intl.t('storefront.settings.sections.app-review'), 'user-check'),
         ];
     }
 

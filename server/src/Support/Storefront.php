@@ -789,6 +789,11 @@ class Storefront
 
     public static function autoDispatchOrder(Order $order, bool $adhoc = true)
     {
+        // An app store reviewer's order is a test: never send a driver for it.
+        if (AppReview::isReviewOrder($order)) {
+            return $order;
+        }
+
         // Patch order config
         Storefront::patchOrderConfig($order);
 

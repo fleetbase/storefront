@@ -31,6 +31,7 @@ use Fleetbase\Storefront\Promotions\PromotionEngine;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
+use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\BookingSlots;
 use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Storefront\Support\OrderPayments;
@@ -1631,6 +1632,9 @@ class CheckoutController extends Controller
             ...$transactionDetails,
         ]);
 
+        // an app reviewer's order is a test the store should not fulfil
+        $orderMeta = AppReview::markOrderMeta($orderMeta, $customer);
+
         // Create order input here
         $orderInput = [];
 
@@ -2047,6 +2051,9 @@ class CheckoutController extends Controller
                 // A booked service makes this store's order a booking order, with its own flow.
                 [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
 
+                // an app reviewer's order is a test the store should not fulfil
+                $orderMeta = AppReview::markOrderMeta($orderMeta, $customer);
+
                 // set meta to order input last
                 $orderInput['meta'] = $orderMeta;
 
@@ -2139,7 +2146,7 @@ class CheckoutController extends Controller
             }
 
             // finally apply meta to master order
-            $masterOrderInput['meta'] = $masterOrderMeta;
+            $masterOrderInput['meta'] = AppReview::markOrderMeta($masterOrderMeta, $customer);
 
             // create master order
             $order = Order::create($masterOrderInput);
