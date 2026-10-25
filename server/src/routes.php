@@ -33,6 +33,24 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
 
         /*
         |--------------------------------------------------------------------------
+        | "Continue with Fleetbase" Routes
+        |--------------------------------------------------------------------------
+        |
+        | For apps holding an access token from core-api's OAuth provider. Each acts
+        | only on the organization the token is bound to. App Review access for stores
+        | and networks is core's /oauth/v1/review-access/{type}/{id}.
+        */
+        if (class_exists(Fleetbase\Http\Middleware\AuthenticateOAuthToken::class)) {
+            Route::prefix('oauth/v1')->middleware(['throttle:600,1'])->group(function ($router) {
+                $router->get('storefronts', [Fleetbase\Storefront\Http\Controllers\OAuth\StorefrontController::class, 'storefronts'])
+                    ->middleware(Fleetbase\Http\Middleware\AuthenticateOAuthToken::class . ':storefront:read');
+                $router->post('app-key', [Fleetbase\Storefront\Http\Controllers\OAuth\StorefrontController::class, 'appKey'])
+                    ->middleware(Fleetbase\Http\Middleware\AuthenticateOAuthToken::class . ':storefront:app-key');
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | Consumable Storefront API Routes
         |--------------------------------------------------------------------------
         |

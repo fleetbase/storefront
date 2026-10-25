@@ -8,6 +8,7 @@
 - **Self-hosted review accounts keep working** (`STOREFRONT_BYPASS_VERIFICATION_CODE` with `STOREFRONT_REVIEW_ACCOUNTS`), now for sign-up as well, and the accounts they list are never sent a code.
 - **Endpoints and permission.** The Console uses core's `GET|PUT /int/v1/review-access/storefront-store/{id}` (and `storefront-network`). A new permission, `storefront manage-app-review store` / `network`, is needed to change it.
 
+- **Continue with Fleetbase.** Apps signed in with core-api's OAuth provider (core-api 1.6.74) can, with an organization administrator's consent, read the organization's stores and networks with their public keys (`storefront:read`, `GET /storefront/oauth/v1/storefronts`), get a dedicated API key for their Storefront app (`storefront:app-key`, `POST /storefront/oauth/v1/app-key`, listed under Developers → API Keys) and turn App Review access on or off (`storefront:review-access`, through core's `/oauth/v1/review-access/storefront-store/{id}`). This is how AppHelm connects a Cloud customer's storefront without pasting keys.
 ---
 ## Upgrading
 - **Requires fleetbase/core-api v1.6.74** (`composer.json` now requires `^1.6.74`), which adds App Review access and the `review_accesses` table. Run migrations.
