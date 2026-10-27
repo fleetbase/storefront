@@ -16,9 +16,9 @@ class StorefrontOrderItemUnavailable extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->item    = trim($item) !== '' ? trim($item) : 'An item';
-        $this->subject = $this->item . ' is unavailable';
-        $this->body    = $this->item . ' from your ' . ($order->isMeta('is_booking') ? 'booking' : 'order') . ' is unavailable. ' . $this->storefront->name . ' will replace or remove it and adjust your total if it changes.';
+        $this->item    = trim($item) !== '' ? trim($item) : $this->trans('order_item_unavailable.default_item');
+        $this->subject = $this->trans('order_item_unavailable.subject', ['item' => $this->item]);
+        $this->body    = $this->trans('order_item_unavailable.' . ($order->isMeta('is_booking') ? 'body_booking' : 'body'), ['item' => $this->item, 'store' => $this->storefront->name]);
         $this->status  = 'order_item_unavailable';
     }
 }

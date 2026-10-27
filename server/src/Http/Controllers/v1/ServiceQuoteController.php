@@ -56,11 +56,11 @@ class ServiceQuoteController extends Controller
         }
 
         if (!$origin) {
-            return response()->error('No delivery origin!');
+            return response()->error(__('storefront::checkout.delivery_origin_missing'));
         }
 
         if (!$destination) {
-            return response()->error('No delivery destination!');
+            return response()->error(__('storefront::checkout.delivery_destination_missing'));
         }
 
         $currency = $cart->currency;
@@ -73,7 +73,7 @@ class ServiceQuoteController extends Controller
             })->first();
 
             if (!$integratedVendor) {
-                return response()->error('Integrated vendor not found!');
+                return response()->error(__('storefront::checkout.integrated_vendor_not_found'));
             }
 
             try {
@@ -136,7 +136,7 @@ class ServiceQuoteController extends Controller
                 return new ServiceQuoteResource($serviceQuote);
             }
 
-            return response()->error('No service rates available!');
+            return response()->error(__('storefront::checkout.service_rates_unavailable'));
         }
 
         foreach ($serviceRates as $serviceRate) {
@@ -215,7 +215,7 @@ class ServiceQuoteController extends Controller
 
         // make sure destination is set
         if (!$destination) {
-            return response()->error('No delivery destination!');
+            return response()->error(__('storefront::checkout.delivery_destination_missing'));
         }
 
         $currency = $cart->currency;
@@ -259,7 +259,7 @@ class ServiceQuoteController extends Controller
             ->values();
 
         if ($storeLocationIds->isEmpty() || $storeLocations->count() !== $storeLocationIds->count()) {
-            return response()->error('One or more store locations are unavailable for this marketplace.', 422);
+            return response()->error(__('storefront::checkout.marketplace_store_locations_unavailable'), 422);
         }
 
         $storeLocationsById = $storeLocations->keyBy('public_id');
@@ -275,7 +275,7 @@ class ServiceQuoteController extends Controller
         });
 
         if ($hasMismatchedStore) {
-            return response()->error('One or more store locations are unavailable for this marketplace.', 422);
+            return response()->error(__('storefront::checkout.marketplace_store_locations_unavailable'), 422);
         }
 
         // get origins
@@ -291,7 +291,7 @@ class ServiceQuoteController extends Controller
             })->first();
 
             if (!$integratedVendor) {
-                return response()->error('Integrated vendor not found!');
+                return response()->error(__('storefront::checkout.integrated_vendor_not_found'));
             }
 
             try {
@@ -355,7 +355,7 @@ class ServiceQuoteController extends Controller
                 return new ServiceQuoteResource($serviceQuote);
             }
 
-            return response()->error('No service rates available!');
+            return response()->error(__('storefront::checkout.service_rates_unavailable'));
         }
 
         foreach ($serviceRates as $serviceRate) {
@@ -461,7 +461,7 @@ class ServiceQuoteController extends Controller
             $next      = $remaining->sortBy(fn ($place) => $straightLine($current, $place))->first();
             $leg       = $this->getDrivingMatrix($current, $next);
             $distance += (float) $leg->distance;
-            $time     += (float) $leg->time;
+            $time += (float) $leg->time;
             $current   = $next;
             $remaining = $remaining->reject(fn ($place) => $place === $next)->values();
         }
@@ -527,7 +527,7 @@ class ServiceQuoteController extends Controller
         }
 
         return response()->json([
-            'errors' => ['Some items in your cart are no longer available.'],
+            'errors' => [__('storefront::checkout.cart_items_unavailable')],
             'code'   => 'cart_items_unavailable',
             'items'  => $unavailable->all(),
         ], 422);

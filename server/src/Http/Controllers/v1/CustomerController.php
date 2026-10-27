@@ -71,22 +71,22 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->apiError('Not authorized to register device for cutomer');
+            return response()->apiError(__('storefront::customers.not_authorized_register_device'));
         }
 
         $token    = trim((string) $request->input('token'));
         $platform = StorefrontPushChannel::normalizePlatform($request->or(['platform', 'os']));
 
         if ($token === '') {
-            return response()->apiError('A device token is required.');
+            return response()->apiError(__('storefront::customers.device_token_required'));
         }
 
         if (!$platform) {
-            return response()->apiError('Device platform must be either ios or android.');
+            return response()->apiError(__('storefront::customers.device_platform_invalid'));
         }
 
         if (!$customer->user_uuid) {
-            return response()->apiError('Unable to register device for customer without a user account.');
+            return response()->apiError(__('storefront::customers.device_requires_user_account'));
         }
 
         // A token identifies one app install, so it always belongs to the customer who
@@ -136,12 +136,12 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->apiError('Not authorized to unregister device for customer');
+            return response()->apiError(__('storefront::customers.not_authorized_unregister_device'));
         }
 
         $token = trim((string) $request->input('token'));
         if ($token === '') {
-            return response()->apiError('A device token is required.');
+            return response()->apiError(__('storefront::customers.device_token_required'));
         }
 
         $deleted = UserDevice::where('token', $token)->where('user_uuid', $customer->user_uuid)->get()->each(fn (UserDevice $device) => $device->delete())->count();
@@ -164,19 +164,19 @@ class CustomerController extends Controller
     public function socketToken(Request $request)
     {
         if (!SocketToken::enabled()) {
-            return response()->apiError('Not found.', 404);
+            return response()->apiError(__('storefront::customers.not_found'), 404);
         }
 
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+            return response()->apiError(__('storefront::customers.not_authorized_socket_token'), 401);
         }
 
         // A customer's token is only honoured by the storefront whose company the
         // customer belongs to, so a token minted against another company's key is refused.
         $storefront = Storefront::about();
         if (!$storefront || $storefront->company_uuid !== $customer->company_uuid) {
-            return response()->apiError('Not authorized to create a socket token for customer.', 401);
+            return response()->apiError(__('storefront::customers.not_authorized_socket_token'), 401);
         }
 
         return response()->json(SocketToken::issue(StorefrontSocket::customerPrincipal($customer, $storefront)));
@@ -202,7 +202,7 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers orders');
+            return response()->apiError(__('storefront::customers.not_authorized_view_orders'));
         }
 
         $results = Order::queryWithRequest($request, function (&$query) use ($customer) {
@@ -228,7 +228,7 @@ class CustomerController extends Controller
         $customer = Storefront::getCustomerFromToken();
 
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers places');
+            return response()->apiError(__('storefront::customers.not_authorized_view_places'));
         }
 
         $results = Place::queryWithRequest($request, function (&$query) use ($customer) {
@@ -253,7 +253,7 @@ class CustomerController extends Controller
 
         // validate identity
         if ($mode === 'email' && !$isEmail) {
-            return response()->apiError('Invalid email provided for identity');
+            return response()->apiError(__('storefront::customers.invalid_identity_email'));
         }
 
         // prepare phone number
@@ -271,7 +271,7 @@ class CustomerController extends Controller
         // An identity that already has an account cannot ask for a creation code. Nothing
         // is checked or sent; the caller is told to sign in instead.
         if (static::accountExistsForIdentity($identity, $isEmail)) {
-            return response()->apiError('An account already exists for this ' . ($isEmail ? 'email address' : 'phone number') . '. Sign in instead.', 422);
+            return response()->apiError($isEmail ? __('storefront::customers.account_exists_for_email') : __('storefront::customers.account_exists_for_phone'), 422);
         }
 
         // A number that can never receive a text is refused before anything is written.
@@ -296,7 +296,7 @@ class CustomerController extends Controller
             if ($isEmail) {
                 VerificationCode::generateEmailVerificationFor($customer, 'storefront_create_customer', [
                     'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} verification code is {$verification->code}";
+                        return __('storefront::customers.verification_code_message', ['name' => $about->name, 'code' => $verification->code]);
                     },
                     'meta' => $meta,
                 ]);
@@ -304,7 +304,7 @@ class CustomerController extends Controller
                 VerificationCode::generateSmsVerificationFor($customer, 'storefront_create_customer', [
                     'hashed'          => true,
                     'messageCallback' => function ($verification) use ($about) {
-                        return "Your {$about->name} verification code is {$verification->code}";
+                        return __('storefront::customers.verification_code_message', ['name' => $about->name, 'code' => $verification->code]);
                     },
                     'meta' => $meta,
                 ]);
@@ -316,7 +316,7 @@ class CustomerController extends Controller
         } catch (\Twilio\Exceptions\RestException $e) {
             return response()->apiError($e->getMessage());
         } catch (\Exception $e) {
-            return response()->apiError(app()->hasDebugModeEnabled() ? $e->getMessage() : 'Error sending verification code.');
+            return response()->apiError(app()->hasDebugModeEnabled() ? $e->getMessage() : __('storefront::customers.error_sending_verification_code'));
         }
     }
 
@@ -345,12 +345,12 @@ class CustomerController extends Controller
         }
 
         if (blank($identity)) {
-            return response()->apiError('An identity is required to create a customer.');
+            return response()->apiError(__('storefront::customers.identity_required'));
         }
 
         $attemptKey = 'create|' . static::attemptIdentity($identity, $about);
         if ($this->codeAttemptsExceeded($attemptKey)) {
-            return response()->apiError('Too many attempts. Try again later.', 429);
+            return response()->apiError(__('storefront::customers.too_many_attempts'), 429);
         }
 
         // verify code: an app reviewer's App Review code, else the newest live code for this
@@ -358,7 +358,7 @@ class CustomerController extends Controller
         if (!static::acceptsReviewerCode($identity, $code, $about) && !$this->verifyIdentityCode('storefront_create_customer', $identity, $code)) {
             $this->recordFailedCodeAttempt($attemptKey);
 
-            return response()->apiError('Invalid verification code provided!');
+            return response()->apiError(__('storefront::customers.invalid_verification_code_provided'));
         }
 
         $this->clearCodeAttempts($attemptKey);
@@ -466,7 +466,7 @@ class CustomerController extends Controller
     {
         $authenticatedCustomer = $this->authenticatedCustomerForRequest($request);
         if (!$authenticatedCustomer) {
-            return response()->apiError('Not authorized to update customer.', 403);
+            return response()->apiError(__('storefront::customers.not_authorized_update_customer'), 403);
         }
 
         if (Str::startsWith($id, 'customer')) {
@@ -477,11 +477,11 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->apiError('Customer resource not found.');
+            return response()->apiError(__('storefront::customers.customer_not_found'));
         }
 
         if ($contact->uuid !== $authenticatedCustomer->uuid) {
-            return response()->apiError('Not authorized to update customer.', 403);
+            return response()->apiError(__('storefront::customers.not_authorized_update_customer'), 403);
         }
 
         // get request input
@@ -548,7 +548,7 @@ class CustomerController extends Controller
     {
         $customer = $this->authenticatedCustomerForRequest($request);
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers.', 401);
+            return response()->apiError(__('storefront::customers.not_authorized_view_customers'), 401);
         }
 
         $results = Contact::queryWithRequestCached($request, function (&$query) use ($customer) {
@@ -568,7 +568,7 @@ class CustomerController extends Controller
     {
         $customer = $this->authenticatedCustomerForRequest(request());
         if (!$customer) {
-            return response()->apiError('Not authorized to view customer.', 401);
+            return response()->apiError(__('storefront::customers.not_authorized_view_customer'), 401);
         }
 
         if (Str::startsWith($id, 'customer')) {
@@ -579,11 +579,11 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->apiError('Customer resource not found.');
+            return response()->apiError(__('storefront::customers.customer_not_found'));
         }
 
         if ($contact->uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to view customer.', 403);
+            return response()->apiError(__('storefront::customers.not_authorized_view_customer'), 403);
         }
 
         // response the customer resource
@@ -605,7 +605,7 @@ class CustomerController extends Controller
         try {
             $contact = Contact::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->apiError('Customer resource not found.');
+            return response()->apiError(__('storefront::customers.customer_not_found'));
         }
 
         // delete the product
@@ -635,7 +635,7 @@ class CustomerController extends Controller
             ->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
-            return response()->apiError('Authentication failed using password provided.', 401);
+            return response()->apiError(__('storefront::customers.password_authentication_failed'), 401);
         }
 
         // get the storefront or network logging in for
@@ -682,7 +682,7 @@ class CustomerController extends Controller
         // Without a phone in the request there is nothing to look up. Falling through would
         // compile to `phone IS NULL` and hand back an arbitrary phone-less user.
         if (!$phone) {
-            return response()->apiError('No customer with this phone # found.');
+            return response()->apiError(__('storefront::customers.no_customer_with_phone'));
         }
 
         // get the storefront or network logging in for
@@ -698,7 +698,7 @@ class CustomerController extends Controller
         $user = User::where('phone', $phone)->whereNull('deleted_at')->withoutGlobalScopes()->first();
 
         if (!$user) {
-            return response()->apiError('No customer with this phone # found.');
+            return response()->apiError(__('storefront::customers.no_customer_with_phone'));
         }
 
         // Generate the verification token.
@@ -712,7 +712,7 @@ class CustomerController extends Controller
         // means a store without Twilio can still authenticate its customers. `method`
         // tells the client which channel actually carried the code.
         $messageCallback = function ($verification) use ($about) {
-            return "Your {$about->name} verification code is {$verification->code}";
+            return __('storefront::customers.verification_code_message', ['name' => $about->name, 'code' => $verification->code]);
         };
 
         $smsFailure = null;
@@ -748,7 +748,7 @@ class CustomerController extends Controller
 
         // With no email to fall back to, a refusal by the SMS guard is answered with its
         // own status so the app can tell "wait a minute" from "something broke".
-        return static::sendFailureResponse($smsFailure, 'Unable to send verification code.');
+        return static::sendFailureResponse($smsFailure, __('storefront::customers.unable_to_send_verification_code'));
     }
 
     /**
@@ -783,7 +783,7 @@ class CustomerController extends Controller
         $appleUserId       = $request->input('appleUserId');
 
         if (!$identityToken || !$authorizationCode) {
-            return response()->apiError('Missing required Apple authentication parameters.', 400);
+            return response()->apiError(__('storefront::customers.apple_parameters_missing'), 400);
         }
 
         try {
@@ -807,7 +807,7 @@ class CustomerController extends Controller
             }
 
             if (!$isValid) {
-                return response()->apiError('Apple ID authentication is not valid.', 400);
+                return response()->apiError(__('storefront::customers.apple_authentication_invalid'), 400);
             }
 
             // Check if the user exists in the system
@@ -946,14 +946,14 @@ class CustomerController extends Controller
         $idToken  = $request->input('idToken');
         $clientId = $request->input('clientId');
         if (!$idToken || !$clientId) {
-            return response()->apiError('Missing required Google authentication parameters.', 400);
+            return response()->apiError(__('storefront::customers.google_parameters_missing'), 400);
         }
 
         try {
             // Verify the Google ID token using the utility function
             $payload = $this->verifyGoogleIdentity($idToken, $clientId);
             if (!$payload) {
-                return response()->apiError('Google Sign-In authentication is not valid.', 400);
+                return response()->apiError(__('storefront::customers.google_authentication_invalid'), 400);
             }
 
             // Extract user details from the payload
@@ -1106,7 +1106,7 @@ class CustomerController extends Controller
         // `phone IS NULL OR email IS NULL` and pick an arbitrary user to test the code
         // against.
         if (blank($identity)) {
-            return response()->apiError('Unable to verify code.');
+            return response()->apiError(__('storefront::customers.unable_to_verify_code'));
         }
 
         // get the storefront or network logging in for
@@ -1114,7 +1114,7 @@ class CustomerController extends Controller
 
         $attemptKey = 'verify|' . static::attemptIdentity($identity, $about);
         if ($this->codeAttemptsExceeded($attemptKey)) {
-            return response()->apiError('Too many attempts. Try again later.', 429);
+            return response()->apiError(__('storefront::customers.too_many_attempts'), 429);
         }
 
         // This storefront's App Review code signs the review number in, creating the shared
@@ -1127,14 +1127,14 @@ class CustomerController extends Controller
         if (!$user) {
             $this->recordFailedCodeAttempt($attemptKey);
 
-            return response()->apiError('Unable to verify code.');
+            return response()->apiError(__('storefront::customers.unable_to_verify_code'));
         }
 
         // find and verify code: the newest live code for this user, checked and used up
         if (!$isAppReviewer && !$this->verifySubjectCode($for, $user->uuid, $code) && !static::isReviewAccountBypass($identity, $code)) {
             $this->recordFailedCodeAttempt($attemptKey);
 
-            return response()->apiError('Invalid verification code!');
+            return response()->apiError(__('storefront::customers.invalid_verification_code'));
         }
 
         $this->clearCodeAttempts($attemptKey);
@@ -1359,12 +1359,12 @@ class CustomerController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers places');
+            return response()->apiError(__('storefront::customers.not_authorized_view_places'));
         }
 
         $gateway    = Storefront::findGateway('stripe');
         if (!$gateway) {
-            return response()->apiError('Stripe not setup.');
+            return response()->apiError(__('storefront::customers.stripe_not_setup'));
         }
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
@@ -1395,12 +1395,12 @@ class CustomerController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers places');
+            return response()->apiError(__('storefront::customers.not_authorized_view_places'));
         }
 
         $gateway    = Storefront::findGateway('stripe');
         if (!$gateway) {
-            return response()->apiError('Stripe not setup.');
+            return response()->apiError(__('storefront::customers.stripe_not_setup'));
         }
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
@@ -1431,23 +1431,23 @@ class CustomerController extends Controller
     {
         $about    = Storefront::about(['company_uuid']);
         if (!$about) {
-            return response()->apiError('Storefront not found.');
+            return response()->apiError(__('storefront::customers.storefront_not_found'));
         }
 
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers places');
+            return response()->apiError(__('storefront::customers.not_authorized_view_places'));
         }
 
         // Get the user account for the contact/customer
         $user = User::where(['uuid' => $customer->user_uuid])->first();
         if (!$user) {
-            return response()->apiError('Customer user account not found.');
+            return response()->apiError(__('storefront::customers.customer_user_not_found'));
         }
 
         // Check for phone or email
         if (!$user->phone && !$user->email) {
-            return response()->apiError('Customer account must have a valid email or phone number linked.');
+            return response()->apiError(__('storefront::customers.customer_contact_required'));
         }
 
         // The identity the code is filed under MUST match what confirmAccountClosure looks
@@ -1457,7 +1457,7 @@ class CustomerController extends Controller
         // fallback below breaks that coupling, so it is made explicit.
         $identity        = $user->phone ?? $user->email;
         $messageCallback = function ($verification) use ($about) {
-            return "Your {$about->name} account closure verification code is {$verification->code}";
+            return __('storefront::customers.account_closure_code_message', ['name' => $about->name, 'code' => $verification->code]);
         };
 
         // An app reviewer confirms with the store's App Review code; nothing is sent.
@@ -1493,7 +1493,7 @@ class CustomerController extends Controller
         if (!$sent && $user->email) {
             try {
                 VerificationCode::generateEmailVerificationFor($user, 'storefront_account_closure', [
-                    'subject'         => $about->name . ' account closure request',
+                    'subject'         => __('storefront::customers.account_closure_subject', ['name' => $about->name]),
                     'messageCallback' => $messageCallback,
                     'meta'            => ['identity' => $identity],
                 ]);
@@ -1509,7 +1509,7 @@ class CustomerController extends Controller
             return response()->json(['status' => 'OK']);
         }
 
-        return static::sendFailureResponse($smsFailure, 'Unable to send account closure verification code.');
+        return static::sendFailureResponse($smsFailure, __('storefront::customers.unable_to_send_account_closure_code'));
     }
 
     public function confirmAccountClosure(Request $request)
@@ -1517,25 +1517,25 @@ class CustomerController extends Controller
         $code     = $request->input('code');
         $about    = Storefront::about(['company_uuid']);
         if (!$about) {
-            return response()->apiError('Storefront not found.');
+            return response()->apiError(__('storefront::customers.storefront_not_found'));
         }
 
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Not authorized to view customers places');
+            return response()->apiError(__('storefront::customers.not_authorized_view_places'));
         }
 
         // Get the user account for the contact/customer
         $user = User::where(['uuid' => $customer->user_uuid])->first();
         if (!$user) {
-            return response()->apiError('Customer user account not found.');
+            return response()->apiError(__('storefront::customers.customer_user_not_found'));
         }
 
         // Get verification identity
         $identity = $user->phone ?? $user->email;
 
         if ($this->codeAttemptsExceeded('closure|' . $customer->uuid)) {
-            return response()->apiError('Too many attempts. Try again later.', 429);
+            return response()->apiError(__('storefront::customers.too_many_attempts'), 429);
         }
 
         // verify account closure code
@@ -1543,7 +1543,7 @@ class CustomerController extends Controller
         if (!$isAppReviewer && !$this->verifyIdentityCode('storefront_account_closure', $identity, $code) && !static::isReviewAccountBypass($identity, $code)) {
             $this->recordFailedCodeAttempt('closure|' . $customer->uuid);
 
-            return response()->apiError('Invalid verification code provided!');
+            return response()->apiError(__('storefront::customers.invalid_verification_code_provided'));
         }
 
         $this->clearCodeAttempts('closure|' . $customer->uuid);
@@ -1564,7 +1564,7 @@ class CustomerController extends Controller
             return response()->apiError($e->getMessage());
         }
 
-        return response()->apiError('An uknown error occured attempting to close customer account.');
+        return response()->apiError(__('storefront::customers.account_closure_failed'));
     }
 
     /**
@@ -1578,19 +1578,19 @@ class CustomerController extends Controller
         $phone    = static::phone($request->input('phone'));
 
         if (!$customer) {
-            return response()->apiError('Not authorized to request phone verification.');
+            return response()->apiError(__('storefront::customers.not_authorized_request_phone_verification'));
         }
 
         // Use the user associated with the contact
         $user = User::where(['uuid' => $customer->user_uuid])->first();
         if (!$user) {
-            return response()->apiError('No user associated with this customer.');
+            return response()->apiError(__('storefront::customers.no_user_for_customer'));
         }
 
         // No phone to verify. This used to arrive as the literal '+' and get as far as the
         // SMS provider before failing with a credentials error.
         if (!$phone) {
-            return response()->apiError('A phone number is required to request verification.');
+            return response()->apiError(__('storefront::customers.phone_required_for_verification'));
         }
 
         $about = Storefront::about();
@@ -1601,7 +1601,7 @@ class CustomerController extends Controller
         $existingUser = AppReview::isReviewPhone($phone) ? null : $this->findExistingUserByPhone($phone, $user->uuid);
 
         if ($existingUser) {
-            return response()->apiError('This phone number is already associated with another account.');
+            return response()->apiError(__('storefront::customers.phone_already_in_use'));
         }
 
         // An app reviewer verifies with the store's App Review code (or a self-hosted review
@@ -1623,7 +1623,7 @@ class CustomerController extends Controller
                 'hashed'          => true,
                 'phone'           => $phone,
                 'messageCallback' => function ($verification) use ($about) {
-                    return "Your {$about->name} verification code is {$verification->code}";
+                    return __('storefront::customers.verification_code_message', ['name' => $about->name, 'code' => $verification->code]);
                 },
                 'meta' => ['phone' => $phone], // Store the phone number in meta
             ]);
@@ -1642,7 +1642,7 @@ class CustomerController extends Controller
             // detail while telling them nothing they can act on. Unlike customer login
             // and account closure, there is no email fallback here — verifying a phone
             // number by email would not verify anything.
-            return response()->apiError('Unable to send phone verification code.');
+            return response()->apiError(__('storefront::customers.unable_to_send_phone_verification_code'));
         }
     }
 
@@ -1666,17 +1666,17 @@ class CustomerController extends Controller
         $code     = $request->input('code');
 
         if (!$customer) {
-            return response()->apiError('Not authorized to verify phone number.');
+            return response()->apiError(__('storefront::customers.not_authorized_verify_phone'));
         }
 
         $user = $customer->user;
 
         if (!$user) {
-            return response()->apiError('No user associated with this customer.');
+            return response()->apiError(__('storefront::customers.no_user_for_customer'));
         }
 
         if ($this->codeAttemptsExceeded('verify-phone|' . $user->uuid)) {
-            return response()->apiError('Too many attempts. Try again later.', 429);
+            return response()->apiError(__('storefront::customers.too_many_attempts'), 429);
         }
 
         // Find the verification code: the newest live one for this user, checked and used up
@@ -1696,7 +1696,7 @@ class CustomerController extends Controller
 
             $this->recordFailedCodeAttempt('verify-phone|' . $user->uuid);
 
-            return response()->apiError('Invalid verification code!');
+            return response()->apiError(__('storefront::customers.invalid_verification_code'));
         }
 
         $this->clearCodeAttempts('verify-phone|' . $user->uuid);
@@ -1706,7 +1706,7 @@ class CustomerController extends Controller
         // recoverable 400 into a 500.
         $phone = data_get($verificationCode->meta, 'phone');
         if (!$phone) {
-            return response()->apiError('Verification code is not associated with a phone number.');
+            return response()->apiError(__('storefront::customers.verification_code_not_for_phone'));
         }
 
         // Update user and contact

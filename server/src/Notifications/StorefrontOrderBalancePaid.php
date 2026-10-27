@@ -19,9 +19,10 @@ class StorefrontOrderBalancePaid extends StorefrontOrderNotification
         $currency      = $order->getMeta('currency');
         $left          = (int) $order->getMeta('balance_due', 0);
         $this->amount  = $amount;
-        $this->subject = 'Payment received for your ' . ($order->isMeta('is_booking') ? 'booking' : 'order') . ' from ' . $this->storefront->name;
-        $this->body    = 'We received your payment of ' . Utils::moneyFormat($amount, $currency) . '. '
-            . ($left > 0 ? 'There is ' . Utils::moneyFormat($left, $currency) . ' left to pay.' : 'Your ' . ($order->isMeta('is_booking') ? 'booking' : 'order') . ' is fully paid.');
+        $kind          = $order->isMeta('is_booking') ? 'booking' : 'order';
+        $this->subject = $this->trans('order_balance_paid.subject_' . $kind, ['store' => $this->storefront->name]);
+        $this->body    = $this->trans('order_balance_paid.received', ['amount' => Utils::moneyFormat($amount, $currency)]) . ' '
+            . ($left > 0 ? $this->trans('order_balance_paid.left_to_pay', ['amount' => Utils::moneyFormat($left, $currency)]) : $this->trans('order_balance_paid.fully_paid_' . $kind));
         $this->status = 'order_balance_paid';
     }
 }

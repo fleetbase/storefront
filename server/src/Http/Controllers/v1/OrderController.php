@@ -47,17 +47,17 @@ class OrderController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Customer is not authenticated.');
+            return response()->apiError(__('storefront::api.customer_not_authenticated'));
         }
 
         $order    = Order::where('public_id', $request->order)->whereNull('deleted_at')->with(['customer'])->first();
         if (!$order) {
-            return response()->apiError('No order found.');
+            return response()->apiError(__('storefront::api.orders.no_order_found'));
         }
 
         // Confirm the completion is done by the customer
         if ($order->customer_uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to pickup this order for completion.');
+            return response()->apiError(__('storefront::api.orders.not_authorized_pickup'));
         }
 
         // Patch order config
@@ -93,16 +93,16 @@ class OrderController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Customer is not authenticated.');
+            return response()->apiError(__('storefront::api.customer_not_authenticated'));
         }
 
         $order = Order::where('public_id', $id)->whereNull('deleted_at')->first();
         if (!$order) {
-            return response()->apiError('No order found.', 404);
+            return response()->apiError(__('storefront::api.orders.no_order_found'), 404);
         }
 
         if ($order->customer_uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to view this order.', 403);
+            return response()->apiError(__('storefront::api.orders.not_authorized_view'), 403);
         }
 
         $related = array_values(array_filter((array) $order->getMeta('related_orders', [])));
@@ -167,7 +167,7 @@ class OrderController extends Controller
     {
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Customer is not authenticated.');
+            return response()->apiError(__('storefront::api.customer_not_authenticated'));
         }
 
         $order = Order::where('public_id', $id)
@@ -175,11 +175,11 @@ class OrderController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->apiError('No order found.', 404);
+            return response()->apiError(__('storefront::api.orders.no_order_found'), 404);
         }
 
         if ($order->customer_uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to view this order.', 403);
+            return response()->apiError(__('storefront::api.orders.not_authorized_view'), 403);
         }
 
         return response()->json(OrderActivityFlow::forOrder($order));
@@ -201,7 +201,7 @@ class OrderController extends Controller
         // Authenticate customer
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Customer is not authenticated.');
+            return response()->apiError(__('storefront::api.customer_not_authenticated'));
         }
 
         // Retrieve order
@@ -211,12 +211,12 @@ class OrderController extends Controller
             ->first();
 
         if (!$order) {
-            return response()->apiError('No order found.');
+            return response()->apiError(__('storefront::api.orders.no_order_found'));
         }
 
         // Authorize customer for this order
         if ($order->customer_uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to get receipt for this order.');
+            return response()->apiError(__('storefront::api.orders.not_authorized_receipt'));
         }
 
         // Route to appropriate receipt handler based on payment method
@@ -234,7 +234,7 @@ class OrderController extends Controller
 
             default:
                 return response()->json([
-                    'message'        => 'No receipt available for this payment method.',
+                    'message'        => __('storefront::api.orders.receipt_unavailable'),
                     'payment_method' => $paymentMethod,
                 ]);
         }
@@ -260,13 +260,13 @@ class OrderController extends Controller
         $ebarimtReceiver     = $request->input('ebarimt_receiver');
 
         if ($ebarimtReceiverType === 'COMPANY' && empty($ebarimtReceiver)) {
-            return response()->apiError('Company registration number is required.');
+            return response()->apiError(__('storefront::api.orders.company_registration_required'));
         }
 
         // Verify payment method is QPay
         $order->loadMissing('payload');
         if ($order->payload && $order->payload->payment_method !== 'qpay') {
-            return response()->apiError('This order was not paid using QPay.');
+            return response()->apiError(__('storefront::api.orders.not_paid_with_qpay'));
         }
 
         // Retrieve checkout record
@@ -275,7 +275,7 @@ class OrderController extends Controller
             : null;
 
         if (!$checkout) {
-            return response()->apiError('No checkout found for this order.');
+            return response()->apiError(__('storefront::api.orders.checkout_not_found'));
         }
 
         // Initialize QPay gateway
@@ -323,7 +323,7 @@ class OrderController extends Controller
         // Resolve gateway configuration
         $gateway = Storefront::findGateway('qpay');
         if (!$gateway) {
-            return response()->apiError('QPay is not configured.');
+            return response()->apiError(__('storefront::api.orders.qpay_not_configured'));
         }
 
         // Create QPay instance with credentials
@@ -382,7 +382,7 @@ class OrderController extends Controller
         // Check for API errors
         if (isset($ebarimt->error)) {
             return response()->apiError(
-                $ebarimt->error ?? $ebarimt->message ?? 'Unable to create ebarimt receipt'
+                $ebarimt->error ?? $ebarimt->message ?? __('storefront::api.orders.ebarimt_receipt_failed')
             );
         }
 

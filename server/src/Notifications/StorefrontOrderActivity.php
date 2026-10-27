@@ -16,7 +16,7 @@ class StorefrontOrderActivity extends StorefrontOrderNotification
         parent::__construct($order);
 
         $this->subject = $label;
-        $this->body    = $details ?: 'Your order from ' . $this->storefront->name . ' has been updated: ' . $label . '.';
+        $this->body    = $details ?: $this->trans('order_activity.body', ['store' => $this->storefront->name, 'activity' => $label]);
         $this->status  = 'order_activity';
     }
 }

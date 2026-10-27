@@ -70,14 +70,14 @@ class OrderChatController extends Controller
         [$order, $customer, $channel] = $context;
 
         if (OrderChat::isClosed($order) || $order->getMeta('is_pickup')) {
-            return response()->apiError('The address of this order can no longer change.', 422);
+            return response()->apiError(__('storefront::api.chat.address_locked'), 422);
         }
 
         $place = null;
         if ($request->filled('place')) {
             $place = Place::where('owner_uuid', $customer->uuid)->where(fn ($query) => $query->where('public_id', $request->input('place'))->orWhere('uuid', $request->input('place')))->first();
             if (!$place) {
-                return response()->apiError('Place not found.', 404);
+                return response()->apiError(__('storefront::api.chat.place_not_found'), 404);
             }
         }
 
@@ -123,7 +123,7 @@ class OrderChatController extends Controller
         if ($request->filled('before')) {
             $before = ChatMessage::where('chat_channel_uuid', $channel->uuid)->where('public_id', $request->input('before'))->first();
             if (!$before) {
-                return response()->apiError('Message not found.', 404);
+                return response()->apiError(__('storefront::api.chat.message_not_found'), 404);
             }
             $query->where(fn ($older) => $older->where('created_at', '<', $before->created_at)
                 ->orWhere(fn ($sameTime) => $sameTime->where('created_at', $before->created_at)->where('id', '<', $before->id)));
@@ -146,12 +146,12 @@ class OrderChatController extends Controller
         [$order, $customer, $channel] = $context;
 
         if (OrderChat::isClosed($order)) {
-            return response()->json(['error' => 'This chat closed when the order finished.', 'reason' => 'chat_closed'], 423);
+            return response()->json(['error' => __('storefront::api.chat.closed'), 'reason' => 'chat_closed'], 423);
         }
 
         $sender = OrderChat::participantFor($channel, $customer->user_uuid);
         if (!$sender) {
-            return response()->apiError('You are not part of this chat.', 403);
+            return response()->apiError(__('storefront::api.chat.not_participant'), 403);
         }
 
         $message = ChatMessage::create([
@@ -184,7 +184,7 @@ class OrderChatController extends Controller
 
         $participant = OrderChat::participantFor($channel, $customer->user_uuid);
         if (!$participant) {
-            return response()->apiError('You are not part of this chat.', 403);
+            return response()->apiError(__('storefront::api.chat.not_participant'), 403);
         }
 
         $unread = $channel->getUnreadMessagesForParticipant($participant);
@@ -219,23 +219,23 @@ class OrderChatController extends Controller
         $kind     = OrderChat::normalizeKind($kind);
         $customer = Storefront::getCustomerFromToken();
         if (!$customer) {
-            return response()->apiError('Customer is not authenticated.', 401);
+            return response()->apiError(__('storefront::api.customer_not_authenticated'), 401);
         }
 
         $order = Order::where('public_id', $id)->with(['customer', 'driverAssigned'])->first();
         if (!$order || !$this->belongsToStorefront($order)) {
-            return response()->apiError('Order not found.', 404);
+            return response()->apiError(__('storefront::api.orders.not_found'), 404);
         }
 
         if ($order->customer_uuid !== $customer->uuid) {
-            return response()->apiError('Not authorized to view this order.', 403);
+            return response()->apiError(__('storefront::api.orders.not_authorized_view'), 403);
         }
 
         // Once the order is finished the chat stays readable, but is not started any more.
         if ($kind === OrderChat::KIND_CUSTOMER) {
             $channel = OrderChat::isClosed($order) ? OrderChat::find($order, $kind) : OrderChat::openStore($order);
             if (!$channel) {
-                return response()->json(['error' => 'This order has no chat with the store.', 'reason' => 'chat_unavailable'], 409);
+                return response()->json(['error' => __('storefront::api.chat.store_unavailable'), 'reason' => 'chat_unavailable'], 409);
             }
 
             return [$order, $customer, $channel];
@@ -244,7 +244,7 @@ class OrderChatController extends Controller
         $channel = OrderChat::isClosed($order) ? OrderChat::find($order) : OrderChat::open($order);
         if (!$channel) {
             return response()->json([
-                'error'  => 'You can message your driver once one is assigned to this order.',
+                'error'  => __('storefront::api.chat.driver_not_assigned'),
                 'reason' => 'driver_not_assigned',
             ], 409);
         }
