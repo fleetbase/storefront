@@ -293,6 +293,24 @@ test('created-order notification includes delivery address fee and optional deli
         ->and($mailLines)->toContain('Delivery Tip:');
 });
 
+test('created-order notification tells the store an App Review order is a test', function () {
+    $order = notificationOrder([
+        'is_pickup'  => true,
+        'subtotal'   => 1000,
+        'total'      => 1000,
+        'currency'   => 'USD',
+        'app_review' => true,
+    ]);
+    $order->setRelation('payload', (object) [
+        'entities' => collect([(object) ['name' => 'Coffee']]),
+        'dropoff'  => (object) ['address' => '1 Market Street'],
+    ]);
+    $notification = notificationWithoutConstructor(StorefrontOrderCreated::class, $order, new Store(['name' => 'Corner Store']));
+
+    expect($notification->toTwilio(null)->content)->toContain(Fleetbase\Storefront\Support\AppReview::ORDER_NOTICE)
+        ->and(implode("\n", $notification->toMail(null)->introLines))->toContain(Fleetbase\Storefront\Support\AppReview::ORDER_NOTICE);
+});
+
 test('created-order notification resolves its storefront from order metadata', function () {
     $schema = Illuminate\Database\Capsule\Manager::schema('mysql');
     $schema->dropIfExists('stores');

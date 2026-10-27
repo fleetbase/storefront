@@ -18,10 +18,6 @@ class OAuthScopes
 
     public static function register(): void
     {
-        if (!class_exists(CoreOAuthScopes::class)) {
-            return;
-        }
-
         CoreOAuthScopes::register(static::READ, [
             'description'  => "See {organization}'s storefronts and networks, with their public keys",
             'organization' => true,

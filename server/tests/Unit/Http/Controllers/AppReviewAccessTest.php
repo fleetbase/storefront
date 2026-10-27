@@ -476,3 +476,14 @@ test('managing App Review access is its own permission on stores and networks', 
         ->and($resources['network']['actions'])->toContain('manage-app-review')
         ->and(Fleetbase\Support\Utils::slugify('manageAppReview'))->toBe('manage-app-review');
 });
+
+test('a customer whose account cannot be loaded is judged by its own phone and email', function () {
+    createAppReviewSchema();
+    Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder()->drop('users');
+
+    $reviewer = (new Contact())->forceFill(['phone' => AppReview::PHONE, 'user_uuid' => 'user_missing']);
+    $customer = (new Contact())->forceFill(['phone' => '+6591234567', 'user_uuid' => 'user_missing']);
+
+    expect(AppReview::isReviewCustomer($reviewer))->toBeTrue()
+        ->and(AppReview::isReviewCustomer($customer))->toBeFalse();
+});
