@@ -18,8 +18,8 @@ class FoodTruckController extends Controller
      */
     public function query(Request $request)
     {
-        $limit    = $request->input('limit', false);
-        $offset   = $request->input('offset', false);
+        $limit     = $request->input('limit', false);
+        $offset    = $request->input('offset', false);
         $storeIds  = static::storeUuidsForStorefront();
         $networkId = session('storefront_network');
         if (empty($storeIds) && !$networkId) {
@@ -80,13 +80,13 @@ class FoodTruckController extends Controller
         try {
             $foodTruck = FoodTruck::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Food Truck resource not found.');
+            return response()->error(__('storefront::api.food_trucks.not_found'));
         }
 
         // Only a truck of this storefront: its own, a network member store's, or one the network runs itself.
         $ownedByNetwork = session('storefront_network') && $foodTruck->network_uuid === session('storefront_network');
         if (!$ownedByNetwork && !in_array($foodTruck->store_uuid, static::storeUuidsForStorefront(), true)) {
-            return response()->error('Food Truck resource not found.', 404);
+            return response()->error(__('storefront::api.food_trucks.not_found'), 404);
         }
 
         $foodTruck->loadMissing(['store', 'vehicle', 'zone', 'serviceArea', 'catalogs']);

@@ -31,6 +31,7 @@ use Fleetbase\Storefront\Promotions\PromotionEngine;
 use Fleetbase\Storefront\Promotions\PromotionRedemptions;
 use Fleetbase\Storefront\Promotions\PromotionResult;
 use Fleetbase\Storefront\Promotions\PromotionUnavailableException;
+use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\BookingSlots;
 use Fleetbase\Storefront\Support\Inventory;
 use Fleetbase\Storefront\Support\OrderPayments;
@@ -52,8 +53,6 @@ use Stripe\Exception\InvalidRequestException;
 
 class CheckoutController extends Controller
 {
-    private const STRIPE_AUTHENTICATION_ERROR = 'Stripe gateway authentication failed. Verify the configured secret key.';
-
     private static function hasStripeSecret(Gateway $gateway): bool
     {
         $secretKey = data_get($gateway, 'config.secret_key');
@@ -70,7 +69,7 @@ class CheckoutController extends Controller
             'exception'    => StripeAuthenticationException::class,
         ]);
 
-        return response()->apiError(self::STRIPE_AUTHENTICATION_ERROR);
+        return response()->apiError(__('storefront::checkout.stripe_authentication_failed'));
     }
 
     protected static function qpayForGateway(Gateway $gateway): QPay
@@ -146,12 +145,12 @@ class CheckoutController extends Controller
 
         $items = collect($cart->items);
         if ($items->isEmpty()) {
-            return response()->apiError('The cart is empty.', 422);
+            return response()->apiError(__('storefront::checkout.cart_empty'), 422);
         }
 
         $storeIds = $items->pluck('store_id')->filter()->unique()->values();
         if ($storeIds->count() !== $items->pluck('store_id')->unique()->count()) {
-            return response()->apiError('Every marketplace cart item must identify its store.', 422);
+            return response()->apiError(__('storefront::checkout.cart_item_store_missing'), 422);
         }
 
         // Active members only: a suspended or pending store can't take orders through the network.
@@ -161,17 +160,17 @@ class CheckoutController extends Controller
             ->keyBy('public_id');
 
         if ($stores->count() !== $storeIds->count()) {
-            return response()->apiError('The cart contains a store outside this marketplace.', 403);
+            return response()->apiError(__('storefront::checkout.cart_store_outside_marketplace'), 403);
         }
 
         if ($stores->contains(fn (Store $store) => !$store->online)) {
-            return response()->apiError('A store in this cart is currently offline.', 422);
+            return response()->apiError(__('storefront::checkout.cart_store_offline'), 422);
         }
 
         $network          = Network::select(['uuid', 'options'])->where('uuid', $networkUuid)->first();
         $multiCartEnabled = data_get($network, 'options.multi_cart_enabled') === true;
         if ($storeIds->count() > 1 && !$multiCartEnabled) {
-            return response()->apiError('This marketplace only supports one store per cart.', 422);
+            return response()->apiError(__('storefront::checkout.marketplace_single_store_only'), 422);
         }
 
         $products = Product::whereIn('public_id', $items->pluck('product_id')->filter()->unique())
@@ -190,15 +189,15 @@ class CheckoutController extends Controller
             $product  = $products->get($item->product_id ?? null);
             $location = $locations->get($item->store_location_id ?? null);
             if (!$store || !$product || $product->store_uuid !== $store->uuid) {
-                return response()->apiError('A product in this cart is no longer available from its store.', 422);
+                return response()->apiError(__('storefront::checkout.cart_product_unavailable'), 422);
             }
             if (!$location || $location->store_uuid !== $store->uuid) {
-                return response()->apiError('A store location in this cart is no longer valid.', 422);
+                return response()->apiError(__('storefront::checkout.cart_store_location_invalid'), 422);
             }
         }
 
         if ($products->pluck('currency')->filter()->unique()->count() > 1) {
-            return response()->apiError('Marketplace carts cannot combine different currencies.', 422);
+            return response()->apiError(__('storefront::checkout.cart_mixed_currencies'), 422);
         }
 
         return null;
@@ -278,7 +277,7 @@ class CheckoutController extends Controller
                 : $customerId;
 
             if ($authenticated->public_id !== $normalized) {
-                return response()->apiError('Customer does not match the authenticated session.', 403);
+                return response()->apiError(__('storefront::checkout.customer_session_mismatch'), 403);
             }
         }
 
@@ -330,7 +329,7 @@ class CheckoutController extends Controller
         }
 
         if (!$gateway) {
-            return response()->apiError('No gateway configured!');
+            return response()->apiError(__('storefront::checkout.gateway_not_configured'));
         }
 
         // handle checkout initialization based on gateway
@@ -343,7 +342,7 @@ class CheckoutController extends Controller
             return static::initializeQPayCheckout($customer, $gateway, $serviceQuote, $cart, $checkoutOptions, $request);
         }
 
-        return response()->apiError('Unable to initialize checkout!');
+        return response()->apiError(__('storefront::checkout.checkout_initialize_failed'));
     }
 
     public static function initializeCashCheckout(Contact $customer, Gateway $gateway, ?ServiceQuote $serviceQuote, Cart $cart, $checkoutOptions, $request)
@@ -411,7 +410,7 @@ class CheckoutController extends Controller
 
         // check for secret key first
         if (!static::hasStripeSecret($gateway)) {
-            return response()->apiError('Gateway not configured correctly!');
+            return response()->apiError(__('storefront::checkout.gateway_misconfigured'));
         }
 
         // Set the stipre secret key from gateway
@@ -451,7 +450,7 @@ class CheckoutController extends Controller
                     return static::stripeAuthenticationError($gateway, 'recreate_customer');
                 }
             } else {
-                return response()->apiError('Error from Stripe: ' . $errorMessage);
+                return response()->apiError(__('storefront::checkout.stripe_error', ['message' => $errorMessage]));
             }
         }
 
@@ -511,11 +510,11 @@ class CheckoutController extends Controller
         $gateway    = Storefront::findGateway('stripe');
 
         if (!$gateway) {
-            return response()->apiError('Stripe not setup.');
+            return response()->apiError(__('storefront::checkout.stripe_not_setup'));
         }
 
         if (!static::hasStripeSecret($gateway)) {
-            return response()->apiError('Gateway not configured correctly!');
+            return response()->apiError(__('storefront::checkout.gateway_misconfigured'));
         }
 
         $customer = static::resolveCheckoutCustomer($customerId);
@@ -608,7 +607,7 @@ class CheckoutController extends Controller
         // Retrieve the gateway (stripe)
         $gateway = Storefront::findGateway('stripe');
         if (!$gateway) {
-            return response()->apiError('No stripe gateway configured!');
+            return response()->apiError(__('storefront::checkout.stripe_gateway_not_configured'));
         }
 
         // Retrieve and validate necessary models
@@ -616,7 +615,7 @@ class CheckoutController extends Controller
         // Cart::retrieve() always returns either the persisted cart or a new cart instance.
         // @codeCoverageIgnoreStart
         if (!$cart) {
-            return response()->apiError('Invalid cart ID provided');
+            return response()->apiError(__('storefront::checkout.invalid_cart_id'));
         }
         // @codeCoverageIgnoreEnd
 
@@ -625,7 +624,7 @@ class CheckoutController extends Controller
             return $customer;
         }
         if (!$customer) {
-            return response()->apiError('Invalid customer ID provided');
+            return response()->apiError(__('storefront::checkout.invalid_customer_id'));
         }
 
         $serviceQuote = ServiceQuote::select(['amount', 'meta', 'uuid', 'public_id'])
@@ -644,7 +643,7 @@ class CheckoutController extends Controller
 
         // Check for Stripe secret key
         if (!static::hasStripeSecret($gateway)) {
-            return response()->apiError('Gateway not configured correctly!');
+            return response()->apiError(__('storefront::checkout.gateway_misconfigured'));
         }
 
         // Set Stripe API key
@@ -665,13 +664,13 @@ class CheckoutController extends Controller
         } catch (StripeAuthenticationException $e) {
             return static::stripeAuthenticationError($gateway, 'retrieve_payment_intent');
         } catch (\Exception $e) {
-            return response()->apiError('Failed to retrieve PaymentIntent: ' . $e->getMessage());
+            return response()->apiError(__('storefront::checkout.payment_intent_retrieve_failed', ['message' => $e->getMessage()]));
         }
 
         // Check if PaymentIntent is in a modifiable state
         $modifiableStatuses = ['requires_payment_method', 'requires_confirmation', 'requires_action', 'processing'];
         if (!in_array($paymentIntent->status, $modifiableStatuses)) {
-            return response()->apiError('PaymentIntent cannot be updated at this stage.');
+            return response()->apiError(__('storefront::checkout.payment_intent_not_updatable'));
         }
 
         // Prepare the updated data
@@ -686,7 +685,7 @@ class CheckoutController extends Controller
         } catch (StripeAuthenticationException $e) {
             return static::stripeAuthenticationError($gateway, 'update_payment_intent');
         } catch (\Exception $e) {
-            return response()->apiError('Failed to update PaymentIntent: ' . $e->getMessage());
+            return response()->apiError(__('storefront::checkout.payment_intent_update_failed', ['message' => $e->getMessage()]));
         }
 
         // If payment intent has a payment method set already update for the customer
@@ -705,7 +704,7 @@ class CheckoutController extends Controller
         } catch (StripeAuthenticationException $e) {
             return static::stripeAuthenticationError($gateway, 'update_ephemeral_key');
         } catch (\Exception $e) {
-            return response()->apiError('Failed to create ephemeral key: ' . $e->getMessage());
+            return response()->apiError(__('storefront::checkout.ephemeral_key_failed', ['message' => $e->getMessage()]));
         }
 
         $attributes = [
@@ -729,7 +728,7 @@ class CheckoutController extends Controller
         // rather than adding an unlinked one.
         $checkout = Checkout::where('stripe_payment_intent_id', $paymentIntent->id)->first();
         if ($checkout && $checkout->owner_uuid !== $customer->uuid) {
-            return response()->apiError('PaymentIntent belongs to another checkout.', 422);
+            return response()->apiError(__('storefront::checkout.payment_intent_other_checkout'), 422);
         }
         if ($checkout) {
             // Its promotion uses and stock are reserved again below at the new price.
@@ -772,7 +771,7 @@ class CheckoutController extends Controller
 
         // check for secret key first
         if (!isset($gateway->config->username)) {
-            return response()->apiError('Gateway not configured correctly!');
+            return response()->apiError(__('storefront::checkout.gateway_misconfigured'));
         }
 
         // Create qpay instance
@@ -965,7 +964,7 @@ class CheckoutController extends Controller
                 } else {
                     $data['error'] = [
                         'error'   => 'PAYMENT_NOT_PAID',
-                        'message' => 'Payment has not been paid!',
+                        'message' => __('storefront::checkout.payment_not_paid'),
                     ];
                 }
 
@@ -1371,7 +1370,7 @@ class CheckoutController extends Controller
         if (!$request->attributes->get('storefront_checkout_lock_held')) {
             $checkout = Checkout::where('token', $request->input('token'))->first();
             if (!$checkout) {
-                return response()->apiError('Checkout session not found.');
+                return response()->apiError(__('storefront::checkout.checkout_session_not_found'));
             }
 
             return $this->captureOrderWithLock($checkout, $request);
@@ -1389,7 +1388,7 @@ class CheckoutController extends Controller
         // get checkout data to create order
         $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
         if (!$checkout) {
-            return response()->apiError('Checkout session not found.');
+            return response()->apiError(__('storefront::checkout.checkout_session_not_found'));
         }
 
         // The customer's note: sent with the capture, or saved on the checkout before paying
@@ -1398,7 +1397,7 @@ class CheckoutController extends Controller
 
         $about        = Storefront::about();
         if (!$about) {
-            return response()->apiError('No storefront in request to capture order!');
+            return response()->apiError(__('storefront::checkout.capture_storefront_missing'));
         }
 
         $customer     = $checkout->owner;
@@ -1420,7 +1419,7 @@ class CheckoutController extends Controller
 
         // if cart is null then cart has either been deleted or expired
         if (!$cart) {
-            return response()->apiError('Cart expired');
+            return response()->apiError(__('storefront::checkout.cart_expired'));
         }
 
         // $amount = $checkout->amount ?? ($checkout->is_pickup ? $cart->subtotal : $cart->subtotal + $serviceQuote->amount);
@@ -1434,7 +1433,7 @@ class CheckoutController extends Controller
         // it before they capture. A capture request carrying only the checkout token, which
         // the customer's app holds, must not create an unpaid order.
         if ($gateway && $gateway->isQPayGateway && !$checkout->getOption('qpay_payment')) {
-            return response()->apiError('QPay payment has not been completed.', 402);
+            return response()->apiError(__('storefront::checkout.qpay_payment_incomplete'), 402);
         }
 
         if ($gateway && $gateway->isStripeGateway) {
@@ -1467,7 +1466,7 @@ class CheckoutController extends Controller
 
         // super rare condition
         if (!$store) {
-            return response()->apiError('No storefront in request to capture order!');
+            return response()->apiError(__('storefront::checkout.capture_storefront_missing'));
         }
 
         // prepare for integrated vendor order if applicable
@@ -1631,6 +1630,9 @@ class CheckoutController extends Controller
             ...$transactionDetails,
         ]);
 
+        // an app reviewer's order is a test the store should not fulfil
+        $orderMeta = AppReview::markOrderMeta($orderMeta, $customer);
+
         // Create order input here
         $orderInput = [];
 
@@ -1711,11 +1713,11 @@ class CheckoutController extends Controller
     protected function verifyStripePaymentForCheckout(Checkout $checkout, Gateway $gateway, ?Contact $customer, int $amount, ?string $currency): array|JsonResponse
     {
         if (!$checkout->stripe_payment_intent_id) {
-            return response()->apiError('Stripe PaymentIntent is not linked to this checkout.', 422);
+            return response()->apiError(__('storefront::checkout.stripe_payment_intent_not_linked'), 422);
         }
 
         if (!static::hasStripeSecret($gateway)) {
-            return response()->apiError('Gateway not configured correctly!');
+            return response()->apiError(__('storefront::checkout.gateway_misconfigured'));
         }
 
         \Stripe\Stripe::setApiKey($gateway->config->secret_key);
@@ -1731,15 +1733,15 @@ class CheckoutController extends Controller
                 'exception'     => get_class($e),
             ]);
 
-            return response()->apiError('Unable to verify Stripe payment.', 502);
+            return response()->apiError(__('storefront::checkout.stripe_payment_verify_failed'), 502);
         }
 
         if ($paymentIntent->status !== 'succeeded') {
-            return response()->apiError('Stripe payment has not been completed.', 402);
+            return response()->apiError(__('storefront::checkout.stripe_payment_incomplete'), 402);
         }
 
         if (!is_string($currency) || trim($currency) === '') {
-            return response()->apiError('Stripe payment does not match this checkout.', 422);
+            return response()->apiError(__('storefront::checkout.stripe_payment_mismatch'), 422);
         }
 
         $stripeCustomerId = is_object($paymentIntent->customer) ? $paymentIntent->customer->id : $paymentIntent->customer;
@@ -1762,7 +1764,7 @@ class CheckoutController extends Controller
                 'payment_intent_id' => $paymentIntent->id,
             ]);
 
-            return response()->apiError('Stripe payment does not match this checkout.', 422);
+            return response()->apiError(__('storefront::checkout.stripe_payment_mismatch'), 422);
         }
 
         return [
@@ -1785,7 +1787,7 @@ class CheckoutController extends Controller
                 return new OrderResource($checkout->order);
             }
 
-            return response()->apiError('Order capture is already in progress.', 409);
+            return response()->apiError(__('storefront::checkout.capture_in_progress'), 409);
         }
 
         try {
@@ -1817,7 +1819,7 @@ class CheckoutController extends Controller
         // get checkout data to create order
         $checkout = Checkout::where('token', $token)->with(['gateway', 'owner', 'serviceQuote', 'cart'])->first();
         if (!$checkout) {
-            return response()->apiError('Checkout session not found.');
+            return response()->apiError(__('storefront::checkout.checkout_session_not_found'));
         }
 
         // The customer's note: sent with the capture, or saved on the checkout before paying
@@ -1848,7 +1850,7 @@ class CheckoutController extends Controller
         }
 
         if (!$about) {
-            return response()->apiError('No network in request to capture order!');
+            return response()->apiError(__('storefront::checkout.capture_network_missing'));
         }
 
         // prepare for integrated vendor order if applicable
@@ -1868,7 +1870,7 @@ class CheckoutController extends Controller
         $originPlaces = collect($origins)->map(fn ($publicId) => Place::createFromMixed($publicId))->values();
         $originStores = $originPlaces->map(fn ($pickup) => $pickup instanceof Place ? Storefront::getStoreFromLocation($pickup->uuid) : null)->values();
         if ($originPlaces->isEmpty() || $originStores->contains(fn ($store) => !$store)) {
-            return response()->apiError('A store in this order could not be found, so it was not placed. Your payment has not been used.');
+            return response()->apiError(__('storefront::checkout.order_store_not_found'));
         }
 
         // setup transaction meta
@@ -2047,6 +2049,9 @@ class CheckoutController extends Controller
                 // A booked service makes this store's order a booking order, with its own flow.
                 [$orderMeta, $orderInput] = static::applyBooking($cartItems, $orderMeta, $orderInput);
 
+                // an app reviewer's order is a test the store should not fulfil
+                $orderMeta = AppReview::markOrderMeta($orderMeta, $customer);
+
                 // set meta to order input last
                 $orderInput['meta'] = $orderMeta;
 
@@ -2139,7 +2144,7 @@ class CheckoutController extends Controller
             }
 
             // finally apply meta to master order
-            $masterOrderInput['meta'] = $masterOrderMeta;
+            $masterOrderInput['meta'] = AppReview::markOrderMeta($masterOrderMeta, $customer);
 
             // create master order
             $order = Order::create($masterOrderInput);
@@ -2245,18 +2250,18 @@ class CheckoutController extends Controller
     {
         $token = $request->input('token');
         if (!is_string($token) || $token === '') {
-            return response()->apiError('Missing checkout token.', 400);
+            return response()->apiError(__('storefront::checkout.checkout_token_missing'), 400);
         }
 
         $notes = $request->input('notes');
         if ($notes !== null && !is_string($notes)) {
-            return response()->apiError('Notes must be text.', 422);
+            return response()->apiError(__('storefront::checkout.notes_must_be_text'), 422);
         }
 
         $checkout = Checkout::where('token', $token)->first();
         $owner    = session('storefront_network') ?? session('storefront_store');
         if (!$checkout || !$owner || ($checkout->network_uuid ?? $checkout->store_uuid) !== $owner) {
-            return response()->apiError('Checkout session not found.', 404);
+            return response()->apiError(__('storefront::checkout.checkout_session_not_found'), 404);
         }
 
         $notes = static::cleanCustomerNotes($notes);
@@ -2287,7 +2292,7 @@ class CheckoutController extends Controller
         // Validate required parameters
         if (!$checkoutId || !$token) {
             return response()->json([
-                'error' => 'Missing required parameters: checkout and token',
+                'error' => __('storefront::checkout.status_parameters_missing'),
             ], 400);
         }
 
@@ -2300,7 +2305,7 @@ class CheckoutController extends Controller
 
             if (!$checkout) {
                 return response()->json([
-                    'error' => 'Checkout not found',
+                    'error' => __('storefront::checkout.checkout_not_found'),
                 ], 404);
             }
 
@@ -2396,7 +2401,7 @@ class CheckoutController extends Controller
             ]);
 
             return response()->json([
-                'error'   => 'Failed to retrieve checkout status',
+                'error'   => __('storefront::checkout.checkout_status_failed'),
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -2498,7 +2503,7 @@ class CheckoutController extends Controller
         $blocking = array_values(array_filter($result->rejected, fn ($rejection) => $rejection['reason'] !== PromotionEngine::REASON_NOT_COMBINABLE));
         if ($blocking) {
             return response()->apiError(
-                'Promotion code "' . $blocking[0]['code'] . '" cannot be applied (' . $blocking[0]['reason'] . ').',
+                __('storefront::checkout.promotion_code_rejected', ['code' => $blocking[0]['code'], 'reason' => $blocking[0]['reason']]),
                 400,
                 ['promotions' => ['rejected' => $blocking]]
             );
@@ -2601,7 +2606,7 @@ class CheckoutController extends Controller
             $checkout->delete();
 
             return response()->json([
-                'errors' => ['The time you picked for ' . $fullSlot . ' was just booked. Please pick another time.'],
+                'errors' => [__('storefront::checkout.booking_slot_taken', ['product' => $fullSlot])],
                 'code'   => 'booking_slot_unavailable',
             ], 422);
         }
@@ -2612,7 +2617,7 @@ class CheckoutController extends Controller
             $checkout->delete();
 
             return response()->json([
-                'errors' => ['Some items in your cart are no longer available.'],
+                'errors' => [__('storefront::checkout.cart_items_unavailable')],
                 'code'   => 'cart_items_unavailable',
                 'items'  => $shortages,
             ], 422);

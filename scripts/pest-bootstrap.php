@@ -55,7 +55,7 @@ if (class_exists('Illuminate\Container\Container') && class_exists('Illuminate\S
 
     if (get_class($app) === Illuminate\Container\Container::class) {
         if (!class_exists('Fleetbase\TestSupport\ApplicationContainer')) {
-            eval('namespace Fleetbase\TestSupport; class ApplicationContainer extends \Illuminate\Container\Container { public function environment(...$environments): string|bool { if ($environments === []) { return "testing"; } return in_array("testing", $environments, true); } public function isProduction(): bool { return false; } public function hasDebugModeEnabled(): bool { return true; } }');
+            eval('namespace Fleetbase\TestSupport; class ApplicationContainer extends \Illuminate\Container\Container { public function environment(...$environments): string|bool { if ($environments === []) { return "testing"; } return in_array("testing", $environments, true); } public function isProduction(): bool { return false; } public function hasDebugModeEnabled(): bool { return true; } public function getLocale(): string { return $this->make("translator")->getLocale(); } public function setLocale(string $locale): void { $this->make("translator")->setLocale($locale); } }');
         }
 
         $app = new Fleetbase\TestSupport\ApplicationContainer();
@@ -111,6 +111,17 @@ if (class_exists('Illuminate\Container\Container') && class_exists('Illuminate\S
         }
 
         $app->instance('response', new Fleetbase\TestSupport\ResponseFactory());
+    }
+
+    // Storefront's own translations, as StorefrontServiceProvider loads them in the app.
+    if (!$app->bound('translator') && class_exists('Illuminate\Translation\FileLoader') && class_exists('Illuminate\Filesystem\Filesystem')) {
+        $app->singleton('translator', function () {
+            $translator = new Illuminate\Translation\Translator(new Illuminate\Translation\FileLoader(new Illuminate\Filesystem\Filesystem(), __DIR__ . '/../server/resources/lang'), 'en');
+            $translator->addNamespace('storefront', __DIR__ . '/../server/resources/lang');
+            $translator->setFallback('en');
+
+            return $translator;
+        });
     }
 
     if (
@@ -183,6 +194,20 @@ if (!function_exists('app')) {
         }
 
         return $abstract === null ? null : new $abstract(...array_values($parameters));
+    }
+}
+
+if (!function_exists('__')) {
+    function __(?string $key = null, array $replace = [], ?string $locale = null): mixed
+    {
+        return $key === null ? $key : app('translator')->get($key, $replace, $locale);
+    }
+}
+
+if (!function_exists('trans')) {
+    function trans(?string $key = null, array $replace = [], ?string $locale = null): mixed
+    {
+        return $key === null ? app('translator') : app('translator')->get($key, $replace, $locale);
     }
 }
 

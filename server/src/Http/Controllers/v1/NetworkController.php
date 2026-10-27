@@ -45,7 +45,7 @@ class NetworkController extends Controller
     public function stores(Request $request)
     {
         if (session('storefront_store')) {
-            return response()->error('Stores cannot have stores!');
+            return response()->error(__('storefront::api.networks.stores_cannot_have_stores'));
         }
 
         $sort                           = $request->input('sort', false);
@@ -212,7 +212,7 @@ class NetworkController extends Controller
         $networkUuid = session('storefront_network');
 
         if (!$storeUuid && !$networkUuid) {
-            return response()->error('Store locations require a storefront context!');
+            return response()->error(__('storefront::api.networks.locations_require_storefront'));
         }
 
         $limit              = $request->input('limit', 30);
@@ -308,7 +308,7 @@ class NetworkController extends Controller
         $networkUuid = session('storefront_network');
 
         if (!$storeUuid && !$networkUuid) {
-            return response()->error('Tags require a storefront context!');
+            return response()->error(__('storefront::api.networks.tags_require_storefront'));
         }
 
         $tags = [];

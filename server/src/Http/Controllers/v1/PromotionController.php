@@ -53,7 +53,7 @@ class PromotionController extends Controller
             ->first();
 
         if (!$promotion || $promotion->availabilityAt() === Promotion::AVAILABILITY_INACTIVE) {
-            return response()->apiError('Promotion not found.', 404);
+            return response()->apiError(__('storefront::api.promotions.not_found'), 404);
         }
 
         return new PromotionResource($promotion);

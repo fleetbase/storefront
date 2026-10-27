@@ -43,7 +43,7 @@ class ReviewController extends Controller
                 });
             })
             ->when(session('storefront_network'), function ($query) {
-                $memberStoreUuids = Store::select('uuid')->activeInNetwork(session('storefront_network'));
+                $memberStoreUuids   = Store::select('uuid')->activeInNetwork(session('storefront_network'));
                 $memberProductUuids = Product::select('uuid')->whereIn('store_uuid', clone $memberStoreUuids);
                 $query->where(function ($subjectQuery) use ($memberStoreUuids, $memberProductUuids) {
                     $subjectQuery->whereIn('subject_uuid', $memberStoreUuids)
@@ -127,7 +127,7 @@ class ReviewController extends Controller
                 $store = $this->resolveStoreForContext($request->input('store'));
 
                 if (!$store) {
-                    return response()->json(['error' => 'Cannot find reviews for store'], 400);
+                    return response()->json(['error' => __('storefront::api.reviews.cannot_find_for_store')], 400);
                 }
 
                 $results = Review::queryWithRequestCached($request, function (&$query) use ($store, $limit, $offset) {
@@ -209,7 +209,7 @@ class ReviewController extends Controller
                 $store = $this->resolveStoreForContext($request->input('store'));
 
                 if (!$store) {
-                    return response()->json(['error' => 'Cannot count reviews for store'], 400);
+                    return response()->json(['error' => __('storefront::api.reviews.cannot_count_for_store')], 400);
                 }
 
                 foreach ($range as $rating) {
@@ -237,7 +237,7 @@ class ReviewController extends Controller
                 throw new ModelNotFoundException();
             }
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Review resource not found.');
+            return response()->error(__('storefront::api.reviews.not_found'));
         }
 
         // response the review resource
@@ -254,16 +254,16 @@ class ReviewController extends Controller
     {
         $subjectId = $request->input('subject');
         if (!is_string($subjectId) || $subjectId === '') {
-            return response()->error('A subject is required.');
+            return response()->error(__('storefront::api.reviews.subject_required'));
         }
 
         $subject = Utils::resolveSubject($subjectId);
         if (!$subject || !$this->subjectBelongsToContext($subject)) {
-            return response()->error('Invalid subject for review');
+            return response()->error(__('storefront::api.reviews.invalid_subject'));
         }
 
         if (static::reviewsDisabled()) {
-            return response()->json(['can_review' => false, 'reason' => 'reviews_disabled', 'message' => 'Reviews are turned off.', 'order' => null, 'review' => null]);
+            return response()->json(['can_review' => false, 'reason' => 'reviews_disabled', 'message' => __('storefront::api.reviews.disabled'), 'order' => null, 'review' => null]);
         }
 
         $eligibility = ReviewEligibility::check(Storefront::getCustomerFromToken(), $subject, $request->input('order'));
@@ -284,17 +284,17 @@ class ReviewController extends Controller
         $bucket      = $request->input('bucket', config('filesystems.disks.' . $disk . '.bucket', config('filesystems.disks.s3.bucket')));
 
         if (!$customer) {
-            return response()->error('Not authorized to create reviews');
+            return response()->error(__('storefront::api.reviews.not_authorized_create'));
         }
 
         if (static::reviewsDisabled()) {
-            return response()->json(['error' => 'Reviews are turned off.', 'reason' => 'reviews_disabled'], 403);
+            return response()->json(['error' => __('storefront::api.reviews.disabled'), 'reason' => 'reviews_disabled'], 403);
         }
 
         $subject = Utils::resolveSubject($request->input('subject'));
 
         if (!$subject || !$this->subjectBelongsToContext($subject)) {
-            return response()->error('Invalid subject for review');
+            return response()->error(__('storefront::api.reviews.invalid_subject'));
         }
 
         $eligibility = ReviewEligibility::check($customer, $subject, $request->input('order'));
@@ -363,12 +363,12 @@ class ReviewController extends Controller
                 throw new ModelNotFoundException();
             }
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Review resource not found.');
+            return response()->error(__('storefront::api.reviews.not_found'));
         }
 
         $customer = Storefront::getCustomerFromToken();
         if (!$customer || $review->customer_uuid !== $customer->uuid) {
-            return response()->error('Not authorized to delete review', 403);
+            return response()->error(__('storefront::api.reviews.not_authorized_delete'), 403);
         }
 
         // delete the review

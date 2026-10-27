@@ -15,8 +15,8 @@ class StorefrontOrderPreparing extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->subject = 'Your order from ' . $this->storefront->name . ' is being prepared!';
-        $this->body    = 'Your order is getting started.';
+        $this->subject = $this->trans('order_preparing.subject', ['store' => $this->storefront->name]);
+        $this->body    = $this->trans('order_preparing.body');
         $this->status  = 'order_preparing';
     }
 }

@@ -15,8 +15,8 @@ class StorefrontOrderCompleted extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->subject = 'Your order from ' . $this->storefront->name . ' has been delivered';
-        $this->body    = 'Your order from ' . $this->storefront->name . ' has been delivered, enjoy!';
+        $this->subject = $this->trans('order_completed.subject', ['store' => $this->storefront->name]);
+        $this->body    = $this->trans('order_completed.body', ['store' => $this->storefront->name]);
         $this->status  = 'order_completed';
     }
 }

@@ -9,12 +9,13 @@ use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
 use Fleetbase\Storefront\Push\PushCredentialResolver;
 use Fleetbase\Storefront\Push\PushMessage;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\CustomerLocale;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
 /**
  * Tells a customer their driver sent a message about an order.
@@ -29,6 +30,7 @@ class StorefrontOrderChatMessage extends Notification implements SendsPushNotifi
 
     public function __construct(public ChatMessage $message, public Order $order)
     {
+        $this->locale = CustomerLocale::for($order->customer);
     }
 
     public function via($notifiable): array
@@ -38,16 +40,16 @@ class StorefrontOrderChatMessage extends Notification implements SendsPushNotifi
 
     public function title(): string
     {
-        $name = data_get($this->message, 'sender.user.name') ?: 'Your driver';
+        $name = data_get($this->message, 'sender.user.name') ?: __('storefront::notifications.order_chat_message.default_name');
 
-        return $name . ' sent a message';
+        return __('storefront::notifications.order_chat_message.title', ['name' => $name]);
     }
 
     public function body(): string
     {
         $content = trim((string) $this->message->content);
 
-        return $content !== '' ? $content : 'Sent a photo';
+        return $content !== '' ? $content : __('storefront::notifications.order_chat_message.photo');
     }
 
     public function toPush($notifiable): ?PushMessage

@@ -30,7 +30,7 @@ class StoreController extends Controller
         $about = Storefront::about('*');
 
         if (!$about) {
-            return response()->error('Unable to find store!');
+            return response()->error(__('storefront::api.stores.not_found'));
         }
 
         if ($about->is_store) {
@@ -48,7 +48,7 @@ class StoreController extends Controller
     public function lookup(?string $id)
     {
         if (!$id) {
-            return response()->apiError('No ID provided for lookup.');
+            return response()->apiError(__('storefront::api.stores.lookup_id_required'));
         }
 
         $store = Store::where('public_id', $id)
@@ -72,7 +72,7 @@ class StoreController extends Controller
             return new NetworkResource($network);
         }
 
-        return response()->apiError('Unable to find store or network for ID provided.');
+        return response()->apiError(__('storefront::api.stores.store_or_network_not_found'));
     }
 
     /**
@@ -83,7 +83,7 @@ class StoreController extends Controller
     public function locations(Request $request)
     {
         if (session('storefront_network') && $request->missing('store')) {
-            return response()->error('Networks cannot have locations!');
+            return response()->error(__('storefront::api.stores.networks_cannot_have_locations'));
         }
 
         if ($request->filled('store')) {
@@ -113,7 +113,7 @@ class StoreController extends Controller
     public function location(string $id, Request $request)
     {
         if (session('storefront_network') && $request->missing('store')) {
-            return response()->error('Networks cannot have locations!');
+            return response()->error(__('storefront::api.stores.networks_cannot_have_locations'));
         }
 
         $storeId = $request->input('store', session('storefront_store'));
@@ -134,7 +134,7 @@ class StoreController extends Controller
         // answered 500 with an HTML stack trace for any unknown location, which is what a
         // client sees for a stale or mistyped id. 404 is the correct answer.
         if (!$store) {
-            return response()->error('Unable to find store!', 404);
+            return response()->error(__('storefront::api.stores.not_found'), 404);
         }
 
         $location = StoreLocation::where([
@@ -145,7 +145,7 @@ class StoreController extends Controller
             ->first();
 
         if (!$location) {
-            return response()->error('Store location not found!', 404);
+            return response()->error(__('storefront::api.stores.location_not_found'), 404);
         }
 
         return new StoreLocationResource($location);

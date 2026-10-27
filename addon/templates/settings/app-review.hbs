@@ -1,0 +1,10 @@
+<div class="storefront-settings-page" data-test-settings-app-review>
+    <section class="storefront-settings-section">
+        <ContentPanel @title={{t "storefront.settings.sections.app-review"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
+            {{#if @model}}
+                <Storefront::AppReviewAccess @owner={{@model}} />
+            {{/if}}
+        </ContentPanel>
+    </section>
+    <Spacer @height="120px" />
+</div>

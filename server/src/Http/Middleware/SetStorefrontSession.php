@@ -19,7 +19,7 @@ class SetStorefrontSession
         $key = $request->bearerToken();
 
         if (!$key) {
-            return response()->error('Oops! No Storefront key found with this request', 401);
+            return response()->error(__('storefront::api.session.key_missing'), 401);
         }
 
         if ($this->isValidKey($key)) {
@@ -30,7 +30,7 @@ class SetStorefrontSession
             return $next($request);
         }
 
-        return response()->error('Oops! The Storefront key provided was not valid', 401);
+        return response()->error(__('storefront::api.session.key_invalid'), 401);
     }
 
     /**

@@ -72,6 +72,7 @@ export default buildRoutes(function () {
     this.route('settings', function () {
         this.route('index', { path: '/' });
         this.route('api');
+        this.route('app-review');
         this.route('locations');
         this.route('gateways');
         this.route('notifications');

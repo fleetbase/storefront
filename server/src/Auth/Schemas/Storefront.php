@@ -73,7 +73,7 @@ class Storefront
         ],
         [
             'name'    => 'network',
-            'actions' => ['rotate-key'],
+            'actions' => ['rotate-key', 'manage-app-review'],
         ],
         [
             'name'    => 'network-store',
@@ -85,7 +85,7 @@ class Storefront
         ],
         [
             'name'    => 'store',
-            'actions' => ['rotate-key'],
+            'actions' => ['rotate-key', 'manage-app-review'],
         ],
         [
             'name'    => 'store-location',
