@@ -323,7 +323,7 @@ class Cart extends StorefrontModel
             return $this->add($product, $quantity, $variants, $addons, $storeLocationId, $scheduledAt, $createdAt, $catalogId);
         }
 
-        throw new \Exception('Invalid product provided to cart!');
+        throw new \Exception(__('storefront::checkout.invalid_cart_product'));
     }
 
     /**
@@ -342,7 +342,7 @@ class Cart extends StorefrontModel
         // When the item comes from a catalog, that catalog's price and availability apply.
         $override = static::catalogOverride($product, $catalogId);
         if ($override && $override['is_available'] === false) {
-            throw new \Exception('This product is not available in the selected catalog.');
+            throw new \Exception(__('storefront::checkout.product_unavailable_in_catalog'));
         }
 
         if ($storeLocationId && !Str::startsWith($storeLocationId, 'food_truck_')) {
@@ -353,7 +353,7 @@ class Cart extends StorefrontModel
                 ->exists();
 
             if (!$locationBelongsToStore) {
-                throw new \Exception('The selected store location is not available for this product.');
+                throw new \Exception(__('storefront::checkout.store_location_unavailable_for_product'));
             }
         }
 
@@ -435,7 +435,7 @@ class Cart extends StorefrontModel
             return $this->updateItem($cartItem, $quantity, $variants, $addons, $scheduledAt);
         }
 
-        throw new \Exception('Invalid cart item provided to cart!');
+        throw new \Exception(__('storefront::checkout.invalid_cart_item'));
     }
 
     /**
@@ -538,7 +538,7 @@ class Cart extends StorefrontModel
             return $this->remove($cartItem);
         }
 
-        throw new \Exception('Invalid cart item provided to cart!');
+        throw new \Exception(__('storefront::checkout.invalid_cart_item'));
     }
 
     /**

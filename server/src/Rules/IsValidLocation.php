@@ -61,6 +61,6 @@ class IsValidLocation implements Rule
      */
     public function message()
     {
-        return 'Invalid :attribute.';
+        return __('storefront::api.validation.invalid_location');
     }
 }

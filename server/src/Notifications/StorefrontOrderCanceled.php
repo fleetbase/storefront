@@ -15,32 +15,34 @@ class StorefrontOrderCanceled extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->subject = 'Your order from ' . $this->storefront->name . ' was canceled';
-        $this->body    = 'Your order from ' . $this->storefront->name . ' has been canceled' . static::reasonSentence($order) . ' ' . static::moneySentence($order);
+        $this->subject = $this->trans('order_canceled.subject', ['store' => $this->storefront->name]);
+        $this->body    = $this->reasonSentence($order) . ' ' . $this->moneySentence($order);
         $this->status  = 'order_canceled';
     }
 
-    protected static function reasonSentence(Order $order): string
+    protected function reasonSentence(Order $order): string
     {
         $reason = trim((string) $order->getMeta('cancel_reason'));
 
-        return $reason !== '' ? ': ' . rtrim($reason, '.') . '.' : '.';
+        return $reason !== ''
+            ? $this->trans('order_canceled.body_reason', ['store' => $this->storefront->name, 'reason' => rtrim($reason, '.')])
+            : $this->trans('order_canceled.body', ['store' => $this->storefront->name]);
     }
 
     /**
      * What happens to the customer's money, from the refunds recorded when it was canceled.
      */
-    protected static function moneySentence(Order $order): string
+    protected function moneySentence(Order $order): string
     {
         $payment = \Fleetbase\Storefront\Support\OrderPayments::summary($order);
         if ($payment['store_credit_code'] && $payment['amount_credited'] > 0) {
-            return 'Your payment was returned as store credit; use code ' . $payment['store_credit_code'] . ' on your next order.';
+            return $this->trans('order_canceled.store_credit', ['code' => $payment['store_credit_code']]);
         }
         if ($payment['amount_refunded'] > 0) {
-            return 'Your payment has been refunded and should reach you within a few days.';
+            return $this->trans('order_canceled.refunded');
         }
 
-        return $payment['amount_paid'] > 0 ? 'If you were charged, you will be refunded.' : '';
+        return $payment['amount_paid'] > 0 ? $this->trans('order_canceled.will_refund') : '';
     }
 
     /**
@@ -50,6 +52,6 @@ class StorefrontOrderCanceled extends StorefrontOrderNotification
      */
     public function toMail($notifiable)
     {
-        return parent::toMail($notifiable)->line('No further action is necessary.');
+        return parent::toMail($notifiable)->line($this->trans('order_canceled.no_action'));
     }
 }

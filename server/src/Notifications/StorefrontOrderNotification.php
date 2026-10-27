@@ -10,15 +10,16 @@ use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
 use Fleetbase\Storefront\Push\PushCredentialResolver;
 use Fleetbase\Storefront\Push\PushMessage;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\CustomerLocale;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Fleetbase\Storefront\Support\NotificationPreferences;
 use Fleetbase\Storefront\Support\Storefront;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
 /**
  * Base class for order lifecycle notifications sent to storefront customers.
@@ -65,6 +66,9 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
 
     /**
      * Create a new notification instance.
+     *
+     * The text is written in the customer's language. Laravel also sends every channel in
+     * that locale, including from the queue.
      */
     public function __construct(Order $order)
     {
@@ -72,6 +76,15 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
         $this->storefront     = Storefront::findAbout($order->getMeta('storefront_id'));
         $this->sentAt         = now()->toDateTimeString();
         $this->notificationId = uniqid('notification_');
+        $this->locale         = CustomerLocale::for($order->customer);
+    }
+
+    /**
+     * Translates a line of this notification into the customer's language.
+     */
+    protected function trans(string $key, array $replace = []): string
+    {
+        return __('storefront::notifications.' . $key, $replace, $this->locale);
     }
 
     /**

@@ -29,6 +29,6 @@ class CustomerExists implements Rule
      */
     public function message()
     {
-        return 'No customer found.';
+        return __('storefront::api.validation.customer_not_found');
     }
 }

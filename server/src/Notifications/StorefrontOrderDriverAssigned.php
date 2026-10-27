@@ -24,11 +24,11 @@ class StorefrontOrderDriverAssigned extends StorefrontOrderNotification
 
         $this->driver  = $order->driverAssigned;
         if (Storefront::isBookingOrder($order)) {
-            $this->subject = 'Your provider is ' . $this->driver->name;
-            $this->body    = $this->driver->name . ' will be your provider for your booking with ' . $this->storefront->name . '.';
+            $this->subject = $this->trans('order_driver_assigned.subject_booking', ['driver' => $this->driver->name]);
+            $this->body    = $this->trans('order_driver_assigned.body_booking', ['driver' => $this->driver->name, 'store' => $this->storefront->name]);
         } else {
-            $this->subject = 'Your driver is ' . $this->driver->name;
-            $this->body    = 'A driver has been assigned to your order from ' . $this->storefront->name . ', they are currently en-route for pickup';
+            $this->subject = $this->trans('order_driver_assigned.subject', ['driver' => $this->driver->name]);
+            $this->body    = $this->trans('order_driver_assigned.body', ['store' => $this->storefront->name]);
         }
         $this->status  = 'order_driver_assigned';
     }

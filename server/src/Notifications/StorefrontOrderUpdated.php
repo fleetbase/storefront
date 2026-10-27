@@ -23,22 +23,32 @@ class StorefrontOrderUpdated extends StorefrontOrderNotification
         parent::__construct($order);
 
         $isBooking = (bool) $order->isMeta('is_booking');
-        $moved     = $isBooking && $changes === ['schedule'] ? static::bookingTime($order, $this->storefront instanceof Store ? $this->storefront : null) : null;
+        $moved     = $isBooking && $changes === ['schedule'] ? $this->bookingTime($order, $this->storefront instanceof Store ? $this->storefront : null) : null;
+        $store     = ['store' => $this->storefront->name];
 
         if ($moved) {
-            $this->subject = 'Your booking with ' . $this->storefront->name . ' was moved';
-            $this->body    = trim($moved . ' ' . static::moneySentence($order));
+            $this->subject = $this->trans('order_updated.subject_moved', $store);
+            $this->body    = trim($moved . ' ' . $this->moneySentence($order));
         } else {
-            $this->subject = 'Your ' . ($isBooking ? 'booking with ' : 'order from ') . $this->storefront->name . ' was updated';
-            $this->body    = trim(($summary !== '' ? rtrim($summary, '.') . '.' : 'Your order from ' . $this->storefront->name . ' was updated.') . ' ' . static::moneySentence($order));
+            $this->subject = $this->trans($isBooking ? 'order_updated.subject_booking' : 'order_updated.subject', $store);
+            $this->body    = trim(($summary !== '' && $this->inEnglish() ? rtrim($summary, '.') . '.' : $this->trans('order_updated.body', $store)) . ' ' . $this->moneySentence($order));
         }
         $this->status = 'order_updated';
     }
 
     /**
+     * The edit summary is written in English for the console and the driver as well, so a
+     * customer in another language gets the general line instead of a mixed-language message.
+     */
+    protected function inEnglish(): bool
+    {
+        return ($this->locale ?? app()->getLocale()) === 'en';
+    }
+
+    /**
      * "Deep Clean is now Mon 19 Oct, 11:00 to 12:00.", in the store's time.
      */
-    protected static function bookingTime(Order $order, ?Store $store): ?string
+    protected function bookingTime(Order $order, ?Store $store): ?string
     {
         $start = data_get($order->meta, 'booking.start') ?? data_get($order->meta, 'booking_at');
         if (!$start) {
@@ -46,24 +56,29 @@ class StorefrontOrderUpdated extends StorefrontOrderNotification
         }
 
         $timezone = BookingSlots::timezone($store);
-        $from     = Carbon::parse($start)->setTimezone($timezone);
+        $locale   = $this->locale ?? app()->getLocale();
+        $from     = Carbon::parse($start)->setTimezone($timezone)->locale($locale)->translatedFormat('D j M, H:i');
         $end      = data_get($order->meta, 'booking.end');
-        $when     = $from->format('D j M, H:i') . ($end ? ' to ' . Carbon::parse($end)->setTimezone($timezone)->format('H:i') : '');
+        $when     = $end ? $this->trans('order_updated.booking_time_range', ['start' => $from, 'end' => Carbon::parse($end)->setTimezone($timezone)->format('H:i')]) : $from;
         $service  = collect(data_get($order, 'payload.entities', []))->first(fn ($entity) => data_get($entity, 'meta.scheduled_at'));
         $name     = data_get($service, 'name');
 
-        return ($name ? $name . ' is now ' : 'Your booking is now ') . $when . '.';
+        return $name
+            ? $this->trans('order_updated.booking_time_named', ['service' => $name, 'when' => $when])
+            : $this->trans('order_updated.booking_time', ['when' => $when]);
     }
 
-    protected static function moneySentence(Order $order): string
+    protected function moneySentence(Order $order): string
     {
         $payment = OrderPayments::summary($order);
         $last    = collect($payment['adjustments'])->last();
 
         return match ($last['type'] ?? null) {
-            'refund'       => 'The difference has been refunded.',
-            'store_credit' => 'The difference was added as store credit: use code ' . ($last['reference'] ?? '') . ' on your next order.',
-            default        => $payment['state'] === OrderPayments::STATE_BALANCE_DUE ? 'There is a balance to pay' . ($payment['payment_link'] ? ': ' . $payment['payment_link'] : '.') : '',
+            'refund'       => $this->trans('order_updated.refunded'),
+            'store_credit' => $this->trans('order_updated.store_credit', ['code' => $last['reference'] ?? '']),
+            default        => $payment['state'] === OrderPayments::STATE_BALANCE_DUE
+                ? ($payment['payment_link'] ? $this->trans('order_updated.balance_due_link', ['link' => $payment['payment_link']]) : $this->trans('order_updated.balance_due'))
+                : '',
         };
     }
 }

@@ -30,6 +30,6 @@ class GatewayExists implements Rule
      */
     public function message()
     {
-        return 'No gateway by code provided exists.';
+        return __('storefront::api.validation.gateway_not_found');
     }
 }

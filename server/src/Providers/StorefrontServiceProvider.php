@@ -52,6 +52,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
      */
     public $middleware = [
         'storefront.api' => [
+            \Fleetbase\Storefront\Http\Middleware\SetStorefrontLocale::class,
             \Fleetbase\Storefront\Http\Middleware\ThrottleRequests::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
@@ -126,6 +127,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->registerExpansionsFrom(__DIR__ . '/../Expansions');
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
+        $this->loadTranslationsFrom(__DIR__ . '/../../resources/lang', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/database.connections.php', 'database.connections');
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');

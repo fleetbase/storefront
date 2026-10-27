@@ -15,8 +15,8 @@ class StorefrontOrderReadyForPickup extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->subject = 'Your order from ' . $this->storefront->name . ' is ready for pickup!';
-        $this->body    = 'You can proceed to pickup your order.';
+        $this->subject = $this->trans('order_ready.subject', ['store' => $this->storefront->name]);
+        $this->body    = $this->trans('order_ready.body');
         $this->status  = 'order_ready';
     }
 }

@@ -15,8 +15,8 @@ class StorefrontOrderEnroute extends StorefrontOrderNotification
     {
         parent::__construct($order);
 
-        $this->subject = 'Your order from ' . $this->storefront->name . ' is on the way!';
-        $this->body    = 'Your order from ' . $this->storefront->name . ' has been picked up, we will update you when your order is nearby';
+        $this->subject = $this->trans('order_enroute.subject', ['store' => $this->storefront->name]);
+        $this->body    = $this->trans('order_enroute.body', ['store' => $this->storefront->name]);
         $this->status  = 'order_enroute';
     }
 }

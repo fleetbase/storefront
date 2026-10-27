@@ -3,7 +3,7 @@
 namespace Fleetbase\Storefront\Notifications;
 
 use Fleetbase\FleetOps\Models\Order;
-use Fleetbase\Support\Utils;
+use Illuminate\Support\Carbon;
 
 class StorefrontOrderNearby extends StorefrontOrderNotification
 {
@@ -28,8 +28,11 @@ class StorefrontOrderNearby extends StorefrontOrderNotification
 
         $this->distance = $distance;
         $this->time     = $time;
-        $this->subject  = 'Your order is nearby!';
-        $this->body     = 'Your order from ' . $this->storefront->name . ' is reaching in ' . Utils::formatSeconds($time);
+        $this->subject  = $this->trans('order_nearby.subject');
+        $this->body     = $this->trans('order_nearby.body', [
+            'store' => $this->storefront->name,
+            'time'  => Carbon::now()->locale($this->locale ?? app()->getLocale())->addSeconds($time)->longAbsoluteDiffForHumans(),
+        ]);
         $this->status   = 'order_nearby';
     }
 }

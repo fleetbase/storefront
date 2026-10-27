@@ -32,13 +32,15 @@ class ReviewEligibility
     public const ORDER_LOOKBACK = 50;
 
     /**
+     * The translation key of the message for each reason, in the customer's language.
+     *
      * @var array<string, string>
      */
     public const MESSAGES = [
-        self::SIGN_IN_REQUIRED    => 'Sign in to write a review.',
-        self::UNSUPPORTED_SUBJECT => 'Only stores and products can be reviewed.',
-        self::NO_COMPLETED_ORDER  => 'You can review this after an order with it is completed.',
-        self::ALREADY_REVIEWED    => 'You have already reviewed this for your completed orders.',
+        self::SIGN_IN_REQUIRED    => 'storefront::api.reviews.sign_in_required',
+        self::UNSUPPORTED_SUBJECT => 'storefront::api.reviews.unsupported_subject',
+        self::NO_COMPLETED_ORDER  => 'storefront::api.reviews.no_completed_order',
+        self::ALREADY_REVIEWED    => 'storefront::api.reviews.already_reviewed',
     ];
 
     public function __construct(
@@ -117,7 +119,7 @@ class ReviewEligibility
 
     public function message(): ?string
     {
-        return $this->reason ? static::MESSAGES[$this->reason] : null;
+        return $this->reason ? __(static::MESSAGES[$this->reason]) : null;
     }
 
     /**

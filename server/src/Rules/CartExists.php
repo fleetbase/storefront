@@ -29,6 +29,6 @@ class CartExists implements Rule
      */
     public function message()
     {
-        return 'Cart session does not exists.';
+        return __('storefront::api.validation.cart_not_found');
     }
 }

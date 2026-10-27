@@ -145,7 +145,7 @@ class CartController extends Controller
     {
         $code = PromotionCode::normalize($request->input('code'));
         if ($code === '') {
-            return response()->apiError('A promotion code is required.');
+            return response()->apiError(__('storefront::checkout.promotion_code_required'));
         }
 
         $cart   = $this->retrieveCart($cartId);
@@ -154,7 +154,7 @@ class CartController extends Controller
 
         $rejection = collect($result->rejected)->firstWhere('code', $code);
         if ($rejection && $rejection['reason'] !== PromotionEngine::REASON_NOT_COMBINABLE) {
-            return response()->apiError('Promotion code "' . $code . '" cannot be applied (' . $rejection['reason'] . ').', 400, ['reason' => $rejection['reason']]);
+            return response()->apiError(__('storefront::checkout.promotion_code_rejected', ['code' => $code, 'reason' => $rejection['reason']]), 400, ['reason' => $rejection['reason']]);
         }
 
         $cart->setPromotionCodes($codes)->save();

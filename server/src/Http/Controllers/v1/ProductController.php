@@ -225,7 +225,7 @@ class ProductController extends Controller
             $product = Product::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
             return response()->json([
-                'error' => 'Product not found.',
+                'error' => __('storefront::api.products.not_found'),
             ], 404);
         }
 
@@ -402,7 +402,7 @@ class ProductController extends Controller
             ->first();
 
         if (!$product) {
-            return response()->error('Product resource not found.', 404);
+            return response()->error(__('storefront::api.products.resource_not_found'), 404);
         }
 
         // response the product resource
@@ -423,7 +423,7 @@ class ProductController extends Controller
             ->first();
 
         if (!$product || !$product->is_bookable) {
-            return response()->error('Bookable service not found.', 404);
+            return response()->error(__('storefront::api.products.bookable_service_not_found'), 404);
         }
 
         return response()->json([
@@ -444,7 +444,7 @@ class ProductController extends Controller
         try {
             $product = Product::findRecordOrFail($id);
         } catch (ModelNotFoundException $exception) {
-            return response()->error('Product resource not found.');
+            return response()->error(__('storefront::api.products.resource_not_found'));
         }
 
         // delete the product
