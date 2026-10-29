@@ -15,7 +15,9 @@
                                 <div class="storefront-member-row__meta">{{smart-humanize notificationChannel.scheme}}</div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <Button @size="xs" @icon="paper-plane" @text={{t "storefront.settings.notification.send-test"}} @onClick={{fn this.testChannel notificationChannel}} />
+                                {{#unless (eq notificationChannel.scheme "apple_sign_in")}}
+                                    <Button @size="xs" @icon="paper-plane" @text={{t "storefront.settings.notification.send-test"}} @onClick={{fn this.testChannel notificationChannel}} />
+                                {{/unless}}
                                 <Button @size="xs" @icon="pencil" @text={{t "storefront.common.edit"}} @onClick={{fn this.editChannel notificationChannel}} @permission="storefront update notification-channel" />
                                 <Button @size="xs" @icon="trash" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} @permission="storefront delete notification-channel" />
                             </div>

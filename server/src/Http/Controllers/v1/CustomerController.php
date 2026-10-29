@@ -24,6 +24,7 @@ use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Support\AppleSignIn;
 use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\Storefront;
 use Fleetbase\Storefront\Support\StorefrontSocket;
@@ -844,6 +845,10 @@ class CustomerController extends Controller
                 ['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone, 'meta' => ['apple_user_id' => $appleUserId], 'type' => 'customer']
             );
 
+            // Keep the refresh token Apple issues for this sign-in, so it can be revoked if the
+            // customer deletes their account. Sign-in goes ahead whether or not it is kept.
+            app(AppleSignIn::class)->remember($contact, $identityToken, $authorizationCode);
+
             // Generate an auth token
             $token          = $user->createToken($contact->uuid);
             $contact->token = $token->plainTextToken;
@@ -1552,7 +1557,13 @@ class CustomerController extends Controller
             // If the user type is `contact` or `customer` delete the user account. The review
             // account is shared by every store, so closing it only removes this store's
             // customer; it signs in afresh next time.
-            if ($user->isType(['contact', 'customer']) && !AppReview::isReviewPhone($user->phone)) {
+            $deleteUser = $user->isType(['contact', 'customer']) && !AppReview::isReviewPhone($user->phone);
+
+            // Revoke the customer's Sign in with Apple tokens with Apple (App Review 5.1.1(v)).
+            // Never stops the deletion; a failure is logged.
+            app(AppleSignIn::class)->revokeFor($customer, $deleteUser);
+
+            if ($deleteUser) {
                 $user->delete();
             }
 
