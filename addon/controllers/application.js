@@ -14,6 +14,26 @@ export function withCreatedRecords(loaded, created = []) {
     return [...added, ...records].filter((record) => record && !record.isDeleted);
 }
 
+const CLOUD_API_HOST = 'api.fleetbase.io';
+const LAUNCH_TAGS = 'utm_campaign=launch&utm_source=console';
+
+/**
+ * Where "Launch App" goes. Fleetbase Cloud accounts sign in to the publishing service with the
+ * account they're already using; a self-hosted install has no account there yet, so it starts at
+ * the page that explains the service.
+ */
+export function launchAppUrl(apiHost) {
+    const isCloud =
+        String(apiHost ?? '')
+            .replace(/^https?:\/\//, '')
+            .replace(/\/.*$/, '') === CLOUD_API_HOST;
+    if (!isCloud) {
+        return `https://apphelm.fleetbase.io/storefront?${LAUNCH_TAGS}&utm_medium=sidebar_selfhosted`;
+    }
+    const next = encodeURIComponent(`/projects/new?app=storefront&resume=1&${LAUNCH_TAGS}&utm_medium=sidebar`);
+    return `https://apphelm.fleetbase.io/api/v1/auth/fleetbase/start?intent=signin&next=${next}&${LAUNCH_TAGS}&utm_medium=sidebar`;
+}
+
 export default class ApplicationController extends Controller {
     @service storefront;
     @service hostRouter;
@@ -224,9 +244,9 @@ export default class ApplicationController extends Controller {
                 label: this.intl.t('storefront.sidebar.launch-app'),
                 description: this.intl.t('storefront.sidebar.descriptions.launch-app'),
                 icon: 'rocket',
-                url: 'https://github.com/fleetbase/storefront-app',
-                target: '_github',
-                keywords: ['launch app', 'storefront app', 'github'],
+                url: launchAppUrl(this.fetch.host),
+                target: '_blank',
+                keywords: ['launch app', 'storefront app', 'publish', 'web app', 'app store', 'google play'],
             },
         ];
     }
