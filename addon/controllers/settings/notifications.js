@@ -41,6 +41,7 @@ export default class SettingsNotificationsController extends Controller {
         const schemaOptions = [
             { name: 'Apple Push Notification Service (APN)', value: 'apn' },
             { name: 'Firebase Cloud Messaging (FCM)', value: 'fcm' },
+            { name: 'Sign in with Apple (account deletion)', value: 'apple_sign_in' },
         ];
 
         this.modalsManager.show('modals/create-notification-channel', {
@@ -53,7 +54,7 @@ export default class SettingsNotificationsController extends Controller {
                 this.modalsManager.setOption('schema', schemas[schema]);
 
                 channel.setProperties({
-                    name: `${capitalize(schema)} Notification Channel`,
+                    name: schema === 'apple_sign_in' ? 'Sign in with Apple' : `${capitalize(schema)} Notification Channel`,
                     scheme: schema,
                     config: schemas[schema],
                 });

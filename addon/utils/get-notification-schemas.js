@@ -11,6 +11,12 @@ export default function getNotificationSchemas() {
             firebase_credentials_json: '',
             android_channel_id: '',
         },
+        apple_sign_in: {
+            key_id: '',
+            team_id: '',
+            app_bundle_id: '',
+            private_key_content: '',
+        },
     };
 
     return schemas;

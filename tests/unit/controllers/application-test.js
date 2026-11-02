@@ -1,6 +1,6 @@
 import { module, test } from 'qunit';
 import { setupTest } from 'dummy/tests/helpers';
-import { withCreatedRecords } from '@fleetbase/storefront-engine/controllers/application';
+import { withCreatedRecords, launchAppUrl } from '@fleetbase/storefront-engine/controllers/application';
 
 class FetchStub {
     static create(props = {}) {
@@ -191,7 +191,18 @@ module('Unit | Controller | application', function (hooks) {
         assert.strictEqual(items[2].route, 'console.storefront.products', 'products is one entry; its page carries the categories');
         assert.strictEqual(items[2].children, undefined, 'no category submenu');
         assert.strictEqual(items[7].route, 'console.storefront.settings', 'settings is one entry; its page carries the section rail');
-        assert.strictEqual(items[8].url, 'https://github.com/fleetbase/storefront-app', 'launch app remains an external URL item');
+        assert.true(items[8].url.startsWith('https://apphelm.fleetbase.io/'), 'launch app opens the publishing service');
+    });
+
+    test('Launch App signs Cloud accounts in, and sends self-hosted installs to the start page', function (assert) {
+        const cloud = launchAppUrl('https://api.fleetbase.io');
+        assert.true(cloud.startsWith('https://apphelm.fleetbase.io/api/v1/auth/fleetbase/start?intent=signin&next='));
+        assert.true(decodeURIComponent(cloud).includes('/projects/new?app=storefront&resume=1'));
+        assert.strictEqual(launchAppUrl('api.fleetbase.io').split('?')[0], cloud.split('?')[0], 'a host with no scheme counts');
+
+        for (const host of ['https://fleetbase.acme.com', 'http://localhost:8000', 'https://api.fleetbase.io.evil.com', undefined]) {
+            assert.true(launchAppUrl(host).startsWith('https://apphelm.fleetbase.io/storefront?'), `${host} is self-hosted`);
+        }
     });
 
     test('it disables Storefront resource sidebar items without an active store', function (assert) {
