@@ -513,6 +513,8 @@ test('account closure goes ahead when a revoked token cannot be removed', functi
     appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
     appleSignInSignedInCustomer();
     appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-123');
+    // The failed delete's message names the row's uuid, which here must not echo the token.
+    appleSignInDb()->table('apple_sign_in_tokens')->update(['uuid' => 'kept_token_uuid']);
     // The token store goes away between Apple's answer and removing the token.
     Http::fake(function () {
         appleSignInDb()->getSchemaBuilder()->drop('apple_sign_in_tokens');
