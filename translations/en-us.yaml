@@ -117,7 +117,7 @@ storefront:
       trucks: Manage trucks, where they serve and what they sell.
       promotions: Discounts, promo codes, customer segments and campaigns.
       settings: Store details, hours, locations, checkout rules, gateways, notifications and API keys.
-      launch-app: Open the storefront application repository.
+      launch-app: Publish your store as your own web and mobile app.
     storefront: Storefront
     dashboard: Dashboard
     products: Products
