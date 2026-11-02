@@ -14,6 +14,8 @@
     <a href="https://www.fleetbase.io/platform/storefront">Platform Overview</a>
     |
     <a href="https://www.fleetbase.io">Fleetbase</a>
+    |
+    <a href="https://apphelm.fleetbase.io/storefront?utm_source=github&utm_medium=readme&utm_campaign=launch&utm_content=storefront"><b>Launch with AppHelm</b></a>
 </p>
 
 <p align="center">
@@ -53,6 +55,30 @@ Read the official guide at [fleetbase.io/docs/storefront](https://www.fleetbase.
 - **Fleet-Ops integration**: register Storefront summaries inside Fleet-Ops order details and add product-as-entity tooling to Fleet-Ops order creation.
 - **Internationalization**: include translations for multiple locales through the extension translation files.
 
+## Customer App
+
+<table>
+  <tr>
+    <td width="34%" valign="top">
+      <a href="https://bayfront-pharmacy.apphelm.io"><img src="https://fleetbase.io/images/screenshots/storefront-app/ios/storefront-app-network-details.webp" alt="A marketplace home: featured stores, categories and stores near the customer" width="100%" /></a>
+    </td>
+    <td valign="top">
+
+The [Storefront App](https://github.com/fleetbase/storefront-app) is the open-source customer app for this extension, for iOS, Android, and the web. Customers browse, order, pay, and track deliveries in it, through the [public Storefront API](#public-storefront-api).
+
+**The easiest way to launch it is [Fleetbase AppHelm](https://apphelm.fleetbase.io/storefront?utm_source=github&utm_medium=readme&utm_campaign=launch&utm_content=storefront)**, which takes a Fleetbase store and publishes it as your own branded app, with no code to write. Connect your store, set your brand, and preview the app with your real products. Publish it free on the web at `yourstore.apphelm.io`, then go on to the App Store and Google Play: AppHelm walks you through each store's requirements and handles the builds and submission, from your own Apple and Google developer accounts.
+
+<p>
+  <a href="https://apphelm.fleetbase.io/storefront?utm_source=github&utm_medium=readme&utm_campaign=launch&utm_content=storefront"><img src="https://img.shields.io/badge/Launch%20with%20AppHelm-1C6CC7?style=for-the-badge" alt="Launch with AppHelm" /></a>
+  <a href="https://bayfront-pharmacy.apphelm.io"><img src="https://img.shields.io/badge/See%20it%20in%20action-24292F?style=for-the-badge" alt="See it in action" /></a>
+</p>
+
+[Source code](https://github.com/fleetbase/storefront-app) · [Build it yourself](https://github.com/fleetbase/storefront-app#quick-start)
+
+</td>
+  </tr>
+</table>
+
 ## Architecture
 
 This repository contains both sides of the Storefront extension:
@@ -78,14 +104,6 @@ Storefront registers a Console entry under the `storefront` route and exposes th
 - **Food Trucks**: Fleet-Ops vehicle-linked mobile stores with service area and zone support.
 - **Promotions**: push notification campaigns and notification channel workflows.
 - **Settings**: store profile, API keys, locations, gateways, and notifications.
-
-## Customer App
-
-The [Storefront App](https://github.com/fleetbase/storefront-app) is the open-source customer app for this extension, for iOS, Android, and the web. Customers browse, order, pay, and track deliveries in it, through the public Storefront API below.
-
-The easiest way to publish it is [AppHelm](https://apphelm.fleetbase.io/storefront?utm_source=github&utm_medium=readme&utm_campaign=launch&utm_content=storefront), Fleetbase's service that takes a Fleetbase store and publishes it as your own branded app, with no code to write. Connect your store, set your brand, and preview the app with your real products. You can publish it free on the web at your own `yourstore.apphelm.io` address, then go on to the App Store and Google Play: AppHelm walks you through each store's requirements and handles the builds and submission, from your own Apple and Google developer accounts.
-
-To build and publish the app yourself, follow the [Storefront App repository](https://github.com/fleetbase/storefront-app).
 
 ## API Surface
 
