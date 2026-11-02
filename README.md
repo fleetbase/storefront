@@ -79,6 +79,14 @@ Storefront registers a Console entry under the `storefront` route and exposes th
 - **Promotions**: push notification campaigns and notification channel workflows.
 - **Settings**: store profile, API keys, locations, gateways, and notifications.
 
+## Customer App
+
+The [Storefront App](https://github.com/fleetbase/storefront-app) is the open-source customer app for this extension, for iOS, Android, and the web. Customers browse, order, pay, and track deliveries in it, through the public Storefront API below.
+
+The easiest way to publish it is [AppHelm](https://apphelm.fleetbase.io/storefront?utm_source=github&utm_medium=readme&utm_campaign=launch&utm_content=storefront), Fleetbase's service that takes a Fleetbase store and publishes it as your own branded app, with no code to write. Connect your store, set your brand, and preview the app with your real products. You can publish it free on the web at your own `yourstore.apphelm.io` address, then go on to the App Store and Google Play: AppHelm walks you through each store's requirements and handles the builds and submission, from your own Apple and Google developer accounts.
+
+To build and publish the app yourself, follow the [Storefront App repository](https://github.com/fleetbase/storefront-app).
+
 ## API Surface
 
 Storefront exposes two API families.
