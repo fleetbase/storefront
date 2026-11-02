@@ -23,7 +23,10 @@ const LAUNCH_TAGS = 'utm_campaign=launch&utm_source=console';
  * the page that explains the service.
  */
 export function launchAppUrl(apiHost) {
-    const isCloud = String(apiHost ?? '').replace(/^https?:\/\//, '').replace(/\/.*$/, '') === CLOUD_API_HOST;
+    const isCloud =
+        String(apiHost ?? '')
+            .replace(/^https?:\/\//, '')
+            .replace(/\/.*$/, '') === CLOUD_API_HOST;
     if (!isCloud) {
         return `https://apphelm.fleetbase.io/storefront?${LAUNCH_TAGS}&utm_medium=sidebar_selfhosted`;
     }
