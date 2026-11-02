@@ -506,3 +506,96 @@ test('account closure goes ahead when the token store cannot be read', function 
         ->and($log->messages())->toBe(['[Storefront] Sign in with Apple tokens could not be looked up for revocation.'])
         ->and(appleSignInDb()->table('contacts')->where('uuid', APPLE_SIGN_IN_CONTACT_UUID)->value('deleted_at'))->not->toBeNull();
 });
+
+test('account closure goes ahead when a revoked token cannot be removed', function () {
+    appleSignInSchema();
+    $log = appleSignInFakes();
+    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInSignedInCustomer();
+    appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-123');
+    // The token store goes away between Apple's answer and removing the token.
+    Http::fake(function () {
+        appleSignInDb()->getSchemaBuilder()->drop('apple_sign_in_tokens');
+
+        return Http::response('', 200);
+    });
+
+    $response = appleSignInCloseAccount();
+    $failure  = collect($log->records)->firstWhere('message', '[Storefront] Sign in with Apple token could not be removed.');
+
+    expect($response->getData(true))->toBe(['status' => 'OK'])
+        ->and($log->messages())->toBe([
+            '[Storefront] Sign in with Apple token revoked.',
+            '[Storefront] Sign in with Apple token could not be removed.',
+        ])
+        ->and($failure['level'])->toBe('error')
+        ->and($failure['context']['customer'])->toBe(APPLE_SIGN_IN_CONTACT_UUID)
+        ->and(json_encode($log->records))->not->toContain('refresh-123')
+        ->and(appleSignInDb()->table('contacts')->where('uuid', APPLE_SIGN_IN_CONTACT_UUID)->value('deleted_at'))->not->toBeNull();
+});
+
+test('a key that cannot sign is skipped, and when Apple turns every other key away its answer stands', function () {
+    appleSignInSchema();
+    $log = appleSignInFakes();
+    appleSignInChannel(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key'], 'store_uuid', '2026-10-01 00:00:00');
+    appleSignInChannel(AppleSignIn::SCHEME, 'WRONGTEAM1', ['team_id' => 'OTHERTEAM1'], 'store_uuid', '2026-10-02 00:00:00');
+    Http::fake([AppleSignIn::TOKEN_URL => Http::response(['error' => 'invalid_client'], 400)]);
+    $customer = new Contact();
+    $customer->forceFill(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid']);
+
+    $kept    = app(AppleSignIn::class)->remember($customer, appleSignInIdentityToken(), 'one-time-code');
+    $skipped = collect($log->records)->firstWhere('message', '[Storefront] A Sign in with Apple key could not sign a client secret.');
+    $refused = collect($log->records)->firstWhere('message', '[Storefront] Sign in with Apple token not kept: Apple refused the authorization code.');
+
+    expect($kept)->toBeFalse()
+        ->and(Http::recorded()->map(fn ($pair) => appleSignInClientSecret($pair[0])['kid'])->all())->toBe(['WRONGTEAM1'])
+        ->and(AppleSignInToken::count())->toBe(0)
+        ->and($skipped['context'])->toBe(['client_id' => APPLE_SIGN_IN_BUNDLE_ID, 'key_id' => 'BADKEY0001'])
+        ->and($refused['context'])->toMatchArray(['status' => 400, 'error' => 'invalid_client'])
+        ->and(json_encode($log->records))->not->toContain('not a private key');
+});
+
+test('Apple is not called when the only key cannot sign', function () {
+    appleSignInSchema();
+    $log = appleSignInFakes();
+    appleSignInChannel(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key']);
+    Http::fake();
+    $customer = new Contact();
+    $customer->forceFill(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid']);
+
+    $kept    = app(AppleSignIn::class)->remember($customer, appleSignInIdentityToken(), 'one-time-code');
+    $refused = collect($log->records)->firstWhere('message', '[Storefront] Sign in with Apple token not kept: Apple refused the authorization code.');
+
+    expect($kept)->toBeFalse()
+        ->and(Http::recorded())->toHaveCount(0)
+        ->and(AppleSignInToken::count())->toBe(0)
+        ->and($refused['context'])->toMatchArray(['status' => null, 'error' => null]);
+});
+
+test('a company with no id, or with no stores or networks, has no keys', function () {
+    appleSignInSchema();
+    appleSignInFakes();
+    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    $signIn = app(AppleSignIn::class);
+
+    expect($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_uuid'))->toHaveCount(1)
+        ->and($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, null))->toHaveCount(0)
+        ->and($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_without_stores'))->toHaveCount(0);
+});
+
+test('a key can be read from a file, and a file that cannot be read gives no key', function () {
+    appleSignInSchema();
+    appleSignInFakes();
+    $privateKey = appleSignInPrivateKey();
+    $path       = tempnam(sys_get_temp_dir(), 'apple-sign-in-key');
+    file_put_contents($path, "\n" . $privateKey . "\n");
+    appleSignInChannel(AppleSignIn::SCHEME, 'FILEKEY001', ['private_key_content' => '', 'private_key_path' => $path]);
+    appleSignInChannel(AppleSignIn::SCHEME, 'NOFILEKEY1', ['private_key_content' => '', 'private_key_path' => $path . '.missing']);
+
+    $credentials = app(AppleSignIn::class)->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_uuid');
+    unlink($path);
+
+    expect($credentials)->toHaveCount(1)
+        ->and($credentials[0]->get('key_id'))->toBe('FILEKEY001')
+        ->and($credentials[0]->get('private_key'))->toBe(trim($privateKey));
+});
