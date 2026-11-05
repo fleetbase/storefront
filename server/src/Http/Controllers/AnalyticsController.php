@@ -289,7 +289,7 @@ class AnalyticsController extends Controller
     {
         $end           = $request->date('end') ? Carbon::parse($request->date('end'))->endOfDay() : Carbon::now()->endOfDay();
         $start         = $request->date('start') ? Carbon::parse($request->date('start'))->startOfDay() : $end->copy()->subDays(29)->startOfDay();
-        $seconds       = max($start->diffInSeconds($end), 1);
+        $seconds       = max((int) $start->diffInSeconds($end, true), 1);
         $previousEnd   = $start->copy()->subSecond();
         $previousStart = $previousEnd->copy()->subSeconds($seconds);
 

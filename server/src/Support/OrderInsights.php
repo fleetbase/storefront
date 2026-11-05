@@ -76,7 +76,7 @@ class OrderInsights
             return 0;
         }
 
-        return (int) $dueAt->diffInMinutes(now());
+        return (int) $dueAt->diffInMinutes(now(), true);
     }
 
     /**
