@@ -175,7 +175,7 @@ function bindCustomerNotificationDispatcher(): void
             {
             }
 
-            public function sendNow($notifiables, $notification)
+            public function sendNow($notifiables, $notification, ?array $channels = null)
             {
             }
         }
@@ -1612,7 +1612,7 @@ test('customer phone login reports both delivery failures without leaking provid
                 throw new RuntimeException('Email provider unavailable');
             }
 
-            public function sendNow($notifiables, $notification)
+            public function sendNow($notifiables, $notification, ?array $channels = null)
             {
                 throw new RuntimeException('Email provider unavailable');
             }

@@ -422,3 +422,8 @@ set_error_handler(function (int $severity, string $message): bool {
 
     return false;
 }, E_WARNING);
+
+// cknow/laravel-money 8 finds its ISO currency table through config, which this harness never loads.
+if (class_exists(Cknow\Money\Money::class)) {
+    Cknow\Money\Money::setCurrencies(new Money\Currencies\ISOCurrencies());
+}
