@@ -86,7 +86,7 @@ class NetworkController extends StorefrontController
             return response()->error('This category is not one of the network\'s categories.', 422);
         }
 
-        $recipients    = collect($request->array('recipients'))->filter(fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL))->map(fn ($email) => strtolower(trim($email)))->unique()->values();
+        $recipients    = collect($request->inputArray('recipients'))->filter(fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL))->map(fn ($email) => strtolower(trim($email)))->unique()->values();
         $expiresInDays = $request->input('expires_in_days');
         $meta          = array_filter([
             'status'           => 'pending',
@@ -579,8 +579,8 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $stores  = collect($request->array('stores'))->filter(fn ($storeId) => is_string($storeId))->values();
-        $remove  = collect($request->array('remove'))->filter(fn ($storeId) => is_string($storeId))->values();
+        $stores  = collect($request->inputArray('stores'))->filter(fn ($storeId) => is_string($storeId))->values();
+        $remove  = collect($request->inputArray('remove'))->filter(fn ($storeId) => is_string($storeId))->values();
         $members = NetworkStore::where('network_uuid', $network->uuid)->whereIn('store_uuid', $stores)->pluck('store_uuid');
 
         // Existing members (which may belong to other companies) are left as they are; new
@@ -742,7 +742,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        return $this->setMembershipStatus($network, $request->array('stores'), NetworkStore::STATUS_SUSPENDED);
+        return $this->setMembershipStatus($network, $request->inputArray('stores'), NetworkStore::STATUS_SUSPENDED);
     }
 
     /**
@@ -758,7 +758,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        return $this->setMembershipStatus($network, $request->array('stores'), NetworkStore::STATUS_ACTIVE);
+        return $this->setMembershipStatus($network, $request->inputArray('stores'), NetworkStore::STATUS_ACTIVE);
     }
 
     /**
@@ -775,7 +775,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $stores = $request->array('stores');
+        $stores = $request->inputArray('stores');
         $this->closeAwaitingInvitations($network->uuid, $stores, 'accepted', 'approved_at');
 
         return $this->setMembershipStatus($network, $stores, NetworkStore::STATUS_ACTIVE);
@@ -795,7 +795,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $stores = $request->array('stores');
+        $stores = $request->inputArray('stores');
         $this->closeAwaitingInvitations($network->uuid, $stores, 'rejected', 'rejected_at');
 
         $removed = NetworkStore::where('network_uuid', $network->uuid)
@@ -898,7 +898,7 @@ class NetworkController extends StorefrontController
             return response()->error('Network not found.', 404);
         }
 
-        $stores = $request->array('stores');
+        $stores = $request->inputArray('stores');
 
         // delete each
         foreach ($stores as $storeId) {
