@@ -467,7 +467,7 @@ test('storefront resolves legacy customer tokens and sends immediate and queued 
             $this->calls[] = 'send';
         }
 
-        public function sendNow($notifiables, $notification)
+        public function sendNow($notifiables, $notification, ?array $channels = null)
         {
             $this->calls[] = 'send_now';
         }

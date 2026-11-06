@@ -34,6 +34,21 @@ class OrderChatFakeDisk implements Illuminate\Contracts\Filesystem\Cloud
         return true;
     }
 
+    public function path($path)
+    {
+        return $path;
+    }
+
+    public function putFile($path, $file = null, $options = [])
+    {
+        return false;
+    }
+
+    public function putFileAs($path, $file, $name = null, $options = [])
+    {
+        return false;
+    }
+
     public function url($path)
     {
         return 'https://cdn.test/' . $path;

@@ -361,10 +361,13 @@ if (class_exists('Illuminate\Http\Request') && !Illuminate\Http\Request::hasMacr
     });
 }
 
-if (class_exists('Illuminate\Http\Request') && !Illuminate\Http\Request::hasMacro('array')) {
-    Illuminate\Http\Request::macro('array', function (string $parameter, array $default = []): array {
-        return (array) $this->input($parameter, $default);
-    });
+// `array` stays until released fleetops, which these tests load, moves to `inputArray`.
+foreach (['inputArray', 'array'] as $macro) {
+    if (class_exists('Illuminate\Http\Request') && !Illuminate\Http\Request::hasMacro($macro) && !method_exists('Illuminate\Http\Request', $macro)) {
+        Illuminate\Http\Request::macro($macro, function (string $parameter, array $default = []): array {
+            return (array) $this->input($parameter, $default);
+        });
+    }
 }
 
 if (class_exists('Illuminate\Http\Request') && !Illuminate\Http\Request::hasMacro('or')) {
@@ -422,3 +425,8 @@ set_error_handler(function (int $severity, string $message): bool {
 
     return false;
 }, E_WARNING);
+
+// cknow/laravel-money 8 finds its ISO currency table through config, which this harness never loads.
+if (class_exists(Cknow\Money\Money::class)) {
+    Cknow\Money\Money::setCurrencies(new Money\Currencies\ISOCurrencies());
+}
