@@ -38,8 +38,8 @@ class CatalogController extends StorefrontController
             return response()->error('Catalog not found.', 404);
         }
 
-        $this->syncSubjects($catalog, Store::class, $request->array('stores'));
-        $this->syncSubjects($catalog, FoodTruck::class, $request->array('food_trucks'));
+        $this->syncSubjects($catalog, Store::class, $request->inputArray('stores'));
+        $this->syncSubjects($catalog, FoodTruck::class, $request->inputArray('food_trucks'));
 
         $catalog->load(['categories.products', 'hours', 'assignments.subject']);
 

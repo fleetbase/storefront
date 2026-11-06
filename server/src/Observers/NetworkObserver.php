@@ -15,7 +15,7 @@ class NetworkObserver
     public function updating(Network $network): void
     {
         $network->flushAttributesCache();
-        $alertable = Request::array('network.alertable');
+        $alertable = Request::inputArray('network.alertable');
 
         // set alertables to public_id
         $network->alertable = collect($alertable)->mapWithKeys(

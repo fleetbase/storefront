@@ -88,7 +88,7 @@ function sms_guard_customer_fakes(): void
             {
             }
 
-            public function sendNow($notifiables, $notification)
+            public function sendNow($notifiables, $notification, ?array $channels = null)
             {
             }
         }
