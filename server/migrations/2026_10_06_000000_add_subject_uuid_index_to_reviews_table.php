@@ -34,12 +34,8 @@ return new class extends Migration {
     protected function indexExists(string $table, string $index): bool
     {
         try {
-            $indexes = Schema::connection(config('storefront.connection.db'))
-                ->getConnection()
-                ->getDoctrineSchemaManager()
-                ->listTableIndexes($table);
-
-            return isset($indexes[$index]);
+            return collect(Schema::connection(config('storefront.connection.db'))->getIndexes($table))
+                ->contains('name', strtolower($index));
         } catch (Throwable $e) {
             return false;
         }

@@ -38,7 +38,7 @@ class AddonCategoryController extends StorefrontController
             $this->validateRequest($request);
 
             $record = $this->model->createRecordFromRequest($request, null, function (&$request, AddonCategory &$addonCategory) {
-                $addons = $request->array('addonCategory.addons');
+                $addons = $request->inputArray('addonCategory.addons');
                 $addonCategory->setAddons($addons);
             });
 
@@ -77,7 +77,7 @@ class AddonCategoryController extends StorefrontController
         try {
             $this->validateRequest($request);
             $record = $this->model->updateRecordFromRequest($request, $id, function (&$request, AddonCategory &$addonCategory) {
-                $addons = $request->array('addonCategory.addons');
+                $addons = $request->inputArray('addonCategory.addons');
                 $addonCategory->setAddons($addons);
             });
 

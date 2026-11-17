@@ -177,7 +177,7 @@ function customerGuardsDelivery(?Throwable $smsFailure = null): object
             {
             }
 
-            public function sendNow($notifiables, $notification)
+            public function sendNow($notifiables, $notification, ?array $channels = null)
             {
             }
         }

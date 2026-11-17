@@ -177,7 +177,7 @@ class ProductController extends StorefrontController
      */
     public function createEntities(Request $request)
     {
-        $productIds = $request->array('products');
+        $productIds = $request->inputArray('products');
         $products   = Product::whereIn('uuid', $productIds)->get();
         $entities   = [];
 

@@ -80,6 +80,7 @@ test('only an unfinished order past its due time is late', function () {
     $due = Carbon::parse('2026-10-14 11:15:00');
 
     expect(OrderInsights::lateMinutes(orderInsightsOrder(), $due))->toBe(45)
+        ->and(OrderInsights::lateMinutes(orderInsightsOrder(), Carbon::parse('2026-10-14 11:14:30')))->toBe(45)
         ->and(OrderInsights::lateMinutes(orderInsightsOrder(), Carbon::parse('2026-10-14 12:30:00')))->toBe(0)
         ->and(OrderInsights::lateMinutes(orderInsightsOrder(), null))->toBe(0)
         ->and(OrderInsights::lateMinutes(orderInsightsOrder(['status' => 'completed']), $due))->toBe(0)
