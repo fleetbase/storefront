@@ -11,7 +11,6 @@ export default class NetworkSerializer extends ApplicationSerializer.extend(Embe
         return {
             stores: { embedded: 'always' },
             gateways: { embedded: 'always' },
-            notification_channels: { embedded: 'always' },
             logo: { embedded: 'always' },
             backdrop: { embedded: 'always' },
         };

@@ -2043,7 +2043,7 @@ storefront:
       hours: Hours
       locations: Locations
       payment-gateways: Payment gateways
-      notification-channels: Notification channels
+      notification-channels: Push notifications
       danger: Danger zone
       general: General
       branding: Branding and media
@@ -2244,6 +2244,91 @@ storefront:
       manage-store: Manage your stores operating locations and hours
       text-location: Create new location
       store-hour: Manage store hours
+    push-app:
+      lede: 'Order updates, driver messages and campaigns reach your customers’ phones through your own mobile app, with your own Apple and Firebase accounts. One push app covers your app on iOS and Android, even when its iOS bundle ID and Android package name are different.'
+      empty: No push app yet, so customers of your mobile app don’t get push notifications. Set one up with your Apple and Firebase settings.
+      add: Set up push notifications
+      edit: Edit settings
+      save: Save push app
+      cancel: Cancel
+      name: App name
+      name-placeholder: Corner Store
+      name-help: 'Only shown to you, to tell your apps apart. For example, your app’s name on the App Store or Google Play.'
+      on: Send push notifications
+      on-help: 'Turn off to stop sending pushes to this app’s devices without deleting its settings. Sign in with Apple keeps working.'
+      ios: Apple Push Notification service (iOS)
+      ios-help: 'Fill this in if your iOS app gets its push tokens from Apple, as the Fleetbase Storefront app does. If your iOS app gets them from Firebase instead, leave this empty and fill in Firebase below. Leave it empty if you have no iOS app.'
+      bundle-id: iOS bundle ID
+      bundle-id-placeholder: com.acme.shop
+      bundle-id-help: 'Your iOS app’s Bundle Identifier, in Xcode under your app target → General, or in App Store Connect under App Information. It doesn’t have to match your Android package name.'
+      key-id: Apple push Key ID
+      key-id-placeholder: ABC123DEFG
+      key-id-help: '10 letters and numbers, shown next to the key in your Apple Developer account under Certificates, Identifiers & Profiles → Keys. The key needs Apple Push Notifications service (APNs) enabled.'
+      team-id: Apple Team ID
+      team-id-placeholder: TEAM123456
+      team-id-help: '10 letters and numbers, under Membership details in your Apple Developer account.'
+      p8: Apple push key (.p8 file)
+      p8-placeholder: '-----BEGIN PRIVATE KEY-----'
+      p8-help: 'Open the AuthKey_….p8 file you downloaded when you created the key, and paste everything in it. Apple lets you download it only once. One key works for every app in your Apple team.'
+      p8-saved: 'An Apple push key is saved. Leave this empty to keep it, or paste a new one to replace it.'
+      environment: Apple servers
+      environment-help: 'Leave on “Production, then sandbox” unless you need one. App Store and TestFlight builds use production; builds run from Xcode use sandbox.'
+      environment-both: Production, then sandbox
+      environment-production: Production only
+      environment-sandbox: Sandbox only
+      android: Firebase Cloud Messaging (Android, and iOS apps that use Firebase)
+      android-help: 'Sends to your Android app, and to your iOS app too if it gets its push tokens from Firebase. Leave it empty if your app doesn’t use Firebase.'
+      no-package-name: 'There’s no Android package name to enter. Firebase works out which app a push is for from each device’s token, so your package name can differ from your iOS bundle ID. Your app and this service account just need to be in the same Firebase project.'
+      firebase-ios: 'If your iOS app uses Firebase for push, upload your Apple push key in Firebase too: Project settings → Cloud Messaging → Apple app configuration.'
+      service-account: Firebase service account key (JSON)
+      service-account-placeholder: Paste the contents of the service account JSON file
+      service-account-help: 'In the Firebase console: Project settings → Service accounts → Generate new private key. Paste the whole file. It isn’t google-services.json or GoogleService-Info.plist; those are the files your app is built with.'
+      service-account-saved: 'The service account of the Firebase project {project} is saved. Leave this empty to keep it, or paste a new one to replace it.'
+      android-channel: Android notification channel ID (optional)
+      android-channel-placeholder: default
+      android-channel-help: 'The ID of a notification channel your Android app creates, so these pushes use its sound and importance. Leave empty to use the app’s default channel.'
+      sign-in: Sign in with Apple (optional)
+      sign-in-help: 'Customers who sign in with Apple must have their Apple sign-in revoked when they delete their account, as App Store Review requires. That needs a key with Sign in with Apple enabled. If your Apple push key above also has Sign in with Apple enabled, leave this section empty and it’s used. Otherwise, add your Sign in with Apple key here.'
+      sign-in-key-id: Sign in with Apple Key ID
+      sign-in-key-id-placeholder: XYZ987WXYZ
+      sign-in-key-id-help: '10 letters and numbers, shown next to the key in Certificates, Identifiers & Profiles → Keys. The key needs Sign in with Apple enabled for your app.'
+      sign-in-team-id: Apple Team ID for Sign in with Apple
+      sign-in-team-id-help: 'Leave empty to use the Team ID above. Fill it in only if the key belongs to another Apple team.'
+      sign-in-bundle-id: iOS bundle ID for Sign in with Apple
+      sign-in-bundle-id-help: 'Leave empty to use the iOS bundle ID above. Fill it in if you left the Apple push settings empty because your iOS app uses Firebase for push.'
+      sign-in-p8: Sign in with Apple key (.p8 file)
+      sign-in-p8-help: 'Open the AuthKey_….p8 file of the Sign in with Apple key and paste everything in it.'
+      sign-in-p8-saved: 'A Sign in with Apple key is saved. Leave this empty to keep it, or paste a new one to replace it.'
+      key: Push app key
+      key-help: '{kind, select, network {Your network’s app doesn’t need this key: devices it registers with the network key are linked to this push app automatically.} other {Your store’s app doesn’t need this key: devices it registers with the store key are linked to this push app automatically.}} Send it as push_app only when another app should register devices with these settings.'
+      migrated: 'Moved here from your notification channels. Apps that register devices with an old noty_channel_… key keep working.'
+      status-on: Sending
+      status-off: Turned off
+      ios-ready: 'Apple: {bundle}'
+      ios-off: No Apple settings
+      android-ready: 'Firebase: {project}'
+      android-off: No Firebase settings
+      sign-in-ready: 'Sign in with Apple: key {key}'
+      sign-in-off: Sign in with Apple uses the Apple push key
+      devices: '{count, plural, =0 {No devices yet} one {# device} other {# devices}}'
+      send-test: Send test push
+      test-token-type: Token type
+      test-token-type-help: 'Which service issued the token. Leave on “Work it out from the token” if you’re not sure.'
+      token-type-auto: Work it out from the token
+      token-type-apn: Apple device token (APNs)
+      token-type-fcm: Firebase token (FCM)
+      test-environment-help: 'Builds run from Xcode use sandbox; App Store and TestFlight builds use production.'
+      test-token: Device token
+      test-token-placeholder: Paste a push token from a phone with your app installed
+      test-token-help: 'Apple device tokens are 64 letters and numbers. Firebase tokens are much longer and contain a colon.'
+      test-sent: The test push was sent.
+      test-failed: 'The test push wasn’t sent: {reason}'
+      created: '{name} set up.'
+      saved: '{name} saved.'
+      deleted: '{name} removed.'
+      delete: Remove push app
+      delete-title: 'Remove {name}?'
+      delete-body: '{count, plural, =0 {Its settings are deleted.} one {Its settings are deleted, and its # device stops getting push notifications until you set up a push app again.} other {Its settings are deleted, and its # devices stop getting push notifications until you set up a push app again.}}'
     notification:
       empty: No notification channels yet. Add one to reach customers by push.
       create-new-notification-channel: Create a new notification channel

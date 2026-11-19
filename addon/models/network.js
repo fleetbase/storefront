@@ -14,7 +14,6 @@ export default class NetworkModel extends Model {
 
     /** @relationships */
     @hasMany('store') stores;
-    @hasMany('notification-channel') notification_channels;
     @hasMany('gateway') gateways;
     @belongsTo('file') logo;
     @belongsTo('file') backdrop;
@@ -70,22 +69,6 @@ export default class NetworkModel extends Model {
     /** @methods */
     toJSON() {
         return this.serialize();
-    }
-
-    loadNotificationChannels() {
-        const owner = getOwner(this);
-        const store = owner.lookup(`service:store`);
-
-        return new Promise((resolve, reject) => {
-            return store
-                .query('notification-channel', { owner_uuid: this.id })
-                .then((notificationChannels) => {
-                    this.notification_channels = notificationChannels.toArray();
-
-                    resolve(notificationChannels);
-                })
-                .catch(reject);
-        });
     }
 
     loadPaymentGateways() {

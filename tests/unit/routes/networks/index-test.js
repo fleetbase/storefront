@@ -43,6 +43,6 @@ module('Unit | Route | networks/index', function (hooks) {
         assert.strictEqual(refreshed, 1, 'the list loads once it is shown');
 
         route.model({ page: 2 }, { to: { name: 'console.storefront.networks.index.index' } });
-        assert.deepEqual(store.queries[0], ['network', { with_gateways: 1, with_notification_channels: 1, page: 2 }]);
+        assert.deepEqual(store.queries[0], ['network', { with_gateways: 1, page: 2 }]);
     });
 });

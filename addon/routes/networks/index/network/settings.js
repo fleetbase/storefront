@@ -10,18 +10,14 @@ export default class NetworksIndexNetworkSettingsRoute extends Route {
     }
 
     /**
-     * The network record loads without its gateways and notification channels: only the networks
-     * list asks for them, and entering a network skips the list. So a refresh showed none of the
-     * ones saved; load what this network owns each time the page opens.
+     * The network record loads without its gateways: only the networks list asks for them, and
+     * entering a network skips the list. So a refresh showed none of the ones saved; load what
+     * this network owns each time the page opens. The push app section loads its own.
      */
     async afterModel(network) {
-        const ownedBy = { owner_uuid: network.id, limit: -1 };
-        const [gateways, channels] = await Promise.all([
-            this.abilities.can('storefront list gateway') ? this.store.query('gateway', ownedBy) : [],
-            this.abilities.can('storefront list notification-channel') ? this.store.query('notification-channel', ownedBy) : [],
-        ]);
+        const gateways = this.abilities.can('storefront list gateway') ? await this.store.query('gateway', { owner_uuid: network.id, limit: -1 }) : [];
 
-        network.setProperties({ gateways: gateways.toArray?.() ?? gateways, notification_channels: channels.toArray?.() ?? channels });
+        network.setProperties({ gateways: gateways.toArray?.() ?? gateways });
     }
 
     async setupController(controller) {

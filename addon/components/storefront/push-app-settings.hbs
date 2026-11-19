@@ -1,0 +1,281 @@
+{{! The push app of a store or network: its Apple, Firebase and Sign in with Apple settings, a test push, and its key. }}
+<div class="storefront-push-app" data-test-push-app-settings {{did-update this.reload @owner.id}}>
+    <p class="storefront-settings-section__lede">{{t "storefront.settings.push-app.lede"}}</p>
+
+    {{#if this.load.isRunning}}
+        <div class="storefront-app-review__loading"><Spinner /></div>
+    {{else if this.editing}}
+        <div class="storefront-push-app__form" data-test-push-app-form>
+            <InputGroup @name={{t "storefront.settings.push-app.name"}} @helpText={{t "storefront.settings.push-app.name-help"}}>
+                <input
+                    class="form-input w-full"
+                    value={{this.form.name}}
+                    placeholder={{t "storefront.settings.push-app.name-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.name"}}
+                    {{on "input" (fn this.set "name")}}
+                    data-test-push-app-name
+                />
+            </InputGroup>
+            <div class="mb-4">
+                <Toggle
+                    @isToggled={{eq this.form.status "active"}}
+                    @onToggle={{this.toggleStatus}}
+                    @label={{t "storefront.settings.push-app.on"}}
+                    @helpText={{t "storefront.settings.push-app.on-help"}}
+                />
+            </div>
+
+            <h4 class="storefront-push-app__heading">{{t "storefront.settings.push-app.ios"}}</h4>
+            <p class="storefront-push-app__help">{{t "storefront.settings.push-app.ios-help"}}</p>
+            <InputGroup @name={{t "storefront.settings.push-app.bundle-id"}} @helpText={{t "storefront.settings.push-app.bundle-id-help"}}>
+                <input
+                    class="form-input w-full font-mono text-xs"
+                    value={{this.form.apn.app_bundle_id}}
+                    placeholder={{t "storefront.settings.push-app.bundle-id-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.bundle-id"}}
+                    {{on "input" (fn this.set "apn.app_bundle_id")}}
+                    data-test-push-app-bundle-id
+                />
+            </InputGroup>
+            <div class="storefront-push-app__pair">
+                <InputGroup @name={{t "storefront.settings.push-app.key-id"}} @helpText={{t "storefront.settings.push-app.key-id-help"}}>
+                    <input
+                        class="form-input w-full font-mono text-xs"
+                        value={{this.form.apn.key_id}}
+                        placeholder={{t "storefront.settings.push-app.key-id-placeholder"}}
+                        aria-label={{t "storefront.settings.push-app.key-id"}}
+                        {{on "input" (fn this.set "apn.key_id")}}
+                    />
+                </InputGroup>
+                <InputGroup @name={{t "storefront.settings.push-app.team-id"}} @helpText={{t "storefront.settings.push-app.team-id-help"}}>
+                    <input
+                        class="form-input w-full font-mono text-xs"
+                        value={{this.form.apn.team_id}}
+                        placeholder={{t "storefront.settings.push-app.team-id-placeholder"}}
+                        aria-label={{t "storefront.settings.push-app.team-id"}}
+                        {{on "input" (fn this.set "apn.team_id")}}
+                    />
+                </InputGroup>
+            </div>
+            <InputGroup
+                @name={{t "storefront.settings.push-app.p8"}}
+                @helpText={{if this.pushApp.providers.apn.has_key (t "storefront.settings.push-app.p8-saved") (t "storefront.settings.push-app.p8-help")}}
+            >
+                <textarea
+                    class="form-input w-full font-mono text-xs"
+                    rows="4"
+                    placeholder={{t "storefront.settings.push-app.p8-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.p8"}}
+                    value={{this.form.apn.private_key_content}}
+                    {{on "input" (fn this.set "apn.private_key_content")}}
+                ></textarea>
+            </InputGroup>
+            <InputGroup @name={{t "storefront.settings.push-app.environment"}} @helpText={{t "storefront.settings.push-app.environment-help"}}>
+                <Select
+                    @value={{this.form.apn.environment}}
+                    @options={{this.environments}}
+                    @optionLabel="label"
+                    @optionValue="value"
+                    @onSelect={{fn this.set "apn.environment"}}
+                    class="w-full"
+                />
+            </InputGroup>
+
+            <h4 class="storefront-push-app__heading">{{t "storefront.settings.push-app.android"}}</h4>
+            <p class="storefront-push-app__help">{{t "storefront.settings.push-app.android-help"}}</p>
+            <ul class="storefront-app-review__notes storefront-push-app__notes">
+                <li data-test-push-app-no-package-name>{{t "storefront.settings.push-app.no-package-name"}}</li>
+                <li>{{t "storefront.settings.push-app.firebase-ios"}}</li>
+            </ul>
+            <InputGroup
+                @name={{t "storefront.settings.push-app.service-account"}}
+                @helpText={{if
+                    this.pushApp.providers.fcm.has_credentials
+                    (t "storefront.settings.push-app.service-account-saved" project=this.pushApp.providers.fcm.project_id)
+                    (t "storefront.settings.push-app.service-account-help")
+                }}
+            >
+                <textarea
+                    class="form-input w-full font-mono text-xs"
+                    rows="4"
+                    placeholder={{t "storefront.settings.push-app.service-account-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.service-account"}}
+                    value={{this.form.fcm.credentials}}
+                    {{on "input" (fn this.set "fcm.credentials")}}
+                ></textarea>
+            </InputGroup>
+            <InputGroup @name={{t "storefront.settings.push-app.android-channel"}} @helpText={{t "storefront.settings.push-app.android-channel-help"}}>
+                <input
+                    class="form-input w-full font-mono text-xs"
+                    value={{this.form.fcm.android_channel_id}}
+                    placeholder={{t "storefront.settings.push-app.android-channel-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.android-channel"}}
+                    {{on "input" (fn this.set "fcm.android_channel_id")}}
+                />
+            </InputGroup>
+
+            <h4 class="storefront-push-app__heading">{{t "storefront.settings.push-app.sign-in"}}</h4>
+            <p class="storefront-push-app__help">{{t "storefront.settings.push-app.sign-in-help"}}</p>
+            <div class="storefront-push-app__pair">
+                <InputGroup @name={{t "storefront.settings.push-app.sign-in-key-id"}} @helpText={{t "storefront.settings.push-app.sign-in-key-id-help"}}>
+                    <input
+                        class="form-input w-full font-mono text-xs"
+                        value={{this.form.apple_sign_in.key_id}}
+                        placeholder={{t "storefront.settings.push-app.sign-in-key-id-placeholder"}}
+                        aria-label={{t "storefront.settings.push-app.sign-in-key-id"}}
+                        {{on "input" (fn this.set "apple_sign_in.key_id")}}
+                        data-test-push-app-sign-in-key-id
+                    />
+                </InputGroup>
+                <InputGroup @name={{t "storefront.settings.push-app.sign-in-team-id"}} @helpText={{t "storefront.settings.push-app.sign-in-team-id-help"}}>
+                    <input
+                        class="form-input w-full font-mono text-xs"
+                        value={{this.form.apple_sign_in.team_id}}
+                        placeholder={{t "storefront.settings.push-app.team-id-placeholder"}}
+                        aria-label={{t "storefront.settings.push-app.sign-in-team-id"}}
+                        {{on "input" (fn this.set "apple_sign_in.team_id")}}
+                    />
+                </InputGroup>
+            </div>
+            <InputGroup @name={{t "storefront.settings.push-app.sign-in-bundle-id"}} @helpText={{t "storefront.settings.push-app.sign-in-bundle-id-help"}}>
+                <input
+                    class="form-input w-full font-mono text-xs"
+                    value={{this.form.apple_sign_in.app_bundle_id}}
+                    placeholder={{t "storefront.settings.push-app.bundle-id-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.sign-in-bundle-id"}}
+                    {{on "input" (fn this.set "apple_sign_in.app_bundle_id")}}
+                />
+            </InputGroup>
+            <InputGroup
+                @name={{t "storefront.settings.push-app.sign-in-p8"}}
+                @helpText={{if this.pushApp.apple_sign_in.has_key (t "storefront.settings.push-app.sign-in-p8-saved") (t "storefront.settings.push-app.sign-in-p8-help")}}
+            >
+                <textarea
+                    class="form-input w-full font-mono text-xs"
+                    rows="4"
+                    placeholder={{t "storefront.settings.push-app.p8-placeholder"}}
+                    aria-label={{t "storefront.settings.push-app.sign-in-p8"}}
+                    value={{this.form.apple_sign_in.private_key_content}}
+                    {{on "input" (fn this.set "apple_sign_in.private_key_content")}}
+                ></textarea>
+            </InputGroup>
+
+            {{#if this.error}}
+                <p class="storefront-push-app__error" role="alert" data-test-push-app-error><FaIcon @icon="circle-exclamation" /> {{this.error}}</p>
+            {{/if}}
+            <div class="storefront-app-review__actions">
+                <Button @size="sm" @text={{t "storefront.common.cancel"}} @onClick={{this.cancel}} />
+                <Button
+                    @type="primary"
+                    @size="sm"
+                    @icon="save"
+                    @text={{t "storefront.settings.push-app.save"}}
+                    @onClick={{perform this.save}}
+                    @isLoading={{this.save.isRunning}}
+                    data-test-push-app-save
+                />
+            </div>
+        </div>
+    {{else if this.pushApp}}
+        <div class="storefront-push-app__summary" data-test-push-app={{this.pushApp.id}}>
+            <div class="storefront-push-app__tags">
+                <Badge
+                    @status={{if (eq this.pushApp.status "active") "success" "default"}}
+                    @text={{if (eq this.pushApp.status "active") (t "storefront.settings.push-app.status-on") (t "storefront.settings.push-app.status-off")}}
+                    @disableHumanize={{true}}
+                />
+                <span class="storefront-push-app__tag">{{if
+                        this.pushApp.providers.apn
+                        (t "storefront.settings.push-app.ios-ready" bundle=this.pushApp.providers.apn.app_bundle_id)
+                        (t "storefront.settings.push-app.ios-off")
+                    }}</span>
+                <span class="storefront-push-app__tag">{{if
+                        this.pushApp.providers.fcm.has_credentials
+                        (t "storefront.settings.push-app.android-ready" project=this.pushApp.providers.fcm.project_id)
+                        (t "storefront.settings.push-app.android-off")
+                    }}</span>
+                <span class="storefront-push-app__tag">{{if
+                        this.pushApp.apple_sign_in
+                        (t "storefront.settings.push-app.sign-in-ready" key=this.pushApp.apple_sign_in.key_id)
+                        (t "storefront.settings.push-app.sign-in-off")
+                    }}</span>
+                <span class="storefront-app-review__hint mt-0">{{t "storefront.settings.push-app.devices" count=this.pushApp.devices}}</span>
+            </div>
+
+            <InputGroup @name={{t "storefront.settings.push-app.key"}} @helpText={{t "storefront.settings.push-app.key-help" kind=this.kind}} @wrapperClass="mb-0">
+                <ClickToCopy @value={{this.pushApp.key}} class="form-input disabled storefront-app-review__value font-mono text-xs" data-test-push-app-key>{{this.pushApp.key}}</ClickToCopy>
+            </InputGroup>
+            {{#if this.pushApp.migrated_from_channels}}
+                <p class="storefront-settings-section__note" data-test-push-app-migrated>{{t "storefront.settings.push-app.migrated"}}</p>
+            {{/if}}
+
+            {{#if this.canUpdate}}
+                <div class="storefront-app-review__actions">
+                    <Button @size="xs" @icon="paper-plane" @text={{t "storefront.settings.push-app.send-test"}} @onClick={{this.toggleTest}} data-test-push-app-test-toggle />
+                    <Button @size="xs" @icon="pencil" @text={{t "storefront.settings.push-app.edit"}} @onClick={{this.edit}} data-test-push-app-edit />
+                    <Button @size="xs" @type="danger" @icon="trash" @text={{t "storefront.settings.push-app.delete"}} @onClick={{this.remove}} data-test-push-app-delete />
+                </div>
+            {{/if}}
+
+            {{#if this.testing}}
+                <div class="storefront-push-app__test" data-test-push-app-test>
+                    <div class="storefront-push-app__pair">
+                        <InputGroup @name={{t "storefront.settings.push-app.test-token-type"}} @helpText={{t "storefront.settings.push-app.test-token-type-help"}}>
+                            <Select
+                                @value={{this.test.push_provider}}
+                                @options={{this.tokenTypes}}
+                                @optionLabel="label"
+                                @optionValue="value"
+                                @onSelect={{fn this.setTest "push_provider"}}
+                                class="w-full"
+                            />
+                        </InputGroup>
+                        {{#unless (eq this.test.push_provider "fcm")}}
+                            <InputGroup @name={{t "storefront.settings.push-app.environment"}} @helpText={{t "storefront.settings.push-app.test-environment-help"}}>
+                                <Select
+                                    @value={{this.test.environment}}
+                                    @options={{this.environments}}
+                                    @optionLabel="label"
+                                    @optionValue="value"
+                                    @onSelect={{fn this.setTest "environment"}}
+                                    class="w-full"
+                                />
+                            </InputGroup>
+                        {{/unless}}
+                    </div>
+                    <InputGroup @name={{t "storefront.settings.push-app.test-token"}} @helpText={{t "storefront.settings.push-app.test-token-help"}}>
+                        <input
+                            class="form-input w-full font-mono text-xs"
+                            value={{this.test.token}}
+                            placeholder={{t "storefront.settings.push-app.test-token-placeholder"}}
+                            aria-label={{t "storefront.settings.push-app.test-token"}}
+                            {{on "input" (fn this.setTest "token")}}
+                            data-test-push-app-test-token
+                        />
+                    </InputGroup>
+                    {{#if this.testResult}}
+                        <p class={{if this.testResult.ok "storefront-push-app__ok" "storefront-push-app__error"}} role="status" data-test-push-app-test-result>{{this.testResult.text}}</p>
+                    {{/if}}
+                    <div class="storefront-app-review__actions">
+                        <Button
+                            @type="primary"
+                            @size="xs"
+                            @icon="paper-plane"
+                            @text={{t "storefront.settings.push-app.send-test"}}
+                            @onClick={{perform this.sendTest}}
+                            @isLoading={{this.sendTest.isRunning}}
+                            data-test-push-app-send-test
+                        />
+                    </div>
+                </div>
+            {{/if}}
+        </div>
+    {{else if this.loaded}}
+        <div class="storefront-empty-row"><span>{{t "storefront.settings.push-app.empty"}}</span></div>
+        {{#if this.canUpdate}}
+            <div class="storefront-app-review__actions">
+                <Button @type="primary" @size="sm" @icon="plus" @text={{t "storefront.settings.push-app.add"}} @onClick={{this.edit}} data-test-push-app-add />
+            </div>
+        {{/if}}
+    {{/if}}
+</div>

@@ -8,7 +8,7 @@ import getPodMethods from '@fleetbase/ember-core/utils/get-pod-methods';
 /**
  * NetworksIndexNetworkSettingsController
  *
- * This controller handles the logic for managing networks, gateways, and notification channels.
+ * This controller handles the logic for managing networks and gateways. The push app section manages itself (Storefront::PushAppSettings).
  *
  * @class NetworksIndexNetworkSettingsController
  * @extends Controller
@@ -20,13 +20,6 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
      * @property {Controller} gatewaysController
      */
     @controller('settings.gateways') gatewaysController;
-
-    /**
-     * Controller for managing notifications.
-     *
-     * @property {Controller} notificationsController
-     */
-    @controller('settings.notifications') notificationsController;
 
     /**
      * Notifications service to handle notification logic.
@@ -99,7 +92,7 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
             item('rules', this.intl.t('storefront.settings.sections.checkout-rules'), 'cart-shopping'),
             item('alerts', this.intl.t('storefront.common.alerts'), 'bell'),
             item('gateways', this.intl.t('storefront.settings.sections.gateways'), 'cash-register', this.gateways?.length || null),
-            item('notifications', this.intl.t('storefront.settings.sections.notifications'), 'bell-concierge', this.channels?.length || null),
+            item('notifications', this.intl.t('storefront.settings.sections.notifications'), 'bell-concierge'),
             item('api', this.intl.t('storefront.settings.sections.api-keys'), 'code'),
             item('app-review', this.intl.t('storefront.settings.sections.app-review'), 'user-check'),
         ];
@@ -238,13 +231,6 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
     @alias('model.gateways') gateways;
 
     /**
-     * Alias for model.notification_channels, representing the notification channels associated with the network.
-     *
-     * @property {Array} channels
-     */
-    @alias('model.notification_channels') channels;
-
-    /**
      * Save network settings.
      *
      * @method saveSettings
@@ -360,82 +346,6 @@ export default class NetworksIndexNetworkSettingsController extends Controller {
      */
     @action deleteGateway() {
         return this.gatewaysController.deleteGateway(...arguments);
-    }
-
-    /**
-     * Create a new notification channel.
-     *
-     * @method createChannel
-     * @public
-     */
-    @action createChannel() {
-        const channel = this.store.createRecord('notification-channel', {
-            owner_uuid: this.model.id,
-            owner_type: 'storefront:network',
-        });
-
-        this.editChannel(channel, {
-            title: this.intl.t('storefront.networks.index.network.index.create-new-notification-channel'),
-            acceptButtonText: this.intl.t('storefront.networks.index.network.index.create-notification-channel'),
-            confirm: (modal) => {
-                modal.startLoading();
-
-                return channel.save().then((channel) => {
-                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.notification-channel-add-network'));
-                    this.channels.pushObject(channel);
-                });
-            },
-            decline: (modal) => {
-                channel.destroyRecord();
-                modal.done();
-            },
-        });
-    }
-
-    /**
-     * Edit a notification channel.
-     *
-     * @method editChannel
-     * @param {Object} channel - The channel object to edit.
-     * @param {Object} [options={}] - Optional parameters for editing the channel.
-     * @public
-     */
-    @action editChannel(channel, options = {}) {
-        if (options === null) {
-            options = {};
-        }
-
-        if (!options.confirm) {
-            options.confirm = (modal) => {
-                modal.startLoading();
-
-                return channel.save().then(() => {
-                    this.notifications.success(this.intl.t('storefront.networks.index.network.index.notification-channel-changes-save'));
-                });
-            };
-        }
-
-        return this.notificationsController.editChannel(channel, options);
-    }
-
-    /**
-     * Delete a notification channel.
-     *
-     * @method deleteChannel
-     * @public
-     */
-    @action deleteChannel() {
-        return this.notificationsController.deleteChannel(...arguments);
-    }
-
-    /**
-     * Send a test push notification through a notification channel.
-     *
-     * @method testChannel
-     * @public
-     */
-    @action testChannel() {
-        return this.notificationsController.testChannel(...arguments);
     }
 
     /**
