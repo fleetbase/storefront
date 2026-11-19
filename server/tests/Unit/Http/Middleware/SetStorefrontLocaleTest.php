@@ -102,7 +102,7 @@ afterEach(function () {
 });
 
 test('storefront supports the languages it ships, english first', function () {
-    expect(CustomerLocale::available())->toBe(['en', 'mn', 'uk'])
+    expect(CustomerLocale::available())->toBe(['en', 'es', 'mn', 'uk'])
         ->and(CustomerLocale::supports('mn'))->toBeTrue()
         ->and(CustomerLocale::supports('fr'))->toBeFalse()
         ->and(CustomerLocale::supports(null))->toBeFalse();
