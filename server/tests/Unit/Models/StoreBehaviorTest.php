@@ -211,7 +211,6 @@ test('store exposes its relationship contracts', function () {
         ->and((new Store())->hours())->toBeInstanceOf(HasMany::class)
         ->and((new Store())->reviews())->toBeInstanceOf(HasMany::class)
         ->and((new Store())->votes())->toBeInstanceOf(HasMany::class)
-        ->and((new Store())->notificationChannels())->toBeInstanceOf(HasMany::class)
         ->and((new Store())->gateways())->toBeInstanceOf(HasMany::class)
         ->and((new Store())->locations())->toBeInstanceOf(HasMany::class)
         ->and((new Store())->networkStores())->toBeInstanceOf(HasMany::class)

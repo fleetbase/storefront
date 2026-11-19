@@ -4564,6 +4564,103 @@ body[data-theme='dark'] .storefront-app-review__hint--warn {
     }
 }
 
+/* Push app: a store's or network's Apple, Firebase and Sign in with Apple settings. */
+.storefront-push-app__heading {
+    margin: 1rem 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.storefront-push-app__help {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+.storefront-push-app__pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1rem;
+}
+
+.storefront-push-app__notes {
+    margin: 0 0 1rem;
+}
+
+.storefront-push-app__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.storefront-push-app__tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.storefront-push-app__tag {
+    padding: 0.125rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    color: #374151;
+}
+
+.storefront-push-app__test {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+}
+
+.storefront-push-app__error,
+.storefront-push-app__ok {
+    margin: 0.5rem 0;
+    font-size: 0.75rem;
+}
+
+.storefront-push-app__error {
+    color: #b91c1c;
+}
+
+.storefront-push-app__ok {
+    color: #15803d;
+}
+
+body[data-theme='dark'] .storefront-push-app__heading {
+    color: #f3f4f6;
+}
+
+body[data-theme='dark'] .storefront-push-app__help {
+    color: #9ca3af;
+}
+
+body[data-theme='dark'] .storefront-push-app__tag {
+    border-color: #374151;
+    color: #d1d5db;
+}
+
+body[data-theme='dark'] .storefront-push-app__test {
+    border-color: #374151;
+}
+
+body[data-theme='dark'] .storefront-push-app__error {
+    color: #f87171;
+}
+
+body[data-theme='dark'] .storefront-push-app__ok {
+    color: #4ade80;
+}
+
+@media (width <= 640px) {
+    .storefront-push-app__pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .storefront-settings-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

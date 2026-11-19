@@ -1,6 +1,7 @@
 <?php
 
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\PromotionalPushNotification;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
@@ -12,8 +13,7 @@ use Fleetbase\Storefront\Notifications\StorefrontOrderEnroute;
 use Fleetbase\Storefront\Notifications\StorefrontOrderNearby;
 use Fleetbase\Storefront\Notifications\StorefrontOrderPreparing;
 use Fleetbase\Storefront\Notifications\StorefrontOrderReadyForPickup;
-use Fleetbase\Storefront\Push\PushMessage;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
 use Illuminate\Notifications\Messages\MailMessage;
 use NotificationChannels\Twilio\TwilioChannel;
 use NotificationChannels\Twilio\TwilioSmsMessage;
@@ -189,13 +189,13 @@ test('order lifecycle notifications build their runtime messages and provider pa
         : new $class($order);
     $notifiable = (object) ['public_id' => 'user_public'];
 
-    $push = $notification->toPush($notifiable);
+    $push = $notification->toPushApp($notifiable);
 
     expect($notification->storefront->public_id)->toBe('store_public')
         ->and($notification->status)->toBe($expectedStatus)
         ->and($notification->subject)->not->toBeEmpty()
         ->and($notification->body)->not->toBeEmpty()
-        ->and($notification->via($notifiable))->toBe([StorefrontPushChannel::class, 'database', 'mail', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
+        ->and($notification->via($notifiable))->toBe([StorefrontPushAppChannel::class, 'database', 'mail', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
         ->and($push)->toBeInstanceOf(PushMessage::class)
         ->and($push->title)->toBe($notification->subject)
         ->and($push->body)->toBe($notification->body)
@@ -381,9 +381,9 @@ test('promotional notifications deliver through the storefront push channel and 
     $store->setRelation('networks', collect([tap(new Fleetbase\Storefront\Models\Network())->forceFill(['uuid' => 'network_uuid'])]));
 
     $notification = new PromotionalPushNotification('Weekend sale', 'Save now', $store);
-    $push         = $notification->toPush(null);
+    $push         = $notification->toPushApp(null);
 
-    expect($notification->via(null))->toBe([StorefrontPushChannel::class, 'database', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
+    expect($notification->via(null))->toBe([StorefrontPushAppChannel::class, 'database', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
         ->and($push)->toBeInstanceOf(PushMessage::class)
         ->and($push->title)->toBe('Weekend sale')
         ->and($push->data)->toBe(['type' => 'promotional', 'store' => 'store_uuid', 'store_id' => 'store_public'])

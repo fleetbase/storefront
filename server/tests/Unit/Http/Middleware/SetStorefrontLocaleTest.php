@@ -209,7 +209,7 @@ test('order notifications are written in the customer language', function () {
         ->and($english->subject)->toBe('Your order from Nomin has been accepted.')
         ->and($mongolian->locale)->toBe('mn')
         ->and($mongolian->subject)->toBe('Nomin таны захиалгыг хүлээн авлаа.')
-        ->and($mongolian->toPush(null)->body)->toBe('Таны захиалга баталгаажлаа.')
+        ->and($mongolian->toPushApp(null)->body)->toBe('Таны захиалга баталгаажлаа.')
         ->and($ukrainian->subject)->toBe('Nomin прийняв ваше замовлення.');
 });
 

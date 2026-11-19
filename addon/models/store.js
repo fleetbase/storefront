@@ -14,7 +14,6 @@ export default class StoreModel extends Model {
     @attr('string') order_config_uuid;
 
     /** @relationships */
-    @hasMany('notification-channel') notification_channels;
     @hasMany('gateway') gateways;
     @belongsTo('category') category;
     @belongsTo('file') logo;

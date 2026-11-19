@@ -50,7 +50,7 @@ Read the official guide at [fleetbase.io/docs/storefront](https://www.fleetbase.
 - **Customers**: support customer registration, login, SMS verification, social login hooks, saved customer metadata, device registration, order history, and account closure flows.
 - **Orders and fulfillment**: manage Storefront orders in the console, advance order activity, assign/unassign drivers, mark preparation states, complete pickups, and inspect commerce details alongside route and tracking data.
 - **Reviews and votes**: expose API resources for customer reviews and voting.
-- **Promotions and notifications**: manage notification channels and send broadcast or transactional push notifications through APNs, FCM, and related Storefront notification classes.
+- **Promotions and notifications**: set up each store's or network's push app (its own Apple and Firebase settings, through core-api push apps) and send broadcast or transactional push notifications.
 - **Dashboard analytics**: ship Storefront widgets for revenue, order volume, average order value, active orders, completed orders, customers, cart conversion, cancellation rate, revenue trends, top products, customer insights, order status mix, recent orders, and recent customers.
 - **Fleet-Ops integration**: register Storefront summaries inside Fleet-Ops order details and add product-as-entity tooling to Fleet-Ops order creation.
 - **Internationalization**: include translations for multiple locales through the extension translation files.
@@ -102,7 +102,7 @@ Storefront registers a Console entry under the `storefront` route and exposes th
 - **Networks**: multi-store marketplace networks, store assignment, categories, invitations, and network-level views for stores, customers, and orders.
 - **Catalogs**: product bundles and catalog categories, including food truck catalog assignment.
 - **Food Trucks**: Fleet-Ops vehicle-linked mobile stores with service area and zone support.
-- **Promotions**: push notification campaigns and notification channel workflows.
+- **Promotions**: push notification campaigns.
 - **Settings**: store profile, API keys, locations, gateways, and notifications.
 
 ## API Surface
@@ -136,7 +136,7 @@ A public `network_...` key uses accepted `network_stores` membership as its mark
 
 The protected internal API is mounted under `storefront/int/v1`. It powers the Fleetbase Console and includes:
 
-- CRUD resources for orders, customers, stores, store hours, store locations, products, product hours, variants, variant options, addons, addon categories, gateways, notification channels, reviews, votes, food trucks, catalogs, catalog categories, and catalog hours.
+- CRUD resources for orders, customers, stores, store hours, store locations, products, product hours, variants, variant options, addons, addon categories, gateways, reviews, votes, food trucks, catalogs, catalog categories, and catalog hours.
 - Order actions for accept, preparing, ready, completed, cancel, and unassign driver.
 - Network actions for adding stores, removing stores, categories, invitations, and network lookup.
 - Analytics endpoints for overview, revenue trends, order status mix, top products, and customer insights.

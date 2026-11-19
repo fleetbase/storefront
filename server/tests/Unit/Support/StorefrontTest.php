@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../Support/PushAppTestHelpers.php';
+
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Support\Storefront;
@@ -115,7 +117,7 @@ class StorefrontSupportProbe extends Storefront
 function createStorefrontSupportSchema(): void
 {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
-    foreach (['personal_access_tokens', 'contacts', 'users', 'order_configs', 'notification_channels', 'products', 'networks', 'stores'] as $table) {
+    foreach (['personal_access_tokens', 'contacts', 'users', 'order_configs', 'products', 'networks', 'stores'] as $table) {
         $schema->dropIfExists($table);
     }
     foreach (['stores', 'networks'] as $tableName) {
@@ -141,13 +143,6 @@ function createStorefrontSupportSchema(): void
         $table->decimal('price', 12, 2)->nullable();
         $table->decimal('sale_price', 12, 2)->nullable();
         $table->boolean('is_on_sale')->default(false);
-        $table->softDeletes();
-    });
-    $schema->create('notification_channels', function ($table) {
-        $table->increments('id');
-        $table->string('uuid')->nullable();
-        $table->string('owner_uuid')->nullable();
-        $table->string('scheme')->nullable();
         $table->softDeletes();
     });
     $schema->create('order_configs', function ($table) {
@@ -220,11 +215,8 @@ test('storefront resolves store and network identities products and cart item de
         'sale_price' => 1000,
         'is_on_sale' => true,
     ]);
-    $connection->table('notification_channels')->insert([
-        'uuid'       => 'channel_uuid',
-        'owner_uuid' => '11111111-1111-4111-8111-111111111111',
-        'scheme'     => 'email',
-    ]);
+    sfPushAppsSetUp();
+    sfPushAppsCreate(['owner_uuid' => '11111111-1111-4111-8111-111111111111'], ['apn' => sfPushAppsApn()]);
     $connection->table('order_configs')->insert([
         'uuid'       => 'order_config_uuid',
         'flow'       => '[]',
@@ -251,8 +243,9 @@ test('storefront resolves store and network identities products and cart item de
         ->and($description)->toBe('Coffee with Variation: Large,Hot with Addons: Oat Milk')
         ->and(Storefront::hasNotificationChannelConfigured(
             '11111111-1111-4111-8111-111111111111',
-            'email'
+            'apn'
         ))->toBeTrue()
+        ->and(Storefront::hasNotificationChannelConfigured('11111111-1111-4111-8111-111111111111', 'fcm'))->toBeFalse()
         ->and(Storefront::hasNotificationChannelConfigured('store_public', 'sms'))->toBeFalse()
         ->and(Storefront::hasNotificationChannelConfigured('network_public', 'email'))->toBeFalse()
         ->and(Storefront::hasNotificationChannelConfigured(
@@ -265,7 +258,7 @@ test('storefront resolves store and network identities products and cart item de
         ->and(Storefront::findAbout('network_missing'))->toBeNull();
 
     $store = Store::where('public_id', 'store_public')->first();
-    expect(Storefront::hasNotificationChannelConfigured($store, 'email'))->toBeTrue();
+    expect(Storefront::hasNotificationChannelConfigured($store, 'apn'))->toBeTrue();
 });
 
 test('storefront auto acceptance and dispatch preserve pickup adhoc and driver transitions', function () {

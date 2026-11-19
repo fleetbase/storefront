@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../../Support/PushAppTestHelpers.php';
+
 use Fleetbase\Models\UserDevice;
 use Fleetbase\Storefront\Http\Controllers\v1\CustomerController;
 use Illuminate\Database\Eloquent\Model;
@@ -67,20 +69,21 @@ function deviceRegistrationRequest(string $secret, array $input): Request
 
 beforeEach(function () {
     $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
-    foreach (['contacts', 'personal_access_tokens', 'user_devices'] as $table) {
+    foreach (['contacts', 'personal_access_tokens', 'stores', 'networks'] as $table) {
         $schema->dropIfExists($table);
     }
-    $schema->create('user_devices', function ($table) {
-        $table->increments('id');
-        $table->string('uuid')->nullable();
-        $table->string('public_id')->nullable();
-        $table->string('user_uuid')->nullable();
-        $table->string('platform')->nullable();
-        $table->text('token')->nullable();
-        $table->string('status')->nullable();
-        $table->timestamps();
-        $table->timestamp('deleted_at')->nullable();
-    });
+    sfPushAppsSetUp();
+    foreach (['stores', 'networks'] as $name) {
+        $schema->create($name, function ($table) {
+            $table->increments('id');
+            foreach (['uuid', 'public_id', 'company_uuid', 'backdrop_uuid', 'logo_uuid', 'order_config_uuid', 'key', 'name', 'description', 'translations', 'website', 'facebook', 'instagram', 'twitter', 'email', 'phone', 'tags', 'currency', 'timezone', 'pod_method', 'options'] as $column) {
+                $table->text($column)->nullable();
+            }
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+    session(['storefront_key' => null, 'storefront_store' => null, 'storefront_network' => null]);
 
     bootDeviceRegistrationCustomer('11111111-1111-4111-8111-111111111111', 'first_user', 'first-secret');
     bootDeviceRegistrationCustomer('22222222-2222-4222-8222-222222222222', 'second_user', 'second-secret');
@@ -163,14 +166,7 @@ test('device unregistration requires an authenticated customer and a token', fun
         ->and($missingToken->getData(true))->toBe(['error' => 'A device token is required.']);
 });
 
-test('device registration records the app and APNs environment when core-api supports it', function () {
-    $schema = Model::getConnectionResolver()->connection('mysql')->getSchemaBuilder();
-    $schema->table('user_devices', function ($table) {
-        $table->string('app_identifier')->nullable();
-        $table->string('environment')->nullable();
-        $table->timestamp('last_seen_at')->nullable();
-    });
-
+test('device registration records the storefront and APNs environment', function () {
     $request = deviceRegistrationRequest('first-secret', ['token' => 'ios-token', 'platform' => 'ios', 'environment' => 'sandbox']);
     $request->session()->put('storefront_network', 'network_uuid');
     session(['storefront_store' => null, 'storefront_network' => 'network_uuid']);
@@ -181,4 +177,46 @@ test('device registration records the app and APNs environment when core-api sup
     expect(UserDevice::where('token', 'ios-token')->first(['app_identifier', 'environment'])->toArray())->toBe(['app_identifier' => 'network_uuid', 'environment' => 'sandbox'])
         ->and(UserDevice::where('token', 'ios-token')->value('last_seen_at'))->not->toBeNull()
         ->and(UserDevice::where('token', 'android-token')->value('environment'))->toBeNull();
+});
+
+test('device registration links the device to the push app the app names, else the storefront\'s own', function () {
+    $db = Model::getConnectionResolver()->connection('mysql');
+    $db->table('stores')->insert(['uuid' => 'store_uuid', 'public_id' => 'store_public', 'company_uuid' => 'company_uuid', 'key' => 'store_key', 'name' => 'Corner Store']);
+    $db->table('networks')->insert(['uuid' => 'network_uuid', 'public_id' => 'network_public', 'company_uuid' => 'company_uuid', 'key' => 'network_key', 'name' => 'Corner Network']);
+    $own    = sfPushAppsCreate(['uuid' => 'own_app', 'key' => 'push_app_own']);
+    $named  = sfPushAppsCreate(['uuid' => 'named_app', 'key' => 'push_app_named', 'owner_uuid' => 'other_owner']);
+    $legacy = sfPushAppsCreate(['uuid' => 'legacy_app', 'key' => 'push_app_legacy', 'owner_uuid' => 'legacy_owner', 'meta' => ['storefront_channel_keys' => ['noty_channel_abc']]]);
+    sfPushAppsCreate(['uuid' => 'foreign_app', 'key' => 'push_app_foreign', 'company_uuid' => 'other_company', 'owner_uuid' => 'foreign_owner']);
+    session(['storefront_key' => 'store_key', 'storefront_store' => 'store_uuid']);
+    $controller = new CustomerController();
+
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'own-token', 'platform' => 'ios', 'push_provider' => 'firebase']));
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'named-token', 'platform' => 'ios', 'push_app' => 'push_app_named', 'push_provider' => 'pigeon']));
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'legacy-token', 'platform' => 'android', 'push_app' => 'noty_channel_abc']));
+    // Another company's key, or a key that matches nothing, falls back to the store's own app.
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'foreign-token', 'platform' => 'android', 'push_app' => 'push_app_foreign']));
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'unknown-token', 'platform' => 'android', 'push_app' => 'noty_channel_missing']));
+
+    $linked = fn (string $token) => UserDevice::where('token', $token)->first(['push_app_uuid', 'company_uuid', 'app_identifier', 'push_provider'])->toArray();
+
+    expect($linked('own-token'))->toBe(['push_app_uuid' => 'own_app', 'company_uuid' => 'company_uuid', 'app_identifier' => 'own_app', 'push_provider' => 'fcm'])
+        ->and($linked('named-token'))->toBe(['push_app_uuid' => 'named_app', 'company_uuid' => 'company_uuid', 'app_identifier' => 'named_app', 'push_provider' => null])
+        ->and($linked('legacy-token')['push_app_uuid'])->toBe('legacy_app')
+        ->and($linked('foreign-token')['push_app_uuid'])->toBe('own_app')
+        ->and($linked('unknown-token')['push_app_uuid'])->toBe('own_app');
+
+    // The network has no push app: a device registering from its app is unlinked, and keeps
+    // the network as its storefront so pushes find the network's app once it has one.
+    session(['storefront_key' => 'network_key', 'storefront_store' => null, 'storefront_network' => 'network_uuid']);
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'own-token', 'platform' => 'ios']));
+
+    expect($linked('own-token'))->toMatchArray(['push_app_uuid' => null, 'app_identifier' => 'network_uuid']);
+
+    // A switched-off push app isn't joined.
+    $own->update(['status' => 'inactive']);
+    session(['storefront_key' => 'store_key', 'storefront_store' => 'store_uuid', 'storefront_network' => null]);
+    $controller->registerDevice(deviceRegistrationRequest('first-secret', ['token' => 'named-token', 'platform' => 'ios']));
+
+    expect($linked('named-token')['push_app_uuid'])->toBeNull()
+        ->and($named->exists && $legacy->exists)->toBeTrue();
 });

@@ -6,7 +6,6 @@ use Fleetbase\Storefront\Http\Filter\CustomerFilter;
 use Fleetbase\Storefront\Http\Filter\FoodTruckFilter;
 use Fleetbase\Storefront\Http\Filter\GatewayFilter;
 use Fleetbase\Storefront\Http\Filter\NetworkFilter;
-use Fleetbase\Storefront\Http\Filter\NotificationChannelFilter;
 use Fleetbase\Storefront\Http\Filter\OrderFilter;
 use Fleetbase\Storefront\Http\Filter\ProductFilter;
 use Fleetbase\Storefront\Http\Filter\StoreFilter;
@@ -16,7 +15,6 @@ use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
-use Fleetbase\Storefront\Models\NotificationChannel;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Models\StoreLocation;
@@ -58,7 +56,6 @@ test('company-scoped filters isolate internal resources to the active tenant', f
 })->with([
     'gateway'              => [GatewayFilter::class, Gateway::class],
     'network'              => [NetworkFilter::class, Network::class],
-    'notification channel' => [NotificationChannelFilter::class, NotificationChannel::class],
     'product'              => [ProductFilter::class, Product::class],
     'store'                => [StoreFilter::class, Store::class],
 ]);

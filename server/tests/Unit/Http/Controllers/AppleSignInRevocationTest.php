@@ -1,6 +1,7 @@
 <?php
 
 use Fleetbase\FleetOps\Models\Contact;
+use Fleetbase\Models\PushApp;
 use Fleetbase\Storefront\Http\Controllers\v1\CustomerController;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Models\AppleSignInToken;
@@ -73,7 +74,7 @@ function appleSignInDb()
 function appleSignInSchema(): void
 {
     $schema = appleSignInDb()->getSchemaBuilder();
-    foreach (['apple_sign_in_tokens', 'notification_channels', 'networks', 'stores', 'companies', 'users', 'contacts', 'verification_codes', 'personal_access_tokens'] as $table) {
+    foreach (['apple_sign_in_tokens', 'push_apps', 'networks', 'stores', 'companies', 'users', 'contacts', 'verification_codes', 'personal_access_tokens'] as $table) {
         $schema->dropIfExists($table);
     }
     $schema->create('apple_sign_in_tokens', function ($table) {
@@ -88,9 +89,9 @@ function appleSignInSchema(): void
         $table->timestamps();
         $table->softDeletes();
     });
-    $schema->create('notification_channels', function ($table) {
+    $schema->create('push_apps', function ($table) {
         $table->increments('id');
-        foreach (['uuid', 'company_uuid', 'owner_uuid', 'owner_type', 'name', 'scheme', 'app_key', 'config', 'options'] as $column) {
+        foreach (['uuid', 'public_id', 'company_uuid', 'created_by_uuid', 'name', 'key', 'providers', 'status', 'owner_uuid', 'owner_type', 'meta'] as $column) {
             $table->text($column)->nullable();
         }
         $table->timestamps();
@@ -214,24 +215,35 @@ function appleSignInPrivateKey(): string
     return $pem;
 }
 
-function appleSignInChannel(string $scheme, string $keyId, array $config = [], string $owner = 'store_uuid', string $createdAt = '2026-10-01 00:00:00'): void
+/**
+ * A push app holding one signing setting: `apple_sign_in` (a Sign in with Apple key), `apn`
+ * (the Apple push key) or `fcm`. The other store's push app belongs to another company.
+ */
+function appleSignInPushApp(string $setting, string $keyId, array $config = [], string $owner = 'store_uuid', string $status = 'active', array $otherSettings = []): PushApp
 {
-    appleSignInDb()->table('notification_channels')->insert([
-        'uuid'         => 'channel_' . $keyId,
-        'company_uuid' => 'company_uuid',
+    static $sequence = 0;
+    $sequence++;
+
+    $app = new PushApp();
+    $app->forceFill([
+        'uuid'         => 'push_app_' . $sequence,
+        'public_id'    => 'push_app_public_' . $sequence,
+        'key'          => 'push_app_key_' . $sequence,
+        'company_uuid' => $owner === 'other_store_uuid' ? 'other_company_uuid' : 'company_uuid',
         'owner_uuid'   => $owner,
-        'owner_type'   => 'storefront:store',
-        'name'         => $scheme . ' ' . $keyId,
-        'scheme'       => $scheme,
-        'config'       => json_encode(array_merge([
-            'key_id'              => $keyId,
-            'team_id'             => 'TEAM123456',
-            'app_bundle_id'       => APPLE_SIGN_IN_BUNDLE_ID,
-            'private_key_content' => appleSignInPrivateKey(),
-        ], $config)),
-        'created_at' => $createdAt,
-        'updated_at' => $createdAt,
+        'owner_type'   => Fleetbase\Storefront\Models\Store::class,
+        'name'         => $setting . ' ' . $keyId,
+        'status'       => $status,
     ]);
+    $app->providers = array_merge([$setting => array_merge([
+        'key_id'              => $keyId,
+        'team_id'             => 'TEAM123456',
+        'app_bundle_id'       => APPLE_SIGN_IN_BUNDLE_ID,
+        'private_key_content' => appleSignInPrivateKey(),
+    ], $config)], $otherSettings);
+    $app->save();
+
+    return $app;
 }
 
 function appleSignInBase64Url(string $value): string
@@ -295,7 +307,7 @@ function appleSignInCloseAccount()
 test('Apple sign-in keeps the refresh token Apple issues for the authorization code, encrypted', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     $db = appleSignInDb();
     $db->table('users')->insert(['uuid' => 'user_uuid', 'company_uuid' => 'company_uuid', 'name' => 'Ada Buyer', 'email' => 'ada@privaterelay.appleid.com', 'type' => 'customer']);
     $db->table('contacts')->insert(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'public_id' => 'contact_ada', 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid', 'name' => 'Ada Buyer', 'type' => 'customer']);
@@ -349,15 +361,15 @@ test('the push key signs for the app when it has Sign in with Apple, and a key A
     appleSignInSchema();
     appleSignInFakes();
     // Tried first: a Sign in with Apple key, which Apple turns away as from the wrong team.
-    appleSignInChannel(AppleSignIn::SCHEME, 'WRONGTEAM1', ['team_id' => 'OTHERTEAM1'], 'store_uuid', '2026-10-03 00:00:00');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'WRONGTEAM1', ['team_id' => 'OTHERTEAM1']);
     // The network's push key, which also has Sign in with Apple enabled.
-    appleSignInChannel('apn', 'PUSHKEY001', [], 'network_uuid', '2026-10-01 00:00:00');
-    // Never used: a push key for another app, an FCM channel and another company's key.
-    appleSignInChannel('apn', 'OTHERAPP01', ['app_bundle_id' => 'com.other.app']);
-    appleSignInChannel('fcm', 'FCMKEY0001');
-    appleSignInChannel(AppleSignIn::SCHEME, 'ELSEWHERE1', [], 'other_store_uuid');
+    appleSignInPushApp('apn', 'PUSHKEY001', [], 'network_uuid');
+    // Never used: a push key for another app, Firebase settings and another company's key.
+    appleSignInPushApp('apn', 'OTHERAPP01', ['app_bundle_id' => 'com.other.app']);
+    appleSignInPushApp('fcm', 'FCMKEY0001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'ELSEWHERE1', [], 'other_store_uuid');
     // Incomplete: no private key.
-    appleSignInChannel(AppleSignIn::SCHEME, 'NOPRIVKEY1', ['private_key_content' => '']);
+    appleSignInPushApp(AppleSignIn::SCHEME, 'NOPRIVKEY1', ['private_key_content' => '']);
 
     Http::fake(function (ClientRequest $request) {
         return appleSignInClientSecret($request)['kid'] === 'PUSHKEY001'
@@ -385,7 +397,7 @@ test('sign-in does not call Apple without a key, and keeps nothing when Apple re
     $withoutKey = $signIn->remember($customer, appleSignInIdentityToken(), 'one-time-code');
     $calls      = Http::recorded()->count();
 
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     $refused        = $signIn->remember($customer, appleSignInIdentityToken(), 'used-code');
     $noAudience     = $signIn->remember($customer, 'not-a-jwt', 'one-time-code');
     $otherAppsToken = $signIn->remember($customer, appleSignInIdentityToken('com.other.app'), 'one-time-code');
@@ -409,7 +421,7 @@ test('sign-in does not call Apple without a key, and keeps nothing when Apple re
 test('Apple sign-in still signs the customer in when keeping the token fails', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     $db = appleSignInDb();
     $db->table('users')->insert(['uuid' => 'user_uuid', 'company_uuid' => 'company_uuid', 'name' => 'Ada Buyer', 'email' => 'ada@privaterelay.appleid.com', 'type' => 'customer']);
     $db->table('contacts')->insert(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'public_id' => 'contact_ada', 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid', 'name' => 'Ada Buyer', 'type' => 'customer']);
@@ -431,7 +443,7 @@ test('Apple sign-in still signs the customer in when keeping the token fails', f
 test('account closure revokes the customer\'s Apple tokens with Apple before the account is deleted', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     appleSignInSignedInCustomer();
     appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-123');
     // The same user's customer in the network app; its user goes too, so its token is revoked.
@@ -460,8 +472,8 @@ test('account closure revokes the customer\'s Apple tokens with Apple before the
 test('account closure still deletes the account when Apple refuses, fails or no key is configured', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
-    appleSignInChannel(AppleSignIn::SCHEME, 'TIMEOUTKEY', ['app_bundle_id' => 'com.cornerstore.timeout']);
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'TIMEOUTKEY', ['app_bundle_id' => 'com.cornerstore.timeout']);
     appleSignInSignedInCustomer();
     appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-refused');
     appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-timeout', 'com.cornerstore.timeout');
@@ -510,7 +522,7 @@ test('account closure goes ahead when the token store cannot be read', function 
 test('account closure goes ahead when a revoked token cannot be removed', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     appleSignInSignedInCustomer();
     appleSignInKeptToken(APPLE_SIGN_IN_CONTACT_UUID, 'refresh-123');
     // The failed delete's message names the row's uuid, which here must not echo the token.
@@ -539,8 +551,8 @@ test('account closure goes ahead when a revoked token cannot be removed', functi
 test('a key that cannot sign is skipped, and when Apple turns every other key away its answer stands', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key'], 'store_uuid', '2026-10-01 00:00:00');
-    appleSignInChannel(AppleSignIn::SCHEME, 'WRONGTEAM1', ['team_id' => 'OTHERTEAM1'], 'store_uuid', '2026-10-02 00:00:00');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key']);
+    appleSignInPushApp(AppleSignIn::SCHEME, 'WRONGTEAM1', ['team_id' => 'OTHERTEAM1']);
     Http::fake([AppleSignIn::TOKEN_URL => Http::response(['error' => 'invalid_client'], 400)]);
     $customer = new Contact();
     $customer->forceFill(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid']);
@@ -560,7 +572,7 @@ test('a key that cannot sign is skipped, and when Apple turns every other key aw
 test('Apple is not called when the only key cannot sign', function () {
     appleSignInSchema();
     $log = appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key']);
+    appleSignInPushApp(AppleSignIn::SCHEME, 'BADKEY0001', ['private_key_content' => 'not a private key']);
     Http::fake();
     $customer = new Contact();
     $customer->forceFill(['uuid' => APPLE_SIGN_IN_CONTACT_UUID, 'company_uuid' => 'company_uuid', 'user_uuid' => 'user_uuid']);
@@ -574,30 +586,34 @@ test('Apple is not called when the only key cannot sign', function () {
         ->and($refused['context'])->toMatchArray(['status' => null, 'error' => null]);
 });
 
-test('a company with no id, or with no stores or networks, has no keys', function () {
+test('a company with no id, or with no push apps, has no keys', function () {
     appleSignInSchema();
     appleSignInFakes();
-    appleSignInChannel(AppleSignIn::SCHEME, 'SIWAKEY001');
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001');
     $signIn = app(AppleSignIn::class);
 
     expect($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_uuid'))->toHaveCount(1)
         ->and($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, null))->toHaveCount(0)
-        ->and($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_without_stores'))->toHaveCount(0);
+        ->and($signIn->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_without_push_apps'))->toHaveCount(0);
 });
 
-test('a key can be read from a file, and a file that cannot be read gives no key', function () {
+test('a Sign in with Apple key takes its team and bundle IDs from the Apple push settings, and a switched-off push app still signs', function () {
     appleSignInSchema();
     appleSignInFakes();
-    $privateKey = appleSignInPrivateKey();
-    $path       = tempnam(sys_get_temp_dir(), 'apple-sign-in-key');
-    file_put_contents($path, "\n" . $privateKey . "\n");
-    appleSignInChannel(AppleSignIn::SCHEME, 'FILEKEY001', ['private_key_content' => '', 'private_key_path' => $path]);
-    appleSignInChannel(AppleSignIn::SCHEME, 'NOFILEKEY1', ['private_key_content' => '', 'private_key_path' => $path . '.missing']);
+    $pushKey = appleSignInPrivateKey();
+    // Only the key ID and .p8 entered; the app's push settings name the team and the app.
+    appleSignInPushApp(AppleSignIn::SCHEME, 'SIWAKEY001', ['team_id' => '', 'app_bundle_id' => ''], 'store_uuid', 'inactive', [
+        'apn' => ['key_id' => 'PUSHKEY001', 'team_id' => 'TEAM654321', 'app_bundle_id' => APPLE_SIGN_IN_BUNDLE_ID, 'private_key_content' => str_replace("\n", '\\n', trim($pushKey))],
+    ]);
+    // A Sign in with Apple key with no push settings to fall back on can't sign.
+    appleSignInPushApp(AppleSignIn::SCHEME, 'NOTEAMKEY1', ['team_id' => '']);
 
     $credentials = app(AppleSignIn::class)->credentials(APPLE_SIGN_IN_BUNDLE_ID, 'company_uuid');
-    unlink($path);
 
-    expect($credentials)->toHaveCount(1)
-        ->and($credentials[0]->get('key_id'))->toBe('FILEKEY001')
-        ->and($credentials[0]->get('private_key'))->toBe(trim($privateKey));
+    expect($credentials->map(fn ($config) => [$config->get('key_id'), $config->get('team_id'), $config->get('client_id')])->all())->toBe([
+        ['SIWAKEY001', 'TEAM654321', APPLE_SIGN_IN_BUNDLE_ID],
+        ['PUSHKEY001', 'TEAM654321', APPLE_SIGN_IN_BUNDLE_ID],
+    ])
+        // A key pasted with escaped newlines is repaired.
+        ->and($credentials[1]->get('private_key'))->toBe(trim($pushKey));
 });

@@ -98,7 +98,7 @@ test('search returns authorized results across every supported storefront resour
         'stores'                => ['public_id', 'uuid', 'name', 'description', 'email', 'phone', 'website', 'company_uuid'],
         'food_trucks'           => ['public_id', 'uuid', 'status', 'company_uuid', 'store_uuid'],
         'gateways'              => ['public_id', 'uuid', 'name', 'description', 'code', 'type', 'company_uuid', 'owner_uuid'],
-        'notification_channels' => ['uuid', 'name', 'scheme', 'app_key', 'company_uuid', 'owner_uuid'],
+        'push_apps'             => ['public_id', 'uuid', 'name', 'key', 'company_uuid', 'owner_uuid', 'owner_type', 'status', 'providers', 'meta'],
     ];
 
     foreach ($definitions as $tableName => $columns) {
@@ -137,7 +137,9 @@ test('search returns authorized results across every supported storefront resour
     $connection->table('stores')->insert($common + ['uuid' => 'store_uuid', 'public_id' => 'store_match', 'name' => 'Match store']);
     $connection->table('food_trucks')->insert($common + ['uuid' => 'truck_uuid', 'public_id' => 'food_truck_match', 'status' => 'active']);
     $connection->table('gateways')->insert($common + ['uuid' => 'gateway_uuid', 'public_id' => 'gateway_match', 'name' => 'Match gateway']);
-    $connection->table('notification_channels')->insert($common + ['uuid' => 'channel_match', 'name' => 'Match channel', 'scheme' => 'fcm', 'app_key' => 'match-app']);
+    $connection->table('push_apps')->insert($common + ['uuid' => 'push_app_uuid', 'public_id' => 'push_app_match', 'name' => 'Match app', 'key' => 'push_app_match', 'owner_uuid' => 'store_uuid', 'owner_type' => Fleetbase\Storefront\Models\Store::class, 'status' => 'active']);
+    // A push app the company made for another app (in Fleet-Ops) isn't a Storefront result.
+    $connection->table('push_apps')->insert($common + ['uuid' => 'driver_app_uuid', 'public_id' => 'push_app_driver', 'name' => 'Match driver app', 'key' => 'push_app_driver', 'status' => 'active']);
     $connection->table('network_stores')->insert([
         'network_uuid' => 'network_uuid',
         'store_uuid'   => 'store_uuid',
@@ -172,7 +174,7 @@ test('search returns authorized results across every supported storefront resour
             'Store',
             'Food Truck',
             'Gateway',
-            'Notification Channel',
+            'Push App',
         ]);
 
     Auth::$user = new class {

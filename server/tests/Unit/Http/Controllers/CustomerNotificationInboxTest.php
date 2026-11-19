@@ -6,7 +6,7 @@ use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
 use Fleetbase\Storefront\Notifications\PromotionalPushNotification;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCompleted;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -257,9 +257,9 @@ test('notification preferences control promotional delivery and order update pus
     $orderNotification = (new ReflectionClass(StorefrontOrderCompleted::class))->newInstanceWithoutConstructor();
 
     expect($promotion->via($optedOut))->toBe([])
-        ->and($promotion->via($defaults))->toBe([StorefrontPushChannel::class, 'database', SafeBroadcastChannel::class])
+        ->and($promotion->via($defaults))->toBe([StorefrontPushAppChannel::class, 'database', SafeBroadcastChannel::class])
         ->and($orderNotification->via($optedOut))->toBe(['database', 'mail', SafeBroadcastChannel::class])
-        ->and($orderNotification->via($defaults))->toBe([StorefrontPushChannel::class, 'database', 'mail', SafeBroadcastChannel::class]);
+        ->and($orderNotification->via($defaults))->toBe([StorefrontPushAppChannel::class, 'database', 'mail', SafeBroadcastChannel::class]);
 });
 
 test('realtime payloads mirror inbox items without recipient details', function () {

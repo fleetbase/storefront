@@ -744,9 +744,9 @@ test('chat notifications describe the driver message for push, inbox and sockets
 
     $notification = new StorefrontOrderChatMessage($message->load(['sender.user', 'chatChannel']), $order);
     $array        = $notification->toArray(null);
-    $push         = $notification->toPush(null);
+    $push         = $notification->toPushApp(null);
 
-    expect($notification->via(null))->toBe([Fleetbase\Storefront\Push\StorefrontPushChannel::class, 'database', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
+    expect($notification->via(null))->toBe([Fleetbase\Storefront\Push\StorefrontPushAppChannel::class, 'database', Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel::class])
         ->and($array)->toMatchArray([
             'title'      => 'Ravi K. sent a message',
             'body'       => 'At the lobby',
@@ -757,7 +757,7 @@ test('chat notifications describe the driver message for push, inbox and sockets
             'store_id'   => 'store_bloom',
             'network_id' => 'network_market',
         ])
-        ->and($push)->toBeInstanceOf(Fleetbase\Storefront\Push\PushMessage::class)
+        ->and($push)->toBeInstanceOf(Fleetbase\Push\PushMessage::class)
         ->and($notification->broadcastType())->toBe('order_chat_message')
         ->and($notification->toBroadcast(null))->toBeInstanceOf(Illuminate\Notifications\Messages\BroadcastMessage::class)
         ->and($notification->pushStorefronts())->toBeArray()

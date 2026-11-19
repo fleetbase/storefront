@@ -10,7 +10,6 @@ export default class StoreSerializer extends ApplicationSerializer.extend(Embedd
     get attrs() {
         return {
             gateways: { embedded: 'always' },
-            notification_channels: { embedded: 'always' },
             category: { embedded: 'always' },
             logo: { embedded: 'always' },
             backdrop: { embedded: 'always' },

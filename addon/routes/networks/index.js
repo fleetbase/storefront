@@ -38,7 +38,7 @@ export default class NetworksIndexRoute extends StorefrontListRoute {
 
     /**
      * The networks list is only shown on its own page. Entering a network passes through this
-     * route too, so it skips the list (every network with its gateways and channels) then, which
+     * route too, so it skips the list (every network with its gateways) then, which
      * made switching into a network slow.
      */
     model(params, transition) {
@@ -48,7 +48,7 @@ export default class NetworksIndexRoute extends StorefrontListRoute {
         }
 
         this.skippedList = false;
-        return this.store.query('network', { with_gateways: 1, with_notification_channels: 1, ...params });
+        return this.store.query('network', { with_gateways: 1, ...params });
     }
 
     /** Arriving on the list from inside a network: this route stayed active, so load the list now. */

@@ -5,10 +5,9 @@ namespace Fleetbase\Storefront\Support;
 use Fleetbase\Auth\OAuth\AppleClientSecretFactory;
 use Fleetbase\Auth\OAuth\OAuthProviderConfig;
 use Fleetbase\FleetOps\Models\Contact;
+use Fleetbase\Models\PushApp;
 use Fleetbase\Storefront\Models\AppleSignInToken;
-use Fleetbase\Storefront\Models\Network;
-use Fleetbase\Storefront\Models\NotificationChannel;
-use Fleetbase\Storefront\Models\Store;
+use Fleetbase\Storefront\Push\StorefrontPushApps;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -23,18 +22,19 @@ use Lcobucci\JWT\UnencryptedToken;
  * At sign-in the app's one-time authorization code is exchanged with Apple for a refresh
  * token, which is kept encrypted (AppleSignInToken). When the customer deletes their account
  * the token is revoked with Apple. Both calls need a client secret signed with a Sign in with
- * Apple key from the app's developer team, which a store keeps as a notification channel:
+ * Apple key from the app's developer team, which the company keeps on the app's push app:
  *
- *   apple_sign_in — a key with Sign in with Apple enabled, tried first
- *   apn           — the push key, used when it also has Sign in with Apple enabled
+ *   apple_sign_in — a separate key with Sign in with Apple enabled, tried first. Its team ID
+ *                   and bundle ID default to the push app's Apple push settings.
+ *   apn           — the Apple push key, used when it also has Sign in with Apple enabled
  *
- * The channel is matched by its `app_bundle_id`, which must equal the app's bundle ID (the
- * identity token's audience). Neither call may stop a customer signing in or deleting their
- * account: when no key is configured or Apple refuses, it is logged and the flow carries on.
+ * The push app is matched by bundle ID, which must equal the app's bundle ID (the identity
+ * token's audience). Neither call may stop a customer signing in or deleting their account:
+ * when no key is configured or Apple refuses, it is logged and the flow carries on.
  */
 class AppleSignIn
 {
-    public const SCHEME          = 'apple_sign_in';
+    public const SCHEME          = StorefrontPushApps::APPLE_SIGN_IN;
     public const TOKEN_URL       = 'https://appleid.apple.com/auth/token';
     public const REVOKE_URL      = 'https://appleid.apple.com/auth/revoke';
     public const TIMEOUT_SECONDS = 10;
@@ -199,8 +199,9 @@ class AppleSignIn
     }
 
     /**
-     * Keys that can sign for an app: the company's `apple_sign_in` channels for the bundle ID,
-     * then its `apn` channels for it, oldest first within each.
+     * Keys that can sign for an app: the Sign in with Apple keys of the company's push apps
+     * for the bundle ID, then their Apple push keys for it, oldest push app first within each.
+     * A push app that's switched off for pushes still signs in.
      *
      * @return Collection<int, OAuthProviderConfig>
      */
@@ -210,38 +211,42 @@ class AppleSignIn
             return collect();
         }
 
-        $owners = Store::where('company_uuid', $companyUuid)->pluck('uuid')
-            ->merge(Network::where('company_uuid', $companyUuid)->pluck('uuid'))
-            ->filter()
-            ->values();
-        if ($owners->isEmpty()) {
-            return collect();
-        }
+        $apps = PushApp::where('company_uuid', $companyUuid)->orderBy('id')->get();
 
-        return NotificationChannel::query()
-            ->whereIn('scheme', [self::SCHEME, 'apn'])
-            ->whereIn('owner_uuid', $owners->all())
-            ->orderBy('created_at')
-            ->get()
-            ->sortBy(fn (NotificationChannel $channel) => $channel->scheme === self::SCHEME ? 0 : 1)
-            ->map(fn (NotificationChannel $channel) => static::configFromChannel($channel))
+        return $apps->map(fn (PushApp $app) => static::configFromPushApp($app, self::SCHEME))
+            ->merge($apps->map(fn (PushApp $app) => static::configFromPushApp($app, 'apn')))
             ->filter(fn (?OAuthProviderConfig $config) => $config && $config->get('client_id') === $clientId)
             ->unique(fn (OAuthProviderConfig $config) => $config->get('team_id') . '|' . $config->get('key_id'))
             ->values();
     }
 
-    public static function configFromChannel(NotificationChannel $channel): ?OAuthProviderConfig
+    /**
+     * The signing key a push app holds under `apple_sign_in` or `apn`. A Sign in with Apple
+     * key without its own team ID or bundle ID uses the ones of the app's Apple push settings.
+     */
+    public static function configFromPushApp(PushApp $app, string $setting): ?OAuthProviderConfig
     {
-        $config = (array) $channel->config;
+        $config = (array) $app->provider($setting);
+        if ($setting === self::SCHEME) {
+            $apn = (array) $app->provider('apn');
+            foreach (['team_id', 'app_bundle_id'] as $key) {
+                if (empty($config[$key]) && !empty($apn[$key])) {
+                    $config[$key] = $apn[$key];
+                }
+            }
+        }
+
+        return static::configFrom($config);
+    }
+
+    public static function configFrom(array $config): ?OAuthProviderConfig
+    {
         $values = [];
         foreach (['key_id', 'team_id', 'app_bundle_id'] as $key) {
             $values[$key] = trim((string) ($config[$key] ?? ''));
         }
 
         $privateKey = str_replace('\\n', "\n", trim((string) ($config['private_key_content'] ?? '')));
-        if ($privateKey === '' && !empty($config['private_key_path']) && is_readable($config['private_key_path'])) {
-            $privateKey = trim((string) file_get_contents($config['private_key_path']));
-        }
 
         if (in_array('', $values, true) || $privateKey === '') {
             return null;

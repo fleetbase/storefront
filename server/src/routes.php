@@ -314,12 +314,11 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
                         $router->fleetbaseRoutes('product-addon-categories');
                         $router->fleetbaseRoutes('addon-categories');
                         $router->fleetbaseRoutes('gateways');
-                        $router->fleetbaseRoutes(
-                            'notification-channels',
-                            function ($router, $controller) {
-                                $router->post('{id}/test', $controller('testPush'));
-                            }
-                        );
+                        // The push app of a store or network ({owner} is its uuid or public ID).
+                        $router->get('push-apps/{owner}', 'PushAppController@show');
+                        $router->put('push-apps/{owner}', 'PushAppController@save');
+                        $router->delete('push-apps/{owner}', 'PushAppController@destroy');
+                        $router->post('push-apps/{owner}/test', 'PushAppController@sendTest');
                         $router->fleetbaseRoutes(
                             'promotions',
                             function ($router, $controller) {

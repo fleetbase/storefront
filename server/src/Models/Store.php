@@ -265,14 +265,6 @@ class Store extends StorefrontModel
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function notificationChannels()
-    {
-        return $this->hasMany(NotificationChannel::class, 'owner_uuid');
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function gateways()
     {
         return $this->hasMany(Gateway::class, 'owner_uuid');

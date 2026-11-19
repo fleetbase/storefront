@@ -1,32 +1,7 @@
 <div class="storefront-settings-page" data-test-settings-notifications>
     <section class="storefront-settings-section">
-        <ContentPanel @title={{t "storefront.settings.sections.notification-channels"}} @open={{true}} @pad={{false}} @wrapperClass="bordered-classic">
-            <div class="storefront-settings-section__toolbar">
-                <p class="storefront-settings-section__lede">{{t "storefront.settings.notification.notification-storefront"}}</p>
-                <Button @size="sm" @type="primary" @icon="plus" @text={{t "storefront.settings.notification.new-channel"}} @onClick={{this.createChannel}} @permission="storefront create notification-channel" data-test-create-channel />
-            </div>
-            {{#if @model.length}}
-                <div class="storefront-member-list" data-test-channels-list>
-                    {{#each @model as |notificationChannel|}}
-                        <div class="storefront-member-row" data-test-channel={{notificationChannel.id}}>
-                            <div class="storefront-member-row__logo storefront-member-row__logo--icon"><FaIcon @icon="bell-concierge" /></div>
-                            <div class="storefront-member-row__identity">
-                                <div class="storefront-member-row__name">{{notificationChannel.name}}</div>
-                                <div class="storefront-member-row__meta">{{smart-humanize notificationChannel.scheme}}</div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                {{#unless (eq notificationChannel.scheme "apple_sign_in")}}
-                                    <Button @size="xs" @icon="paper-plane" @text={{t "storefront.settings.notification.send-test"}} @onClick={{fn this.testChannel notificationChannel}} />
-                                {{/unless}}
-                                <Button @size="xs" @icon="pencil" @text={{t "storefront.common.edit"}} @onClick={{fn this.editChannel notificationChannel}} @permission="storefront update notification-channel" />
-                                <Button @size="xs" @icon="trash" @type="danger" @text={{t "storefront.common.delete"}} @onClick={{fn this.deleteChannel notificationChannel}} @permission="storefront delete notification-channel" />
-                            </div>
-                        </div>
-                    {{/each}}
-                </div>
-            {{else}}
-                <p class="storefront-settings-section__note mt-0">{{t "storefront.settings.notification.empty"}}</p>
-            {{/if}}
+        <ContentPanel @title={{t "storefront.settings.sections.notification-channels"}} @open={{true}} @wrapperClass="bordered-classic">
+            <Storefront::PushAppSettings @owner={{this.activeStore}} />
         </ContentPanel>
     </section>
     <Spacer @height="120px" />

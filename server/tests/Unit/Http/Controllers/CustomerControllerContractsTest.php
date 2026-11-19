@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../../Support/PushAppTestHelpers.php';
+
 use Fleetbase\FleetOps\Http\Requests\UpdateContactRequest;
 use Fleetbase\Storefront\Http\Controllers\v1\CustomerController;
 use Fleetbase\Storefront\Http\Requests\CreateCustomerRequest;
@@ -292,17 +294,7 @@ test('authenticated customer endpoints register devices and scope orders and pla
         $table->timestamps();
         $table->timestamp('deleted_at')->nullable();
     });
-    $schema->create('user_devices', function ($table) {
-        $table->increments('id');
-        $table->string('uuid')->nullable();
-        $table->string('public_id')->nullable();
-        $table->string('user_uuid')->nullable();
-        $table->string('platform')->nullable();
-        $table->string('token')->nullable();
-        $table->string('status')->nullable();
-        $table->timestamps();
-        $table->timestamp('deleted_at')->nullable();
-    });
+    sfPushAppsSetUp();
     $schema->create('orders', function ($table) {
         $table->increments('id');
         $table->string('uuid')->nullable();

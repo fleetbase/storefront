@@ -10,11 +10,11 @@ use Fleetbase\Models\Company;
 use Fleetbase\Models\User;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
-use Fleetbase\Storefront\Models\NotificationChannel;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\StorefrontOrderAccepted;
 use Fleetbase\Storefront\Notifications\StorefrontOrderCreated;
+use Fleetbase\Storefront\Push\StorefrontPushApps;
 use Fleetbase\Support\Auth;
 use Fleetbase\Support\Utils;
 use Illuminate\Support\Facades\DB;
@@ -828,41 +828,17 @@ class Storefront
     }
 
     /**
-     * Determine whether the given Store or Network has a configured notification channel.
+     * Whether a store or network's push app is set up for a push provider (`apn` or `fcm`)
+     * or Sign in with Apple (`apple_sign_in`). Takes a model, uuid or public ID.
      *
-     * Accepts either a model instance (Store|Network) or an identifier string.
-     * When a string is provided, this method attempts to resolve it in the following order:
-     *   1) UUID        → `where('uuid', $id)`
-     *   2) public_id   → `where('public_id', $id)` (if your models use a public_id column)
-     *
-     * If resolution fails, the method returns false.
-     *
-     * @param Store|\Fleetbase\FleetOps\Models\Network|string|null $subject
-     *                                                                      Store/Network model instance or identifier (uuid/public_id)
-     * @param string                                               $channel Channel scheme/key (e.g., "email", "sms", "fcm").
-     *
-     * @return bool true if a NotificationChannel exists for the subject and scheme; otherwise false
-     *
-     * @example
-     *  YourClass::hasNotificationChannelConfigures($store, 'email');
-     *  YourClass::hasNotificationChannelConfigures($networkUuid, 'fcm');
-     *  YourClass::hasNotificationChannelConfigures('STO-12345', 'sms'); // public_id example
-     *
-     * @note The method name appears to have a typo; consider renaming to:
-     *       hasNotificationChannelConfigured() and keeping this as a BC alias.
+     * Named after the notification channels push apps replaced.
      */
     public static function hasNotificationChannelConfigured(Store|Network|string|null $subject, string $channel): bool
     {
         $model = self::resolveSubjectToModel($subject);
+        $app   = $model ? StorefrontPushApps::forOwner($model) : null;
 
-        if (!$model) {
-            return false;
-        }
-
-        return NotificationChannel::query()
-            ->where('owner_uuid', $model->uuid)
-            ->where('scheme', $channel)
-            ->exists();
+        return $app !== null && $app->provider($channel) !== null;
     }
 
     /**

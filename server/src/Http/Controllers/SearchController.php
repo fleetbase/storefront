@@ -4,12 +4,12 @@ namespace Fleetbase\Storefront\Http\Controllers;
 
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Http\Controllers\Controller;
+use Fleetbase\Models\PushApp;
 use Fleetbase\Storefront\Models\Catalog;
 use Fleetbase\Storefront\Models\Customer;
 use Fleetbase\Storefront\Models\FoodTruck;
 use Fleetbase\Storefront\Models\Gateway;
 use Fleetbase\Storefront\Models\Network;
-use Fleetbase\Storefront\Models\NotificationChannel;
 use Fleetbase\Storefront\Models\Product;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Support\Auth;
@@ -271,20 +271,25 @@ class SearchController extends Controller
             ]);
     }
 
+    /**
+     * Push apps of the company's stores and networks (Settings → Notifications). Searched
+     * under the old notification channel type and permission, which they replace.
+     */
     private function searchNotificationChannels(string $query, int $limit, ?Store $store): Collection
     {
-        return NotificationChannel::where('company_uuid', session('company'))
+        return PushApp::where('company_uuid', session('company'))
+            ->whereIn('owner_type', [Store::class, Network::class])
             ->when($store, fn (Builder $builder) => $builder->where('owner_uuid', $store->uuid))
             ->where(function (Builder $builder) use ($query) {
-                $this->whereLike($builder, ['uuid', 'name', 'scheme', 'app_key'], $query);
+                $this->whereLike($builder, ['uuid', 'public_id', 'name', 'key'], $query);
             })
             ->limit($limit)
-            ->get(['uuid', 'name', 'scheme', 'app_key'])
-            ->map(fn (NotificationChannel $channel) => [
-                'label'       => $channel->name ?: $channel->app_key,
-                'description' => trim(implode(' ', array_filter([$channel->scheme, $channel->app_key]))),
+            ->get()
+            ->map(fn (PushApp $app) => [
+                'label'       => $app->name ?: $app->key,
+                'description' => trim(implode(' ', array_filter(['Push app', $app->key]))),
                 'icon'        => 'bell-concierge',
-                'type'        => 'Notification Channel',
+                'type'        => 'Push App',
                 'route'       => 'console.storefront.settings.notifications',
                 'queryParams' => ['query' => $query],
                 'breadcrumb'  => 'Storefront > Settings > Notifications',

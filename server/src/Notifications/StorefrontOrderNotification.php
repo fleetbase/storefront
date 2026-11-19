@@ -3,13 +3,13 @@
 namespace Fleetbase\Storefront\Notifications;
 
 use Fleetbase\FleetOps\Models\Order;
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
-use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
-use Fleetbase\Storefront\Push\PushCredentialResolver;
-use Fleetbase\Storefront\Push\PushMessage;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\Contracts\SendsStorefrontPush;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
+use Fleetbase\Storefront\Push\StorefrontPushApps;
 use Fleetbase\Storefront\Support\CustomerLocale;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Fleetbase\Storefront\Support\NotificationPreferences;
@@ -24,7 +24,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Base class for order lifecycle notifications sent to storefront customers.
  */
-abstract class StorefrontOrderNotification extends Notification implements SendsPushNotification, ShouldQueue
+abstract class StorefrontOrderNotification extends Notification implements SendsStorefrontPush, ShouldQueue
 {
     use Queueable;
     use SerializesModels;
@@ -97,7 +97,7 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
     {
         $channels = [];
         if (NotificationPreferences::allows($notifiable, 'order_updates')) {
-            $channels[] = StorefrontPushChannel::class;
+            $channels[] = StorefrontPushAppChannel::class;
         }
 
         return [...$channels, 'database', 'mail', SafeBroadcastChannel::class];
@@ -135,7 +135,7 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
     /**
      * Get the push notification representation of the notification.
      */
-    public function toPush($notifiable): ?PushMessage
+    public function toPushApp($notifiable): ?PushMessage
     {
         return PushMessage::create($this->subject, $this->body, [
             'type'       => $this->status,
@@ -151,7 +151,7 @@ abstract class StorefrontOrderNotification extends Notification implements Sends
      */
     public function pushStorefronts(): array
     {
-        $storefronts = PushCredentialResolver::storefrontsForOrder($this->order);
+        $storefronts = StorefrontPushApps::storefrontsForOrder($this->order);
 
         if (empty($storefronts) && isset($this->storefront)) {
             $storefronts[] = $this->storefront;

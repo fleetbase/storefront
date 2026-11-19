@@ -6,13 +6,15 @@ the app also revokes the customer's Sign in with Apple tokens (App Review guidel
 
 ## Using your push key (most stores)
 
-You can use the same key for push notifications and Sign in with Apple. If the key in your
-store's **APN** notification channel (**Storefront → Settings → Notifications**) has Sign in
-with Apple ticked, with your app as its primary App ID, and the channel's bundle ID is your
-app's, you're done: Storefront uses that key. You don't need to add anything else.
+You can use the same key for push notifications and Sign in with Apple. If the Apple push key
+in your store's push app (**Storefront → Settings → Push notifications**, or a network's
+**Settings → Notifications**) has Sign in with Apple ticked, with your app as its primary App
+ID, and the push app's iOS bundle ID is your app's, you're done: Storefront uses that key. You
+don't need to add anything else.
 
 If you're creating that key now, tick both **Apple Push Notifications service (APNs)** and
-**Sign in with Apple** on it (steps below), then enter it in the APN channel.
+**Sign in with Apple** on it (steps below), then enter it under **Apple Push Notification
+service (iOS)** in the push app.
 
 ## A separate key
 
@@ -31,16 +33,22 @@ Use this if your push key can't have Sign in with Apple, or you'd rather keep th
 
 ### Enter it in the Console
 
-1. Open **Storefront → Settings → Notifications** and choose **New channel**.
-2. Choose **Sign in with Apple (account deletion)** and fill in:
-   - **Key ID** and **Team ID** from above.
-   - **App bundle ID**: your app's bundle ID, for example `com.yourstore.app`.
-   - **Private key content**: open the `.p8` file in a text editor and paste all of it,
-     including the `BEGIN` and `END` lines.
+1. Open **Storefront → Settings → Push notifications** and choose **Edit settings** (or
+   **Set up push notifications** if the store has no push app yet).
+2. Under **Sign in with Apple (optional)** fill in:
+   - **Sign in with Apple Key ID** from above.
+   - **Apple Team ID for Sign in with Apple** and **iOS bundle ID for Sign in with Apple**
+     only if they differ from the Apple push settings above, or if you left those empty
+     because your iOS app uses Firebase for push.
+   - **Sign in with Apple key (.p8 file)**: open the `.p8` file in a text editor and paste
+     all of it, including the `BEGIN` and `END` lines.
 3. Save.
 
-For a network's app, add the key to any store in the same organization; the bundle ID
+Any push app in the organization can hold the key, including a network's; the bundle ID
 decides which app it is for.
+
+Stores that set this up before push apps had it as a **Sign in with Apple** notification
+channel. Upgrading moves it into the store's push app.
 
 ## What happens
 
