@@ -106,6 +106,21 @@ class StorefrontPushApps
     }
 
     /**
+     * Firebase settings with the install's default Android notification channel
+     * (`storefront.push.android_channel_id`, STOREFRONT_PUSH_ANDROID_CHANNEL_ID) filled in when
+     * they name none. Applied when a push app's Firebase settings are saved or migrated.
+     */
+    public static function withDefaultAndroidChannel(array $fcm): array
+    {
+        $default = trim((string) config('storefront.push.android_channel_id'));
+        if ($default !== '' && empty($fcm['android_channel_id'])) {
+            $fcm['android_channel_id'] = $default;
+        }
+
+        return $fcm;
+    }
+
+    /**
      * Storefronts an order's push notifications may be sent through, most preferred first.
      *
      * Network (marketplace) orders are placed from the network's app, so the network comes

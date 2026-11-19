@@ -189,7 +189,7 @@ class PushAppController extends Controller
             if ($config === null) {
                 unset($configs[$key]);
             } else {
-                $configs[$key] = $config;
+                $configs[$key] = $key === 'fcm' ? StorefrontPushApps::withDefaultAndroidChannel($config) : $config;
             }
         }
 

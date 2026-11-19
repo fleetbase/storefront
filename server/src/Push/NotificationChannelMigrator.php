@@ -143,10 +143,12 @@ class NotificationChannelMigrator
                 $credentials = json_decode(trim($credentials), true);
             }
 
-            return array_filter([
+            $settings = array_filter([
                 'credentials'        => is_array($credentials) ? json_encode($credentials) : null,
                 'android_channel_id' => $text('android_channel_id') ?: null,
-            ]) ?: null;
+            ]);
+
+            return $settings ? StorefrontPushApps::withDefaultAndroidChannel($settings) : null;
         }
 
         $privateKey = str_replace('\n', "\n", $text('private_key_content'));

@@ -400,3 +400,18 @@ test('the migration moves channels only once core-api has push apps', function (
     expect(sfPushAppsDb()->getSchemaBuilder()->hasTable('push_apps'))->toBeFalse();
     app()->forgetInstance(NotificationChannelMigrator::class);
 });
+
+test('the install\'s default Android notification channel fills Firebase settings that name none', function () {
+    config(['storefront.push.android_channel_id' => 'storefront_orders']);
+
+    try {
+        expect(StorefrontPushApps::withDefaultAndroidChannel(['credentials' => '{}']))->toBe(['credentials' => '{}', 'android_channel_id' => 'storefront_orders'])
+            ->and(StorefrontPushApps::withDefaultAndroidChannel(['credentials' => '{}', 'android_channel_id' => 'promos']))->toBe(['credentials' => '{}', 'android_channel_id' => 'promos'])
+            ->and(NotificationChannelMigrator::providerConfig('fcm', ['credentials' => '{"project_id":"p"}']))->toBe(['credentials' => '{"project_id":"p"}', 'android_channel_id' => 'storefront_orders'])
+            ->and(NotificationChannelMigrator::providerConfig('fcm', []))->toBeNull();
+    } finally {
+        config(['storefront.push.android_channel_id' => null]);
+    }
+
+    expect(StorefrontPushApps::withDefaultAndroidChannel(['credentials' => '{}']))->toBe(['credentials' => '{}']);
+});

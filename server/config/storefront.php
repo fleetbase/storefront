@@ -50,9 +50,10 @@ return [
     | Push Notifications
     |--------------------------------------------------------------------------
     |
-    | android_channel_id: the Android notification channel storefront pushes are
-    | posted to. Leave empty to use the app's default FCM channel. A notification
-    | channel's own `android_channel_id` setting takes precedence.
+    | android_channel_id: the Android notification channel a push app's Firebase
+    | settings get when they're saved or migrated without one. Leave empty to use
+    | the app's default FCM channel. It's stored on the push app, so changing it
+    | later doesn't change push apps already saved.
     */
     'push' => [
         'android_channel_id' => env('STOREFRONT_PUSH_ANDROID_CHANNEL_ID'),
