@@ -387,7 +387,6 @@ test('network exposes media commerce and ownership relationships', function () {
         ->and((new Network())->files())->toBeInstanceOf(HasMany::class)
         ->and((new Network())->media())->toBeInstanceOf(HasMany::class)
         ->and((new Network())->stores())->toBeInstanceOf(BelongsToMany::class)
-        ->and((new Network())->notificationChannels())->toBeInstanceOf(HasMany::class)
         ->and((new Network())->gateways())->toBeInstanceOf(HasMany::class)
         ->and((new Network())->categories())->toBeInstanceOf(HasMany::class);
 });
@@ -544,7 +543,7 @@ test('addon category option accessors accept arrays JSON and invalid values', fu
         ->and($category->name)->toBe('Sides');
 });
 
-test('creating specialized categories and notification channels applies model invariants', function () {
+test('creating specialized categories applies model invariants', function () {
     $schema = Illuminate\Database\Capsule\Manager::schema('mysql');
     $schema->dropIfExists('categories');
     $schema->create('categories', function (Illuminate\Database\Schema\Blueprint $table) {
@@ -552,67 +551,23 @@ test('creating specialized categories and notification channels applies model in
         $table->string('uuid')->nullable();
         $table->string('public_id')->nullable();
     });
-    $schema->dropIfExists('notification_channels');
-    $schema->create('notification_channels', function (Illuminate\Database\Schema\Blueprint $table) {
-        $table->increments('id');
-        $table->string('uuid')->nullable();
-        $table->string('app_key')->nullable();
-    });
     Model::setEventDispatcher(new Illuminate\Events\Dispatcher(app()));
     Model::clearBootedModels();
 
     try {
         $addon   = new Fleetbase\Storefront\Models\AddonCategory();
         $catalog = new CatalogCategory();
-        $channel = new Fleetbase\Storefront\Models\NotificationChannel();
-        foreach ([$addon, $catalog, $channel] as $model) {
+        foreach ([$addon, $catalog] as $model) {
             $fireCreating = new ReflectionMethod($model, 'fireModelEvent');
             $fireCreating->invoke($model, 'creating', false);
         }
 
         expect($addon->for)->toBe('storefront_product_addon')
-            ->and($catalog->for)->toBe('storefront_catalog')
-            ->and($channel->app_key)->toStartWith('noty_channel_');
+            ->and($catalog->for)->toBe('storefront_catalog');
     } finally {
         Model::unsetEventDispatcher();
         Model::clearBootedModels();
     }
-});
-
-test('notification channels normalize provider configuration and expose gateway type', function () {
-    $channel = new Fleetbase\Storefront\Models\NotificationChannel();
-    $channel->setRawAttributes([
-        'scheme' => 'apn',
-        'config' => json_encode([
-            'sandbox'             => true,
-            'private_key_content' => "  private key\n",
-            'enabled'             => false,
-        ]),
-    ]);
-
-    expect($channel->createdBy())->toBeInstanceOf(BelongsTo::class)
-        ->and((new Fleetbase\Storefront\Models\NotificationChannel())->company())->toBeInstanceOf(BelongsTo::class)
-        ->and((new Fleetbase\Storefront\Models\NotificationChannel())->certificate())->toBeInstanceOf(BelongsTo::class)
-        ->and((new Fleetbase\Storefront\Models\NotificationChannel())->owner())->toBeInstanceOf(MorphTo::class)
-        ->and($channel->is_apn_gateway)->toBeTrue()
-        ->and($channel->is_fcm_gateway)->toBeFalse()
-        ->and((array) $channel->config)->toBe([
-            'private_key_content' => "  private key\n",
-            'enabled'             => false,
-            'sandbox'             => true,
-        ]);
-
-    $channel->config     = ['private_key_content' => "  trimmed key \n", 'sandbox' => false];
-    $channel->scheme     = 'fcm';
-    $channel->owner_type = 'storefront:store';
-
-    expect(json_decode($channel->getAttributes()['config'], true))->toBe([
-        'private_key_content' => 'trimmed key',
-        'sandbox'             => false,
-    ])->and($channel->getAttributes()['owner_type'])->toBe(
-        Fleetbase\FleetOps\Support\Utils::getMutationType('storefront:store')
-    )->and($channel->is_apn_gateway)->toBeFalse()
-        ->and($channel->is_fcm_gateway)->toBeTrue();
 });
 
 test('addon categories create and update their addon rows deterministically', function () {

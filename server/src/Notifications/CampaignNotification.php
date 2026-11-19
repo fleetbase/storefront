@@ -2,13 +2,13 @@
 
 namespace Fleetbase\Storefront\Notifications;
 
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Models\Campaign;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
-use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
-use Fleetbase\Storefront\Push\PushMessage;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\Contracts\SendsStorefrontPush;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Fleetbase\Storefront\Support\NotificationPreferences;
 use Illuminate\Bus\Queueable;
@@ -18,7 +18,7 @@ use Illuminate\Notifications\Notification;
 /**
  * A campaign message delivered to one customer by push and/or to their inbox.
  */
-class CampaignNotification extends Notification implements SendsPushNotification
+class CampaignNotification extends Notification implements SendsStorefrontPush
 {
     use Queueable;
 
@@ -39,7 +39,7 @@ class CampaignNotification extends Notification implements SendsPushNotification
         $channels = $this->campaign->enabledChannels();
         $via      = [];
         if (in_array(Campaign::CHANNEL_PUSH, $channels, true)) {
-            $via[] = StorefrontPushChannel::class;
+            $via[] = StorefrontPushAppChannel::class;
         }
         if (in_array(Campaign::CHANNEL_INBOX, $channels, true)) {
             $via[] = 'database';
@@ -49,7 +49,7 @@ class CampaignNotification extends Notification implements SendsPushNotification
         return $via;
     }
 
-    public function toPush($notifiable): ?PushMessage
+    public function toPushApp($notifiable): ?PushMessage
     {
         return PushMessage::create($this->campaign->title, $this->campaign->body, $this->payload())
             ->image($this->imageUrl())

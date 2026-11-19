@@ -23,7 +23,7 @@ use Fleetbase\Storefront\Http\Requests\VerifyCreateCustomerRequest;
 use Fleetbase\Storefront\Http\Resources\Customer;
 use Fleetbase\Storefront\Models\Network;
 use Fleetbase\Storefront\Models\Store;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\StorefrontPushApps;
 use Fleetbase\Storefront\Support\AppleSignIn;
 use Fleetbase\Storefront\Support\AppReview;
 use Fleetbase\Storefront\Support\Storefront;
@@ -76,7 +76,7 @@ class CustomerController extends Controller
         }
 
         $token    = trim((string) $request->input('token'));
-        $platform = StorefrontPushChannel::normalizePlatform($request->or(['platform', 'os']));
+        $platform = UserDevice::normalizePlatform($request->or(['platform', 'os']));
 
         if ($token === '') {
             return response()->apiError(__('storefront::customers.device_token_required'));
@@ -107,16 +107,20 @@ class CustomerController extends Controller
             'status'    => 'active',
         ]);
 
-        $optionalAttributes = [
+        $device->forceFill([
             'environment'    => in_array($request->input('environment'), ['production', 'sandbox'], true) ? $request->input('environment') : null,
             'app_identifier' => session('storefront_store') ?? session('storefront_network'),
             'last_seen_at'   => now(),
-        ];
-        $columns = static::userDeviceColumns();
-        foreach ($optionalAttributes as $column => $value) {
-            if (in_array($column, $columns, true)) {
-                $device->forceFill([$column => $value]);
-            }
+        ]);
+
+        // Pushes go through the push app the device registers with: the one named by
+        // `push_app`, else the store's or network's own. Without one the device stays
+        // unlinked and is sent through the storefront's push app once it has one.
+        $pushApp = StorefrontPushApps::forRegistration($request, Storefront::about());
+        if ($pushApp) {
+            StorefrontPushApps::link($device, $pushApp, $request);
+        } else {
+            $device->forceFill(['push_app_uuid' => null]);
         }
 
         $device->save();
@@ -181,16 +185,6 @@ class CustomerController extends Controller
         }
 
         return response()->json(SocketToken::issue(StorefrontSocket::customerPrincipal($customer, $storefront)));
-    }
-
-    /**
-     * Newer core-api versions add push metadata columns to user_devices.
-     *
-     * @return string[]
-     */
-    protected static function userDeviceColumns(): array
-    {
-        return (new UserDevice())->getConnection()->getSchemaBuilder()->getColumnListing('user_devices');
     }
 
     /**

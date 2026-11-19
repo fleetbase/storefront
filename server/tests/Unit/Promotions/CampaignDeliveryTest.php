@@ -14,7 +14,7 @@ use Fleetbase\Storefront\Notifications\CampaignNotification;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
 use Fleetbase\Storefront\Promotions\CampaignDispatcher;
 use Fleetbase\Storefront\Promotions\SegmentResolver;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
 use Illuminate\Support\Carbon;
 
 function campaignStore(): Store
@@ -249,8 +249,8 @@ test('campaign notifications honor channels and preferences and deep link to the
 
     expect($inboxOnly->via($optedOut))->toBe([])
         ->and($inboxOnly->via($customer))->toBe(['database', SafeBroadcastChannel::class])
-        ->and($pushOnly->via($customer))->toBe([StorefrontPushChannel::class])
-        ->and($both->via($customer))->toBe([StorefrontPushChannel::class, 'database', SafeBroadcastChannel::class])
+        ->and($pushOnly->via($customer))->toBe([StorefrontPushAppChannel::class])
+        ->and($both->via($customer))->toBe([StorefrontPushAppChannel::class, 'database', SafeBroadcastChannel::class])
         ->and($inboxOnly->toArray($customer))->toBe([
             'title'        => 'Fresh deals',
             'body'         => 'Come see what is new.',
@@ -264,8 +264,8 @@ test('campaign notifications honor channels and preferences and deep link to the
             'action'       => 'promotion',
             'action_id'    => $promotion->public_id,
         ])
-        ->and($inboxOnly->toPush($customer)->data['campaign_id'])->toBe($campaign->public_id)
-        ->and($inboxOnly->toPush($customer)->analyticsLabel)->toBe('campaign')
+        ->and($inboxOnly->toPushApp($customer)->data['campaign_id'])->toBe($campaign->public_id)
+        ->and($inboxOnly->toPushApp($customer)->analyticsLabel)->toBe('campaign')
         ->and($inboxOnly->toBroadcast($customer)->data['type'])->toBe('campaign')
         ->and($inboxOnly->broadcastType())->toBe('campaign')
         ->and(collect($inboxOnly->pushStorefronts())->pluck('uuid')->all())->toBe(['store_a_uuid', 'network_uuid']);

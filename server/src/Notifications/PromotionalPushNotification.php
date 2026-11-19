@@ -2,11 +2,11 @@
 
 namespace Fleetbase\Storefront\Notifications;
 
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Models\Store;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
-use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
-use Fleetbase\Storefront\Push\PushMessage;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\Contracts\SendsStorefrontPush;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Fleetbase\Storefront\Support\NotificationPreferences;
 use Illuminate\Bus\Queueable;
@@ -17,7 +17,7 @@ use Illuminate\Notifications\Notification;
  * @deprecated Promotional messages are sent as campaigns (CampaignNotification). Kept for
  *             integrations that notify customers with this class directly.
  */
-class PromotionalPushNotification extends Notification implements SendsPushNotification
+class PromotionalPushNotification extends Notification implements SendsStorefrontPush
 {
     use Queueable;
 
@@ -69,7 +69,7 @@ class PromotionalPushNotification extends Notification implements SendsPushNotif
             return [];
         }
 
-        return [StorefrontPushChannel::class, 'database', SafeBroadcastChannel::class];
+        return [StorefrontPushAppChannel::class, 'database', SafeBroadcastChannel::class];
     }
 
     /**
@@ -91,7 +91,7 @@ class PromotionalPushNotification extends Notification implements SendsPushNotif
     /**
      * Get the push notification representation of the notification.
      */
-    public function toPush($notifiable): ?PushMessage
+    public function toPushApp($notifiable): ?PushMessage
     {
         return PushMessage::create($this->title, $this->body, [
             'type'     => 'promotional',

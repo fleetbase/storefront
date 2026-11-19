@@ -6,7 +6,6 @@ use Fleetbase\Storefront\Http\Resources\Category as CategoryResource;
 use Fleetbase\Storefront\Http\Resources\Gateway as GatewayResource;
 use Fleetbase\Storefront\Http\Resources\Media as MediaResource;
 use Fleetbase\Storefront\Http\Resources\Network as NetworkResource;
-use Fleetbase\Storefront\Http\Resources\NotificationChannel as NotificationChannelResource;
 use Fleetbase\Storefront\Http\Resources\Review as ReviewResource;
 use Fleetbase\Storefront\Http\Resources\Store as StoreResource;
 use Illuminate\Database\Eloquent\Model;
@@ -83,49 +82,6 @@ test('gateway resource hides configuration publicly and exposes it internally', 
         'public_id'  => 'gateway_123',
         'owner_uuid' => 'store_uuid',
         'config'     => ['secret_key' => 'must-not-leak'],
-    ]);
-});
-
-test('notification channel resource preserves delivery scheme and internal ownership', function () {
-    $channel = storefrontResourceModel([
-        'id'               => 2,
-        'uuid'             => 'channel_uuid',
-        'public_id'        => 'channel_123',
-        'company_uuid'     => 'company_uuid',
-        'created_by_uuid'  => 'user_uuid',
-        'certificate_uuid' => 'certificate_uuid',
-        'owner_uuid'       => 'store_uuid',
-        'owner_type'       => 'store',
-        'name'             => 'Mobile push',
-        'scheme'           => 'fcm',
-        'options'          => ['topic' => 'orders'],
-        'config'           => ['project' => 'storefront'],
-        'app_key'          => 'app-key',
-        'is_apn_gateway'   => false,
-        'is_fcm_gateway'   => true,
-        'created_at'       => '2026-01-01',
-        'updated_at'       => '2026-01-02',
-    ]);
-
-    $public = (new NotificationChannelResource($channel))
-        ->resolve(setSimpleStorefrontResourceRoute('v1/storefront/notification-channels'));
-
-    expect($public)->toMatchArray([
-        'id'             => 'channel_123',
-        'name'           => 'Mobile push',
-        'scheme'         => 'fcm',
-        'is_fcm_gateway' => true,
-    ])->and($public)->not->toHaveKeys(['uuid', 'company_uuid', 'owner_uuid']);
-
-    $internal = (new NotificationChannelResource($channel))
-        ->resolve(setSimpleStorefrontResourceRoute('int/v1/storefront/notification-channels'));
-
-    expect($internal)->toMatchArray([
-        'id'           => 2,
-        'uuid'         => 'channel_uuid',
-        'public_id'    => 'channel_123',
-        'company_uuid' => 'company_uuid',
-        'owner_uuid'   => 'store_uuid',
     ]);
 });
 
@@ -358,7 +314,6 @@ test('network resource includes requested related collections and storefront fla
         'stores'               => collect(),
         'categories'           => collect(),
         'gateways'             => collect(),
-        'notificationChannels' => collect(),
     ]);
 
     $request = setSimpleStorefrontResourceRoute('v1/storefront/networks');

@@ -4,11 +4,11 @@ namespace Fleetbase\Storefront\Notifications;
 
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\Models\ChatMessage;
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Notifications\Channels\SafeBroadcastChannel;
-use Fleetbase\Storefront\Push\Contracts\SendsPushNotification;
-use Fleetbase\Storefront\Push\PushCredentialResolver;
-use Fleetbase\Storefront\Push\PushMessage;
-use Fleetbase\Storefront\Push\StorefrontPushChannel;
+use Fleetbase\Storefront\Push\Contracts\SendsStorefrontPush;
+use Fleetbase\Storefront\Push\StorefrontPushAppChannel;
+use Fleetbase\Storefront\Push\StorefrontPushApps;
 use Fleetbase\Storefront\Support\CustomerLocale;
 use Fleetbase\Storefront\Support\CustomerNotificationPresenter;
 use Illuminate\Bus\Queueable;
@@ -23,7 +23,7 @@ use Illuminate\Queue\SerializesModels;
  * Messages about an order in progress always reach the customer: they are not promotional
  * and do not depend on the order update preference.
  */
-class StorefrontOrderChatMessage extends Notification implements SendsPushNotification, ShouldQueue
+class StorefrontOrderChatMessage extends Notification implements SendsStorefrontPush, ShouldQueue
 {
     use Queueable;
     use SerializesModels;
@@ -35,7 +35,7 @@ class StorefrontOrderChatMessage extends Notification implements SendsPushNotifi
 
     public function via($notifiable): array
     {
-        return [StorefrontPushChannel::class, 'database', SafeBroadcastChannel::class];
+        return [StorefrontPushAppChannel::class, 'database', SafeBroadcastChannel::class];
     }
 
     public function title(): string
@@ -52,14 +52,14 @@ class StorefrontOrderChatMessage extends Notification implements SendsPushNotifi
         return $content !== '' ? $content : __('storefront::notifications.order_chat_message.photo');
     }
 
-    public function toPush($notifiable): ?PushMessage
+    public function toPushApp($notifiable): ?PushMessage
     {
         return PushMessage::create($this->title(), $this->body(), $this->payload())->analyticsLabel('storefront_order_chat');
     }
 
     public function pushStorefronts(): array
     {
-        return PushCredentialResolver::storefrontsForOrder($this->order);
+        return StorefrontPushApps::storefrontsForOrder($this->order);
     }
 
     public function toArray($notifiable): array

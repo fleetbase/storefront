@@ -3,10 +3,10 @@
 use Fleetbase\FleetOps\Models\Entity;
 use Fleetbase\FleetOps\Models\Order;
 use Fleetbase\FleetOps\Models\Payload;
+use Fleetbase\Push\PushMessage;
 use Fleetbase\Storefront\Notifications\StorefrontOrderBalancePaid;
 use Fleetbase\Storefront\Notifications\StorefrontOrderItemUnavailable;
 use Fleetbase\Storefront\Notifications\StorefrontOrderUpdated;
-use Fleetbase\Storefront\Push\PushMessage;
 
 function orderChangeStore(?string $timezone = 'Asia/Singapore'): void
 {
@@ -51,7 +51,7 @@ test('an unavailable item tells the customer it will be replaced or removed', fu
     orderChangeStore();
 
     $notification = new StorefrontOrderItemUnavailable(orderChangeOrder(), 'Mango Lassi');
-    $push         = $notification->toPush((object) ['public_id' => 'contact_public']);
+    $push         = $notification->toPushApp((object) ['public_id' => 'contact_public']);
 
     expect($notification->status)->toBe('order_item_unavailable')
         ->and($notification->subject)->toBe('Mango Lassi is unavailable')
