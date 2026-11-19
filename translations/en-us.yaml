@@ -2254,8 +2254,8 @@ storefront:
       name: App name
       name-placeholder: Corner Store
       name-help: 'Only shown to you, to tell your apps apart. For example, your app’s name on the App Store or Google Play.'
-      on: Send push notifications
-      on-help: 'Turn off to stop sending pushes to this app’s devices without deleting its settings. Sign in with Apple keeps working.'
+      sending: Send push notifications
+      sending-help: 'Turn off to stop sending pushes to this app’s devices without deleting its settings. Sign in with Apple keeps working.'
       ios: Apple Push Notification service (iOS)
       ios-help: 'Fill this in if your iOS app gets its push tokens from Apple, as the Fleetbase Storefront app does. If your iOS app gets them from Firebase instead, leave this empty and fill in Firebase below. Leave it empty if you have no iOS app.'
       bundle-id: iOS bundle ID

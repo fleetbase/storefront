@@ -20,8 +20,8 @@
                 <Toggle
                     @isToggled={{eq this.form.status "active"}}
                     @onToggle={{this.toggleStatus}}
-                    @label={{t "storefront.settings.push-app.on"}}
-                    @helpText={{t "storefront.settings.push-app.on-help"}}
+                    @label={{t "storefront.settings.push-app.sending"}}
+                    @helpText={{t "storefront.settings.push-app.sending-help"}}
                 />
             </div>
 
@@ -164,7 +164,7 @@
                 <p class="storefront-push-app__error" role="alert" data-test-push-app-error><FaIcon @icon="circle-exclamation" /> {{this.error}}</p>
             {{/if}}
             <div class="storefront-app-review__actions">
-                <Button @size="sm" @text={{t "storefront.common.cancel"}} @onClick={{this.cancel}} />
+                <Button @size="sm" @text={{t "storefront.settings.push-app.cancel"}} @onClick={{this.cancel}} />
                 <Button
                     @type="primary"
                     @size="sm"

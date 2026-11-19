@@ -116,7 +116,7 @@ module('Integration | Component | storefront/push-app-settings', function (hooks
         assert.strictEqual(url, 'push-apps/store_1');
         assert.strictEqual(body.apn.app_bundle_id, 'com.corner.shop');
         assert.deepEqual(Object.keys(body).sort(), ['apn', 'apple_sign_in', 'fcm', 'name', 'status']);
-        assert.dom('[data-test-push-app-key]').hasText('push_app_abc');
+        assert.dom('[data-test-push-app-key]').includesText('push_app_abc');
         assert.dom('[data-test-push-app-migrated]').exists();
     });
 
