@@ -1,6 +1,20 @@
 storefront:
   extension-name: Storefront
   common:
+    sku: SKU
+    updated: Actualizado
+    select-all: Seleccionar todo
+    food-truck: Food truck
+    promotion: Promoción
+    save: Guardar
+    filters: Filtros
+    off: Desactivado
+    on: Activado
+    all: Todos
+    active: Activa
+    select: Seleccionar
+    preview: Vista previa
+    actions: Acciones
     address: Dirección
     alerts: Alertas
     amount: Cantidad
@@ -33,10 +47,20 @@ storefront:
     import: Importar
     invalid: Inválido
     loading: Cargando...
+    loading-storefront: Cargando Storefront…
+    error-state:
+      title: No se ha podido cargar esta página
+      description: Se ha producido un error al cargar esta página. Inténtelo de nuevo o vuelva al panel.
+      retry: Reintentar
+      back: Volver al panel
+    more: Más
     logo: logo
     name: Nombre
     neighborhood: Barrio
     online: En línea
+    offline: Fuera de línea
+    last-modified: Última modificación
+    order: Pedido
     orders: Pedidos
     phone: Teléfono
     photos: Fotos
@@ -74,6 +98,26 @@ storefront:
     catalog: Catálogo
     catalogs: Catálogos
   sidebar:
+    all-products: Todos los productos
+    descriptions:
+      network-overview: Miembros, invitaciones, pedidos e ingresos de toda la red.
+      network-stores: Tiendas que venden a través de esta red, sus categorías e invitaciones.
+      network-trucks: Food trucks gestionados por las tiendas de esta red.
+      network-orders: Pedidos realizados a través de esta red.
+      network-customers: Clientes que han hecho pedidos a través de esta red.
+      network-categories: Las categorías en las que se agrupan las tiendas en la app de la red.
+      network-promotions: Promociones, campañas, segmentos y canjes de la red.
+      network-settings: Detalles de la red, pasarelas de pago y canales de notificación.
+      dashboard: Panel de la tienda y resumen de ventas.
+      orders: Gestione los pedidos entrantes de la tienda.
+      products: Gestione productos, categorías, variantes y complementos.
+      all-products: Consulte y gestione el inventario de productos.
+      catalogs: Cree y gestione los catálogos de la tienda.
+      customers: Consulte los clientes de la tienda y su historial de pedidos.
+      trucks: Gestione los food trucks, dónde sirven y qué venden.
+      promotions: Descuentos, códigos promocionales, segmentos de clientes y campañas.
+      settings: Detalles de la tienda, horario, ubicaciones, reglas de compra, pasarelas de pago, notificaciones y claves de API.
+      launch-app: Publique su tienda como su propia app web y móvil.
     storefront: Tienda
     dashboard: Panel
     products: Productos
@@ -82,8 +126,11 @@ storefront:
     customers: Clientes
     orders: Pedidos
     networks: Redes
+    promotions: Promociones
     settings: Configuración
     launch-app: Lanzar App
+    member-of: Miembro de
+    your-stores: Sus tiendas en esta red
   component:
     storefront-order-summary:
       order-summary-title: Resumen de Pedido de la Tienda
@@ -99,22 +146,19 @@ storefront:
         placeholder-driver: Seleccione el Conductor para Asignar
       create-first-store:
         title: ¡Bienvenido a la Tienda!
-        message: La tienda te permite configurar rápidamente una tienda dinámica y
-          sin cabeza bajo demanda impulsada por Fleetbase.
+        message: La tienda te permite configurar rápidamente una tienda dinámica y sin cabeza bajo demanda impulsada por Fleetbase.
         submit-message: Envía el formulario a continuación para crear tu primera tienda.
         storefront-name: Nombre de la tienda
         enter-name: Introduce el nombre de tu tienda
         description: Descripción de la tienda
-        brief-description: Da a tu tienda una breve descripción simple sobre los tipos
-          de productos que vende
+        brief-description: Da a tu tienda una breve descripción simple sobre los tipos de productos que vende
         currency: Moneda de la tienda
         select-currency: Selecciona la moneda predeterminada para tu tienda
       create-getaway:
         getaway: Tipo de pasarela
         getaway-text: Seleccionar tipo de pasarela
         getaway-name: Nombre de la pasarela
-        name-text: Asigne un nombre a su pasarela de pago, esto solo será relevante
-          internamente
+        name-text: Asigne un nombre a su pasarela de pago, esto solo será relevante internamente
         getaway-code: Código de la pasarela
         code-text: Código identificador usado para identificar la pasarela en el SDK
         callback-url: URL de devolución de llamada
@@ -132,16 +176,13 @@ storefront:
         category-icon: Tipo de icono de categoría
       create-network:
         title: Iniciar una red
-        message-line1: Storefront le permite crear mercados rápidamente, permitiendo
-          que múltiples escaparates vendan bajo un mismo paraguas.
-        message-line2: Cuando crea la red, define sus reglas y puede expandir su red
-          mediante invitaciones.
+        message-line1: Storefront le permite crear mercados rápidamente, permitiendo que múltiples escaparates vendan bajo un mismo paraguas.
+        message-line2: Cuando crea la red, define sus reglas y puede expandir su red mediante invitaciones.
         message-line3: Comience creando una red a continuación.
         name: Nombre de la red
         name-text: Introduzca el nombre de su tienda
         description: Descripción de la red
-        description-text: Dé a su tienda una breve descripción simple sobre los tipos
-          de productos que se venden
+        description-text: Dé a su tienda una breve descripción simple sobre los tipos de productos que se venden
         currency: Moneda de la red
         currency-text: Seleccione la moneda predeterminada para su escaparate
       create-new-variant:
@@ -149,19 +190,23 @@ storefront:
         name-text: Dé un nombre a la variante de su producto
         description: Descripción de la variante
         description-text: Descripción corta de la variante
-        checkbox-1: Permitir al usuario seleccionar múltiples opciones de variante
-          a la vez
+        checkbox-1: Permitir al usuario seleccionar múltiples opciones de variante a la vez
         checkbox-2: Esta selección de variante de producto es obligatoria
       create-notification-channel:
         title: Canal
         title-text: Seleccione el canal de notificación
         name: Nombre del canal
-        name-text: Dé un nombre a su canal de notificación, esto solo será relevante
-          internamente
+        name-text: Dé un nombre a su canal de notificación, esto solo será relevante internamente
         key: Clave del canal
-        key-text: Esta es la clave de su canal de notificación, úsela para especificar
-          qué aplicaciones deben utilizar este canal de notificación mediante configuraciones
-          del SDK.
+        key-text: Esta es la clave de su canal de notificación, úsela para especificar qué aplicaciones deben utilizar este canal de notificación mediante configuraciones del SDK.
+        environment-help-text: Con «auto» se prueba primero producción y, si Apple rechaza el token del dispositivo, se reintenta en sandbox (compilaciones de desarrollo).
+        android-channel-id-help-text: ID opcional del canal de notificación de Android. Déjelo vacío para usar el canal predeterminado de la app.
+      test-notification-channel:
+        token: Token del dispositivo
+        token-text: Pegue un token de registro de FCM (Android) o un token de dispositivo de APNs (iOS) de un dispositivo que ejecute su app.
+        environment: Entorno de APNs
+        environment-text: Déjelo vacío para probar los entornos configurados en el canal.
+        result: Resultado del proveedor
       create-product-category:
         name: Nombre de la categoría
         name-text: Introduzca un nombre para la categoría
@@ -169,12 +214,14 @@ storefront:
         description-text: Dé a su categoría de producto una breve descripción
         icon: Icono de la categoría
         uploading-new: Subir nuevo icono de categoría
+        parent: Categoría superior
+        parent-text: Las categorías se pueden anidar hasta tres niveles, como Bebidas › Café › Cold brew.
+        top-level: Ninguna (nivel superior)
       create-store:
         name: Nombre del escaparate
         name-text: Introduzca el nombre de su tienda
         description: Descripción del escaparate
-        description-text: Dé a su tienda una breve descripción simple sobre los tipos
-          de productos que se venden
+        description-text: Dé a su tienda una breve descripción simple sobre los tipos de productos que se venden
         currency: Moneda de la tienda
         currency-text: Seleccione la moneda predeterminada para su tienda
       import-products:
@@ -185,10 +232,18 @@ storefront:
         drag-drop: Arrastre y suelte archivos de hojas de cálculo en esta zona
         select-spreadsheets: o seleccione hojas de cálculo para subir.
         upload-queue: Cola de subida
-        optionally-select-category: Opcionalmente seleccione una categoría para importar
-          productos
+        optionally-select-category: Opcionalmente seleccione una categoría para importar productos
         select-category: Seleccionar categoría
       incoming-order:
+        placed: Realizado {ago}
+        items-count: "{count, plural, one {# artículo} other {# artículos}}"
+        paid-in-app: Pagado en la app
+        scheduled-for: Para el {date}
+        collects-from: El cliente recoge en
+        leaves-from: Sale de
+        deliver-to: Entregar en
+        note: Nota del cliente
+        scan-hint: Escanee o imprima para entregar el pedido
         assigned: Conductor asignado
         not-assigned: Ningún conductor asignado
         no-phone: Sin teléfono
@@ -208,35 +263,26 @@ storefront:
         new-addon: Nuevo complemento
         addon-name: Nombre del complemento
         description: Descripción del complemento
-        delete-this-addon-category-assosiated-will-lost: ¿Está seguro de que desea
-          eliminar esta categoría de complementos? ¡Todos los complementos asociados
-          se perderán!
+        delete-this-addon-category-assosiated-will-lost: ¿Está seguro de que desea eliminar esta categoría de complementos? ¡Todos los complementos asociados se perderán!
         untitled-addon-category: Categoría de complemento sin título
       order-ready-assign-driver:
-        driver-dispatch: Está a punto de marcar este pedido como listo y despacharlo,
-          use el desplegable a continuación para seleccionar un conductor al que despachar.
-          <br><br>O opcionalmente puede optar por despachar el pedido como adhoc,
-          lo que enviará el pedido a todos los conductores cercanos para que lo acepten.
+        driver-dispatch: Está a punto de marcar este pedido como listo y despacharlo, use el desplegable a continuación para seleccionar un conductor al que despachar. <br><br>O opcionalmente puede optar por despachar el pedido como adhoc, lo que enviará el pedido a todos los conductores cercanos para que lo acepten.
         adhoc-dispatch-nearby-drivers: Despacho adhoc a conductores cercanos
         select-driver: Seleccionar conductor
         select-driver-to-assign: Seleccionar conductor para asignar
       share-network:
         invite-member: Invitar miembros a su red
-        email-below: Obtenga un enlace de invitación para compartir o envíe invitaciones
-          individuales por correo electrónico a continuación.
-        invite-network: Introduzca los correos electrónicos de las personas u organizaciones
-          a las que desea enviar una invitación para unirse a su red.
+        email-below: Obtenga un enlace de invitación para compartir o envíe invitaciones individuales por correo electrónico a continuación.
+        invite-network: Introduzca los correos electrónicos de las personas u organizaciones a las que desea enviar una invitación para unirse a su red.
         add-email: Agregar correos electrónicos
         get-link: Obtener enlace
         enable-shareable-link: Habilitar enlace para compartir
-        anyone-with-this-link-able-to-join-your-network: Cualquiera con este enlace
-          puede unirse a su red
+        anyone-with-this-link-able-to-join-your-network: Cualquiera con este enlace puede unirse a su red
       store-form:
         storefront-name: Nombre de la tienda
         the-name-of-your-store: El nombre de su tienda.
         storefront-description-placeholder: Descripción de la tienda
-        give-your-store-brief-description: Dé a su tienda una breve descripción para
-          que los usuarios sepan qué vende.
+        give-your-store-brief-description: Dé a su tienda una breve descripción para que los usuarios sepan qué vende.
         add-tags-placeholder: Agregar etiquetas
       store-location-form:
         street-2: Calle 2
@@ -250,6 +296,15 @@ storefront:
         phone: Teléfono
         email: Correo electrónico
       orders:
+        next: Siguiente paso
+        order: Pedido
+        refresh: Actualizar pedidos
+        active-only: Solo activos
+        all-orders: Todos los pedidos
+        driver-not-needed: No necesario
+        unassigned: Sin asignar
+        empty: Aún no hay pedidos recientes.
+        recent-count: "{count, plural, =0 {Ningún pedido reciente} one {# pedido reciente} other {# pedidos recientes}}"
         widget-title: Pedidos recientes
         id-column: ID de pedido
         cancel-order: Cancelar pedido
@@ -275,23 +330,18 @@ storefront:
         customer-pickup: Recogida por el cliente
         pickup-order: Pedido para recoger
         mark-as-ready-modal-pickup-title: ¿Marcar el pedido como listo para recoger?
-        mark-as-ready-modal-pickup-body: ¡Marcar el pedido como listo notificará al
-          cliente que su pedido está listo para recoger!
+        mark-as-ready-modal-pickup-body: ¡Marcar el pedido como listo notificará al cliente que su pedido está listo para recoger!
         mark-as-ready-modal-pickup-accept-button-text: ¡Listo para recoger!
         mark-as-ready-modal-not-adhoc-title: Asignar conductor y enviar pedidos
         mark-as-ready-modal-not-adhoc-accept-button-text: ¡Asignar y enviar!
         mark-as-ready-modal-title: ¿Quieres marcar el pedido como listo?
-        mark-as-ready-modal-body: Marcar el pedido como listo enviará el pedido a
-          conductores cercanos, solo marca el pedido como listo cuando pueda ser recogido.
+        mark-as-ready-modal-body: Marcar el pedido como listo enviará el pedido a conductores cercanos, solo marca el pedido como listo cuando pueda ser recogido.
         mark-as-ready-modal-accept-button-text: ¡Enviar!
         mark-as-completed-modal-title: ¿Seguro que quieres marcar el pedido como completado?
-        mark-as-completed-modal-body: Marcar el pedido como completado confirma que
-          el cliente ha recogido el pedido y que está completado.
+        mark-as-completed-modal-body: Marcar el pedido como completado confirma que el cliente ha recogido el pedido y que está completado.
         mark-as-completed-accept-button-text: ¡Pedido completado!
-        mark-as-preparing-modal-title: ¿Seguro que quieres marcar el pedido como en
-          preparación?
-        mark-as-preparing-modal-body: Marcar el pedido como en preparación confirma
-          que el pedido está siendo preparado.
+        mark-as-preparing-modal-title: ¿Seguro que quieres marcar el pedido como en preparación?
+        mark-as-preparing-modal-body: Marcar el pedido como en preparación confirma que el pedido está siendo preparado.
         mark-as-preparing-accept-button-text: Pedido en preparación
         assign-driver-modal-title: Asignar conductor
         assign-driver-modal-accept-button-text: Asignar conductor
@@ -299,27 +349,97 @@ storefront:
         last-day: Últimos 30 días
     file-record:
       delete-this-file: ¿Estás seguro de que deseas eliminar este archivo?
-      delete-this-file-you-will-unable-recover: Una vez que elimines este archivo
-        no podrás recuperarlo.
+      delete-this-file-you-will-unable-recover: Una vez que elimines este archivo no podrás recuperarlo.
     network-category-picker:
       no-subcategory: No hay subcategorías para
       no-categories: No hay categorías para esta red
       create-category: Crear una nueva categoría
     schedule-manager:
       add-hours: Agregar horas
+      no-hours: Sin horario
       add-new-hours-for-day: Agregar nuevas horas para {day}
       new-hours-added-for-day: Nuevas horas agregadas para {day}
       you-wish-to-remove-these-hour: ¿Estás seguro de que deseas eliminar estas horas?
-      by-removing-these-operation: Al eliminar estas horas de operación/disponibilidad,
-        su tienda o producto puede volverse inactivo o no disponible según el horario
-        actualizado...
+      by-removing-these-operation: Al eliminar estas horas de operación/disponibilidad, su tienda o producto puede volverse inactivo o no disponible según el horario actualizado...
     store-selector:
       no-stores: No hay tiendas para seleccionar
       create-storefront: Crear un nuevo
+      store: Tienda
+      network: Red
+      stores: Tiendas
+      networks: Redes
+      no-networks: Aún no hay redes
+      new-store: Nueva tienda
+      new-network: Nueva red
+      badge-title: "{count, plural, one {# invitación de red} other {# invitaciones de red}}"
   home:
     title: Panel de Control de la Tienda
   customers:
+    create:
+      button: Nuevo cliente
+      title: Nuevo cliente
+      save: Añadir cliente
+      saved: "Se ha añadido a {name}."
+      name-placeholder: Nombre completo
+      help: Solo el nombre es obligatorio; añada un teléfono o un correo electrónico para que la tienda pueda contactar con el cliente sobre el pedido.
+    addresses:
+      new-title: "Nueva dirección para {name}"
+      save: Guardar dirección
+      street-required: Introduzca la calle y el número.
+      saved: "Dirección guardada para {name}."
+      add: Añadir dirección
+    card:
+      places-count: "{count, plural, =0 {Ninguna dirección guardada} one {# dirección guardada} other {# direcciones guardadas}}"
+      account: Cuenta en la app
+      since: "Cliente desde {date}"
+    panel:
+      edit-details: Detalles
+      edit-help: Las direcciones guardadas se editan en la pestaña Lugares.
+      name-required: Indique un nombre para el cliente.
+      saved: "Se ha guardado {name}."
+      segments: Segmentos
+      no-segments: Ahora mismo no está en ningún segmento.
+      manage-segments: Gestionar segmentos
+      tabs:
+        overview: Resumen
+        orders: Pedidos
+        places: Lugares
+        activity: Actividad y notas
+      new-order: Nuevo pedido
+      copy-id: Copiar ID del cliente
+      copy-email: Copiar correo electrónico
+      copied: "Copiado: {value}"
+      since: "desde {date}"
+      lifetime: Gasto total
+      average: Pedido medio
+      last-order: Último pedido
+      first-order: Primer pedido
+      never: Nunca
+      prefers-delivery: Prefiere entrega
+      prefers-pickup: Prefiere recogida
+      preferred-fulfillment: Modalidad preferida
+      account: Cuenta
+      guest: Invitado
+      saved-places: Direcciones guardadas
+      default: Predeterminada
+      set-default: Marcar como predeterminada
+      default-saved: "{name} es ahora la dirección predeterminada."
+      no-places: Aún no hay direcciones guardadas
+      no-places-help: Añada una ahora o el cliente la añadirá al pagar.
+      places-lede: Los lugares de Fleet-Ops del cliente. Abra un lugar desde su etiqueta para editarlo en Fleet-Ops.
+      places-note: Los lugares pertenecen a Fleet-Ops; la dirección predeterminada es la que la app propone al pagar.
+      stores-ordered-from: Tiendas en las que ha pedido
+      orders-count: "{count, plural, one {# pedido} other {# pedidos}}"
+      recent-orders: Pedidos recientes
+      no-orders: Aún no hay pedidos.
+      canceled-orders: Pedidos cancelados
+      notes: Notas internas
     index:
+      subtitle: Personas que han hecho pedidos en esta tienda
+      search: Buscar clientes
+      view-cards: Tarjetas
+      view-table: Tabla
+      empty: Aún no hay clientes. Aparecerán aquí tras su primer pedido o registro.
       internal-id: ID Interno
       create-at: Creado en
       update-at: Actualizado en
@@ -334,26 +454,940 @@ storefront:
       edit-button: Editar cliente
       cancel-edit-button: Cancelar edición del cliente
       cancel-new-button: Cancelar nuevo cliente
-  networks:
+  catalogs:
+    editor:
+      edit-category: Editar categoría
+      edit-category-title: "Editar {name}"
+      apply-category: Aplicar
+      category-name-required: Indique un nombre para la categoría.
+      back: Todos los catálogos
+      delete-catalog: Eliminar catálogo
+      sold-here: Se vende aquí
+      columns:
+        product: Producto
+        price: Precio en el catálogo
+        availability: Disponibilidad
+        stock: Stock
+        actions: Acciones
+      name-placeholder: Nombre del catálogo
+      categories-count: "{count, plural, =0 {ninguna categoría} one {# categoría} other {# categorías}}"
+      served-by-count: "servido por {stores, plural, =0 {ninguna tienda} one {# tienda} other {# tiendas}} y {trucks, plural, =0 {ningún food truck} one {# food truck} other {# food trucks}}"
+      duplicate: Duplicar
+      duplicated: Catálogo duplicado como borrador.
+      sections:
+        categories: Categorías y productos
+        hours: Horario
+        served-by: Servido por
+        details: Detalles
+      new-category: Nueva categoría
+      move-up: Subir
+      move-down: Bajar
+      indent: Mover dentro de la categoría anterior
+      outdent: Subir un nivel
+      add-subcategory: Añadir subcategoría
+      new-subcategory-name: Nueva subcategoría
+      categories-note: La app muestra las categorías en este mismo orden. Una categoría sin productos se oculta en la app.
+      remove-category-title: "¿Quitar la categoría {name}?"
+      remove-category-body: Sus productos siguen en la tienda; solo salen de este catálogo. Sus subcategorías suben un nivel.
+      add-products: Añadir productos
+      search-products: Buscar en los productos de la tienda
+      picker-hint: "{count, plural, =0 {Los productos que ya están en este catálogo no se muestran.} one {# seleccionado} other {# seleccionados}}"
+      no-products-to-add: Todos los productos de esta tienda ya están en el catálogo.
+      add-count-to: "{count, plural, =0 {Añadir a {category}} one {Añadir # a {category}} other {Añadir # a {category}}}"
+      variants-count: "{count, plural, one {# variante} other {# variantes}}"
+      addons-count: "{count, plural, one {# complemento} other {# complementos}}"
+      store-price: precio de la tienda
+      catalog-price: precio del catálogo
+      set-catalog-price: Fijar un precio para este catálogo
+      price-done: Listo
+      use-store-price: Usar el precio de la tienda
+      hidden-here: Oculto en este catálogo
+      sold-here-help: Se vende a través de este catálogo. Si lo desactiva, el producto se oculta aquí sin cambiar nada en la tienda.
+      in-stock: En stock
+      out-of-stock: Agotado
+      remove-from-category: Quitar de esta categoría
+      products-note: Un producto puede estar en varios catálogos; quitarlo aquí nunca lo elimina de la tienda.
+      no-products-in-category: Aún no hay productos en esta categoría.
+      pick-a-category: Elija una categoría a la izquierda o cree una.
+      status: Estado
+      visible-in-app: Visible en la app
+      visible-yes: Sí, dentro del horario
+      visible-no: "No, borrador"
+      empty-categories: Categorías vacías
+      no-hours: Sin horario definido
+      every-day: todos los días
+      hours-lede: Cuándo se sirve el catálogo. Fuera de este horario, la app lo oculta.
+      served-by-lede: Las tiendas y los food trucks que sirven este catálogo. Un food truck solo lo muestra mientras está en línea.
+      manage-served-by: Gestionar
+      served-by-title: "Quién sirve {name}"
+      served-by-saved: Se ha guardado la lista «Servido por».
+      serving: En servicio
+      no-served-by: Todavía nadie sirve este catálogo.
+      assign-store-or-truck: Asignar una tienda o un food truck
+      stop-serving: "Dejar de servir desde {name}"
+      served-by-removed: "{name} ya no sirve este catálogo."
+      stores: Tiendas
+      stores-help: Tiendas que sirven este catálogo en sus ubicaciones.
+      trucks-help: Food trucks que sirven este catálogo mientras están en línea.
+      pick-trucks: Seleccionar food trucks
+      unsaved: Cambios sin guardar
+      unsaved-summary: "Sin guardar: {added, plural, =0 {} one {# producto añadido} other {# productos añadidos}} {removed, plural, =0 {} one {# quitado} other {# quitados}} {categories, plural, =0 {} other {categorías modificadas}} {overrides, plural, =0 {} one {# cambio de precio o disponibilidad} other {# cambios de precio o disponibilidad}}"
+      save: Guardar catálogo
+      saved: Catálogo guardado.
+      created: Catálogo creado. Ahora añada categorías y productos.
+      create-and-open: Crear y abrir
+      create-lede: Dé un nombre al catálogo; después añadirá las categorías, los productos, el horario y quién lo sirve.
+      leave-title: ¿Salir sin guardar?
+      leave-body: Se perderán los cambios no guardados de este catálogo.
+      leave: Salir
     index:
+      subtitle: "Un catálogo es una carta: sus propias categorías, los productos que contienen, el horario en que se sirve y las tiendas y food trucks que lo sirven."
+      search: Buscar catálogos
+      new-catalog: Nuevo catálogo
+      sort:
+        name: nombre
+        updated: última actualización
+      empty-state: Cree un catálogo para agrupar productos en una carta con sus propias categorías y horario.
+      create-catalog: Crear catálogo
+    card:
+      out-of-stock-count: "{count, plural, one {# agotado} other {# agotados}}"
+      assign: Asignar a tiendas y food trucks
+      publish: Publicar
+      unpublish: Retirar publicación
+      published: Catálogo publicado.
+      unpublished: Se ha retirado la publicación del catálogo; vuelve a ser un borrador.
+      store-only: Solo tienda, sin food trucks
+      draft-hint: Necesita categorías, productos y horario
+      continue-setup: Continuar configuración
+      no-description: Sin descripción
+      no-categories: Aún no hay categorías
+      products-count: "{count, plural, =0 {Ningún producto} one {# producto} other {# productos}}"
+  trucks:
+    panel:
+      new-subtitle: Elija el vehículo, dónde sirve y qué vende.
+      tabs:
+        details: Detalles
+        catalogs: Catálogos
+        orders: Pedidos
+        location: Ubicación
+      location-lede: Última posición notificada por el vehículo, según el seguimiento de Fleet-Ops.
+      last-position: Última posición
+      no-position: Aún no se ha notificado ninguna posición
+      last-seen: Última actualización
+      ago: "hace {value}"
+      open-map: Abrir en el mapa de Fleet-Ops
+      open-vehicle: Abrir vehículo
+      no-vehicle-yet: Elija un vehículo en la pestaña Detalles para ver dónde está.
+      new-truck: Nuevo food truck
+      delete-truck: Eliminar food truck
+      not-assigned: sin asignar
+      sections:
+        vehicle-crew: Vehículo y equipo
+        catalogs: Catálogos de este food truck
+        today: Hoy
+      today:
+        revenue: Ingresos
+        avg-prep: Preparación media
+        minutes: '{value} min'
+      orders-lede: Pedidos atendidos desde este food truck, los más recientes primero.
+      no-orders: Aún no hay pedidos de este food truck.
+      vehicle: Vehículo
+      vehicle-help: El vehículo de Fleet-Ops; su conductor y su estado en línea vienen de Fleet-Ops.
+      vehicle-placeholder: Seleccione el vehículo de este food truck
+      service-area: Zona de servicio
+      service-area-placeholder: Dónde sirve el food truck
+      zone: Zona
+      zone-placeholder: Una zona dentro de la zona de servicio
+      pick-service-area-first: Elija primero una zona de servicio
+      status-help: Un food truck inactivo se oculta en la app aunque su vehículo esté en línea.
+      catalogs-lede: La app muestra a la vez todos los catálogos asignados que estén dentro de su horario.
+      catalogs-note: Se permiten horarios solapados. Un catálogo en borrador nunca se muestra.
+      outside-hours: Fuera de horario
+      no-catalogs: Aún no hay catálogos para asignar. Cree uno en la página Catálogos.
+      unsaved: Cambios sin guardar
+      create: Crear food truck
+      saved: Food truck guardado.
+    network:
+      subtitle: Food trucks gestionados por esta red y por las tiendas que venden a través de ella.
+    map:
+      unavailable: No se ha podido cargar el mapa en esta consola.
+    index:
+      subtitle: Un vehículo de Fleet-Ops que vende desde un catálogo dentro de una zona de servicio.
+      new-truck: Nuevo food truck
+      map: Mapa
+      search: Buscar food trucks
+      map-note: '{count} de {total} food trucks tienen una posición notificada.'
+      active: Activo
+      inactive: Inactivo
+      empty-state: Añada un food truck para vender desde un vehículo dentro de una zona de servicio.
+      create-truck: Añadir food truck
+    card:
+      no-vehicle: Sin vehículo asignado
+      no-driver: Sin conductor asignado
+      service-area: 'Zona de servicio {name}'
+      orders-today: '{count, plural, =0 {ningún pedido hoy} one {# pedido hoy} other {# pedidos hoy}}'
+      no-service-area: Sin zona de servicio
+      inactive: Inactivo
+      no-catalog: Activo, sin catálogo
+      no-catalog-in-hours: Activo · ningún catálogo en horario
+      serving: "En servicio · {catalog}"
+      assign-catalogs: Asignar catálogos
+      catalogs-count: "{count, plural, =0 {Ningún catálogo} one {# catálogo} other {# catálogos}}"
+      owned-by: "Propiedad de {name}"
+  dashboard:
+    kpi:
+      metric: Métrica
+      vs-previous-period: frente al periodo anterior
+      no-previous-period: Sin periodo anterior
+      load-error: No se ha podido cargar la métrica
+      active-orders: Pedidos activos
+      orders: Pedidos
+      aov: Valor medio del pedido
+      revenue: Ingresos
+      cancellation-rate: Tasa de cancelación
+      customers: Clientes
+      completed-orders: Pedidos completados
+      cart-conversion: Conversión de carritos
+    widgets:
+      recent-customers: "{count, plural, one {# cliente reciente} other {# clientes recientes}}"
+      no-recent-customers: Aún no hay clientes recientes.
+      new-vs-returning: Compradores nuevos y recurrentes
+      repeat-rate: Tasa de recompra
+      no-customer-activity: Aún no hay actividad de clientes.
+      no-order-activity: Aún no hay actividad de pedidos.
+      best-sellers: Los más vendidos por ingresos
+      no-product-sales: Aún no hay ventas de productos.
+      no-revenue: Aún no hay datos de ingresos.
+    open-state:
+      open: "Abierta · cierra a las {time}"
+      closed-until: "Cerrada · abre a las {time}"
+      closed-until-day: "Cerrada · abre el {day} a las {time}"
+      closed: Cerrada
+      no-hours: Sin horario definido
+      days:
+        monday: lunes
+        tuesday: martes
+        wednesday: miércoles
+        thursday: jueves
+        friday: viernes
+        saturday: sábado
+        sunday: domingo
+    attention:
+      title: Requiere atención
+      subtitle: Lo que la tienda tiene que atender hoy.
+      all-clear: Ahora mismo no tiene nada pendiente.
+      refresh: Actualizar
+      orders-to-confirm: "{count, plural, one {pedido por confirmar} other {pedidos por confirmar}}"
+      oldest: "el más antiguo, hace {age}"
+      ready-for-pickup: esperando recogida
+      customers-notified: clientes avisados
+      awaiting-driver: "{count, plural, one {entrega sin conductor} other {entregas sin conductor}}"
+      out-of-stock: "{count, plural, one {producto marcado como no disponible} other {productos marcados como no disponibles}}"
+      still-published: aún en el catálogo
+      trucks-inactive: "{count, plural, one {food truck inactivo} other {food trucks inactivos}}"
+      network-invitations: "{count, plural, one {invitación de red} other {invitaciones de red}}"
+  order:
+    booking-steps:
+      booked: Reservada
+      confirmed: Confirmada
+      on_the_way: En camino
+      in_progress: En curso
+      done: Finalizada
+    sections:
+      details: Detalles
+      metadata: Metadatos
+      customer-insights: Información del cliente
+      order: Pedido
+      comments: Comentarios
+      no-items: No se han encontrado artículos en el pedido.
+      delivery-tip: Propina de entrega
+      cash: Efectivo
+      unnamed-item: Artículo sin nombre
+      no-description: Sin descripción
+      scheduled-at: "Programado para el {date}"
+      subtotal: Subtotal
+      discount: Descuento
+      tip: Propina
+      total: Total
+      delivery-address: Dirección de entrega
+    tracking:
+      based-on: Según la ruta del proveedor y la señal del conductor
+      reported-total: Total informado
+      between-stops: Entre paradas
+      provider: Proveedor
+      fallback: Alternativo
+      traffic-aware: Con datos de tráfico
+      confidence: Confianza
+      driver-signal: Señal del conductor
+      warnings: Avisos
+    workflow:
+      dispatch-provider: Enviar al profesional
+      mark-as-ready: Marcar como listo
+      mark-picked-up: Marcar como recogido
+    reload-activity: Recargar actividad
+    update-activity: Actualizar la actividad del pedido
+    asap: Lo antes posible
+    incl-tip: "incl. {tip} de propina"
+    other-orders-in-checkout: "{count, plural, =0 {Otros pedidos de esta compra} one {# pedido más en esta compra} other {# pedidos más en esta compra}}"
+    no-other-orders: Es el único pedido de esta compra.
+    tabs:
+      items: Artículos
+      route: Ruta
+      payment: Pago
+      activity: Actividad
+      customer: Cliente
+      data: Datos
+    flow:
+      created: Creado
+      accepted: Confirmado
+      preparing: En preparación
+      ready: Listo
+      pickup_ready: Listo para recoger
+      dispatched: Despachado
+      picked_up: Recogido
+      completed: Completado
+      canceled: Cancelado
+    panel:
+      app-review: Pedido de prueba de App Review
+      app-review-body: Un revisor de la tienda de aplicaciones hizo este pedido mientras probaba su app. No lo prepare ni lo entregue; cancélelo cuando quiera.
+      app-review-order: Pedido de App Review
+      customer-note: Nota de {name}
+      copy-tracking: Copiar número de seguimiento
+      copied: "Copiado: {value}"
+      booking: Reserva
+      app-order: Pedido desde la app
+      console-order: Pedido desde la consola
+      placed: "realizado el {time} ({ago})"
+      part-of-checkout: "parte de la compra {checkout}"
+      message: Mensajes
+      more: Más acciones
+      print-label: Imprimir etiqueta
+      tracking-page: Página de seguimiento del cliente
+      open-in-fleet-ops: Abrir en Fleet-Ops
+      steps: Pasos del pedido
+      due-left: "Previsto: {time} · quedan {left}"
+      eta: "Llegada estimada: {time}"
+      driver: Conductor
+      driver-tab: "{name} (conductor)"
+      all-three: Los tres
+      everyone: todos
+      no-customer: Este pedido no tiene cliente.
+      orders-count: "{count, plural, one {# pedido} other {# pedidos}}"
+      since: "desde {date}"
+      call: "Llamar a {name}"
+      message-to: "Escribir a {name}"
+      online: En línea
+      offline: Fuera de línea
+      track: Seguir en el mapa
+      reassign: Reasignar
+      no-driver: Aún sin conductor
+      adhoc: Ofrecido a los conductores cercanos.
+      assign-hint: Asigne un conductor cuando el pedido esté listo.
+      assign-driver: Asignar conductor
+      collects: "{name} lo recoge en la tienda."
+      driver-status:
+        assigned: Asignado
+        heading-to-store: De camino a la tienda
+        picked-up: Ha recogido el pedido
+        on-the-way: De camino al cliente
+        arrived: Ha llegado al punto de entrega
+        delivered: Entregado
+      open-in-maps: Abrir en mapas
+      edit-address: Editar dirección
+      map-label: "Mapa: la tienda y el punto de entrega"
+      provider: Profesional
+      no-provider: Aún sin profesional
+      assign-provider: Asignar profesional
+      bring-to-job: Llevar al servicio
+      hand-over: Entregar en la tienda
+      booking-when: "{day}, de {start} a {end}"
+      booking-starts: "empieza dentro de {in}"
+      booking-started: "empezó hace {ago}"
+      reschedule: Reprogramar
+      move-to: "Pasar a {step}"
+      complete-order: Completar pedido
+      complete-now: Completar el pedido ahora
+      more-steps: Más pasos
+      proof-title: Prueba de entrega
+      proof-count: "{count, plural, one {# prueba} other {# pruebas}}"
+      proof-types:
+        photo: Foto
+        signature: Firma
+        scan: Código escaneado
+      proof-open: "Abrir {type}"
+      step-dialog:
+        move-title: "¿Pasar el pedido a «{step}»?"
+        move-body: "El estado del pedido pasará a ser «{step}» y lo verán el cliente y el conductor."
+        move: "Pasar a {step}"
+        complete-title: ¿Completar este pedido?
+        complete-body: El pedido se da por finalizado; se liquida el pago en efectivo a la entrega y se avisa al cliente.
+        complete: Completar pedido
+        complete-pickup-title: ¿Marcar este pedido como recogido?
+        complete-pickup-body: El pedido se da por finalizado y se avisa al cliente.
+        complete-pickup: Marcar como recogido
+        no-proof: Este paso requiere una prueba de entrega, que no se puede capturar desde la consola; se registrará sin prueba.
+        moved: "El pedido ha pasado a «{step}»"
+      map-focus: Centrar la ruta
+      map-expand: Ampliar el mapa
+      map-shrink: Reducir el mapa
+      from: Origen
+      to: Destino
+      no-address: Sin dirección de entrega
+      out-of-stock: ¿Agotado?
+      substitute-or-remove: Sustituir o quitar
+      each: "{price} la unidad"
+      promotion: "Promoción {code}"
+      payment:
+        paid: Pagado
+        paid-at: "con {method} a las {time} · nada que cobrar"
+        paid-with: "con {method} · nada que cobrar"
+        to-collect: "{amount} por cobrar"
+        cash-on-delivery: pago en efectivo a la entrega
+        unpaid: Aún sin pagar
+        balance-due: "{amount} aún pendiente"
+        paid-by: "· {amount} pagado con {method}"
+        refunded: Reembolsado
+        refunded-to: "{amount} a {method}"
+        credited: "con {method} · {amount} abonado como saldo de tienda"
+        partly-refunded: "con {method} · {amount} reembolsado"
+      store-author: "{name} (tienda)"
+      staff-only: solo para el personal
+      customer-sees: visible para el cliente
+      note-placeholder: Añada una nota interna (el cliente nunca la verá)
+      staff-note: Nota interna
+      add: Añadir
+      checkout: Compra
+      other-stores: "{count, plural, one {# tienda más} other {# tiendas más}} en {checkout}"
+      method: Método
+      transaction: Transacción
+      gateway-reference: Referencia de la pasarela
+      invoice: Factura
+      invoice-short: "factura {id}"
+      paid: Pagado
+      refunded: Reembolsado
+      credited: Saldo de tienda
+      balance: Importe pendiente
+      details-documents: Detalles y documentos
+      details-summary: ID, campos personalizados, archivos
+      details-summary-count: "ID, metadatos, {files, plural, =0 {sin archivos} one {# archivo} other {# archivos}}"
+      details-tab: Pedido
+      tracking-number: Número de seguimiento
+      created: Creado
+      scheduled: Programado para
+      updated: Actualizado
+      no-files: Aún no hay archivos.
+      payment-state: Estado
+      paid-at: Pagado el
+      credit-code: Código de saldo
+      cash-to-collect: Efectivo por cobrar
+      payment-states:
+        paid: Pagado
+        to_collect: Por cobrar
+        unpaid: Sin pagar
+        refunded: Reembolsado
+        partially_refunded: Reembolsado en parte
+        balance_due: Importe pendiente
+      details-tabs:
+        details: Detalles
+        metadata: Metadatos
+        files: Archivos
+      order-id: ID del pedido
+      internal-id: ID interno
+      open: Abrir
+      events: "{count, plural, one {# evento} other {# eventos}}"
+      last: "último: {time}"
+      no-activity: Aún no hay actividad.
+      activity:
+        note: "Nota de {name}: {content}"
+        edit: "{name} modificó el pedido: {summary}"
+        message: "{name}: {content}"
+        payment-refund: "Reembolso de {amount}"
+        payment-store_credit: "Saldo de tienda de {amount}"
+        payment-charge: "Cobro de {amount}"
+        payment-cod_update: "Efectivo por cobrar modificado en {amount}"
+      close-messages: Cerrar mensajes
+      unread: sin leer
+      group-hint: Una conversación entre el cliente, el conductor y la tienda para coordinar la entrega. Inactiva hasta que alguien escriba en ella.
+      group-no-driver: El cliente, el conductor y la tienda podrán hablar aquí cuando se asigne un conductor.
+      assign-to-message: Asigne un conductor para escribirle.
+      customer-footnote: Le llega como notificación push y en el chat del pedido de la app.
+      driver-footnote: Le llega en la app del conductor.
+      alerts:
+        address-wrong: "{name} indica que la dirección es incorrecta."
+        suggested: "Sugerida: {address}"
+        reply: Responder
+        dismiss: Descartar
+        update-address: Actualizar dirección
+        balance-due: "Quedan {amount} pendientes tras una modificación."
+        balance-link: Hay un enlace de pago listo; el pedido se marcará como pagado cuando se abone.
+        balance-collect: El conductor lo cobra en la entrega.
+        balance-no-link: Aún no hay enlace de pago.
+        view-link: Enlace de pago
+        create-link: Crear enlace de pago
+        link-created: Enlace de pago creado
+        send-link: "Enviar a {name}"
+        link-message: "Quedan {amount} por pagar en su pedido. Puede abonarlo aquí: {link}"
+        check-payment: Comprobar pago
+        balance-paid: Se ha pagado el importe pendiente.
+        balance-not-paid: Aún no se ha pagado.
+        late: "{late} de retraso."
+        late-detail: Aún no se ha avisado al cliente.
+        late-told: "Se avisó a {name} ({time})."
+        tell: "Avisar a {name}"
+        late-message: Disculpe, su pedido lleva un poco de retraso. Se lo haremos llegar lo antes posible.
+        delivered: "Entregado a las {time}"
+        picked-up: "Recogido a las {time}"
+        on-time: a tiempo
+        early: "con {early} de antelación"
+        late-by: "con {late} de retraso"
+        proof-captured: "{count, plural, one {Prueba de entrega registrada.} other {# pruebas de entrega registradas.}}"
+        view-proof: Ver prueba
+    overview:
+      items-count: "{count, plural, one {# artículo} other {# artículos}} · {products, plural, one {# producto} other {# productos}}"
+      print-label: Imprimir etiqueta
+      due-in: "Previsto: {time} · {minutes, plural, =0 {ahora} one {queda # min} other {quedan # min}}"
+      due-late: "Previsto: {time} · {late} de retraso"
+      duration:
+        minutes: "{count} min"
+        hours: "{hours} h {minutes} min"
+        days: "{count, plural, one {# día} other {# días}}"
+      next:
+        accept: "Siguiente: aceptar el pedido"
+        ready: "Siguiente: prepararlo y marcarlo como listo"
+        hand-to-customer: "Siguiente: entregarlo al cliente cuando llegue"
+        hand-to-driver: "Siguiente: entregárselo a {driver}"
+        assign-driver: "Siguiente: asignar un conductor"
+        with-driver: "{driver} lo está entregando"
+        on-the-way: De camino al cliente
+        delivered: Entregado
+        picked-up: Recogido por el cliente
+        canceled: Cancelado
+        canceled-because: "Cancelado: {reason}"
+        next-step: "Siguiente: {step}"
+        in-progress: "En curso: {step}"
+        confirm-booking: "Siguiente: confirmar la reserva"
+        send-provider: "Siguiente: enviar al profesional"
+        start-when-arrives: "Siguiente: empezar cuando llegue {name}"
+    alerts:
+      address-change-requested: El cliente indica que la dirección es incorrecta
+      update-address: Actualizar dirección
+      driver-not-accepted: El conductor no ha aceptado el pedido
+      reassign: Reasignar
+      balance-due: "Quedan {amount} pendientes tras una modificación"
+      balance-link-sent: Se ha enviado un enlace de pago al cliente.
+      balance-collect: El conductor lo cobra en la entrega.
+      copy-link: Copiar enlace de pago
+      link-copied: Enlace de pago copiado
+      item-unavailable: "No disponible: {items}"
+      item-unavailable-detail: Sustitúyalo o quítelo; la diferencia se reembolsa o se abona como saldo de tienda.
+      substitute-or-remove: Sustituir o quitar
+      late: "{late} de retraso"
+      change-time: Cambiar hora
+      suggested-address: "Sugerida: {address}"
+      dismiss: Descartar
+    chat:
+      title: Mensajes
+      thread: Conversación
+      unread: "{count, plural, one {# mensaje sin leer del cliente} other {# mensajes sin leer del cliente}}"
+      with-customer: Tienda y cliente
+      customer-and-driver: Cliente y conductor
+      empty: Aún no hay mensajes.
+      no-driver: El cliente podrá escribir al conductor cuando se asigne uno.
+      placeholder: Escriba al cliente…
+      send: Enviar
+      delivery-help: El cliente lo recibe como notificación push y en el chat del pedido de la app.
+      driver-readonly: Esta es la conversación del cliente con el conductor; la tienda puede leerla.
+      new-message: "Nuevo mensaje de {name}"
+      roles:
+        customer: Cliente
+        driver: Conductor
+        store: Tienda
+        system: Actualización
+    payment-link:
+      title: Enlace de pago
+      due-label: Importe pendiente
+      waiting: Esperando el pago
+      via: "vía {gateway}"
+      link-label: "Enlace para {name}"
+      open: Abrir
+      step-send: "Envíe el enlace a {name}"
+      step-send-help: Por el chat del pedido (botón Enviar, abajo) o copiando el enlace en cualquier mensaje.
+      step-pay: "{name} paga"
+      step-pay-help: "En la app de su banco o con tarjeta, igual que en el pago del pedido. {name} también verá un botón Pagar ahora en el pedido, dentro de la app."
+      step-paid: El pedido se marca como pagado
+      how-qpay: QPay avisa a la tienda cuando se paga; no tiene que hacer nada.
+      how-stripe: A los pocos minutos del pago, o al instante con Comprobar pago.
+      send: "Enviar a {name}"
+      close: Cerrar
+    packing:
+      unavailable: No disponible
+      mark-unavailable: Marcar como no disponible
+      available-again: Marcar como disponible
+      unavailable-told: "Se ha marcado {item} como no disponible. Se ha avisado a {name}."
+    payment:
+      paid: "Pagado: {amount} con {method} · nada que cobrar"
+      to-collect: "Pago en efectivo a la entrega · {amount} por cobrar"
+      unpaid: "Aún sin pagar · {amount}"
+      balance-due: "Pagado: {paid} con {method} · {amount} aún pendiente"
+      refunded: "{amount} reembolsado a {method}"
+      partially-refunded: "Pagado: {paid} con {method} · {amount} reembolsado"
+      credited: "Pagado: {paid} con {method} · {amount} abonado como saldo de tienda"
+    cancel:
+      title: ¿Cancelar este pedido?
+      body: Se informará al cliente del motivo. Las promociones que haya usado volverán a estar disponibles.
+      why: ¿Por qué se cancela?
+      common-reasons: Motivos habituales
+      reasons:
+        customer-asked: El cliente ha pedido cancelarlo
+        out-of-stock: Hay artículos agotados
+        store-closed: La tienda está cerrada
+        cannot-deliver: No podemos entregar en esta dirección
+        payment-problem: Hay un problema con el pago
+      reason: Motivo
+      reason-placeholder: O indique el motivo con sus propias palabras; el cliente lo verá
+      money-back: Qué ocurre con el pago
+      paid-line: "Pago de {amount} con {method}"
+      already-back: "ya devuelto: {amount}"
+      refund-to: "Reembolsar vía {method}"
+      store-credit: Saldo de tienda
+      keep: No devolver
+      amount: Importe
+      up-to: "Hasta {amount}, el importe pagado que aún no se ha devuelto."
+      whole-only: "{method} solo reembolsa el pago completo. Para devolver solo una parte, conceda saldo de tienda."
+      credit-help: Un código de un solo uso para este cliente, válido durante un año.
+      nothing-paid: No se ha pagado nada, así que no hay nada que devolver.
+      nothing-collected: El pago en efectivo a la entrega aún no se ha cobrado; el conductor no lo cobrará.
+      review:
+        none: Se cancelará el pedido y se informará al cliente del motivo. No se devolverá nada.
+        refund: "Se cancelará el pedido, se hará un reembolso de {amount} vía {method} y se informará al cliente del motivo."
+        store_credit: "Se cancelará el pedido, se concederá un saldo de tienda de {amount} y el cliente recibirá el código y el motivo."
+      keep-order: Mantener el pedido
+      confirm: Cancelar pedido
+      confirm-refund: "Cancelar y reembolsar {amount}"
+      confirm-credit: "Cancelar y abonar {amount} en saldo"
+      success: "Pedido {orderId} cancelado"
+    reschedule:
+      title: Reprogramar reserva
+      moving-to: Se cambia a
+      move: Elegir una nueva hora
+      move-to: "Cambiar a {time}"
+      keep: Mantener esta hora
+      moved: "Reserva {id} reprogramada."
+    edit:
+      title: Editar pedido
+      edit-items: Editar artículos
+      changed: Con cambios
+      was: "Antes: {value}"
+      dropoff: Dirección de entrega
+      dropoff-reroutes: Se redirigirá al conductor a la nueva dirección y se le avisará.
+      contact-scope: Dónde se guardan los datos de contacto
+      contact-order: Solo este pedido
+      contact-profile: "Actualizar el perfil de {name}"
+      contact-order-help: Para un regalo u otro destinatario; el perfil no cambia.
+      contact-profile-help: Se usará en este pedido y en los siguientes.
+      removed: Eliminado
+      added: Añadido
+      qty-was: "Cantidad anterior: {quantity}"
+      undo: Deshacer
+      when: Cuándo
+      notes: Notas
+      notify-customer: "Informar a {name} de los cambios"
+      notify-driver: "Informar a {name}"
+      notify-driver-dropoff: "Informar a {name} (nueva dirección de entrega)"
+      notify-driver-items: "Informar a {name} (artículos modificados)"
+      pricing: Calculando el precio del cambio…
+      no-changes: Todavía no hay cambios.
+      discard: Descartar
+      save: Guardar cambios
+      saved: "Pedido {id} actualizado"
+      settle-label: Cómo se liquida la diferencia
+      settle:
+        refund: "Reembolsar vía {method}"
+        store_credit: Saldo de tienda
+        payment_link: Enlace de pago
+        collect: Cobra el conductor
+        cod_update: Actualizar el efectivo a cobrar
+      settle-sentence:
+        refund: "Al guardar, se hará un reembolso de {amount} vía {method}."
+        store_credit: "Al guardar, se concederá un saldo de tienda de {amount}."
+        payment_link: "Hay que cobrar {amount} más; se enviará al cliente un enlace de pago."
+        collect: "Hay que cobrar {amount} más; el conductor lo cobrará en la entrega."
+        cod_update: "El efectivo que cobra el conductor cambia en {amount}."
+        none: ""
+      applies-to-order: Los cambios solo se aplican a este pedido, salvo que indique lo contrario más abajo.
+      back: Volver al pedido
+      the-customer: este cliente
+      the-driver: este conductor
+      was-prefix: "Antes:"
+      address: Dirección
+      address-placeholder: Buscar una dirección
+      saved-places: "Direcciones guardadas de {name}"
+      unit: Piso, puerta
+      door-contact: Contacto en la puerta
+      instructions: Instrucciones para el conductor
+      map-label: Mapa del punto de entrega. Arrastre el marcador para ajustarlo.
+      drag-pin: Arrastre el marcador hasta la entrada exacta
+      distance: "Distancia {was} → {now}"
+      distance-now: "Distancia {now}"
+      fee-unchanged: "gastos de envío sin cambios: {fee}"
+      fee-changed: "gastos de envío {was} → {now}"
+      save-place: "Guardar en las direcciones de {name}"
+      open-profile: "Abrir el perfil de {name}"
+      items-source: de los catálogos que la tienda vende actualmente
+      add-product: Añadir producto
+      removed-out-of-stock: "Eliminado: agotado"
+      substitute: Sustituto
+      substitute-for: "en lugar de {name}"
+      substitute-title: "Sustituto de {name}"
+      options-changed: Opciones modificadas
+      out-of-stock: Agotado
+      change-options: Cambiar opciones
+      quantity-of: "Cantidad de {name}"
+      decrease: "Quitar una unidad de {name}"
+      increase: "Añadir una unidad de {name}"
+      remove: "Quitar {name}"
+      promotion-applies: "{promotion} ({amount} de descuento) se sigue aplicando: nuevo subtotal {subtotal}."
+      promotion-lost: "{promotion} ya no se aplica a los nuevos artículos."
+      due: "Previsto para las {time}"
+      asap-help: En cuanto la tienda pueda
+      schedule-help: Elija un día y una hora
+      closed-today: Hoy la tienda está cerrada
+      open-until: "Dentro del horario de la tienda, hoy hasta las {time}"
+      customer-note: Nota del cliente
+      changes-count: "{count, plural, one {# cambio} other {# cambios}}"
+      paid-by: "Pago de {amount} con {method}."
+      booked-for: Reservada para
+      no-booked-service: "El servicio reservado ya no está en el catálogo de la tienda, así que no se pueden mostrar sus horas disponibles."
+      unit-placeholder: "Por ejemplo: 3.º, puerta 4B"
+      door-contact-placeholder: Teléfono al que llamar al llegar
+      instructions-placeholder: "Por ejemplo: dejar en recepción, llamar al llegar"
+      name-placeholder: Nombre completo
+      phone-placeholder: Número de teléfono
+      email-placeholder: Correo electrónico
+      notes-placeholder: Lo que ha pedido el cliente
+      saved-link: "Pedido {id} actualizado. El pedido incluye un enlace de pago de {amount}."
+      saved-link-sent: "Pedido {id} actualizado. Se ha enviado a {name} un enlace de pago de {amount}."
+      stage:
+        open: "Todavía se puede cambiar todo. Los cambios de artículos durante la preparación se notifican a la tienda."
+        ready: "El pedido está listo: solo se pueden quitar artículos y adelantar la hora."
+        with_driver: "El conductor ya tiene el pedido: si cambia la dirección, se le redirigirá; los artículos y la hora están bloqueados."
+        closed: "El pedido ha finalizado; no se puede cambiar nada. En su lugar, puede reembolsarlo."
+  networks:
+    store-details:
+      back: Tiendas
+      revenue-share: "{share} % de los ingresos de la red"
+      through-network: A través de la red
+      no-orders: Todavía no hay pedidos a través de la red.
+      no-customers: Todavía no hay clientes a través de la red.
+    card:
+      stores-count: "{count, plural, =0 {Sin tiendas} one {# tienda} other {# tiendas}}"
+    overview:
+      members-count: "{count, plural, =0 {sin miembros} one {# miembro} other {# miembros}}"
+      invitee: Invitado
+      sent: Enviada
+      state: Estado
+      copy-link: Copiar
+      manage-stores: Gestionar tiendas
+      no-category: Sin categoría
+      view-on-stores: Ver en la página de tiendas
+      open-store: Gestionar esta tienda
+      view-store: Ver detalles de la tienda
+      online-count: "{count, plural, =0 {ninguna en línea} one {# en línea} other {# en línea}}"
+      invitations-hint: "pendientes, {declined} rechazadas"
+      orders-7d: Pedidos · 7 días
+      multi-store-count: "{count, plural, =0 {ninguno de varias tiendas} one {# de varias tiendas} other {# de varias tiendas}}"
+      revenue-7d: Ingresos · 7 días
+      tips-hint: "propinas: {tips}, repartidas entre las tiendas"
+      new-customers: "{count, plural, =0 {ninguno nuevo este mes} one {# nuevo este mes} other {# nuevos este mes}}"
+      members-title: "{count, plural, =0 {Tiendas} one {Tiendas · # miembro} other {Tiendas · # miembros}}"
+      orders-count-7d: "{count, plural, =0 {sin pedidos · 7 d} one {# pedido · 7 d} other {# pedidos · 7 d}}"
+      share-of-network: "{share} % de la red"
+      no-members: Todavía no hay tiendas que vendan a través de esta red.
+      recent-orders: Pedidos recientes de la red
+      all-orders: Todos los pedidos
+      no-orders: No ha habido pedidos a través de esta red en los últimos siete días.
+    orders:
+      search: Buscar pedidos
+      subtitle: Todos los pedidos hechos a través de la app del marketplace, agrupados por compra
+      group-by-checkout: Agrupar por compra
+      flat: Sin agrupar
+      tabs:
+        all: Todos
+        needs-action: Requieren acción
+        preparing: En preparación
+        ready: Listos para recoger
+        dispatched: En reparto
+        completed: Completados
+        canceled: Cancelados
+        custom: Filtrados
+      columns:
+        next: Siguiente paso
+        reference: Compra / pedido
+        fulfillment: Modalidad
+        total: Total
+        placed: Realizado
+      group-summary: "{orders, plural, one {# pedido} other {# pedidos}} · {items, plural, one {# artículo} other {# artículos}}"
+      part-of: "parte de {checkout}"
+      items-count: "{count, plural, one {# artículo} other {# artículos}}"
+      no-customer: Sin cliente
+      no-store: Sin tienda
+      delivery: Entrega
+      truck: Food truck
+      from-truck: "Pedido en el food truck {name}"
+      from-a-truck: Pedido en un food truck
+      tip-split: "propina de {tip} repartida en {count} partes"
+      tip-shared: "+ propina de {tip} compartida"
+      tip-to-store: "propina de {tip} para la tienda"
+      driver-shared: "compartido entre {count} pedidos"
+      no-driver-needed: No se necesita conductor
+      drivers-count: "{count} conductores"
+      assign-driver: Asignar conductor
+      unassigned: Sin asignar
+      group-status: "{count} de {total} {status}"
+      expand-hint: Desplegar para ver el pedido de cada tienda
+      group-note: El estado del grupo es el de su pedido menos avanzado; un grupo sale de «Requieren acción» cuando todos sus pedidos tienen conductor o están listos para recoger.
+    join:
+      eyebrow: Le han invitado a unirse a
+      sent-by: "enviada por {name}"
+      expires: "caduca: {when}"
+      what-happens: Qué ocurre
+      what-happens-body: Su tienda se une con su propio catálogo, sus precios y su horario; la app de la red la mostrará.
+      category-later: La red la elegirá cuando se una
+      approval: Aprobación
+      approval-body: La red revisará su tienda antes de que aparezca en la app.
+      which-store: Qué tienda se une
+      which-store-help: Tiendas que usted administra. La red verá el nombre, el catálogo y el horario de la tienda.
+      accept: Revisar y aceptar
+      decline: Rechazar
+      accepted: "{store} se ha unido a {network}."
+      declined: Invitación rechazada.
+      joined: "{store} ya es miembro de {network}."
+      awaiting-approval: "{network} revisará su tienda antes de que aparezca en la app."
+      go-to-dashboard: Ir al panel
+      closed:
+        accepted: Esta invitación ya se ha aceptado.
+        awaiting_approval: Esta invitación se ha aceptado y está pendiente de la aprobación de la red.
+        declined: Esta invitación se ha rechazado.
+        expired: Esta invitación ha caducado. Pida a la red que vuelva a invitarle.
+        revoked: Esta invitación se ha retirado.
+      banner-title: "{network} ha invitado a esta tienda a unirse"
+      review: Revisar
+      badge-title: "{count, plural, one {# invitación de red} other {# invitaciones de red}}"
+    customers:
+      subtitle: Clientes que han hecho pedidos a través de la app de la red
+      search: Buscar clientes
+      note: Cada cliente pertenece a la tienda que lo atendió primero; la red ve a todos los que han pedido a través de ella.
+    share:
+      lede: Compartir con personas y organizaciones
+    categories:
+      icon: Icono de la categoría
+      upload-icon: Subir icono de la categoría
+      subtitle: "{count, plural, =0 {Todavía no hay categorías} one {# categoría} other {# categorías}} para que los clientes exploren la app de la red"
+      title: Categorías
+      new-category: Nueva categoría
+      parent: Categoría principal
+      add-subcategory: Añadir subcategoría
+      saved: Cambios de la categoría guardados.
+      deleted: Categoría eliminada; sus tiendas han pasado al nivel superior.
+      empty: Todavía no hay categorías. Las categorías agrupan las tiendas que los clientes exploran en la app de la red.
+      note: Cada tienda está en una sola categoría; al eliminar una categoría, sus tiendas pasan al nivel superior.
+    invitations:
+      title: Invitaciones
+      invite-stores: Invitar tiendas
+      invited: Invitadas
+      pending-count: "{count, plural, =0 {ninguna invitación pendiente} one {# invitación pendiente} other {# invitaciones pendientes}}"
+      none: No hay invitaciones abiertas.
+      sent-ago: "Enviada {ago}"
+      resend: Reenviar
+      revoke: Revocar
+      invite-again: Volver a invitar
+      resent: "Invitación reenviada a {email}."
+      revoke-title: "¿Revocar la invitación enviada a {email}?"
+      revoke-body: El enlace del correo electrónico dejará de funcionar de inmediato. Podrá volver a invitar a esta dirección más adelante.
+      shareable-link: Enlace para compartir
+      manage-link: Gestionar enlace
+      link: Enlace
+      link-hint: Cualquier persona con el enlace puede solicitar unirse. Si desactiva el enlace, dejará de ser válido de inmediato.
+      regenerate: Regenerar
+      regenerate-hint: Al regenerarlo, el enlace anterior deja de ser válido de inmediato.
+      link-expires: Caducidad del enlace
+      link-expires-on: "Caduca el {date}"
+      link-joins: "{count, plural, =0 {Aún no se ha unido ninguna tienda con este enlace} one {# tienda se ha unido con este enlace} other {# tiendas se han unido con este enlace}}"
+      approve-automatically: Aprobar automáticamente (sin paso de revisión)
+      approve-automatically-help: "Si está desactivado, la aprobación queda en sus manos: una tienda que se une mediante el enlace espera en la página Tiendas hasta que usted la apruebe."
+      link-updated: Enlace de invitación actualizado.
+      via-link: Se unió mediante enlace
+      status:
+        pending: Pendiente
+        declined: Declinada
+        expired: Caducada
+        accepted: Aceptada
+        revoked: Revocada
+        awaiting_approval: Pendiente de aprobación
+        rejected: Rechazada
+      stores-subtitle: "{members, plural, =0 {Ningún miembro} one {# miembro} other {# miembros}} · {pending, plural, =0 {ninguna invitación pendiente} one {# invitación pendiente} other {# invitaciones pendientes}}"
+      add-existing-store: Añadir tienda existente
+      edit-category: Editar categoría
+      delete-category: Eliminar categoría
+      selected-count: "{count, plural, one {# seleccionado} other {# seleccionados}}"
+      clear: Deseleccionar
+      rows-note: Las filas de tiendas invitadas son invitaciones, no miembros; desaparecen de la lista cuando se aceptan o se revocan.
+      assign-category-count: "Asignar una categoría a {count, plural, one {# tienda} other {# tiendas}}"
+      pick-a-category: Seleccione primero una categoría.
+      remove-count-title: "¿Quitar {count, plural, one {# tienda} other {# tiendas}} de {networkName}?"
+      remove-body: La tienda conserva su propio catálogo y sus pedidos. Los pedidos abiertos de la red que incluyen esta tienda siguen abiertos; los nuevos carritos de varias tiendas ya no ofrecerán sus productos.
+      panel-title: "Invitar tiendas a {network}"
+      panel-lede: Una tienda que acepta se une con su propio catálogo, sus precios y su horario. Usted elige su categoría.
+      tab-email: Por correo electrónico
+      tab-link: Enlace para compartir
+      tab-own: Añadir una tienda que usted gestiona
+      email-addresses: Direcciones de correo electrónico
+      email-help: "Pegue una lista: se envía una invitación por dirección. Antes del envío se marcan los miembros y las direcciones con una invitación pendiente."
+      already-flagged: "{count, plural, one {# dirección ya es miembro o ya está invitada y se omitirá.} other {# direcciones ya son miembros o ya están invitadas y se omitirán.}}"
+      invalid-flagged: "{count, plural, one {# dirección no es un correo electrónico válido.} other {# direcciones no son correos electrónicos válidos.}}"
+      category-on-joining: Categoría al unirse
+      let-store-choose: Dejar que elija la tienda
+      expires: Caducidad de la invitación
+      expires-14: En 14 días
+      expires-7: En 7 días
+      expires-30: En 30 días
+      expires-never: Nunca
+      message: Mensaje (opcional)
+      message-placeholder: "Hola, nos gustaría contar con su tienda en {network}. Acepte la invitación para mostrar su catálogo en la app."
+      require-approval: Requerir mi aprobación después de que la tienda acepte
+      require-approval-help: Usted revisa la tienda antes de que aparezca en la app.
+      send-count: "{count, plural, =0 {Enviar invitaciones} one {Enviar # invitación} other {Enviar # invitaciones}}"
+      sent: "{count, plural, one {# invitación enviada.} other {# invitaciones enviadas.}}"
+      own-stores: Tiendas de su organización
+      own-stores-help: Las tiendas que usted administra se unen de inmediato; no se envía ninguna invitación.
+      pick-stores: Seleccionar tiendas
+      add-to-network: Añadir a la red
+      own-stores-added: "{count, plural, one {# tienda añadida a la red.} other {# tiendas añadidas a la red.}}"
+    index:
+      empty-state: Cree una red para vender desde varias tiendas a través de una sola app.
+      create-network: Crear red
       network-option: Opciones de Red
       manage-network: Gestionar Red
       send-invite: Enviar Invitaciones
       delete-network: Eliminar Red
       create-new-network: Crear una nueva red
       success-message: ¡Su nueva red de tiendas ha sido creada!
-      delete-this-network-all-assigned-stores-customer-order: ¿Está seguro de que
-        desea eliminar esta red ({networkName})? Todas las tiendas, clientes y pedidos
-        asignados dejarán de estar accesibles.
+      delete-this-network-all-assigned-stores-customer-order: ¿Está seguro de que desea eliminar esta red ({networkName})? Todas las tiendas, clientes y pedidos asignados dejarán de estar accesibles.
       network:
+        unsaved-title: Cambios sin guardar en la red
+        unsaved-body: Si vuelve atrás, se desharán todos los cambios no guardados de esta red.
         manage-network: Gestionar Red
+        all-networks: Todas las redes
+        overview: Resumen
         settings: Configuración
         customers: Clientes
         orders: Pedidos
+        trucks:
+          empty-state: Aún no hay food trucks. Los food trucks se crean desde una tienda y aparecen aquí para todas las tiendas de la red.
         Network-changes-not-save: ¡Los cambios en la red no se han guardado!
-        going-back-will-rollback-all-unsaved-changes: Volver atrás revertirá todos
-          los cambios no guardados, ¿está seguro de que desea continuar?
+        going-back-will-rollback-all-unsaved-changes: Volver atrás revertirá todos los cambios no guardados, ¿está seguro de que desea continuar?
         index:
+          placeholder-tax: Porcentaje de impuesto
           change-network-saved: Cambios en la red guardados.
           create-new-payment-gateway: Crear una nueva pasarela de pago
           save-gateway: Guardar Pasarela
@@ -361,13 +1395,10 @@ storefront:
           payment-gateway-changes-success: ¡Cambios en la pasarela de pago guardados!
           create-new-notification-channel: Crear un nuevo canal de notificación
           create-notification-channel: Crear Canal de Notificación
-          notification-channel-add-network: ¡Nuevo canal de notificación añadido a
-            la red!
-          notification-channel-changes-save: ¡Cambios en el canal de notificación
-            guardados!
+          notification-channel-add-network: ¡Nuevo canal de notificación añadido a la red!
+          notification-channel-changes-save: ¡Cambios en el canal de notificación guardados!
           general-network-settings-title: Configuración General de la Red
-          general-network-settings-subtitle: Proporcione la configuración general
-            para su red o mercado.
+          general-network-settings-subtitle: Proporcione la configuración general para su red o mercado.
           general-network-settings-form:
             save-changes-button-text: Guardar Cambios
             name: Nombre
@@ -375,8 +1406,7 @@ storefront:
             name-help-text: El nombre de su red o mercado.
             description: Descripción
             description-placeholder: Descripción de la Tienda
-            description-help-text: Dé a su tienda una breve descripción para que los
-              usuarios sepan de qué trata su red.
+            description-help-text: Dé a su tienda una breve descripción para que los usuarios sepan de qué trata su red.
             currency: Moneda
             contact-social-panel:
               panel-title: Contacto y Redes Sociales
@@ -403,14 +1433,15 @@ storefront:
               panel-title: Alertas
               panel-description: Configure quién debe ser alertado para ciertos eventos
               new-order-alert-label: Alerta de nuevo pedido
-              new-order-alert-placeholder: Seleccione usuarios para alertar sobre
-                nuevos pedidos
+              new-order-alert-placeholder: Seleccione usuarios para alertar sobre nuevos pedidos
             config-switches:
               online: En línea
               enable-tax: Habilitar impuestos
               tax-percentage-input-label: Porcentaje de impuesto
-              tax-percentage-input-help-text: El porcentaje de impuesto sobre ventas
-                que se aplicará a los pedidos.
+              tax-percentage-input-help-text: El porcentaje de impuesto sobre ventas que se aplicará a los pedidos.
+              enable-minimum-order-amount: Habilitar importe mínimo de pedido
+              minimum-order-amount-input-label: Importe mínimo de pedido
+              minimum-order-amount-input-help-text: El importe mínimo que debe alcanzar el pedido para poder pagar.
               auto-accept-incoming-orders: Aceptar automáticamente pedidos entrantes
               auto-dispatch-orders: Despachar pedidos automáticamente
               require-proof-of-delivery: Requerir prueba de entrega
@@ -427,20 +1458,16 @@ storefront:
             panel-header: Configuración de API
             panel-description: Clave de acceso para la API de Storefront e integraciones
             network-key-label: Clave de red
-            network-key-help-text: Esta es su clave de red, úsela para habilitar aplicaciones
-              e integraciones para su red.
+            network-key-help-text: Esta es su clave de red, úsela para habilitar aplicaciones e integraciones para su red.
           payment-gateways-panel:
             panel-title: Configuración de pasarelas
-            panel-description: Agregue o administre la configuración de sus pasarelas
-              de pago aquí.
+            panel-description: Agregue o administre la configuración de sus pasarelas de pago aquí.
             new-gateway-button-text: Crear nueva pasarela
             gateway-form:
               name: Nombre de la pasarela
-              name-help-text: Dé un nombre a su pasarela de pago, esto solo será relevante
-                internamente
+              name-help-text: Dé un nombre a su pasarela de pago, esto solo será relevante internamente
               code: Código de la pasarela
-              code-help-text: Código identificador usado para identificar la pasarela
-                en el SDK
+              code-help-text: Código identificador usado para identificar la pasarela en el SDK
               callback-url: URL de devolución de llamada
               callback-url-help-text: URL de devolución de llamada si aplica
               return-url: URL de retorno
@@ -451,11 +1478,34 @@ storefront:
           notification-channels-panel:
             panel-title: Canales de Notificación
             panel-header: Configuración de Notificaciones
-            panel-description: Configura los canales de notificación para tu tienda,
-              cada canal de notificación puede tener además sus propias reglas y opciones.
+            panel-description: Configura los canales de notificación para tu tienda, cada canal de notificación puede tener además sus propias reglas y opciones.
             new-channel-button-text: Crear nuevo canal
         stores:
           store: Tiendas
+          suspended: Suspendida
+          suspend-short: Suspender
+          remove-short: Quitar de la red
+          approve-short: Aprobar
+          search: Buscar tiendas
+          no-categories: Aún no hay categorías
+          showing: "Mostrando del {from} al {to} de {total}"
+          awaiting-approval: Pendiente de aprobación
+          approve: Aprobar adhesión
+          reject: Rechazar adhesión
+          reject-title: "¿Rechazar {name}?"
+          reject-body: "La tienda no se unirá a {networkName}. Su invitación se cierra como rechazada; podrá volver a invitarla más adelante."
+          approve-done: "{count, plural, one {Tienda aprobada.} other {# tiendas aprobadas.}}"
+          reject-done: "{count, plural, one {Adhesión rechazada.} other {# adhesiones rechazadas.}}"
+          suspend: Suspender de la red
+          reinstate: Reactivar en la red
+          suspend-title: "{count, plural, one {¿Suspender {names}?} other {¿Suspender # tiendas?}}"
+          suspend-body: "Las tiendas suspendidas siguen siendo miembros de {networkName}, pero desaparecen de su app y de los carritos hasta que se reactiven. Se conservan su categoría y su historial de pedidos."
+          suspend-done: "{count, plural, one {Tienda suspendida.} other {# tiendas suspendidas.}}"
+          reinstate-done: "{count, plural, one {Tienda reactivada.} other {# tiendas reactivadas.}}"
+          orders-7d: Pedidos · 7 d
+          share: Cuota de pedidos
+          joined: Se unió
+          empty: Aún no hay tiendas en esta red. Añada una tienda existente o invite a una.
           add-stores-button-text: Agregar Tiendas
           invite-stores-button-text: Invitar Tiendas
           created-at: Creado el
@@ -465,9 +1515,7 @@ storefront:
           remove-category: Eliminar Categoría
           remove-store-from-network: Eliminar Tienda de la Red
           delete-network-category: ¿Eliminar categoría de red?
-          deleting-category-move-all-stores-inside-on-top-level: Eliminar esta categoría
-            moverá todas las tiendas dentro al nivel superior, ¿estás seguro de que
-            deseas eliminar esta categoría?
+          deleting-category-move-all-stores-inside-on-top-level: Eliminar esta categoría moverá todas las tiendas dentro al nivel superior, ¿estás seguro de que deseas eliminar esta categoría?
           add-store-to-category: Agregar tienda a la categoría
           save-change: Guardar Cambios
           add-new-network-category: Agregar nueva categoría de red
@@ -479,19 +1527,156 @@ storefront:
           network-stores-update: Tiendas de la red actualizadas.
           remove-this-store: ¿Eliminar esta tienda ({storeName}) de esta red ({networkName})?
           done: Hecho
-          longer-findable-by-this-network: ¿Estás seguro de que deseas eliminar esta
-            tienda de esta red? Ya no será localizable por esta red.
+          longer-findable-by-this-network: ¿Estás seguro de que deseas eliminar esta tienda de esta red? Ya no será localizable por esta red.
           viewing-storefront: Viendo la tienda {storeName}
           editing-storefront: Editando la tienda {storeName}
           send-invitations: Enviar Invitaciones
           invitation-sent-recipients: ¡Invitaciones enviadas a los destinatarios!
-          invalid-emails-provided-error: ¡Se proporcionaron correos electrónicos no
-            válidos!
+          invalid-emails-provided-error: ¡Se proporcionaron correos electrónicos no válidos!
           remove-store-category: Eliminar categoría de tienda
-          remove-store-category-body: Estás a punto de eliminar {storeName} de la
-            categoría {categoryName}, ¿deseas continuar?
+          remove-store-category-body: Estás a punto de eliminar {storeName} de la categoría {categoryName}, ¿deseas continuar?
   orders:
+    booking:
+      title: Nueva reserva
+      subtitle: el formulario de pedido, abierto en servicios
+      booking: Reserva
+      when-where: Cuándo y dónde
+      services-products: Servicios y productos
+      services-hint: Servicios y productos que lleva el profesional
+      type: Tipo
+      service: Servicio
+      product: Producto
+      brought-along: Lo lleva el profesional
+      products-ride: "En una reserva, los productos viajan con el profesional: sin entrega aparte y preparados para el trabajo."
+      add-service-first: Añada un servicio para ver sus días y horas libres.
+      at-customer: En la dirección del cliente
+      at-store: En la tienda
+      at-store-short: "En {store}"
+      where-help: El profesional se desplaza hasta el cliente o el cliente acude a la tienda.
+      provider-from: El profesional sale de
+      at-location: El cliente acude a
+      service-address: Dirección del servicio
+      job-notes: Notas de acceso y del trabajo
+      job-notes-placeholder: "Por ejemplo: llave en conserjería, gato en el segundo dormitorio"
+      day: Día
+      slots: Horas libres
+      start-time: Hora de inicio
+      previous-week: Semana anterior
+      next-week: Semana siguiente
+      closed: Cerrado
+      range: "de {start} a {end}"
+      hours: "{count, plural, one {# h} other {# h}}"
+      minutes: "{count} min"
+      hours-job: "{count, plural, one {# h de trabajo} other {# h de trabajo}}"
+      minutes-job: "{count} min de trabajo"
+      slots-help: Las horas se calculan a partir del horario y la duración del servicio, descontando sus reservas. Las horas tachadas están completas.
+      left: "Libres: {count}"
+      full: Completo
+      no-slots: "No hay horas libres este día. El horario del servicio (o el de la tienda) determina cuándo se puede reservar."
+      pick-slot: Seleccione una hora para la reserva
+      issues:
+        service: Añada un servicio.
+        address: Seleccione la dirección del servicio.
+      payment-after: En efectivo al terminar el trabajo
+      payment-paid: Pagado ahora
+      payment-help: «Pagado ahora» se registra como pagado; en caso contrario, el profesional cobra al terminar el trabajo.
+      products: "{count, plural, one {Productos · # artículo} other {Productos · # artículos}}"
+      products-brought: "{count, plural, one {Productos · # artículo que lleva el profesional} other {Productos · # artículos que lleva el profesional}}"
+      travel-fee: Gastos de desplazamiento
+      travel-fee-km: "Gastos de desplazamiento · {distance}"
+      book: "Reservar · {total}"
+      book-at: "Reservar {when} · {total}"
+      provider: Profesional
+      any-provider: Cualquiera disponible
+      assign-at-confirmation: Asignar un conductor cuando se confirme la reserva
+      choose-provider: Seleccione un conductor
+      driver: Conductor
+      provider-help: Los profesionales son los conductores de Fleet-Ops de la tienda; el mapa en directo y el chat funcionan igual que con cualquier conductor.
+      provider-not-assigned: "La reserva se ha realizado, pero no se ha podido asignar a {name}. Realice la asignación desde el pedido."
+    create:
+      add-product-from-storefront: Añadir producto de la tienda
+      select-store: Seleccionar tienda
+      select-category: Seleccionar categoría de producto
+      filter-by-category: Filtrar por categoría de producto
+      select-product-title: Seleccione un producto para añadirlo al pedido
+      title: Nuevo pedido
+      fulfillment-help: «Recogida» oculta el punto de entrega y los gastos de envío; «Programar» añade una hora dentro del horario de la tienda.
+      store-location: Ubicación de la tienda
+      no-locations: Esta tienda aún no tiene ubicaciones; añada una en Configuración.
+      add-products: Añadir productos
+      options: Opciones
+      qty: Cant.
+      decrease: Reducir cantidad
+      increase: Aumentar cantidad
+      promotion: Promoción
+      method: Método
+      product: Producto
+      price: Precio
+      fulfillment: Modalidad
+      subtitle: un pedido desde la consola sigue el mismo flujo que uno desde la app
+      change-customer: Cambiar cliente
+      customer-placeholder: Buscar clientes por nombre, teléfono o correo electrónico
+      customer-help: Al seleccionar un cliente, se rellenan las direcciones de abajo.
+      schedule: Programar
+      pickup-from: Recogida en
+      change-address: Cambiar dirección
+      leaves-from: Sale de
+      location-help: Una ubicación de la tienda; su horario determina lo que ofrece el catálogo.
+      deliver-to: Entregar en
+      no-places: Aún no hay direcciones guardadas; seleccione otra dirección o añada una nueva.
+      other-address: Otra dirección
+      pick-customer-first: Seleccione un cliente para ver sus direcciones guardadas.
+      dropoff-help: Una dirección guardada del cliente, otra dirección o una nueva que se guarda en su ficha.
+      new-address: Nueva dirección
+      street-placeholder: Calle y número
+      unit-placeholder: Puerta, planta o edificio
+      address-name-placeholder: Etiqueta, p. ej., Casa
+      save-address: Guardar dirección
+      address-saved: "Dirección guardada en la ficha de {name}."
+      items-hint: de los productos publicados de la tienda
+      store-hint: la tienda miembro en la que se hace este pedido
+      each: c/u
+      choose-options: Seleccione las opciones y, después, añádalo al pedido.
+      add-to-order: Añadir al pedido
+      max: "(hasta {max})"
+      max-addons: "Hasta {max} de {category}."
+      variant-required: "Seleccione una opción de {variant}."
+      picker-hint: Haga clic en un producto para añadirlo; si tiene opciones, se le pedirá que las elija antes.
+      no-products: No hay productos publicados que coincidan.
+      notes: Notas del pedido
+      notes-placeholder: Todo lo que la tienda o el conductor deban saber
+      summary: Resumen
+      promo-placeholder: Código promocional
+      apply: Aplicar
+      promo-applied: "Se ha aplicado {name}"
+      promo-rejected: "No se puede aplicar {code} ({reason})."
+      payment-cash: Pago en efectivo a la entrega
+      payment-paid: Marcar como pagado (pedido telefónico)
+      payment-help: Los pagos con tarjeta se cobran en la app; un pedido desde la consola se paga en efectivo o ya está pagado.
+      tip: Propina
+      tip-none: Ninguna
+      tip-custom: Otra
+      subtotal: "Subtotal · {count, plural, one {# artículo} other {# artículos}}"
+      discount: Promoción
+      delivery-fee: Gastos de envío
+      pricing: Calculando precios mediante la API…
+      minimum-met: "Pedido mínimo de {amount} alcanzado"
+      ready: Listo para hacer el pedido
+      place: "Hacer pedido · {total}"
+      placed: "Pedido {id} realizado."
+      issues:
+        store: Seleccione la tienda en la que se hace el pedido.
+        customer: Seleccione un cliente.
+        items: Añada al menos un producto.
+        dropoff: Seleccione dónde se entrega el pedido.
+        location: Seleccione la ubicación de la tienda.
+        minimum: "No se alcanza el pedido mínimo de {amount}."
     index:
+      subtitle: Pedidos realizados desde la app y la consola, los más recientes primero
+      search: Buscar pedidos
+      empty-title: Aún no hay pedidos
+      empty-help: Aquí aparecen los pedidos realizados en la app y desde la consola.
+      items: Artículos
       internal-id: ID Interno
       customer: Cliente
       select-order-customer: Seleccionar cliente del pedido
@@ -547,17 +1732,14 @@ storefront:
         tracking: Seguimiento
         view-activity: Ver actividad
         order-metadata: Metadatos del pedido
-        unassign-title: ¿Está seguro de que desea desasignar al conductor ({driverName})
-          de este pedido?
-        unassign-body: Una vez que el conductor sea desasignado, ya no tendrá acceso
-          a los detalles de este pedido.
+        unassign-title: ¿Está seguro de que desea desasignar al conductor ({driverName}) de este pedido?
+        unassign-body: Una vez que el conductor sea desasignado, ya no tendrá acceso a los detalles de este pedido.
         unassign-success: El conductor ha sido desasignado de este pedido.
-        route-error: La optimización de la ruta falló, revise la entrada de la ruta
-          y vuelva a intentarlo.
+        route-error: La optimización de la ruta falló, revise la entrada de la ruta y vuelva a intentarlo.
         invalid-warning: Entrada de estado personalizado no válida.
         change-order: Cambiar conductor del pedido
         assign-order: Asignar conductor al pedido
-        assign-success: Conductor asignado actualizado para {orderId}.
+        assign-success: 'Conductor asignado actualizado para {orderId}.'
         order-title: Etiqueta del Pedido
         waypoint-title: Etiqueta del Punto de Ruta
         proof-of-delivery: Prueba de Entrega
@@ -565,13 +1747,244 @@ storefront:
         save-order-note: Guardar Nota del Pedido
         order-notes-updated: Notas del pedido actualizadas.
   products:
+    sidebar:
+      categories: Categorías
+      categories-help: Organice los productos para facilitar la navegación. Haga clic en una flecha para plegar una categoría.
+      new-category: Nueva categoría
+      new-subcategory: Nueva subcategoría
+      all-products: Todos los productos
+      no-categories: Aún no hay categorías
+      smart-groups: Grupos inteligentes
+    empty:
+      help: Cree una categoría y, después, añádale productos.
+      category-help: Cree el primer producto de esta categoría.
+    booking:
+      title: Reserva
+      hint: Cómo reservan los clientes este servicio
+      duration: Duración de una reserva (minutos)
+      duration-help: Las franjas se obtienen dividiendo el horario del servicio (o el de la tienda) en tramos de esta duración.
+      capacity: Reservas simultáneas
+      capacity-help: Cuántos clientes pueden reservar la misma franja, p. ej., el número de profesionales.
+    inventory:
+      title: Stock
+      track: Controlar el stock de este producto
+      help-on: "Los pedidos descuentan el stock de la ubicación desde la que se sirven. Al iniciar el pago, el stock queda retenido 15 minutos mientras el cliente paga; los pedidos cancelados lo reponen."
+      help-off: Sin límite. Actívelo para llevar el stock por ubicación de la tienda y dejar de vender cuando se agote.
+      save-first: Guarde primero el producto para definir su stock.
+      available-total: "Disponible: {count}"
+      out-of-stock: Agotado
+      only-left: "Solo {count} en stock"
+      location: Ubicación
+      on-hand: Existencias
+      on-hand-for: "Existencias en {location}"
+      held: Retenido
+      available: Disponible
+      low-at: Stock mínimo
+      low-at-for: "Umbral de stock bajo en {location}"
+      backorder: Venta sin stock
+      backorder-for: "Permitir la venta sin stock en {location}"
+      note-placeholder: "Nota para este cambio, p. ej., mercancía recibida"
+      save: Guardar stock
+      saved: Stock guardado
+      no-locations: Esta tienda no tiene ubicaciones ni food trucks en los que gestionar el stock.
+      recent: Cambios recientes
+      types:
+        adjustment: Ajustado
+        restock: Reabastecido
+        reservation: Retenido para una compra
+        release: Liberado de una compra
+        sale: Vendido
+        cancellation: Devuelto (pedido cancelado)
+        edit: Pedido editado
+    groups:
+      out-of-stock: No disponibles
+      low-stock: Stock bajo
+      drafts: Borradores
+      recommended: Recomendado
+      on-sale: En oferta
+      uncategorized: Sin categoría
+    statuses:
+      published: Publicados
+      draft: Borradores
+    card:
+      untitled: Producto sin título
+      updated: "Actualizado hace {ago}"
+      ago: "Hace {ago}"
+      unavailable: No disponible
+      variants: "{count, plural, =0 {Sin variantes} one {# variante} other {# variantes}}"
+      simple: Producto simple
+      in-catalogs: "{count, plural, one {en # catálogo} other {en # catálogos}}"
+      addons: "{count, plural, =0 {Sin complementos} one {# complemento} other {# complementos}}"
+      service: Servicio
+      bookable: Reservable
+      missing: "Falta: {items}"
+      restock-hint: Agotado y todavía publicado. Reponga el stock o retire su publicación.
+    sort:
+      label: "Orden: {sort}"
+      recently-updated: última actualización
+      newest: más recientes primero
+      name: nombre
+      price-low: precio, de menor a mayor
+      price-high: precio, de mayor a menor
+    bulk:
+      publish: Publicar
+      unpublish: Retirar publicación
+      move: Mover a categoría
+      mark-on-sale: Poner en oferta
+      add-to-catalog: Añadir al catálogo
+      add-to-catalog-title: "Añadir {count, plural, one {# producto} other {# productos}} a un catálogo"
+      pick-catalog: Seleccione un catálogo
+      pick-category: Seleccione una categoría
+      pick-catalog-first: Seleccione primero un catálogo y una categoría.
+      catalog-help: Uno de los catálogos de esta tienda.
+      category-help: La categoría del catálogo en la que se muestran los productos.
+      no-categories: Este catálogo aún no tiene categorías. Añada una primero en el editor del catálogo.
+      added-to-catalog: "{count, plural, one {# producto añadido} other {# productos añadidos}} a {category} en {catalog}."
+      published: "{count, plural, one {# producto publicado.} other {# productos publicados.}}"
+      unpublished: "{count, plural, one {Se ha retirado la publicación de # producto.} other {Se ha retirado la publicación de # productos.}}"
+      on-sale: "{count, plural, one {# producto puesto en oferta.} other {# productos puestos en oferta.}}"
+      move-title: "Mover {count, plural, one {# producto} other {# productos}} a una categoría"
+      moved: "{count, plural, one {# producto movido} other {# productos movidos}} a {category}."
+      delete-title: "¿Eliminar {count, plural, one {# producto} other {# productos}}?"
+    addons:
+      title: Complementos
+      subtitle: Grupos reutilizables entre los que el cliente elige al pagar, como ingredientes extra o guarniciones.
+      groups: Grupos
+      new-group: Nuevo grupo
+      untitled-group: Grupo sin título
+      group-name: Nombre del grupo
+      delete-group: Eliminar grupo
+      delete-group-title: "¿Eliminar {name}?"
+      delete-group-body: Sus complementos se quitarán de todos los productos que usan este grupo.
+      name: Nombre
+      description: Descripción
+      add-addon: Añadir un complemento
+      no-addons: Este grupo aún no tiene complementos.
+      no-groups: Aún no hay grupos.
+      pick-group: Cree un grupo para empezar a añadir complementos.
+      saved: Complementos guardados.
+    form:
+      add-metafield: Añadir metacampo
+      actions:
+        make-primary: Establecer como principal
+        new-variant: Nueva variante
+        remove-variant: Quitar variante
+        edit-variant: Editar variante
+        select-addon-categories: Seleccionar categorías de complementos
+      tabs:
+        details: Detalles
+        variants: Variantes y complementos
+        availability: Disponibilidad
+        media: Multimedia
+      sections:
+        organization: Organización
+        product: Producto
+        pricing: Precios
+        flags: Visibilidad
+        videos: Vídeos de YouTube
+        media: Imágenes y vídeos
+        variants: Variantes
+        addons: Complementos
+        translations: Traducciones
+      fields:
+        name: Nombre
+        name-placeholder: Nombre del producto en la app, por ejemplo, Pizza margarita
+        description: Descripción
+        description-placeholder: Lo que lee el cliente en la app
+        category: Categoría
+        category-placeholder: Seleccione una categoría
+        sku: SKU
+        sku-placeholder: Por ejemplo, PIZ-MARG-12
+        sku-help: Opcional; se muestra en las líneas de pedido y en las exportaciones.
+        tags: Etiquetas
+        tags-placeholder: Añadir etiquetas
+        price: Precio
+        price-help: Lo que paga el cliente por una unidad.
+        sale-price: Precio de oferta
+        sale-price-help: Se cobra en lugar del precio mientras el producto está en oferta.
+        video-placeholder: https://www.youtube.com/watch?v=...
+        video-urls: URL de vídeos de YouTube
+        video-urls-help: Vídeos que se muestran en el producto en la app.
+        no-options: Esta variante no tiene opciones.
+        checkout-modifiers: Modificadores al pagar
+      flags:
+        service: Es un servicio (se reserva, no se entrega)
+        bookable: Este servicio se puede reservar
+        on-sale: En oferta, se muestra el precio de oferta
+        recommended: Recomendado, fijado al principio de su categoría
+        available: Disponible para pedidos
+      status-help: Los borradores permanecen ocultos en la app hasta que se publican.
+      hours-hint: Cuándo se puede pedir el producto.
+      hours-empty: No hay horario definido, así que el producto se puede pedir siempre que la tienda esté abierta.
+      variants:
+        hint: Opciones obligatorias u opcionales, como el tamaño; cada opción se suma al precio.
+        new-option: "Nueva opción de {name}"
+        add-option: Añadir opción
+        required: Obligatoria
+        multiple: Elegir varias
+        none: Sin variantes. Añada una para opciones como el tamaño o el sabor.
+        option-name: Nombre de la opción
+        option-description: Descripción de la opción
+        option: Opción
+        extra-cost: Coste adicional
+        optional: Opcional
+        pick-one: Elegir una
+        options-count: "{count, plural, =0 {sin opciones} one {# opción} other {# opciones}}"
+        edit: Editar variante
+        remove: Quitar variante
+      videos:
+        add: Añadir vídeo
+        invalid: No es un enlace de YouTube; pegue un enlace de tipo watch, share o shorts.
+      addons:
+        hint: Grupos de complementos reutilizables; desmarque un complemento para ocultarlo en este producto.
+        no-description: Sin descripción
+        group-empty: Este grupo aún no tiene complementos.
+        none: No hay grupos de complementos vinculados.
+        offered: "{offered} de {total} ofrecidos"
+        hidden: Oculto
+        remove-group: Quitar grupo
+      more: Más
+      more-subtitle: "traducciones ({translations}), metadatos ({metadata} claves)"
+      metadata: Metadatos
+      metadata-subtitle: "{count, plural, =0 {sin claves} one {# clave} other {# claves}} para integraciones"
+      translations:
+        hint: El nombre y la descripción en otros idiomas; la app muestra el idioma del cliente cuando está disponible.
+        add-language: Añadir idioma
+        remove-language: "Quitar {language}"
+        placeholder: Igual que el original
+        custom-fields: Campos personalizados
+        new-field: Clave del nuevo campo, por ejemplo, ingredientes
+        add-field: Añadir campo
+        help: Si un campo está vacío, la app muestra el texto original.
+        none: Aún sin traducir. Añada un idioma para traducir el nombre y la descripción.
+      needs-attention: "{count, plural, one {# campo requiere atención} other {# campos requieren atención}}"
+      create: Crear producto
+      creating: Creando el producto…
+      save: Guardar cambios
+      issues:
+        name: Asigne un nombre al producto.
+        price: Defina un precio.
+        sale-price: El precio de oferta debe ser inferior al precio.
+        sale-price-missing: El producto está en oferta, pero no tiene precio de oferta.
+        category: Un producto publicado necesita una categoría.
+        media: Un producto publicado debería tener al menos una imagen.
     index:
+      summary: "{products, plural, =0 {Sin productos} one {# producto} other {# productos}} · {categories, plural, =0 {sin categorías} one {# categoría} other {# categorías}}"
+      summary-categories: "{categories, plural, =0 {Sin categorías} one {# categoría} other {# categorías}}"
+      search: Buscar productos
+      new-product: Nuevo producto
+      edit-category: Editar esta categoría…
+      delete-category: Eliminar esta categoría…
       manage-addons: Gestionar Complementos
+      view-grid: Cuadrícula
+      view-list: Lista
       manage-addons-dialog:
         manage-addons-title: Gestionar Categorías y Opciones de Complementos del Producto
         manage-addons-accept-button: Guardar Cambios
       done: Hecho
       create-new-product-category: Crear una nueva categoría de producto
+      create-new-product-subcategory: "Nueva categoría dentro de {parent}"
+      category-meta: "{path} · {products, plural, =0 {sin productos} one {# producto} other {# productos}}"
       product-category-created-success: Nueva categoría de producto creada.
       import-products-via-spreadsheets: Importar productos mediante hojas de cálculo
       start-upload: Iniciar Subida
@@ -582,21 +1995,18 @@ storefront:
       aside-scroller:
         title: Categorías de Productos
         custom-top-item-text: Todos los Productos
-      import-products-success-message: Se importaron correctamente {resultsLength}
-        productos...
+      import-products-success-message: Se importaron correctamente {resultsLength} productos...
       edit:
         title: ¡El producto no está guardado!
         body: Perderá todos los cambios no guardados, ¿está seguro de que desea cancelar?
         changes-saved: ¡Cambios guardados!
       new:
         new-product-created-success: ¡Nuevo producto creado con éxito!
-        warning-only-select-an-image-file-to-be-primary: ¡Solo puede seleccionar un
-          archivo de imagen como principal!
-        made-the-primary-success-image: '{fileName} se ha establecido como imagen
-          principal.'
+        warning-only-select-an-image-file-to-be-primary: ¡Solo puede seleccionar un archivo de imagen como principal!
+        made-the-primary-success-image: >-
+          {fileName} se ha establecido como imagen principal.
         title: ¡El producto no está guardado!
-        body: Volver atrás cancelará la creación de este producto, si continúa se
-          borrarán todos los campos de entrada.
+        body: Volver atrás cancelará la creación de este producto, si continúa se borrarán todos los campos de entrada.
         select-addon-categories: Seleccionar categorías de complementos
         add-new-product-variant: Agregar nueva variante de producto
         edit-product-variant: Editar variante de producto
@@ -604,33 +2014,154 @@ storefront:
       category:
         category: categoría
         title: ¡El producto no está guardado!
-        body: ¡Advertencia! Eliminar esta categoría también eliminará todos los productos
-          listados bajo esta categoría.
+        body: ¡Advertencia! Eliminar esta categoría también eliminará todos los productos listados bajo esta categoría.
         edit-category: Editar categoría
         save-changes: Guardar Cambios
         category-changes-saved-success: Cambios en la categoría guardados.
         delete-product: ¿Está seguro de que desea eliminar este producto?
-        body-warning: ¡Advertencia! Una vez eliminado este producto, ya no estará
-          accesible.
+        body-warning: ¡Advertencia! Una vez eliminado este producto, ya no estará accesible.
   settings:
+    hours:
+      lede: Cuándo está abierta cada ubicación. La app solo ofrece lo que entra en este horario; edítelo en la ubicación.
+      edit: Editar horario
+      open-days: "{count, plural, =0 {cerrada todos los días} one {abierta # día a la semana} other {abierta # días a la semana}}"
+      empty: Aún no hay ubicaciones. El horario pertenece a una ubicación, así que añada una primero.
+    danger:
+      lede: Las acciones de esta sección no se pueden deshacer.
+      delete-title: Eliminar {name}
+      delete-description: Elimina la tienda, sus productos, catálogos, ubicaciones y configuración. Los pedidos ya realizados se conservan en el historial.
+      delete-button: Eliminar tienda
+      confirm-title: ¿Eliminar {name}?
+      confirm-body: Se eliminará definitivamente la tienda y todo lo que contiene. Los pedidos ya realizados se conservan en el historial. Esta acción no se puede deshacer.
+      deleted: "{name} se ha eliminado."
+    shell:
+      copy-store-key: Copiar clave de la tienda
+      store-key-copied: Clave de la tienda copiada.
+    sections:
+      app-review: App Review
+      select-gateway-type: Seleccione el tipo de pasarela
+      hours: Horario
+      locations: Ubicaciones
+      payment-gateways: Pasarelas de pago
+      notification-channels: Canales de notificación
+      danger: Zona de peligro
+      general: General
+      branding: Marca y multimedia
+      checkout-rules: Reglas de compra
+      checkout-rules-lede: Lo que la app permite en el carrito y al pagar.
+      messages: Mensajes de pedidos
+      messages-lede: Las respuestas rápidas que se ofrecen cuando la tienda escribe a un cliente sobre un pedido.
+      alerts: Alertas
+      api-keys: Claves de API
+      store-key: Clave de la tienda
+      timezone: Zona horaria
+      timezone-help: El horario y los pedidos programados se rigen por esta zona horaria.
+      timezone-search: Buscar zonas horarias, p. ej., Ulaanbaatar
+      store-key-help: La usan la app y la API; no se puede cambiar.
+      default-order-config: Configuración de pedido predeterminada
+      default-order-config-help: Se aplica a todos los pedidos creados para esta tienda.
+      default-order-config-placeholder: Seleccione la configuración de pedido predeterminada
+      network-key: Clave de la red
+      network-key-help: La usan la app y la API; no se puede cambiar.
+      gateways: Pasarelas de pago
+      notifications: Canales de notificación
+      contact-social: Contacto y redes sociales
+      network-rules-lede: Lo que la app permite en las tiendas de esta red.
+      copy-network-key: Copiar clave de la red
+      network-key-copied: Clave de la red copiada.
+    messages:
+      quick-replies: Respuestas rápidas para pedidos
+      quick-replies-help: Una respuesta por línea. Déjelo vacío para ofrecer las respuestas predeterminadas que se muestran.
+      quick-replies-placeholder: |-
+        Su pedido se está preparando.
+        Su repartidor está en camino.
+        Vamos con unos 10 minutos de retraso, disculpe.
+        ¿Puede confirmar la dirección de entrega?
+      booking-quick-replies: Respuestas rápidas para reservas
+      booking-quick-replies-help: Una respuesta por línea. Déjelo vacío para ofrecer las respuestas predeterminadas de reservas que se muestran; las respuestas de pedidos no se usan en las reservas.
+      booking-quick-replies-placeholder: |-
+        Su reserva está confirmada.
+        Su profesional está en camino.
+        Vamos con unos 10 minutos de retraso, disculpe.
+        ¿Puede confirmar la dirección y cómo acceder?
+      note: Las respuestas al conductor no se configuran aquí; la consola ofrece las suyas.
+    rules:
+      online: Los clientes pueden ver esta tienda y hacer pedidos en ella desde la app.
+      pickup-label: Pedidos para recoger
+      pickup: Los clientes pueden recoger el pedido en una ubicación de la tienda en lugar de recibirlo a domicilio.
+      tips-label: Propinas para la tienda
+      tips: Los clientes pueden añadir una propina para la tienda al pagar.
+      delivery-tips-label: Propinas de entrega
+      delivery-tips: Los clientes pueden añadir una propina para el conductor al pagar.
+      minimum-label: Importe mínimo del pedido
+      minimum: Los carritos por debajo de este importe no pueden completar el pago.
+      cod-label: Pago en efectivo a la entrega
+      cod: Los clientes pueden pagar en efectivo al conductor cuando llega el pedido.
+      tax-label: Impuesto
+      tax: Se añade un impuesto a todos los pedidos con el porcentaje indicado abajo.
+      auto-accept-label: Aceptar automáticamente los pedidos entrantes
+      auto-accept: Los pedidos nuevos omiten el paso de confirmación y pasan directamente a preparación.
+      auto-dispatch-label: Despachar pedidos automáticamente
+      auto-dispatch: Los pedidos se despachan a Fleet-Ops en cuanto están listos.
+      pod-label: Prueba de entrega
+      pod: El conductor debe registrar una prueba antes de completar el pedido.
+      network-note: Las reglas de la red (pago de múltiples carritos, reparto de propinas) se encuentran en la configuración de la red.
+      online-network: Los clientes pueden explorar esta red y hacer pedidos en ella desde la app.
+      multi-cart-label: Pago de múltiples carritos
+      multi-cart: Los clientes pueden pagar artículos de varias tiendas en un solo pedido.
+      split-tips-label: Repartir la propina de tienda entre las tiendas
+      split-tips: La propina de tienda de un pedido con varias tiendas se reparte según la parte de cada una; si está desactivado, se la queda la red.
+      reviews-label: Reseñas de clientes
+      reviews: Los clientes pueden dejar reseñas de productos y tiendas tras completar un pedido.
+    app-review:
+      lede: Apple y Google prueban su app antes de publicarla, y sus revisores no pueden recibir SMS. Active esta opción para que puedan iniciar sesión con un número de teléfono de prueba y un código que usted facilita a Apple y Google.
+      'on': 'Activado'
+      'off': 'Desactivado'
+      phone-label: Número de teléfono del revisor
+      phone-help: Un número de prueba al que nunca se envían SMS. Es el mismo para todas las tiendas; el código determina en qué tienda se inicia sesión.
+      code-label: Código de inicio de sesión
+      code-new: Copie este código ahora. Solo se muestra una vez.
+      code-hidden: Código creado el {date}. Solo se muestra una vez, así que cree uno nuevo si lo ha perdido.
+      code-none: Todavía no hay código. Al activar esta opción se crea uno.
+      where: En App Store Connect, introduzca ambos en «App Review Information», «Sign-in required». En Google Play Console, introdúzcalos en «App content», «App access».
+      orders: Los pedidos que hace el revisor se marcan como «Pedido de prueba de App Review» y nunca se envían a un conductor. No los tramite.
+      turn-on: Activar
+      turn-off: Desactivar
+      turn-off-title: ¿Desactivar el acceso para App Review?
+      turn-off-body: Los revisores ya no podrán iniciar sesión en {name}. Desactívelo cuando su app esté aprobada y vuelva a activarlo antes de enviar una actualización.
+      regenerate: Crear código nuevo
+      regenerate-title: ¿Crear un código nuevo?
+      regenerate-body: El código actual deja de funcionar de inmediato. Introduzca el nuevo en App Store Connect y Google Play Console.
+      turned-on: El acceso para App Review está activado.
+      turned-off: El acceso para App Review está desactivado.
+      regenerated: Código nuevo creado.
+    rotate-key:
+      button: Rotar la clave
+      help: Al rotar la clave se emite una nueva. Las apps e integraciones que usen la actual se rechazarán de inmediato hasta que se actualicen con la nueva clave.
+      title: ¿Rotar la clave {type, select, network {de la red} other {de la tienda}}?
+      body: '{name} recibirá una clave nueva y la clave actual dejará de funcionar de inmediato. Todas las apps, sitios web e integraciones que la usen se rechazarán hasta que se actualicen con la nueva clave.'
+      confirm: Rotar la clave
+      done: Se ha rotado la clave {type, select, network {de la red} other {de la tienda}}. Actualice sus apps con la nueva clave.
+    save-bar:
+      unsaved: "{count, plural, one {# cambio sin guardar} other {# cambios sin guardar}}"
+      saved: Todos los cambios guardados
+      saved-toast: Cambios guardados.
+      discard: Descartar
+      save: Guardar configuración
     api:
       api-settings: Configuración de API
-      access-key-for-storefront-api-integrations: Clave de acceso para API de Storefront
-        e integraciones.
+      access-key-for-storefront-api-integrations: Clave de acceso para API de Storefront e integraciones.
       store-key: Clave de la tienda
-      store-key-help-text: Esta es su clave de tienda, úsela para habilitar aplicaciones
-        e integraciones para su tienda.
+      store-key-help-text: Esta es su clave de tienda, úsela para habilitar aplicaciones e integraciones para su tienda.
     gateways:
+      empty: Todavía no hay pasarelas de pago. Añada una para que los clientes puedan pagar en la app.
       geteway-settings: Configuración de Pasarela
-      add-or-manage-your-paymeny-gateway-settings-here: Agregue o gestione la configuración
-        de su pasarela de pago aquí.
+      add-or-manage-your-paymeny-gateway-settings-here: Agregue o gestione la configuración de su pasarela de pago aquí.
       create-new-gateway: Crear nueva pasarela
       gateway-name: Nombre de la pasarela
-      gateway-help-text: Asigne un nombre a su pasarela de pago, esto solo será relevante
-        internamente
+      gateway-help-text: Asigne un nombre a su pasarela de pago, esto solo será relevante internamente
       gateway-code: Código de pasarela
-      gateway-code-help-text: Código identificador usado para identificar la pasarela
-        en el SDK
+      gateway-code-help-text: Código identificador usado para identificar la pasarela en el SDK
       callback-url: URL de devolución de llamada
       callback-url-help-text: URL de devolución de llamada si procede
       return-url: URL de retorno
@@ -642,17 +2173,14 @@ storefront:
       edit-payment-gateway: Editar pasarela de pago
       save-changes: Guardar cambios
       title-remove: ¿Está seguro de que desea eliminar esta pasarela?
-      application-website-utilizing-gateway: Todas las aplicaciones y sitios web que
-        utilicen esta pasarela en la configuración podrían verse interrumpidos si
-        la pasarela no se reemplaza previamente
+      application-website-utilizing-gateway: Todas las aplicaciones y sitios web que utilicen esta pasarela en la configuración podrían verse interrumpidos si la pasarela no se reemplaza previamente
     index:
       general-settings-header: Configuración general
       general-settings-message: Proporcione la configuración general para su tienda.
       name-placeholder: Nombre de la tienda
       name-help-text: El nombre de su tienda.
       description-placeholder: Descripción de la tienda
-      description-help-text: Dé a su tienda una breve descripción para que los usuarios
-        sepan qué vende.
+      description-help-text: Dé a su tienda una breve descripción para que los usuarios sepan qué vende.
       tags-placeholder: Agregar etiquetas
       contact-social: Contacto y redes sociales
       website-help-text: URL del sitio web de su negocio.
@@ -667,6 +2195,13 @@ storefront:
       upload-new-logo: Subir nuevo logo
       backdrop-help-text: Banner o imagen de fondo opcional para su tienda.
       upload-new-backdrop: Subir nuevo fondo
+      map-marker: Marcador en el mapa
+      map-marker-help-text: Cómo se muestra esta tienda en el mapa de la app.
+      map-marker-network-help-text: Cómo se muestran las tiendas de la red en el mapa de la app.
+      map-marker-store: Icono de tienda
+      map-marker-warehouse: Icono de almacén
+      map-marker-factory: Icono de fábrica
+      map-marker-logo: Logo de la tienda
       images-videos: Imágenes y videos
       drop-to-upload: Suelte para subir
       ready-to-upload: listo para subir.
@@ -678,8 +2213,10 @@ storefront:
       alert-placeholder: Seleccione usuarios para alertar sobre nuevos pedidos
       enable-tax: Habilitar impuestos
       tax-percentage: Porcentaje de impuestos
-      tax-percentage-help-text: El porcentaje de impuesto sobre las ventas que se
-        aplicará a los pedidos.
+      tax-percentage-help-text: El porcentaje de impuesto sobre las ventas que se aplicará a los pedidos.
+      enable-minimum-order-amount: Habilitar importe mínimo de pedido
+      minimum-order-amount: Importe mínimo de pedido
+      minimum-order-amount-help-text: El importe mínimo que debe alcanzar un pedido para poder pagarlo.
       auto-accept-incoming-order: Aceptar automáticamente los pedidos entrantes
       auto-dispatch-order: Despachar pedidos automáticamente
       require-proof-of-delivery: Requerir prueba de entrega
@@ -691,39 +2228,39 @@ storefront:
       enable-integrated-vendors: Habilitar proveedores integrados
       save-changes: Guardar cambios
     locations:
+      empty: Todavía no hay ubicaciones. Añada una para que los clientes puedan recoger sus pedidos y para poder definir el horario.
       new-store-location: Nueva ubicación de tienda
       add-new-location: Agregar nueva ubicación
       edit-store-location: Editar ubicación de tienda
       save-changes: Guardar cambios
-      remove-this-store-location: ¿Está seguro de que desea eliminar esta ubicación
-        de tienda?
-      solely-accosciated-location: Todos los productos que estén únicamente asociados
-        con esta ubicación ya no estarán accesibles.
+      remove-this-store-location: ¿Está seguro de que desea eliminar esta ubicación de tienda?
+      solely-accosciated-location: Todos los productos que estén únicamente asociados con esta ubicación ya no estarán accesibles.
       new-store-hour: Agregar nuevo horario de tienda para {day}
       add-hours: Agregar horario
       store-hour-added: Nuevo horario de tienda agregado para {day}
       remove-these-hour: ¿Está seguro de que desea eliminar estos horarios?
-      update-schedule-location: Al eliminar estos horarios de operación, su tienda
-        podría volverse inactiva según el horario actualizado para esta ubicación.
+      update-schedule-location: Al eliminar estos horarios de operación, su tienda podría volverse inactiva según el horario actualizado para esta ubicación.
       location-setting: Configuración de ubicación
       manage-store: Administre las ubicaciones y horarios de operación de sus tiendas
       text-location: Crear nueva ubicación
       store-hour: Administrar horarios de tienda
     notification:
+      empty: Todavía no hay canales de notificación. Añada uno para llegar a los clientes con notificaciones push.
       create-new-notification-channel: Crear un nuevo canal de notificación
       create-notification-channel: Crear canal de notificación
       edit-notification-channel: Editar canal de notificación
       save-changes: Guardar cambios
       new-notification-channel-added: Nuevo canal de notificación agregado
-      remove-this-notification-channel: ¿Está seguro de que desea eliminar este canal
-        de notificación?
-      application-websites-utillizing-channel: Todas las aplicaciones y sitios web
-        que utilicen este canal en la configuración podrían verse interrumpidos si
-        el canal no se reemplaza previamente
+      remove-this-notification-channel: ¿Está seguro de que desea eliminar este canal de notificación?
+      application-websites-utillizing-channel: Todas las aplicaciones y sitios web que utilicen este canal en la configuración podrían verse interrumpidos si el canal no se reemplaza previamente
       notification-settings: Configuración de notificaciones
-      notification-storefront: Configure los canales de notificación para su escaparate,
-        cada canal de notificación además puede tener sus propias reglas y opciones.
+      notification-storefront: Configure los canales de notificación para su escaparate, cada canal de notificación además puede tener sus propias reglas y opciones.
       new-channel: Nuevo canal
+      send-test: Enviar prueba
+      send-test-push: Enviar una notificación push de prueba
+      send-test-push-button: Enviar push de prueba
+      test-push-sent: La notificación push de prueba se ha entregado al proveedor.
+      test-push-failed: La notificación push de prueba ha fallado; consulte abajo la respuesta del proveedor.
   service:
     storefront:
       new-incoming-order: ¡Tiene un nuevo pedido entrante!
@@ -735,3 +2272,315 @@ storefront:
       storefront-create-success: ¡Su nuevo escaparate ha sido creado!
   application:
     launch-app: Lanzar aplicación
+  promotions:
+    hub:
+      title: Promociones
+      subtitle: Un único lugar para las ofertas, las campañas que las anuncian, los segmentos a los que se dirigen y las notificaciones push que se envían.
+      active: Activas
+      scheduled: Programadas
+      discount-given: Descuento concedido
+      cards: Tarjetas
+      table: Tabla
+    redemptions:
+      tab-title: Canjes
+      header: Canjes
+      subtitle: Cada uso de una promoción, con el pedido y el descuento aplicado.
+      search-placeholder: Buscar por promoción o código
+      discount: Descuento
+      redeemed-at: Fecha de canje
+      empty-title: Todavía no hay canjes
+      empty-help: Los canjes aparecen aquí en cuanto un cliente usa una promoción al pagar.
+    card:
+      bogo-summary: "Compre {buy} y llévese {get}"
+      first-order: Primer pedido
+      with-code: Con código
+      cart-total-above: "Total del carrito superior a {amount}"
+      starts: "Desde {date}"
+      ends: "Hasta {date}"
+      always: Siempre
+      products-count: "{count, plural, one {# producto} other {# productos}}"
+      categories-count: "{count, plural, one {# categoría} other {# categorías}}"
+      whole-store: Toda la tienda
+      redemptions-summary: "{count, plural, =0 {Sin canjes} one {# canje} other {# canjes}} · {amount}"
+    builder:
+      step-of: "Paso {step} de {total}"
+      steps:
+        what: Oferta
+        when: Cuándo se aplica
+        targets: Alcance
+        schedule: Vigencia y límites
+        review: Revisar y anunciar
+      type-hints:
+        percentage: Un porcentaje de descuento sobre los artículos aplicables
+        fixed_amount: Un importe fijo de descuento sobre el carrito
+        free_delivery: Sin gastos de envío
+        bogo: Compre algunos y llévese otros gratis o con descuento
+      trigger:
+        code: Al pagar, con un código
+        code-hint: El cliente introduce un código
+        automatic: Automáticamente
+        automatic-hint: Se aplica cuando se cumplen las condiciones
+      min-subtotal-help: Importe mínimo en la moneda de la tienda; déjelo vacío si no hay mínimo.
+      codes-after-save: Guarde primero la promoción y después genere aquí sus códigos.
+      segment: Segmento de clientes
+      stores: Tiendas
+      stores-help: Déjelo vacío para aplicarla en todas las tiendas miembro.
+      stores-placeholder: Seleccione tiendas miembro
+      segment-help: Solo los clientes de este segmento obtienen la promoción.
+      segment-placeholder: Todos
+      summary:
+        percentage: "{value} % de descuento"
+        fixed: "{amount} de descuento"
+        with-code: Al pagar, con un código
+        automatic: Automáticamente
+        excluded: "{count, plural, one {# excluido} other {# excluidos}}"
+        limit: "Límite de usos: {count}"
+      issues:
+        name: Asigne un nombre a la promoción.
+        value: Indique el valor del descuento.
+        percent: El porcentaje no puede ser superior a 100.
+        window: La fecha de fin debe ser posterior a la de inicio.
+      announce: Anunciar después de guardar
+      announce-help: Abre el editor de campañas para que los clientes se enteren.
+      save-draft: Guardar borrador
+      back: Atrás
+      next: "Siguiente: {step}"
+    title: Promociones
+    push-notifications:
+      tab-title: Notificaciones push
+      header: Enviar notificaciones push
+      description: Envíe notificaciones push promocionales a sus clientes
+      title-label: Título de la notificación
+      title-placeholder: Introduzca el título de la notificación
+      title-help-text: El título que aparecerá en la notificación push
+      body-label: Texto de la notificación
+      body-placeholder: Introduzca el mensaje de la notificación
+      body-help-text: El contenido del mensaje que se enviará a los clientes
+      select-all-customers: Seleccionar todos los clientes
+      select-all-customers-help-text: Enviar la notificación a todos los clientes de esta tienda
+      customers-label: Seleccionar clientes
+      customers-placeholder: Seleccione los clientes a los que enviar la notificación
+      send-button: Enviar notificación
+      validation-title-body-required: Introduzca el título y el texto de la notificación
+      validation-customers-required: Seleccione al menos un cliente al que enviar la notificación
+      notification-sent-success: Notificación push enviada correctamente a los clientes seleccionados
+      notification-sent-error: No se ha podido enviar la notificación push. Inténtelo de nuevo.
+    common:
+      new: Nuevo
+      edit: Editar
+      delete: Eliminar
+      save: Guardar
+      cancel: Cancelar
+      name: Nombre
+      description: Descripción
+      status: Estado
+      created: Creado
+      updated: Actualizado
+      none: Ninguno
+      all-customers: Todos los clientes
+      done: Listo
+      no-results: No hay resultados que coincidan
+      no-results-help: Pruebe con otra búsqueda o vuelva a la lista completa.
+      reset-filters: Mostrar todo
+    statuses:
+      all: Todas
+      draft: Borrador
+      active: Activa
+      paused: En pausa
+      ended: Finalizada
+      scheduled: Programada
+      sending: Enviando
+      sent: Enviada
+      canceled: Cancelada
+    list:
+      none-with-status: "No hay promociones con el estado «{status}»."
+      bulk-updated: "{count, plural, one {# promoción actualizada.} other {# promociones actualizadas.}}"
+      tab-title: Promociones
+      header: Promociones
+      duplicate: Duplicar
+      view-redemptions: Ver canjes
+      new-promotion: Nueva promoción
+      edit-promotion: Editar promoción
+      type: Tipo
+      trigger: Activación
+      runs: Vigencia
+      redemptions: Canjes
+      discount-given: Descuento concedido
+      actions: Acciones de la promoción
+      manage-codes: Gestionar códigos
+      announce: Anunciar a los clientes
+      activate: Activar
+      pause: Pausar
+      end: Finalizar promoción
+      created-success: Promoción creada.
+      saved-success: Promoción guardada.
+      status-updated: Estado de la promoción actualizado.
+      empty: Todavía no hay promociones. Cree una para ofrecer descuentos al pagar.
+      search-placeholder: Buscar promociones…
+      empty-title: Todavía no hay promociones
+      empty-help: Cree una promoción para ofrecer descuentos al pagar.
+    types:
+      percentage: Descuento porcentual
+      fixed_amount: Descuento fijo
+      free_delivery: Envío gratis
+      bogo: Compre X y llévese Y
+    triggers:
+      automatic: Automática
+      code: Código promocional
+    form:
+      basics: Datos básicos
+      name-placeholder: p. ej., Oferta de fin de semana
+      name-help: Se muestra a los clientes al pagar y en la app.
+      description-placeholder: Describa la oferta y sus condiciones
+      description-help: Detalles opcionales que se muestran con la oferta en la app.
+      type-help: Cómo se calcula el descuento.
+      trigger-help: Las promociones automáticas se aplican a todos los carritos que cumplen los requisitos; las promociones con código requieren un código promocional.
+      percent-off: Porcentaje de descuento
+      amount-off: Importe de descuento
+      buy-quantity: Compre (artículos)
+      get-quantity: Llévese (artículos)
+      get-discount-percent: Descuento en «llévese» (%)
+      bogo-help: Por cada grupo de artículos aplicables de «compre» + «llévese», el descuento se aplica a los artículos «llévese» más baratos.
+      schedule: Vigencia
+      starts-at: Fecha de inicio
+      ends-at: Fecha de fin
+      schedule-help: Deje vacío el inicio para que la promoción esté disponible en cuanto se active. Deje vacío el fin para que no tenga fecha de finalización.
+      conditions: Condiciones
+      min-subtotal: Gasto mínimo
+      min-items: Mínimo de artículos
+      no-minimum: Sin mínimo
+      no-limit: Sin límite
+      first-order-only: Solo en el primer pedido
+      first-order-only-help: Solo pueden usarla los clientes que nunca han hecho un pedido.
+      targeting: Alcance
+      targeting-help: Limite el descuento a estos productos o categorías. Déjelo vacío para aplicarlo a todo el carrito.
+      products: Productos
+      products-placeholder: Busque y seleccione productos
+      categories: Categorías
+      categories-placeholder: Busque y seleccione categorías
+      exclude-products: Productos excluidos
+      exclude-products-placeholder: Busque productos para excluir
+      limits: Límites
+      usage-limit: Usos totales
+      usage-limit-per-customer: Usos por cliente
+      budget-amount: Presupuesto total
+      max-discount-amount: Descuento máximo por pedido
+      limits-help: Déjelo vacío para no establecer ningún límite.
+      stacking: Combinación y visibilidad
+      stackable: Combinable con otras promociones
+      stackable-help: Si no, se aplica sola y solo cuando ofrece al cliente un descuento mayor.
+      priority: Prioridad
+      priority-help: Las promociones con mayor prioridad se aplican primero.
+      is-public: Mostrar en las ofertas de la app
+    codes:
+      title: Códigos promocionales de {name}
+      help: Genere un lote de códigos únicos o introduzca un código concreto para compartirlo con los clientes.
+      generate: Generar códigos
+      count: Cantidad
+      prefix: Prefijo
+      prefix-placeholder: p. ej., VERANO
+      length: Longitud del código
+      usage-limit: Usos por código
+      usage-limit-help: 1 para códigos de un solo uso. Déjelo vacío para usos ilimitados.
+      specific-code: O cree un código concreto
+      specific-code-placeholder: p. ej., VERANO25
+      specific-code-help: Si lo introduce, solo se crea este código. Se ignoran la cantidad, el prefijo y la longitud del código indicados arriba.
+      loading: Cargando códigos promocionales…
+      load-failed: No se han podido cargar los códigos promocionales.
+      retry: Reintentar
+      code: Código
+      used: Usos
+      expires: Caduca
+      disable: Desactivar
+      enable: Activar
+      generated-success: Códigos generados.
+      empty: Todavía no hay códigos.
+    announce:
+      title: Anunciar {name}
+      help: Envíe a sus clientes una notificación sobre esta promoción. Se envía cuando empieza la promoción, o de inmediato si ya ha empezado.
+      segment: Audiencia
+      segment-placeholder: Todos los clientes
+      message-title: Título de la notificación
+      title-placeholder: p. ej., Su próximo pedido tiene descuento
+      message-body: Mensaje de la notificación
+      body-placeholder: Explique la oferta a sus clientes
+      send-at: Fecha de envío (opcional)
+      send-at-help: Déjelo vacío para enviarla cuando empiece la promoción, o de inmediato si ya ha empezado.
+      success: Anuncio programado.
+    campaigns:
+      tab-title: Campañas
+      header: Campañas
+      new-campaign: Nueva campaña
+      edit-campaign: Editar campaña
+      view-campaign: Ver campaña
+      search-placeholder: Buscar campañas…
+      empty-title: Todavía no hay campañas
+      empty-help: Cree una campaña para enviar novedades y ofertas a sus clientes.
+      name-placeholder: p. ej., Anuncio de ofertas de fin de semana
+      name-help: Nombre interno para que su equipo identifique esta campaña.
+      title-placeholder: p. ej., Ya están aquí sus ofertas de fin de semana
+      body-placeholder: Escriba el mensaje que recibirán sus clientes.
+      read-only-help: Esta campaña ya no se puede editar. Su mensaje y su audiencia se muestran como referencia.
+      audience: Audiencia
+      audience-help: Seleccione un segmento para dirigirse a un grupo, o déjelo vacío para incluir a todos los clientes de su organización.
+      channels: Canales
+      channels-help: Elija dónde deben recibir los clientes esta campaña.
+      channel-push: Notificación push
+      channel-inbox: Bandeja de entrada de la app
+      send-at: Fecha de envío
+      sent-at: Enviada
+      targeted: Clientes alcanzados
+      send-now: Enviar ahora
+      send-now-confirm: ¿Enviar ahora esta campaña a su audiencia?
+      cancel-campaign: Cancelar campaña
+      cancel-confirm: ¿Cancelar esta campaña? No se enviará.
+      audience-count: Esta campaña llegará a {count} clientes.
+      title-label: Título de la notificación
+      body-label: Mensaje de la notificación
+      promotion: Promoción vinculada
+      promotion-help: Al tocar la notificación se abre esta promoción.
+      promotion-placeholder: Seleccione una promoción (opcional)
+      link-url: O enlazar a una URL
+      link-help: Destino opcional cuando el cliente toca la notificación.
+      link-placeholder: https://example.com/offers
+      when: Cuándo enviar
+      when-draft: Guardar como borrador
+      when-now: Enviar ahora
+      when-schedule: Programar
+      required-fields: Introduzca un nombre de campaña, un título y un mensaje para la notificación.
+      required-channel: Seleccione al menos un canal de envío.
+      required-schedule: Elija una fecha y hora futuras para esta campaña.
+      schedule-help: Seleccione una fecha y hora futuras en su zona horaria local.
+      saved-success: Campaña guardada.
+      sent-success: Campaña enviada.
+      canceled-success: Campaña cancelada.
+      empty: Todavía no hay campañas.
+    segments:
+      tab-title: Segmentos
+      header: Segmentos de clientes
+      new-segment: Nuevo segmento
+      edit-segment: Editar segmento
+      required-name: Introduzca un nombre para el segmento.
+      search-placeholder: Buscar segmentos…
+      empty-title: Todavía no hay segmentos de clientes
+      empty-help: Agrupe a los clientes por su historial de pedidos y su actividad para dirigir campañas.
+      name-placeholder: p. ej., Clientes frecuentes
+      description-placeholder: Describa quién forma parte de este segmento (opcional).
+      rules: Reglas
+      rules-help: Los clientes deben cumplir todas las reglas que rellene. Deje una regla vacía para ignorarla, o todas vacías para incluir a todos los clientes de su organización.
+      orders-placeholder: Sin límite de pedidos
+      days-placeholder: Sin límite de tiempo
+      spend-placeholder: Sin gasto mínimo
+      min-orders: Como mínimo este número de pedidos
+      max-orders: Como máximo este número de pedidos
+      ordered-within-days: Ha pedido en los últimos (días)
+      not-ordered-within-days: No ha pedido en los últimos (días)
+      joined-within-days: Se registró en los últimos (días)
+      min-spent: Ha gastado al menos
+      min-spent-help: Total mínimo de pagos completados en toda su organización. Déjelo vacío o ponga 0 para no fijar un mínimo.
+      has-push-device: Puede recibir notificaciones push
+      matching: 'Clientes que coinciden: {count}'
+      matching-loading: Contando los clientes que coinciden…
+      matching-unavailable: El recuento de clientes no está disponible en este momento.
+      saved-success: Segmento guardado.
+      empty: Todavía no hay segmentos. Los segmentos le permiten dirigir campañas a grupos de clientes.
